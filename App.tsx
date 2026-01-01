@@ -356,16 +356,84 @@ const App: React.FC = () => {
 
   // 傳統下載方式（用於網頁瀏覽器）
   const fallbackDownload = (blob: Blob, filename: string) => {
+    // 在 Android WebView/TWA 環境中，使用多種方法嘗試下載
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      document.body.removeChild(link);
+    
+    // 方法1: 嘗試使用 <a> 標籤點擊（適用於一般瀏覽器）
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      
+      // 觸發點擊事件（添加多種方式以確保兼容性）
+      if (typeof link.click === 'function') {
+        link.click();
+      } else {
+        // 某些環境可能不支援 click()，使用 MouseEvent
+        const clickEvent = new MouseEvent('click', {
+          view: window,
+          bubbles: true,
+          cancelable: true
+        });
+        link.dispatchEvent(clickEvent);
+      }
+      
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      // 如果方法1成功，直接返回
+      return;
+    } catch (e) {
+      console.log("Method 1 (link.click) failed:", e);
+    }
+
+    // 方法2: 使用 window.open（適用於 Android WebView/TWA）
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        try {
+          const dataUrl = reader.result as string;
+          const newWindow = window.open(dataUrl, '_blank');
+          if (!newWindow) {
+            // 如果彈出視窗被阻止，嘗試在當前視窗打開
+            window.location.href = dataUrl;
+          }
+          // 延遲釋放 URL
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+          }, 1000);
+        } catch (e) {
+          console.error("Method 2 (window.open) failed:", e);
+          URL.revokeObjectURL(url);
+          showAlert("下載失敗：無法打開下載視窗。請檢查瀏覽器是否阻止了彈出視窗。", "下載錯誤", "error");
+        }
+      };
+      reader.onerror = () => {
+        URL.revokeObjectURL(url);
+        showAlert("下載失敗：讀取檔案時發生錯誤。", "下載錯誤", "error");
+      };
+      reader.readAsDataURL(blob);
+      return;
+    } catch (e) {
+      console.error("Method 2 setup failed:", e);
       URL.revokeObjectURL(url);
-    }, 100);
+    }
+
+    // 方法3: 最後嘗試直接設置 location.href
+    try {
+      window.location.href = url;
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (e) {
+      console.error("All download methods failed:", e);
+      URL.revokeObjectURL(url);
+      showAlert("下載失敗：請嘗試使用瀏覽器開啟此頁面，或使用分享功能儲存備份。", "下載錯誤", "error");
+    }
   };
 
   const handleExportData = async () => {
@@ -393,12 +461,18 @@ const App: React.FC = () => {
       const dateStr = new Date().toISOString().split('T')[0];
       const filename = `tradefolio_${safeUser}_${dateStr}.json`;
 
+      // 檢測是否在 Android WebView/TWA 環境中
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const isStandalone = (window.navigator as any).standalone === true || 
+                          window.matchMedia('(display-mode: standalone)').matches;
+      const isAndroidWebView = isAndroid && (isStandalone || (window as any).Android !== undefined);
+
       // 優先使用 Web Share API（支援 Android WebView/TWA 環境）
       if (navigator.share) {
         try {
           const file = new File([blob], filename, { type: 'application/json' });
           
-          // 檢查是否可以分享檔案（某些環境可能不支援檔案分享）
+          // 檢查是否可以分享檔案
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
               title: 'TradeFolio 備份檔案',
@@ -406,6 +480,27 @@ const App: React.FC = () => {
               files: [file]
             });
             return; // 成功分享，提前返回
+          } else if (isAndroidWebView) {
+            // 在 Android WebView 中，即使 canShare 不支援檔案，也嘗試分享文字和 URL
+            // 將 blob 轉換為 data URL 作為 fallback
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+              try {
+                const dataUrl = reader.result as string;
+                await navigator.share({
+                  title: 'TradeFolio 備份檔案',
+                  text: `TradeFolio 備份：${filename}\n\n請點擊下方連結或使用「另存連結為」功能下載檔案。`,
+                  url: dataUrl
+                });
+              } catch (err: any) {
+                if (err.name !== 'AbortError') {
+                  console.log("Web Share API with data URL failed, trying fallback:", err);
+                  fallbackDownload(blob, filename);
+                }
+              }
+            };
+            reader.readAsDataURL(blob);
+            return;
           }
         } catch (shareErr: any) {
           // 如果使用者取消分享（AbortError），不執行任何操作
