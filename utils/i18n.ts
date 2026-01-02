@@ -46,6 +46,8 @@ export interface Translations {
     login: string;
     privacy: string;
     privacyDesc: string;
+    riskDisclaimer: string;
+    riskDisclaimerDesc: string;
   };
   // 儀表板
   dashboard: {
@@ -122,6 +124,9 @@ export interface Translations {
     startAnalysis: string;
     analyzing: string;
     viewCalculationDetails: string;
+    riskWarning: string;
+    riskWarningDesc: string;
+    notInvestmentAdvice: string;
   };
   // 資金管理
   funds: {
@@ -412,6 +417,8 @@ const zhTW: Translations = {
     login: '登入',
     privacy: '隱私聲明',
     privacyDesc: '資料都在個人電腦與手機，系統不涉及個資問題，記得定時備份。',
+    riskDisclaimer: '投資風險警告',
+    riskDisclaimerDesc: '⚠️ 投資有風險，過往績效不代表未來表現。本應用程式僅提供資產統計與管理功能，不提供投資建議，亦不具備證券交易功能。所有投資決策應由使用者自行判斷，並承擔相關風險。',
   },
   dashboard: {
     netCost: '淨投入成本',
@@ -487,6 +494,9 @@ const zhTW: Translations = {
     startAnalysis: '開始分析',
     analyzing: '分析中...',
     viewCalculationDetails: '查看計算明細',
+    riskWarning: '⚠️ 投資風險警告',
+    riskWarningDesc: '本應用程式提供的所有資訊、分析與建議僅供參考，不構成任何投資建議。投資有風險，過往績效不代表未來表現。使用者應自行評估投資風險，並諮詢專業財務顧問。',
+    notInvestmentAdvice: '本應用程式不提供投資建議，所有分析結果僅供參考。',
   },
   funds: {
     title: '資金管理',
@@ -772,7 +782,26 @@ Q: 會員的年度績效表為何有勾勾？
 A: 具勾勾部份是顯示該年度年底的績效表現，無勾勾部份是按你的報酬率反推的你績效表現，僅是預估效果。
 
 Q: 股價與匯率為何與按「AI聯網更新股價&匯率」得到現價為何不同？
-A: 股價與匯率因為是抓取網頁現值，故現值會慢三分鐘至五分鐘不等，所以勿拿來當買賣的參考值，建議買賣的參考仍以証券公司為主，此軟體僅適用作統計資產功能，例如有緊急預備金、旅遊基金、退休金、定存、股債券等統計參考，並無証券交易買賣功能；另外投資有賺有賠，記得預留緊急預備金，感謝您的使用。`,
+A: 股價與匯率因為是抓取網頁現值，故現值會慢三分鐘至五分鐘不等，所以勿拿來當買賣的參考值，建議買賣的參考仍以証券公司為主，此軟體僅適用作統計資產功能，例如有緊急預備金、旅遊基金、退休金、定存、股債券等統計參考，並無証券交易買賣功能；另外投資有賺有賠，記得預留緊急預備金，感謝您的使用。
+
+## 5. 重要免責聲明
+
+**投資風險警告**：
+- ⚠️ 投資有風險，過往績效不代表未來表現。
+- 本應用程式僅提供資產統計與管理功能，不提供投資建議。
+- 本應用程式不具備證券交易功能，無法進行實際買賣操作。
+- 所有投資決策應由使用者自行判斷，並承擔相關風險。
+- 使用者應自行評估投資風險，並在需要時諮詢專業財務顧問。
+
+**非投資建議聲明**：
+- 本應用程式提供的所有資訊、分析、圖表與 AI 建議僅供參考，不構成任何投資建議。
+- 本應用程式不保證任何投資結果或報酬率。
+- 使用者應根據自身情況做出投資決策，並對所有投資決策負責。
+
+**資料準確性**：
+- 本應用程式提供的股價、匯率等資料可能因網路延遲而與實際市場價格有所差異。
+- 使用者不應將本應用程式的資料作為實際買賣的唯一參考依據。
+- 建議以證券公司或金融機構提供的即時報價為準。`,
     androidPublish: '上架安卓商店指南',
     androidPublishTitle: '如何將此工具上架到 Google Play？',
     androidPublishDesc: '您可以透過 TWA 技術將網頁轉為 Android App：\n1. 註冊 Google 開發者帳號 ($25)。\n2. 使用 Bubblewrap CLI 工具封裝您的網站網址。\n3. 在 Play Console 上傳 AAB 檔並提交審核。',
@@ -819,6 +848,8 @@ const en: Translations = {
     login: 'Login',
     privacy: 'Privacy Notice',
     privacyDesc: 'All data is stored locally on your device. The system does not collect personal information. Please remember to backup regularly.',
+    riskDisclaimer: 'Investment Risk Warning',
+    riskDisclaimerDesc: '⚠️ Investments carry risk. Past performance does not guarantee future results. This application provides asset tracking and management features only. It does not provide investment advice and does not have securities trading functionality. All investment decisions should be made by users at their own discretion, and users bear all related risks.',
   },
   dashboard: {
     netCost: 'Net Cost',
@@ -894,6 +925,9 @@ const en: Translations = {
     startAnalysis: 'Start Analysis',
     analyzing: 'Analyzing...',
     viewCalculationDetails: 'View Details',
+    riskWarning: '⚠️ Investment Risk Warning',
+    riskWarningDesc: 'All information, analysis, and suggestions provided by this application are for reference only and do not constitute investment advice. Investments carry risk. Past performance does not guarantee future results. Users should evaluate investment risks independently and consult professional financial advisors.',
+    notInvestmentAdvice: 'This application does not provide investment advice. All analysis results are for reference only.',
   },
   funds: {
     title: 'Fund Management',
@@ -1180,7 +1214,26 @@ Q: Why are there checkmarks in the member's annual performance table?
 A: The parts with checkmarks show the performance at the end of that year. The parts without checkmarks are performance estimates calculated by reverse-engineering based on your return rate, which are only estimated effects.
 
 Q: Why are stock prices and exchange rates different from the current prices obtained by clicking "AI Update Prices & Exchange Rates"?
-A: Stock prices and exchange rates are scraped from web current values, so the current values may lag by three to five minutes. Therefore, do not use them as references for buying and selling. It is recommended to use securities companies as the main reference for buying and selling. This software is only suitable for statistical asset functions, such as emergency funds, travel funds, retirement funds, fixed deposits, stocks and bonds, etc. It does not have securities trading functions. Additionally, investments have profits and losses. Remember to reserve emergency funds. Thank you for using.`,
+A: Stock prices and exchange rates are scraped from web current values, so the current values may lag by three to five minutes. Therefore, do not use them as references for buying and selling. It is recommended to use securities companies as the main reference for buying and selling. This software is only suitable for statistical asset functions, such as emergency funds, travel funds, retirement funds, fixed deposits, stocks and bonds, etc. It does not have securities trading functions. Additionally, investments have profits and losses. Remember to reserve emergency funds. Thank you for using.
+
+## 5. Important Disclaimers
+
+**Investment Risk Warning**:
+- ⚠️ Investments carry risk. Past performance does not guarantee future results.
+- This application provides asset tracking and management features only. It does not provide investment advice.
+- This application does not have securities trading functionality and cannot perform actual buy/sell operations.
+- All investment decisions should be made by users at their own discretion, and users bear all related risks.
+- Users should evaluate investment risks independently and consult professional financial advisors when needed.
+
+**Not Investment Advice Statement**:
+- All information, analysis, charts, and AI suggestions provided by this application are for reference only and do not constitute investment advice.
+- This application does not guarantee any investment results or returns.
+- Users should make investment decisions based on their own circumstances and are responsible for all investment decisions.
+
+**Data Accuracy**:
+- Stock prices, exchange rates, and other data provided by this application may differ from actual market prices due to network delays.
+- Users should not use data from this application as the sole reference for actual trading.
+- It is recommended to use real-time quotes provided by securities companies or financial institutions.`,
     androidPublish: 'Android Store Publishing Guide',
     androidPublishTitle: 'How to publish this tool on Google Play?',
     androidPublishDesc: 'You can convert the web app to an Android App using TWA:\n1. Register for a Google Developer account ($25).\n2. Use Bubblewrap CLI to wrap your website URL.\n3. Upload the AAB file to Play Console and submit for review.',
