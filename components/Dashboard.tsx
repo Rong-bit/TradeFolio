@@ -136,23 +136,10 @@ const Dashboard: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
-      {/* Investment Risk Warning */}
-      <div className="bg-red-50 border-2 border-red-400 rounded-xl p-4 shadow-sm">
-        <div className="flex items-start gap-3">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-          <div className="flex-1">
-            <h4 className="text-sm font-bold text-red-900 mb-1">{translations.dashboard.riskWarning}</h4>
-            <p className="text-xs text-red-800 leading-relaxed">{translations.dashboard.riskWarningDesc}</p>
-          </div>
-        </div>
-      </div>
-
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 border-purple-500 relative">
-          <h4 className="text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider flex justify-between items-center">
+          <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider flex justify-between items-center">
             {translations.dashboard.netCost}
             <button 
               onClick={() => setShowCostDetailModal(true)}
@@ -162,13 +149,13 @@ const Dashboard: React.FC<Props> = ({
               🔍 {translations.dashboard.detail}
             </button>
           </h4>
-          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
+          <p className="text-2xl sm:text-3xl font-bold text-slate-800 mt-2">
             {formatCurrency(summary.netInvestedTWD, 'TWD')}
           </p>
         </div>
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 border-green-500">
-          <h4 className="text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
-          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
+          <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
+          <p className="text-2xl sm:text-3xl font-bold text-slate-800 mt-2">
             {formatCurrency(summary.totalValueTWD + summary.cashBalanceTWD, 'TWD')}
           </p>
           <div className="flex justify-between items-end mt-1">
@@ -176,19 +163,19 @@ const Dashboard: React.FC<Props> = ({
           </div>
         </div>
         <div className={`bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-success' : 'border-danger'}`}>
-          <h4 className="text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
+          <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
           <div className="flex items-baseline gap-2 mt-2">
-            <p className={`text-xl sm:text-2xl font-bold ${summary.totalPLTWD >= 0 ? 'text-success' : 'text-danger'}`}>
+            <p className={`text-2xl sm:text-3xl font-bold ${summary.totalPLTWD >= 0 ? 'text-success' : 'text-danger'}`}>
                {summary.totalPLTWD >= 0 ? '+' : ''}{formatCurrency(summary.totalPLTWD, 'TWD')}
             </p>
           </div>
-          <p className={`text-[10px] sm:text-xs font-bold mt-1 ${summary.totalPLTWD >= 0 ? 'text-success' : 'text-danger'}`}>
+          <p className={`text-xs sm:text-sm font-bold mt-1 ${summary.totalPLTWD >= 0 ? 'text-success' : 'text-danger'}`}>
              {summary.totalPLPercent.toFixed(2)}%
           </p>
         </div>
          <div className="bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 border-blue-500">
-          <h4 className="text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
-          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
+          <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
+          <p className="text-2xl sm:text-3xl font-bold text-slate-800 mt-2">
             {summary.annualizedReturn.toFixed(1)}%
           </p>
           <p className="text-[10px] sm:text-xs text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(summary.netInvestedTWD * 1.08, 'TWD')}</p>
@@ -214,40 +201,40 @@ const Dashboard: React.FC<Props> = ({
         {showDetails && (
           <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4 animate-fade-in border-t border-slate-100">
             <div>
-              <p className="text-xs text-slate-500 mb-1">{translations.dashboard.totalCost}</p>
-              <p className="text-lg font-bold text-slate-800">{formatCurrency(summary.netInvestedTWD, 'TWD')}</p>
+              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.totalCost}</p>
+              <p className="text-xl font-bold text-slate-800">{formatCurrency(summary.netInvestedTWD, 'TWD')}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500 mb-1">{translations.dashboard.totalPLAmount}</p>
-              <p className={`text-lg font-bold ${summary.totalPLTWD >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.totalPLAmount}</p>
+              <p className={`text-xl font-bold ${summary.totalPLTWD >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(summary.totalPLTWD, 'TWD')}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500 mb-1">{translations.dashboard.accumulatedCashDividends}</p>
-              <p className="text-lg font-bold text-yellow-600">{formatCurrency(summary.accumulatedCashDividendsTWD, 'TWD')}</p>
+              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.accumulatedCashDividends}</p>
+              <p className="text-xl font-bold text-yellow-600">{formatCurrency(summary.accumulatedCashDividendsTWD, 'TWD')}</p>
             </div>
              <div>
-              <p className="text-xs text-slate-500 mb-1">{translations.dashboard.accumulatedStockDividends}</p>
-              <p className="text-lg font-bold text-yellow-600">{formatCurrency(summary.accumulatedStockDividendsTWD, 'TWD')}</p>
+              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.accumulatedStockDividends}</p>
+              <p className="text-xl font-bold text-yellow-600">{formatCurrency(summary.accumulatedStockDividendsTWD, 'TWD')}</p>
             </div>
              <div>
-              <p className="text-xs text-slate-500 mb-1">{translations.dashboard.annualizedReturnRate}</p>
-              <p className={`text-lg font-bold ${summary.annualizedReturn >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.annualizedReturnRate}</p>
+              <p className={`text-xl font-bold ${summary.annualizedReturn >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                 {summary.annualizedReturn.toFixed(2)}%
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500 mb-1">{translations.dashboard.avgExchangeRate}</p>
-              <p className="text-lg font-bold text-slate-700">{summary.avgExchangeRate > 0 ? summary.avgExchangeRate.toFixed(2) : '-'}</p>
+              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.avgExchangeRate}</p>
+              <p className="text-xl font-bold text-slate-700">{summary.avgExchangeRate > 0 ? summary.avgExchangeRate.toFixed(2) : '-'}</p>
             </div>
              <div>
-              <p className="text-xs text-slate-500 mb-1">{translations.dashboard.currentExchangeRate}</p>
-              <p className="text-lg font-bold text-slate-700">{summary.exchangeRateUsdToTwd.toFixed(2)}</p>
+              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.currentExchangeRate}</p>
+              <p className="text-xl font-bold text-slate-700">{summary.exchangeRateUsdToTwd.toFixed(2)}</p>
             </div>
              <div>
-              <p className="text-xs text-slate-500 mb-1">{translations.dashboard.totalReturnRate}</p>
-              <p className={`text-lg font-bold ${summary.totalPLPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.totalReturnRate}</p>
+              <p className={`text-xl font-bold ${summary.totalPLPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {summary.totalPLPercent.toFixed(2)}%
               </p>
             </div>
@@ -259,7 +246,7 @@ const Dashboard: React.FC<Props> = ({
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <div className="flex justify-between items-center mb-2">
-              <h3 className="font-bold text-blue-600 text-lg">{translations.dashboard.assetVsCostTrend}</h3>
+              <h3 className="font-bold text-blue-600 text-xl">{translations.dashboard.assetVsCostTrend}</h3>
               {onUpdateHistorical && (
                 <button 
                   onClick={onUpdateHistorical}
@@ -368,7 +355,7 @@ const Dashboard: React.FC<Props> = ({
 
       {/* Market Distribution */}
       <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-        <h3 className="font-bold text-slate-800 text-lg mb-4">{language === 'zh-TW' ? '市場分佈比例' : 'Market Distribution'}</h3>
+        <h3 className="font-bold text-slate-800 text-xl mb-4">{language === 'zh-TW' ? '市場分佈比例' : 'Market Distribution'}</h3>
         {marketDistribution.length > 0 ? (
           <div className="space-y-3">
             {marketDistribution.map((item) => {
@@ -413,7 +400,7 @@ const Dashboard: React.FC<Props> = ({
       {/* Allocation Pie Chart */}
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-          <h3 className="font-bold text-slate-800 text-lg mb-4">{translations.dashboard.allocation}</h3>
+          <h3 className="font-bold text-slate-800 text-xl mb-4">{translations.dashboard.allocation}</h3>
           <div className="w-full flex justify-center">
             <div className="w-full max-w-md md:max-w-lg aspect-square">
               {isMounted && assetAllocation.length > 0 ? (
@@ -459,7 +446,7 @@ const Dashboard: React.FC<Props> = ({
       {!isGuest && annualPerformance.length > 0 && (
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-slate-800 text-lg">{translations.dashboard.annualPerformance}</h3>
+              <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.annualPerformance}</h3>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
                 <button
@@ -488,12 +475,12 @@ const Dashboard: React.FC<Props> = ({
               <table className="min-w-full text-sm text-left">
                 <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
                   <tr>
-                    <th className="px-6 py-3">{translations.dashboard.year}</th>
-                    <th className="px-6 py-3 text-right">{translations.dashboard.startAssets}</th>
-                    <th className="px-6 py-3 text-right">{translations.dashboard.annualNetInflow}</th>
-                    <th className="px-6 py-3 text-right">{translations.dashboard.endAssets}</th>
-                    <th className="px-6 py-3 text-right">{translations.dashboard.annualProfit}</th>
-                    <th className="px-6 py-3 text-right">{translations.dashboard.annualROI}</th>
+                    <th className="px-3 py-2">{translations.dashboard.year}</th>
+                    <th className="px-3 py-2 text-right">{translations.dashboard.startAssets}</th>
+                    <th className="px-3 py-2 text-right">{translations.dashboard.annualNetInflow}</th>
+                    <th className="px-3 py-2 text-right">{translations.dashboard.endAssets}</th>
+                    <th className="px-3 py-2 text-right">{translations.dashboard.annualProfit}</th>
+                    <th className="px-3 py-2 text-right">{translations.dashboard.annualROI}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -506,17 +493,17 @@ const Dashboard: React.FC<Props> = ({
                     
                     return (
                       <tr key={item.year} className="hover:bg-slate-50">
-                        <td className="px-6 py-3 font-bold text-slate-700">
+                        <td className="px-3 py-2 font-bold text-slate-700">
                           {item.year}
                           {item.isRealData && <span title={language === 'zh-TW' ? '真實歷史數據' : 'Real historical data'} className="ml-2 text-xs cursor-help">✅</span>}
                         </td>
-                        <td className="px-6 py-3 text-right text-slate-500">{formatCurrency(startAssets, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right text-slate-500">{formatCurrency(netInflow, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right font-medium">{formatCurrency(endAssets, displayCurrency)}</td>
-                        <td className={`px-6 py-3 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td className="px-3 py-2 text-right text-slate-500">{formatCurrency(startAssets, displayCurrency)}</td>
+                        <td className="px-3 py-2 text-right text-slate-500">{formatCurrency(netInflow, displayCurrency)}</td>
+                        <td className="px-3 py-2 text-right font-medium">{formatCurrency(endAssets, displayCurrency)}</td>
+                        <td className={`px-3 py-2 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
                           {formatCurrency(profit, displayCurrency)}
                         </td>
-                        <td className={`px-6 py-3 text-right font-bold ${item.roi >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td className={`px-3 py-2 text-right font-bold ${item.roi >= 0 ? 'text-success' : 'text-danger'}`}>
                           {item.roi.toFixed(2)}%
                         </td>
                       </tr>
@@ -531,7 +518,7 @@ const Dashboard: React.FC<Props> = ({
       {/* Account List Card */}
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-          <h3 className="font-bold text-slate-800 text-lg">{translations.dashboard.brokerageAccounts}</h3>
+          <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.brokerageAccounts}</h3>
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
             <button
@@ -560,12 +547,12 @@ const Dashboard: React.FC<Props> = ({
           <table className="min-w-full text-sm text-left">
             <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
               <tr>
-                <th className="px-6 py-3">{translations.dashboard.accountName}</th>
-                <th className="px-6 py-3 text-right">{translations.dashboard.totalAssetsNT}</th>
-                <th className="px-6 py-3 text-right">{translations.dashboard.marketValueNT}</th>
-                <th className="px-6 py-3 text-right">{translations.dashboard.balanceNT}</th>
-                <th className="px-6 py-3 text-right">{translations.dashboard.profitNT}</th>
-                <th className="px-6 py-3 text-right">{translations.dashboard.annualizedROI}</th>
+                <th className="px-3 py-2">{translations.dashboard.accountName}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.totalAssetsNT}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.marketValueNT}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.balanceNT}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.profitNT}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.annualizedROI}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -593,23 +580,23 @@ const Dashboard: React.FC<Props> = ({
                   
                   return (
                     <tr key={acc.id} className="hover:bg-slate-50">
-                      <td className="px-6 py-3 font-semibold text-slate-700">
+                      <td className="px-3 py-2 font-semibold text-slate-700">
                         {acc.name} 
                         <span className="text-xs font-normal text-slate-400 ml-1">({acc.currency})</span>
                       </td>
-                      <td className="px-6 py-3 text-right font-bold text-slate-700">
+                      <td className="px-3 py-2 text-right font-bold text-slate-700">
                         {formatCurrency(totalAssets, displayCurrency)}
                       </td>
-                      <td className="px-6 py-3 text-right text-slate-600">
+                      <td className="px-3 py-2 text-right text-slate-600">
                         {formatCurrency(marketValue, displayCurrency)}
                       </td>
-                      <td className="px-6 py-3 text-right text-slate-600">
+                      <td className="px-3 py-2 text-right text-slate-600">
                         {formatCurrency(cashBalance, displayCurrency)}
                       </td>
-                      <td className={`px-6 py-3 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
+                      <td className={`px-3 py-2 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
                         {formatCurrency(profit, displayCurrency)}
                       </td>
-                      <td className={`px-6 py-3 text-right font-bold ${acc.roi >= 0 ? 'text-success' : 'text-danger'}`}>
+                      <td className={`px-3 py-2 text-right font-bold ${acc.roi >= 0 ? 'text-success' : 'text-danger'}`}>
                         {acc.roi.toFixed(2)}%
                       </td>
                     </tr>
@@ -617,7 +604,7 @@ const Dashboard: React.FC<Props> = ({
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">{translations.dashboard.noAccounts}</td>
+                  <td colSpan={6} className="px-3 py-4 text-center text-slate-400">{translations.dashboard.noAccounts}</td>
                 </tr>
               )}
             </tbody>
@@ -652,12 +639,6 @@ const Dashboard: React.FC<Props> = ({
             >
               {loadingAi ? translations.dashboard.analyzing : translations.dashboard.startAnalysis}
             </button>
-          </div>
-
-          <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-500/50 rounded-lg">
-            <p className="text-xs text-yellow-200 leading-relaxed">
-              <strong className="text-yellow-300">⚠️ {translations.dashboard.notInvestmentAdvice}</strong>
-            </p>
           </div>
 
           {aiAnalysis && (
