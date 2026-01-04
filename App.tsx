@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Transaction, Holding, PortfolioSummary, ChartDataPoint, Market, Account, CashFlow, TransactionType, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlowType, Currency, HistoricalData, CombinedRecord } from './types';
 import { useLocalStorageDebounced, useLocalStorageDebouncedSimple } from './hooks/useLocalStorageDebounced';
+import { useFilters } from './hooks/useFilters';
 import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import HoldingsTable from './components/HoldingsTable';
@@ -80,12 +81,20 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>(getLanguage());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // 篩選狀態
-  const [filterAccount, setFilterAccount] = useState<string>('');
-  const [filterTicker, setFilterTicker] = useState<string>('');
-  const [filterDateFrom, setFilterDateFrom] = useState<string>('');
-  const [filterDateTo, setFilterDateTo] = useState<string>('');
-  const [includeCashFlow, setIncludeCashFlow] = useState<boolean>(true);
+  // 篩選狀態（使用 useReducer 管理）
+  const {
+    filterAccount,
+    filterTicker,
+    filterDateFrom,
+    filterDateTo,
+    includeCashFlow,
+    setFilterAccount,
+    setFilterTicker,
+    setFilterDateFrom,
+    setFilterDateTo,
+    setIncludeCashFlow,
+    clearFilters,
+  } = useFilters();
 
   // HelpView 不再需要覆蓋 window.confirm，因為已經移除全域覆蓋
 
@@ -993,13 +1002,7 @@ const App: React.FC = () => {
     });
   }, [combinedRecords, filterAccount, filterTicker, filterDateFrom, filterDateTo, includeCashFlow]);
 
-  const clearFilters = () => {
-    setFilterAccount('');
-    setFilterTicker('');
-    setFilterDateFrom('');
-    setFilterDateTo('');
-    setIncludeCashFlow(true);
-  };
+  // clearFilters 已經從 useFilters hook 中取得，不需要重新定義
 
   // --- View Logic (Guest vs Member) ---
   const availableViews: View[] = isGuest 
