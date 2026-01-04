@@ -13,8 +13,11 @@ import BatchImportModal from './components/BatchImportModal';
 import HistoricalDataModal from './components/HistoricalDataModal';
 import BatchUpdateMarketModal from './components/BatchUpdateMarketModal';
 import AssetAllocationSimulator from './components/AssetAllocationSimulator';
+import PurchaseModal from './components/PurchaseModal';
 import { fetchCurrentPrices } from './services/yahooFinanceService';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
+import { checkUserMembership, getAuthorizedUsers } from './services/supabase';
+import BillingBridge, { Purchase } from './components/BillingBridge';
 import { v4 as uuidv4 } from 'uuid';
 import { Language, getLanguage, setLanguage as saveLanguage, t, translate } from './utils/i18n';
 
@@ -89,6 +92,7 @@ const App: React.FC = () => {
   const [hasAutoUpdated, setHasAutoUpdated] = useState(false);
   const [language, setLanguage] = useState<Language>(getLanguage());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   
   // 篩選狀態
   const [filterAccount, setFilterAccount] = useState<string>('');
@@ -117,17 +121,31 @@ const App: React.FC = () => {
     setLanguage(savedLang);
     
     if (isAuth === 'true' && lastUser) {
-      if (guestStatus === 'true') {
+      // 檢查用戶會員狀態（包含購買記錄）
+      checkMembershipStatus(lastUser).then((isMember) => {
         setCurrentUser(lastUser === 'Guest' ? 'Guest' : lastUser);
-        setIsGuest(true);
         setIsAuthenticated(true);
-      } else {
-        setCurrentUser(lastUser);
-        setIsAuthenticated(true);
-        setIsGuest(false);
-      }
+        setIsGuest(!isMember);
+      });
     }
   }, []);
+
+  // 檢查會員狀態（整合購買記錄檢查）
+  const checkMembershipStatus = async (email: string): Promise<boolean> => {
+    // 1. 檢查 config.ts 中的 GLOBAL_AUTHORIZED_USERS
+    if (GLOBAL_AUTHORIZED_USERS.includes(email)) {
+      return true;
+    }
+    
+    // 2. 檢查 Supabase 中的購買記錄
+    try {
+      const isMember = await checkUserMembership(email);
+      return isMember;
+    } catch (error) {
+      console.error('檢查會員狀態失敗:', error);
+      return false;
+    }
+  };
 
   // 切換語言
   const handleLanguageChange = (lang: Language) => {
@@ -135,7 +153,7 @@ const App: React.FC = () => {
     saveLanguage(lang);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const email = loginEmail.trim();
     const password = loginPassword.trim();
@@ -153,21 +171,107 @@ const App: React.FC = () => {
       }
     }
 
-    // 2. Authorized Login
-    if (GLOBAL_AUTHORIZED_USERS.includes(email)) {
+    // 2. 檢查會員狀態（包含購買記錄和手動授權）
+    const isMember = await checkMembershipStatus(email);
+    
+    if (isMember) {
       loginSuccess(email, false);
       return;
     }
 
     // 3. Unauthorized - Guest Login
     loginSuccess(email, true);
-    showAlert("已為您登入「非會員模式」。\n\n您尚未註冊，若需開通會員模式，請按'申請開通'發送申請信通知管理員開通權限。", "登入成功", "info");
+    showAlert(
+      language === 'zh-TW' 
+        ? "已為您登入「非會員模式」。\n\n您尚未註冊，若需開通會員模式，請點擊「升級」按鈕購買會員方案。" 
+        : "Logged in as Guest.\n\nTo unlock all features, click the 'Upgrade' button to purchase a membership plan.",
+      language === 'zh-TW' ? "登入成功" : "Login Successful",
+      "info"
+    );
   };
 
-  const handleContactAdmin = () => {
-    const subject = encodeURIComponent("TradeFolio 購買/權限開通申請");
-    const body = encodeURIComponent(`Hi 管理員,\n\n我的帳號是: ${currentUser}\n\n我目前是非會員身份，希望申請/購買完整權限。\n\n請協助處理，謝謝。`);
-    window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+  // 處理購買流程（替換原本的 Email 發送）
+  const handlePurchase = () => {
+    if (!currentUser || currentUser === 'Guest') {
+      showAlert(
+        language === 'zh-TW' ? '請先登入' : 'Please login first',
+        language === 'zh-TW' ? '提示' : 'Notice',
+        'error'
+      );
+      return;
+    }
+    
+    // 檢查是否在 Android 環境中
+    if (!BillingBridge.isAvailable()) {
+      // 如果不在 Android 環境，回退到 Email 方式
+      const subject = encodeURIComponent("TradeFolio 購買/權限開通申請");
+      const body = encodeURIComponent(`Hi 管理員,\n\n我的帳號是: ${currentUser}\n\n我目前是非會員身份，希望申請/購買完整權限。\n\n請協助處理，謝謝。`);
+      window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+      return;
+    }
+    
+    // 打開購買 Modal
+    setIsPurchaseModalOpen(true);
+  };
+
+  // 處理購買成功
+  const handlePurchaseSuccess = async (purchase: Purchase) => {
+    try {
+      // 發送到後端驗證
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://your-api.vercel.app';
+      const response = await fetch(`${apiUrl}/api/verify-purchase`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          purchaseToken: purchase.purchaseToken,
+          productId: purchase.productIds[0],
+          orderId: purchase.orderId,
+          userEmail: currentUser,
+          purchaseType: purchase.productIds[0] === 'tradefolio_lifetime' ? 'lifetime' : 'subscription',
+          purchaseTime: purchase.purchaseTime,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // 更新本地會員狀態
+        setIsGuest(false);
+        localStorage.setItem('tf_is_guest', 'false');
+        
+        showAlert(
+          language === 'zh-TW' 
+            ? '購買成功！會員功能已開通。' 
+            : 'Purchase successful! Membership activated.',
+          language === 'zh-TW' ? '購買成功' : 'Success',
+          'success'
+        );
+        
+        // 重新檢查會員狀態
+        const isMember = await checkMembershipStatus(currentUser);
+        setIsGuest(!isMember);
+      } else {
+        const error = await response.json();
+        showAlert(
+          language === 'zh-TW' 
+            ? `購買驗證失敗：${error.error || '未知錯誤'}` 
+            : `Purchase verification failed: ${error.error || 'Unknown error'}`,
+          language === 'zh-TW' ? '錯誤' : 'Error',
+          'error'
+        );
+      }
+    } catch (error: any) {
+      console.error('購買驗證失敗:', error);
+      showAlert(
+        language === 'zh-TW' 
+          ? `購買驗證失敗：${error.message || '網路錯誤'}` 
+          : `Purchase verification failed: ${error.message || 'Network error'}`,
+        language === 'zh-TW' ? '錯誤' : 'Error',
+        'error'
+      );
+    }
   };
 
   const loginSuccess = (user: string, isGuestUser: boolean) => {
@@ -514,6 +618,7 @@ const App: React.FC = () => {
 
       // 檢查 Capacitor 環境（作為備選方案）
       try {
+        // @ts-ignore - Capacitor 是可選依賴
         const capacitorModule = await import('@capacitor/core');
         const Capacitor = capacitorModule.Capacitor;
         
@@ -1075,7 +1180,7 @@ const App: React.FC = () => {
               </button>
             </form>
 
-            <div className="mt-8 space-y-4">
+            <div className="mt-8">
               <div className="p-4 bg-blue-50 border-2 border-dashed border-blue-400 rounded-xl text-center shadow-sm">
                   <p className="text-sm font-bold text-blue-900 flex flex-col items-center gap-1">
                       <span className="flex items-center gap-1 text-blue-700">
@@ -1085,17 +1190,6 @@ const App: React.FC = () => {
                         {t(language).login.privacy}
                       </span>
                       <span>{t(language).login.privacyDesc}</span>
-                  </p>
-              </div>
-              <div className="p-4 bg-red-50 border-2 border-dashed border-red-400 rounded-xl text-center shadow-sm">
-                  <p className="text-sm font-bold text-red-900 flex flex-col items-center gap-1">
-                      <span className="flex items-center gap-1 text-red-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                        {t(language).login.riskDisclaimer}
-                      </span>
-                      <span className="text-xs text-red-800 mt-1">{t(language).login.riskDisclaimerDesc}</span>
                   </p>
               </div>
             </div>
@@ -1176,14 +1270,14 @@ const App: React.FC = () => {
                {/* Guest Upgrade Button */}
                {isGuest && (
                  <button
-                   onClick={handleContactAdmin}
+                   onClick={handlePurchase}
                    className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold rounded-full transition shadow-lg shadow-amber-500/20"
                  >
                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                     <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
                    </svg>
-                   <span>{language === 'en' ? 'Upgrade' : '申請開通'}</span>
+                   <span>{language === 'en' ? 'Upgrade' : '升級'}</span>
                  </button>
                )}
 
@@ -1239,10 +1333,10 @@ const App: React.FC = () => {
                 {/* Mobile specific Guest Button */}
                 {isGuest && (
                    <button
-                     onClick={handleContactAdmin}
+                     onClick={handlePurchase}
                      className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow"
                    >
-                     {language === 'en' ? 'Upgrade' : '申請開通'}
+                     {language === 'en' ? 'Upgrade' : '升級'}
                    </button>
                 )}
             </h2>
@@ -1437,16 +1531,16 @@ const App: React.FC = () => {
                    <table className="min-w-full text-xs sm:text-sm text-left">
                      <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
                        <tr>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap">{t(language).labels.date}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap hidden sm:table-cell">{t(language).labels.account}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap">{t(language).labels.description}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap hidden md:table-cell">{t(language).labels.category}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap">{t(language).labels.price}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap">{t(language).labels.quantity}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap">{t(language).labels.fee}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap">{t(language).labels.amount}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap hidden md:table-cell">{t(language).labels.balance}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-center whitespace-nowrap">{t(language).labels.action}</th>
+                         <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.date}</th>
+                         <th className="px-2 sm:px-3 py-2 whitespace-nowrap hidden sm:table-cell">{t(language).labels.account}</th>
+                         <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.description}</th>
+                         <th className="px-2 sm:px-3 py-2 whitespace-nowrap hidden md:table-cell">{t(language).labels.category}</th>
+                         <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.price}</th>
+                         <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.quantity}</th>
+                         <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.fee}</th>
+                         <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.amount}</th>
+                         <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden md:table-cell">{t(language).labels.balance}</th>
+                         <th className="px-2 sm:px-3 py-2 text-center whitespace-nowrap">{t(language).labels.action}</th>
                        </tr>
                      </thead>
                      <tbody className="divide-y divide-slate-100">
@@ -1491,9 +1585,9 @@ const App: React.FC = () => {
 
                          return (
                            <tr key={`${record.type}-${record.id}`} className="hover:bg-slate-50">
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-slate-600 text-xs sm:text-sm">{record.date}</td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-slate-500 text-[10px] sm:text-xs hidden sm:table-cell">{accName}</td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-slate-700 text-xs sm:text-sm">
+                             <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-slate-600 text-xs sm:text-sm">{record.date}</td>
+                             <td className="px-2 sm:px-3 py-2 text-slate-500 text-[10px] sm:text-xs hidden sm:table-cell">{accName}</td>
+                             <td className="px-2 sm:px-3 py-2 font-semibold text-slate-700 text-xs sm:text-sm">
                                 {record.type === 'TRANSACTION' ? (
                                   <div className="flex flex-col">
                                     <span><span className="text-[10px] sm:text-xs text-slate-400 mr-1">{record.market}</span>{record.ticker}</span>
@@ -1507,22 +1601,22 @@ const App: React.FC = () => {
                                   </div>
                                 )}
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">
+                             <td className="px-2 sm:px-3 py-2 hidden md:table-cell">
                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${badgeColor}`}>
                                  {displayType}
                                </span>
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-slate-600 text-xs">
+                             <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">
                                {record.type === 'TRANSACTION' ? formatNumber(record.price) : 
                                 record.type === 'CASHFLOW' && record.exchangeRate ? record.exchangeRate : '-'}
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-slate-600 text-xs">
+                             <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">
                                {record.type === 'TRANSACTION' ? formatNumber(record.quantity) : '-'}
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-slate-600 text-xs">
+                             <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">
                                {record.type === 'TRANSACTION' && (record as any).fees > 0 ? formatNumber((record as any).fees) : '-'}
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold font-mono text-slate-700 text-xs sm:text-sm">
+                             <td className="px-2 sm:px-3 py-2 text-right font-bold font-mono text-slate-700 text-xs sm:text-sm">
                                {record.amount % 1 === 0 ? record.amount.toString() : record.amount.toFixed(2)}
                                <div className="md:hidden mt-0.5">
                                  <span className={`text-[10px] font-normal ${
@@ -1532,7 +1626,7 @@ const App: React.FC = () => {
                                  </span>
                                </div>
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right hidden md:table-cell">
+                             <td className="px-2 sm:px-3 py-2 text-right hidden md:table-cell">
                                 <div className="flex flex-col items-end">
                                   <span className={`font-medium text-xs sm:text-sm ${
                                     (record as any).balance >= 0 ? 'text-green-600' : 'text-red-600'
@@ -1544,7 +1638,7 @@ const App: React.FC = () => {
                                   </span>
                                 </div>
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
+                             <td className="px-2 sm:px-3 py-2 text-right">
                                 {!(record.type === 'CASHFLOW' && (record as any).isTargetRecord) && (
                                   <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 justify-end items-end sm:items-center">
                                     {record.type === 'TRANSACTION' && (
@@ -1734,16 +1828,16 @@ const App: React.FC = () => {
               {isGuest && (
                 <button
                   onClick={() => {
-                    handleContactAdmin();
+                    handlePurchase();
                     setIsMobileMenuOpen(false);
                   }}
                   className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-amber-500 text-slate-900 font-bold hover:bg-amber-600 transition"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
                   </svg>
-                  {language === 'en' ? 'Upgrade' : '申請開通'}
+                  {language === 'en' ? 'Upgrade' : '升級'}
                 </button>
               )}
               <button 
@@ -1910,6 +2004,15 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+      
+      {/* Purchase Modal */}
+      <PurchaseModal
+        isOpen={isPurchaseModalOpen}
+        onClose={() => setIsPurchaseModalOpen(false)}
+        onPurchaseSuccess={handlePurchaseSuccess}
+        language={language}
+        userEmail={currentUser}
+      />
     </div>
   );
 };
