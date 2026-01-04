@@ -1437,16 +1437,16 @@ const App: React.FC = () => {
                    <table className="min-w-full text-xs sm:text-sm text-left">
                      <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
                        <tr>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap">{t(language).labels.date}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap hidden sm:table-cell">{t(language).labels.account}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap">{t(language).labels.description}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap hidden md:table-cell">{t(language).labels.category}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap">{t(language).labels.price}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap">{t(language).labels.quantity}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap">{t(language).labels.fee}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap">{t(language).labels.amount}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap hidden md:table-cell">{t(language).labels.balance}</th>
-                         <th className="px-2 sm:px-4 py-2 sm:py-3 text-center whitespace-nowrap">{t(language).labels.action}</th>
+                         <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.date}</th>
+                         <th className="px-2 sm:px-3 py-2 whitespace-nowrap hidden sm:table-cell">{t(language).labels.account}</th>
+                         <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.description}</th>
+                         <th className="px-2 sm:px-3 py-2 whitespace-nowrap hidden md:table-cell">{t(language).labels.category}</th>
+                         <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.price}</th>
+                         <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.quantity}</th>
+                         <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.fee}</th>
+                         <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.amount}</th>
+                         <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden md:table-cell">{t(language).labels.balance}</th>
+                         <th className="px-2 sm:px-3 py-2 text-center whitespace-nowrap">{t(language).labels.action}</th>
                        </tr>
                      </thead>
                      <tbody className="divide-y divide-slate-100">
@@ -1491,9 +1491,9 @@ const App: React.FC = () => {
 
                          return (
                            <tr key={`${record.type}-${record.id}`} className="hover:bg-slate-50">
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap text-slate-600 text-xs sm:text-sm">{record.date}</td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-slate-500 text-[10px] sm:text-xs hidden sm:table-cell">{accName}</td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-slate-700 text-xs sm:text-sm">
+                             <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-slate-600 text-xs sm:text-sm">{record.date}</td>
+                             <td className="px-2 sm:px-3 py-2 text-slate-500 text-[10px] sm:text-xs hidden sm:table-cell">{accName}</td>
+                             <td className="px-2 sm:px-3 py-2 font-semibold text-slate-700 text-xs sm:text-sm">
                                 {record.type === 'TRANSACTION' ? (
                                   <div className="flex flex-col">
                                     <span><span className="text-[10px] sm:text-xs text-slate-400 mr-1">{record.market}</span>{record.ticker}</span>
@@ -1507,22 +1507,22 @@ const App: React.FC = () => {
                                   </div>
                                 )}
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">
+                             <td className="px-2 sm:px-3 py-2 hidden md:table-cell">
                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${badgeColor}`}>
                                  {displayType}
                                </span>
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-slate-600 text-xs">
+                             <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">
                                {record.type === 'TRANSACTION' ? formatNumber(record.price) : 
                                 record.type === 'CASHFLOW' && record.exchangeRate ? record.exchangeRate : '-'}
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-slate-600 text-xs">
+                             <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">
                                {record.type === 'TRANSACTION' ? formatNumber(record.quantity) : '-'}
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-slate-600 text-xs">
+                             <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">
                                {record.type === 'TRANSACTION' && (record as any).fees > 0 ? formatNumber((record as any).fees) : '-'}
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold font-mono text-slate-700 text-xs sm:text-sm">
+                             <td className="px-2 sm:px-3 py-2 text-right font-bold font-mono text-slate-700 text-xs sm:text-sm">
                                {record.amount % 1 === 0 ? record.amount.toString() : record.amount.toFixed(2)}
                                <div className="md:hidden mt-0.5">
                                  <span className={`text-[10px] font-normal ${
@@ -1532,7 +1532,7 @@ const App: React.FC = () => {
                                  </span>
                                </div>
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right hidden md:table-cell">
+                             <td className="px-2 sm:px-3 py-2 text-right hidden md:table-cell">
                                 <div className="flex flex-col items-end">
                                   <span className={`font-medium text-xs sm:text-sm ${
                                     (record as any).balance >= 0 ? 'text-green-600' : 'text-red-600'
@@ -1544,7 +1544,7 @@ const App: React.FC = () => {
                                   </span>
                                 </div>
                              </td>
-                             <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
+                             <td className="px-2 sm:px-3 py-2 text-right">
                                 {!(record.type === 'CASHFLOW' && (record as any).isTargetRecord) && (
                                   <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 justify-end items-end sm:items-center">
                                     {record.type === 'TRANSACTION' && (
