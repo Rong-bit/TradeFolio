@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Account, Currency } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from '../utils/calculations';
@@ -26,6 +26,55 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
   // State for edit modal
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  // 用於追蹤名稱是否由用戶手動修改（避免自動更新與用戶輸入衝突）
+  const nameChangeByUserRef = useRef(false);
+  // 用於追蹤是否正在初始化編輯模式（避免觸發自動更新）
+  const isInitializingEditRef = useRef(false);
+  
+  // 檢查名稱是否與其他帳戶重複（排除當前編輯的帳戶）
+  const isNameDuplicate = useCallback((checkName: string): boolean => {
+    return accounts.some(acc => {
+      // 編輯模式下，排除當前編輯的帳戶
+      if (editingAccount && acc.id === editingAccount.id) {
+        return false;
+      }
+      return acc.name === checkName;
+    });
+  }, [accounts, editingAccount]);
+  
+  // 自動在名稱後加上或移除「複委託」
+  useEffect(() => {
+    // 如果正在初始化編輯模式，不自動更新
+    if (isInitializingEditRef.current) {
+      isInitializingEditRef.current = false;
+      return;
+    }
+    
+    // 如果名稱是由用戶手動修改的，不自動更新
+    if (nameChangeByUserRef.current) {
+      nameChangeByUserRef.current = false;
+      return;
+    }
+    
+    if (!name.trim()) return;
+    
+    const suffix = translations.accounts.subBrokerage; // 「複委託」
+    const hasSuffix = name.endsWith(suffix);
+    
+    if (isSubBrokerage && !hasSuffix) {
+      // 勾選時加上「複委託」
+      setName(prev => prev + suffix);
+    } else if (!isSubBrokerage && hasSuffix) {
+      // 取消勾選時移除「複委託」，但需檢查是否會造成名稱重複
+      const nameWithoutSuffix = name.replace(new RegExp(suffix + '$'), '').trim();
+      if (!isNameDuplicate(nameWithoutSuffix)) {
+        // 沒有重複，可以移除「複委託」
+        setName(nameWithoutSuffix);
+      }
+      // 如果有重複，保留「複委託」後綴，不自動移除（用戶可手動修改）
+    }
+  }, [isSubBrokerage, translations.accounts.subBrokerage, name, isNameDuplicate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,11 +112,24 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
   const handleEditClick = (e: React.MouseEvent, account: Account) => {
     e.stopPropagation();
     setEditingAccount(account);
-    setName(account.name);
+    const suffix = translations.accounts.subBrokerage;
+    // 編輯時，如果名稱有「複委託」且帳戶標記為複委託，先移除「複委託」作為基礎名稱
+    // 這樣 useEffect 會根據 isSubBrokerage 自動加上或移除
+    let baseName = account.name;
+    if (account.isSubBrokerage && account.name.endsWith(suffix)) {
+      baseName = account.name.replace(new RegExp(suffix + '$'), '').trim();
+    }
+    isInitializingEditRef.current = true;
+    setName(baseName);
     setCurrency(account.currency);
     setIsSubBrokerage(account.isSubBrokerage);
     setBalance(account.balance.toString());
     setIsEditModalOpen(true);
+  };
+  
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    nameChangeByUserRef.current = true;
+    setName(e.target.value);
   };
 
   const handleDeleteClick = (e: React.MouseEvent, id: string, accountName: string) => {
@@ -94,7 +156,7 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
               type="text" 
               required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={handleNameChange}
               className="mt-1 block w-full border border-slate-300 rounded-md p-2"
               placeholder={translations.accounts.accountNamePlaceholder}
             />
@@ -202,7 +264,7 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
                   type="text" 
                   required
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={handleNameChange}
                   className="w-full border border-slate-300 rounded-md p-2"
                   placeholder={translations.accounts.accountNamePlaceholder}
                 />
