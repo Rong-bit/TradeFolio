@@ -182,17 +182,17 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
         <table className="min-w-full text-sm text-left">
           <thead className="bg-white text-slate-500 text-xs uppercase font-bold tracking-wider border-b border-slate-100">
             <tr>
-              <th className="px-4 py-3">{translations.holdings.market}</th>
-              <th className="px-4 py-3">{translations.holdings.ticker}</th>
-              <th className="px-4 py-3 text-right">{translations.holdings.quantity}</th>
-              <th className="px-4 py-3 text-right">{translations.holdings.currentPrice}</th>
-              <th className="px-4 py-3 w-32 text-left">{translations.holdings.weight}</th>
-              <th className="px-4 py-3 text-right">{translations.holdings.cost}</th>
-              <th className="px-4 py-3 text-right">{translations.holdings.marketValue}</th>
-              <th className="px-4 py-3 text-right">{translations.holdings.profitLoss}</th>
-              <th className="px-4 py-3 text-right">{translations.holdings.annualizedROI}</th>
-              <th className="px-4 py-3 text-right">{translations.holdings.dailyChange}</th>
-              <th className="px-4 py-3 text-right">{translations.holdings.avgPrice}</th>
+              <th className="px-3 py-2">{translations.holdings.market}</th>
+              <th className="px-3 py-2">{translations.holdings.ticker}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.currentPrice}</th>
+              <th className="px-3 py-2 w-32 text-left">{translations.holdings.weight}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.cost}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.marketValue}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.profitLoss}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.annualizedROI}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.dailyChange}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.avgPrice}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 bg-white">
@@ -200,7 +200,7 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
               // 合併顯示模式
               mergedHoldings.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={11} className="px-3 py-6 text-center text-slate-400">
                     {translations.holdings.noHoldings}
                   </td>
                 </tr>
@@ -213,7 +213,7 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
               // 明細顯示模式（依帳戶分組）
               groupedByAccount.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={11} className="px-3 py-6 text-center text-slate-400">
                     {translations.holdings.noHoldings}
                   </td>
                 </tr>
@@ -233,7 +233,7 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
                     <React.Fragment key={account.id}>
                       {/* 帳戶標題列 */}
                       <tr className="bg-slate-700 text-white font-bold">
-                        <td colSpan={2} className="px-4 py-3">
+                        <td colSpan={2} className="px-3 py-2">
                           <div className="flex items-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -242,17 +242,17 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
                             <span className="text-xs font-normal opacity-75">({account.currency})</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right">-</td>
-                        <td className="px-4 py-3 text-right">-</td>
-                        <td className="px-4 py-3 text-right">{accountTotalWeight.toFixed(1)}%</td>
-                        <td className="px-4 py-3 text-right">{formatCurrency(accountTotalCost, currency)}</td>
-                        <td className="px-4 py-3 text-right">{formatCurrency(accountTotalValue, currency)}</td>
-                        <td className={`px-4 py-3 text-right ${accountTotalPL >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                        <td className="px-3 py-2 text-right">-</td>
+                        <td className="px-3 py-2 text-right">-</td>
+                        <td className="px-3 py-2 text-right">{accountTotalWeight.toFixed(1)}%</td>
+                        <td className="px-3 py-2 text-right">{formatCurrency(accountTotalCost, currency)}</td>
+                        <td className="px-3 py-2 text-right">{formatCurrency(accountTotalValue, currency)}</td>
+                        <td className={`px-3 py-2 text-right ${accountTotalPL >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
                           {formatCurrency(accountTotalPL, currency)}
                         </td>
-                        <td className="px-4 py-3 text-right">-</td>
-                        <td className="px-4 py-3 text-right">-</td>
-                        <td className="px-4 py-3 text-right">-</td>
+                        <td className="px-3 py-2 text-right">-</td>
+                        <td className="px-3 py-2 text-right">-</td>
+                        <td className="px-3 py-2 text-right">-</td>
                       </tr>
                       {/* 該帳戶的持倉明細 */}
                       {accountHoldings.map((h) => renderHoldingRow(h, true))}
@@ -283,7 +283,7 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
     return (
       <tr key={uniqueKey} className={`hover:bg-slate-50 transition-colors group ${isDetailedMode ? 'bg-slate-50/30' : ''}`}>
         {/* 1. Market */}
-        <td className="px-4 py-3">
+        <td className="px-3 py-2">
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
             h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' : 
             h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' : 
@@ -294,15 +294,15 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
         </td>
         
         {/* 2. Ticker */}
-        <td className="px-4 py-3 font-bold text-slate-700">{h.ticker}</td>
+        <td className="px-3 py-2 font-bold text-slate-700">{h.ticker}</td>
         
         {/* 3. Quantity */}
-        <td className="px-4 py-3 text-right font-mono text-slate-600">
+        <td className="px-3 py-2 text-right font-mono text-slate-600">
           {h.quantity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
         </td>
         
         {/* 4. Current Price */}
-        <td className="px-4 py-3 text-right">
+        <td className="px-3 py-2 text-right">
            <div className="flex items-center justify-end gap-1 group-hover:bg-white bg-slate-50/50 rounded px-1 transition-colors">
              <span className="text-slate-400 text-xs">$</span>
              <input 
@@ -316,7 +316,7 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
         </td>
 
         {/* 5. Weight */}
-        <td className="px-4 py-3">
+        <td className="px-3 py-2">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-slate-600 text-right">{h.weight.toFixed(1)}%</span>
             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
@@ -333,17 +333,17 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
         </td>
 
         {/* 6. Total Cost (New) */}
-        <td className="px-4 py-3 text-right font-medium text-slate-500">
+        <td className="px-3 py-2 text-right font-medium text-slate-500">
           {formatCurrency(h.totalCost, currency)}
         </td>
 
         {/* 7. Market Value */}
-        <td className="px-4 py-3 text-right font-medium text-slate-800">
+        <td className="px-3 py-2 text-right font-medium text-slate-800">
           {formatCurrency(h.currentValue, currency)}
         </td>
 
         {/* 8. P/L */}
-        <td className={`px-4 py-3 text-right font-bold ${plColor}`}>
+        <td className={`px-3 py-2 text-right font-bold ${plColor}`}>
           <div className="flex flex-col items-end leading-tight">
             <span>{formatCurrency(h.unrealizedPL, currency)}</span>
             <span className="text-[10px] opacity-80">{isProfit ? '+' : ''}{h.unrealizedPLPercent.toFixed(2)}%</span>
@@ -351,12 +351,12 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
         </td>
 
         {/* 9. Annualized Return */}
-        <td className={`px-4 py-3 text-right font-bold ${roiColor}`}>
+        <td className={`px-3 py-2 text-right font-bold ${roiColor}`}>
           {h.annualizedReturn && h.annualizedReturn !== 0 ? `${h.annualizedReturn.toFixed(1)}%` : '-'}
         </td>
 
         {/* 10. Daily Change */}
-        <td className={`px-4 py-3 text-right text-xs font-bold ${dailyChangeColor}`}>
+        <td className={`px-3 py-2 text-right text-xs font-bold ${dailyChangeColor}`}>
           {h.dailyChange !== undefined && h.dailyChange !== null ? (
              <div className="flex flex-col items-end">
                <span>{h.dailyChange > 0 ? '+' : ''}{h.dailyChange.toFixed(2)}</span>
@@ -370,7 +370,7 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
         </td>
 
         {/* 11. Avg Cost */}
-        <td className="px-4 py-3 text-right text-slate-500 text-xs">
+        <td className="px-3 py-2 text-right text-slate-500 text-xs">
            {new Intl.NumberFormat('zh-TW', { 
               style: 'currency', 
               currency: currency, 
