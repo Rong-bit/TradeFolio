@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Transaction, Holding, PortfolioSummary, ChartDataPoint, Market, Account, CashFlow, TransactionType, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlowType, Currency, HistoricalData } from './types';
+import { Transaction, Holding, PortfolioSummary, ChartDataPoint, Market, Account, CashFlow, TransactionType, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlowType, Currency, HistoricalData, CombinedRecord } from './types';
+import { useLocalStorageDebounced, useLocalStorageDebouncedSimple } from './hooks/useLocalStorageDebounced';
 import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import HoldingsTable from './components/HoldingsTable';
@@ -20,20 +21,9 @@ import { Language, getLanguage, setLanguage as saveLanguage, t, translate } from
 
 type View = 'dashboard' | 'history' | 'funds' | 'accounts' | 'rebalance' | 'simulator' | 'help';
 
-// 全局覆蓋 confirm 函數
+// 全局除錯日誌（不再覆蓋 window.confirm 和 window.alert）
 let globalDebugLogs: string[] = [];
 let globalSetDebugLogs: ((logs: string[]) => void) | null = null;
-
-window.confirm = function(message?: string): boolean {
-  const logEntry = `🚨 CONFIRM() 調用 - ${new Date().toISOString()}\n訊息: ${message}`;
-  globalDebugLogs = [...globalDebugLogs.slice(-9), logEntry];
-  if (globalSetDebugLogs) globalSetDebugLogs([...globalDebugLogs]);
-  return false;
-};
-
-window.alert = function(message?: string): void {
-  console.warn('⚠️ ALERT() 被調用了！', message);
-};
 
 // 格式化數字，保留必要的小數位但不強制限制
 const formatNumber = (num: number): string => {
@@ -97,17 +87,7 @@ const App: React.FC = () => {
   const [filterDateTo, setFilterDateTo] = useState<string>('');
   const [includeCashFlow, setIncludeCashFlow] = useState<boolean>(true);
 
-  // --- HelpView Confirm Override ---
-  useEffect(() => {
-    if (view === 'help') {
-      const tempConfirm = window.confirm;
-      window.confirm = (message?: string) => {
-        if (message && (message.includes('匯入') || message.includes('覆蓋') || message.includes('警告'))) return true;
-        return true;
-      };
-      return () => { window.confirm = tempConfirm; };
-    }
-  }, [view]);
+  // HelpView 不再需要覆蓋 window.confirm，因為已經移除全域覆蓋
 
   useEffect(() => {
     const lastUser = localStorage.getItem('tf_last_user');
@@ -229,23 +209,20 @@ const App: React.FC = () => {
 
   }, [isAuthenticated, currentUser]);
 
-  // --- Persistence: SAVE DATA ---
-  useEffect(() => {
-    if (!isAuthenticated || !currentUser) return;
-    const getKey = (key: string) => `tf_${currentUser}_${key}`;
-    localStorage.setItem(getKey('transactions'), JSON.stringify(transactions));
-    localStorage.setItem(getKey('accounts'), JSON.stringify(accounts));
-    localStorage.setItem(getKey('cashFlows'), JSON.stringify(cashFlows));
-    localStorage.setItem(getKey('prices'), JSON.stringify(currentPrices));
-    localStorage.setItem(getKey('priceDetails'), JSON.stringify(priceDetails));
-    localStorage.setItem(getKey('exchangeRate'), exchangeRate.toString());
-    if (jpyExchangeRate !== undefined) {
-      localStorage.setItem(getKey('jpyExchangeRate'), jpyExchangeRate.toString());
-    }
-    localStorage.setItem(getKey('rebalanceTargets'), JSON.stringify(rebalanceTargets));
-    localStorage.setItem(getKey('rebalanceEnabledItems'), JSON.stringify(rebalanceEnabledItems));
-    localStorage.setItem(getKey('historicalData'), JSON.stringify(historicalData));
-  }, [transactions, accounts, cashFlows, currentPrices, priceDetails, exchangeRate, jpyExchangeRate, rebalanceTargets, rebalanceEnabledItems, historicalData, isAuthenticated, currentUser]);
+  // --- Persistence: SAVE DATA (使用防抖機制減少頻繁寫入) ---
+  const userPrefix = isAuthenticated && currentUser ? `tf_${currentUser}` : undefined;
+  
+  // 使用防抖的 localStorage hooks（只在已認證時才儲存）
+  useLocalStorageDebounced('transactions', transactions, 500, userPrefix);
+  useLocalStorageDebounced('accounts', accounts, 500, userPrefix);
+  useLocalStorageDebounced('cashFlows', cashFlows, 500, userPrefix);
+  useLocalStorageDebounced('prices', currentPrices, 500, userPrefix);
+  useLocalStorageDebounced('priceDetails', priceDetails, 500, userPrefix);
+  useLocalStorageDebouncedSimple('exchangeRate', exchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('jpyExchangeRate', jpyExchangeRate, 500, userPrefix);
+  useLocalStorageDebounced('rebalanceTargets', rebalanceTargets, 500, userPrefix);
+  useLocalStorageDebounced('rebalanceEnabledItems', rebalanceEnabledItems, 500, userPrefix);
+  useLocalStorageDebounced('historicalData', historicalData, 500, userPrefix);
 
   const showAlert = (message: string, title: string = '提示', type: 'info' | 'success' | 'error' = 'info') => {
     setAlertDialog({ isOpen: true, title, message, type });
@@ -782,7 +759,7 @@ const App: React.FC = () => {
             weight: totalAssets > 0 ? (valTwd / totalAssets) * 100 : 0
         };
     });
-  }, [baseHoldings, summary, exchangeRate]);
+  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate]);
 
   // --- Auto Update Prices on Load ---
   useEffect(() => {
@@ -797,18 +774,20 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated, baseHoldings.length, hasAutoUpdated]);
 
-  const chartData = useMemo(() => generateAdvancedChartData(transactions, cashFlows, accounts, summary.totalValueTWD + summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate), [transactions, cashFlows, accounts, summary, exchangeRate, historicalData, jpyExchangeRate]);
-  const assetAllocation = useMemo(() => calculateAssetAllocation(holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate), [holdings, summary, exchangeRate, jpyExchangeRate]);
+  // 修復 useMemo 依賴項：只依賴 summary 中實際使用的屬性，而不是整個物件
+  const chartData = useMemo(() => generateAdvancedChartData(transactions, cashFlows, accounts, summary.totalValueTWD + summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate]);
+  // 修復 useMemo 依賴項：只依賴 summary 中實際使用的屬性
+  const assetAllocation = useMemo(() => calculateAssetAllocation(holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate), [holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate]);
   const annualPerformance = useMemo(() => calculateAnnualPerformance(chartData), [chartData]);
   const accountPerformance = useMemo(() => calculateAccountPerformance(computedAccounts, holdings, cashFlows, transactions, exchangeRate, jpyExchangeRate), [computedAccounts, holdings, cashFlows, transactions, exchangeRate, jpyExchangeRate]);
 
   // --- Filtering & Balance Calculation Logic (Merged) ---
   const combinedRecords = useMemo(() => {
     // 1. Transform Transactions
-    const transactionRecords = transactions.map(tx => {
+    const transactionRecords: CombinedRecord[] = transactions.map(tx => {
       let calculatedAmount = 0;
-      if ((tx as any).amount !== undefined && (tx as any).amount !== null) {
-        calculatedAmount = (tx as any).amount;
+      if (tx.amount !== undefined && tx.amount !== null) {
+        calculatedAmount = tx.amount;
       } else {
         if (tx.type === TransactionType.BUY || tx.type === TransactionType.TRANSFER_OUT) {
           calculatedAmount = tx.price * tx.quantity + (tx.fees || 0);
@@ -836,7 +815,7 @@ const App: React.FC = () => {
     });
 
     // 2. Transform Cash Flows
-    const cashFlowRecords: any[] = [];
+    const cashFlowRecords: CombinedRecord[] = [];
     cashFlows.forEach(cf => {
       cashFlowRecords.push({
         id: cf.id,
@@ -886,7 +865,7 @@ const App: React.FC = () => {
       const dateB = new Date(b.date).getTime();
       if (dateA !== dateB) return dateB - dateA;
       
-      const getDisplayTypeOrder = (record: any) => {
+      const getDisplayTypeOrder = (record: CombinedRecord) => {
         if (record.type === 'CASHFLOW') {
           if (record.subType === 'WITHDRAW') return 1;
           if (record.subType === 'TRANSFER') return 1;
@@ -915,7 +894,7 @@ const App: React.FC = () => {
     });
 
     // 4. Calculate Balance Changes
-    const calculateBalanceChange = (record: any) => {
+    const calculateBalanceChange = (record: CombinedRecord) => {
       let balanceChange = 0;
       if (record.type === 'TRANSACTION') {
         const tx = record.originalRecord as Transaction;
