@@ -1665,8 +1665,9 @@ const App: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex bg-black bg-opacity-50 animate-fade-in" onClick={() => setIsMobileMenuOpen(false)}>
           <div 
-            className="bg-slate-900 w-80 h-full shadow-2xl flex flex-col transform transition-transform animate-slide-right" 
+            className="bg-slate-900 w-80 h-full shadow-2xl flex flex-col animate-slide-right" 
             onClick={e => e.stopPropagation()}
+            style={{ willChange: 'transform' }}
           >
             {/* 選單標題 */}
             <div className="p-6 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
