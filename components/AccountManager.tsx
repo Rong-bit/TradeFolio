@@ -80,6 +80,15 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
     e.preventDefault();
     if (!name.trim()) return;
     
+    // 檢查名稱是否重複
+    if (isNameDuplicate(name)) {
+      const errorMsg = language === 'zh-TW' 
+        ? `帳戶名稱「${name}」已存在，請使用不同的名稱。`
+        : `Account name "${name}" already exists. Please use a different name.`;
+      alert(errorMsg);
+      return;
+    }
+    
     const accountBalance = balance ? parseFloat(balance) : 0;
     
     if (editingAccount && onUpdate) {
