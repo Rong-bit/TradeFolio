@@ -4,6 +4,7 @@ import { Transaction, Holding, PortfolioSummary, ChartDataPoint, Market, Account
 import { useLocalStorageDebounced, useLocalStorageDebouncedSimple } from './hooks/useLocalStorageDebounced';
 import { useFilters } from './hooks/useFilters';
 import { useDeleteState } from './hooks/useDeleteState';
+import { useUIState } from './hooks/useUIState';
 import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import HoldingsTable from './components/HoldingsTable';
@@ -62,13 +63,25 @@ const App: React.FC = () => {
   const [rebalanceEnabledItems, setRebalanceEnabledItems] = useState<string[]>([]);
   const [historicalData, setHistoricalData] = useState<HistoricalData>({}); 
   
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [isTransactionDeleteConfirmOpen, setIsTransactionDeleteConfirmOpen] = useState(false);
-  const [isCashFlowDeleteConfirmOpen, setIsCashFlowDeleteConfirmOpen] = useState(false);
-  const [isHistoricalModalOpen, setIsHistoricalModalOpen] = useState(false);
-  const [isBatchUpdateMarketOpen, setIsBatchUpdateMarketOpen] = useState(false);
+  // UI 狀態（使用 useReducer 管理）
+  const {
+    isFormOpen,
+    isImportOpen,
+    isDeleteConfirmOpen,
+    isTransactionDeleteConfirmOpen,
+    isCashFlowDeleteConfirmOpen,
+    isHistoricalModalOpen,
+    isBatchUpdateMarketOpen,
+    isMobileMenuOpen,
+    setIsFormOpen,
+    setIsImportOpen,
+    setIsDeleteConfirmOpen,
+    setIsTransactionDeleteConfirmOpen,
+    setIsCashFlowDeleteConfirmOpen,
+    setIsHistoricalModalOpen,
+    setIsBatchUpdateMarketOpen,
+    setIsMobileMenuOpen,
+  } = useUIState();
   // 刪除操作狀態（使用自訂 Hook 管理）
   const {
     transactionToDelete,
@@ -89,7 +102,7 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>('dashboard');
   const [hasAutoUpdated, setHasAutoUpdated] = useState(false);
   const [language, setLanguage] = useState<Language>(getLanguage());
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // isMobileMenuOpen 已經從 useUIState hook 中取得
   
   // 篩選狀態（使用 useReducer 管理）
   const {
