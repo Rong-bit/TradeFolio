@@ -197,4 +197,29 @@ export interface YearlyProjection {
   cumulativeInvestment?: number; // 累積總投入（包含初始和定期定額）
 }
 
+// 用於交易記錄和資金流動記錄的統一型別
+export interface CombinedRecord {
+  id: string;
+  date: string;
+  accountId: string;
+  type: 'TRANSACTION' | 'CASHFLOW';
+  subType: TransactionType | CashFlowType | 'TRANSFER_IN';
+  ticker: string;
+  market: Market | '';
+  price: number;
+  quantity: number;
+  amount: number;
+  fees: number;
+  description: string;
+  originalRecord: Transaction | CashFlow;
+  balance?: number;
+  balanceChange?: number;
+  // 僅用於 CASHFLOW 的欄位
+  targetAccountId?: string;
+  sourceAccountId?: string;
+  exchangeRate?: number;
+  isSourceRecord?: boolean;
+  isTargetRecord?: boolean;
+}
+
 
