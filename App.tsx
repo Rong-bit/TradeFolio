@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Transaction, Holding, PortfolioSummary, ChartDataPoint, Market, Account, CashFlow, TransactionType, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlowType, Currency, HistoricalData, CombinedRecord } from './types';
 import { useLocalStorageDebounced, useLocalStorageDebouncedSimple } from './hooks/useLocalStorageDebounced';
 import { useFilters } from './hooks/useFilters';
+import { useDeleteState } from './hooks/useDeleteState';
 import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import HoldingsTable from './components/HoldingsTable';
@@ -68,9 +69,18 @@ const App: React.FC = () => {
   const [isCashFlowDeleteConfirmOpen, setIsCashFlowDeleteConfirmOpen] = useState(false);
   const [isHistoricalModalOpen, setIsHistoricalModalOpen] = useState(false);
   const [isBatchUpdateMarketOpen, setIsBatchUpdateMarketOpen] = useState(false);
-  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
-  const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
-  const [cashFlowToDelete, setCashFlowToDelete] = useState<string | null>(null);
+  // 刪除操作狀態（使用自訂 Hook 管理）
+  const {
+    transactionToDelete,
+    transactionToEdit,
+    cashFlowToDelete,
+    setTransactionToDelete,
+    setTransactionToEdit,
+    setCashFlowToDelete,
+    clearTransactionDelete,
+    clearTransactionEdit,
+    clearCashFlowDelete,
+  } = useDeleteState();
   const [alertDialog, setAlertDialog] = useState<{isOpen: boolean, title: string, message: string, type: 'info' | 'success' | 'error'}>({
     isOpen: false, title: '', message: '', type: 'info'
   });
@@ -278,7 +288,7 @@ const App: React.FC = () => {
       showAlert("交易記錄已刪除", "刪除成功", "success");
     }
     setIsTransactionDeleteConfirmOpen(false);
-    setTransactionToDelete(null);
+    clearTransactionDelete();
   };
   const handleClearAllTransactions = () => setIsDeleteConfirmOpen(true);
   const confirmDeleteAllTransactions = () => {
@@ -318,12 +328,12 @@ const App: React.FC = () => {
       showAlert(`現金流紀錄已刪除`, "刪除成功", "success");
     }
     setIsCashFlowDeleteConfirmOpen(false);
-    setCashFlowToDelete(null);
+    clearCashFlowDelete();
   };
   
   const cancelRemoveCashFlow = () => {
     setIsCashFlowDeleteConfirmOpen(false);
-    setCashFlowToDelete(null);
+    clearCashFlowDelete();
   };
   
   const handleClearAllCashFlows = () => {
