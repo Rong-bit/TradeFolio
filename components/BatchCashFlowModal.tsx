@@ -247,40 +247,40 @@ const BatchCashFlowModal: React.FC<Props> = ({ accounts, onImport, onClose }) =>
                   </span>
                 </h3>
                 <div className="border rounded-lg overflow-hidden max-h-80 overflow-y-auto">
-                  <table className="min-w-full text-sm text-left">
+                  <table className="min-w-full text-xs sm:text-sm text-left">
                     <thead className="bg-slate-100 sticky top-0">
                       <tr>
-                        <th className="px-4 py-2">日期</th>
-                        <th className="px-4 py-2">類別</th>
-                        <th className="px-4 py-2 text-right">金額 (USD/TWD)</th>
-                        <th className="px-4 py-2 text-right">手續費</th>
-                        <th className="px-4 py-2 text-right">實際台幣成本</th>
-                        <th className="px-4 py-2">檔案帳戶</th>
-                        <th className="px-4 py-2">對應系統帳戶</th>
+                        <th className="px-3 py-2">日期</th>
+                        <th className="px-3 py-2">類別</th>
+                        <th className="px-3 py-2 text-right">金額 (USD/TWD)</th>
+                        <th className="px-3 py-2 text-right">手續費</th>
+                        <th className="px-3 py-2 text-right">實際台幣成本</th>
+                        <th className="px-3 py-2">檔案帳戶</th>
+                        <th className="px-3 py-2">對應系統帳戶</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {parsedRows.map((row, idx) => (
                         <tr key={idx} className="hover:bg-slate-50">
-                          <td className="px-4 py-2 whitespace-nowrap">{row.date}</td>
-                          <td className="px-4 py-2">
+                          <td className="px-3 py-2 whitespace-nowrap">{row.date}</td>
+                          <td className="px-3 py-2">
                             <span className={`px-2 py-0.5 rounded text-xs font-bold 
                               ${row.type === CashFlowType.DEPOSIT || row.type === CashFlowType.INTEREST ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                               {row.note.split(' ')[0]} {/* Show original category name */}
                             </span>
                           </td>
-                          <td className="px-4 py-2 text-right font-mono">
+                          <td className="px-3 py-2 text-right font-mono">
                             {row.isUSD ? '$' : 'NT$'}{row.amount.toLocaleString()}
                             {row.exchangeRate && <span className="block text-[10px] text-slate-400">Ex: {row.exchangeRate}</span>}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-slate-500">
+                          <td className="px-3 py-2 text-right font-mono text-slate-500">
                              {row.fee ? row.fee : '-'}
                           </td>
-                          <td className="px-4 py-2 text-right font-mono text-emerald-700 font-bold">
+                          <td className="px-3 py-2 text-right font-mono text-emerald-700 font-bold">
                             {row.amountTWD ? `NT$${row.amountTWD.toLocaleString()}` : '-'}
                           </td>
-                          <td className="px-4 py-2 text-slate-500">{row.originalAccountName}</td>
-                          <td className="px-4 py-2 font-medium text-slate-700">
+                          <td className="px-3 py-2 text-slate-500">{row.originalAccountName}</td>
+                          <td className="px-3 py-2 font-medium text-slate-700">
                             {accounts.find(a => a.id === accountMapping[row.originalAccountName])?.name || <span className="text-red-500">未對應</span>}
                           </td>
                         </tr>
