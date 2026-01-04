@@ -183,12 +183,14 @@ const FundManager: React.FC<Props> = ({
   
   // Logic to determine if Exchange Rate Input should be shown
   const isTransfer = type === CashFlowType.TRANSFER;
+  const isInterest = type === CashFlowType.INTEREST;
   const isCrossCurrencyTransfer = isTransfer && selectedAccount && targetAccount && selectedAccount.currency !== targetAccount.currency;
   const isSameCurrencyTransfer = isTransfer && selectedAccount && targetAccount && selectedAccount.currency === targetAccount.currency;
 
   const showExchangeRateInput = 
     // Case 1: USD/JPY Account doing non-transfer operations (Need rate to calculate TWD cost)
-    (!isTransfer && (selectedAccount?.currency === Currency.USD || selectedAccount?.currency === Currency.JPY)) || 
+    // 排除利息收入，因為利息不計入成本，不需要匯率轉換
+    (!isTransfer && !isInterest && (selectedAccount?.currency === Currency.USD || selectedAccount?.currency === Currency.JPY)) || 
     // Case 2: Transfer between DIFFERENT currencies
     (isTransfer && targetAccountId !== '' && isCrossCurrencyTransfer);
 
@@ -352,7 +354,7 @@ const FundManager: React.FC<Props> = ({
 
       {/* 3. List Table */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <table className="min-w-full text-xs sm:text-sm text-left">
+        <table className="min-w-full text-sm sm:text-base text-left">
           <thead className="bg-slate-50 text-slate-500 uppercase">
             <tr>
               <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.date}</th>
