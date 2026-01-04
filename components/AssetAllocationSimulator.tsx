@@ -606,20 +606,20 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
 
         {/* 多行輸入表格 */}
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
+          <table className="min-w-full text-xs sm:text-sm">
             <thead className="bg-slate-50 text-slate-600 uppercase font-medium">
               <tr>
-                <th className="px-4 py-3 text-left">{translations.simulator.ticker}</th>
-                <th className="px-4 py-3 text-left">{translations.simulator.market}</th>
-                <th className="px-4 py-3 text-left">{translations.simulator.annualReturn}</th>
-                <th className="px-4 py-3 text-left">{translations.simulator.allocation}</th>
-                <th className="px-4 py-3 text-center">{language === 'zh-TW' ? '操作' : 'Action'}</th>
+                <th className="px-3 py-2 text-left">{translations.simulator.ticker}</th>
+                <th className="px-3 py-2 text-left">{translations.simulator.market}</th>
+                <th className="px-3 py-2 text-left">{translations.simulator.annualReturn}</th>
+                <th className="px-3 py-2 text-left">{translations.simulator.allocation}</th>
+                <th className="px-3 py-2 text-center">{language === 'zh-TW' ? '操作' : 'Action'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {inputRows.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2">
                     <input
                       type="text"
                       value={row.ticker}
@@ -628,7 +628,7 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2">
                     <select
                       value={row.market}
                       onChange={(e) => updateInputRow(row.id, 'market', e.target.value as Market)}
@@ -640,7 +640,7 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
                       <option value={Market.JP}>{translations.simulator.marketJP}</option>
                     </select>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -673,7 +673,7 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2">
                     <input
                       type="number"
                       value={row.allocation === 0 ? '' : row.allocation}
@@ -711,7 +711,7 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
                       placeholder="0"
                     />
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3 py-2 text-center">
                     <button
                       onClick={() => removeInputRow(row.id)}
                       disabled={inputRows.length === 1}
@@ -758,14 +758,14 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-full text-xs sm:text-sm">
               <thead className="bg-slate-50 text-slate-600 uppercase font-medium">
                 <tr>
-                  <th className="px-4 py-3 text-left">{translations.simulator.ticker}</th>
-                  <th className="px-4 py-3 text-left">{translations.simulator.market}</th>
-                  <th className="px-4 py-3 text-right">{translations.simulator.annualReturn}</th>
-                  <th className="px-4 py-3 text-right">{translations.simulator.allocation}</th>
-                  <th className="px-4 py-3 text-right">{language === 'zh-TW' ? '操作' : 'Action'}</th>
+                  <th className="px-3 py-2 text-left">{translations.simulator.ticker}</th>
+                  <th className="px-3 py-2 text-left">{translations.simulator.market}</th>
+                  <th className="px-3 py-2 text-right">{translations.simulator.annualReturn}</th>
+                  <th className="px-3 py-2 text-right">{translations.simulator.allocation}</th>
+                  <th className="px-3 py-2 text-right">{language === 'zh-TW' ? '操作' : 'Action'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -773,12 +773,12 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
                   const currentTotal = assets.reduce((sum, a) => sum + a.allocation, 0);
                   return (
                     <tr key={asset.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 font-semibold text-slate-800">
+                      <td className="px-3 py-2 font-semibold text-slate-800">
                         {asset.ticker}
                         {asset.name && <span className="text-xs text-slate-500 ml-2">({asset.name})</span>}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{getMarketDisplayText(asset.market)}</td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-3 py-2 text-slate-600">{getMarketDisplayText(asset.market)}</td>
+                      <td className="px-3 py-2 text-right">
                         <input
                           type="number"
                           value={asset.annualizedReturn}
@@ -787,7 +787,7 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
                           step="0.1"
                         />
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-3 py-2 text-right">
                         <input
                           type="number"
                           value={asset.allocation === 0 ? '' : asset.allocation}
@@ -830,7 +830,7 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
                           placeholder="0"
                         />
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-3 py-2 text-right">
                         <button
                           onClick={() => removeAsset(asset.id)}
                           className="text-red-500 hover:text-red-700 active:text-red-900 active:scale-95 transition-all duration-150 text-sm px-2 py-1 rounded hover:bg-red-50 active:bg-red-100"
@@ -844,8 +844,8 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
               </tbody>
               <tfoot className="bg-slate-50 font-bold">
                 <tr>
-                  <td colSpan={3} className="px-4 py-3 text-right">{translations.simulator.allocationSum}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td colSpan={3} className="px-3 py-2 text-right">{translations.simulator.allocationSum}</td>
+                  <td className="px-3 py-2 text-right">
                     <span className={Math.abs(assets.reduce((sum, a) => sum + a.allocation, 0) - 100) < 0.01 ? 'text-green-600' : 'text-red-600'}>
                       {assets.reduce((sum, a) => sum + a.allocation, 0).toFixed(1)}%
                     </span>
@@ -983,7 +983,7 @@ const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], language }) 
               <h3 className="font-bold text-slate-800 text-lg">{translations.simulator.detailedYearlyProjection}</h3>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm text-left">
+              <table className="min-w-full text-xs sm:text-sm text-left">
                 <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
                   <tr>
                     <th className="px-6 py-3">{translations.simulator.year}</th>
