@@ -355,16 +355,16 @@ const FundManager: React.FC<Props> = ({
         <table className="min-w-full text-xs sm:text-sm text-left">
           <thead className="bg-slate-50 text-slate-500 uppercase">
             <tr>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap">{t(language).labels.date}</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap hidden sm:table-cell">{language === 'en' ? 'TWD' : '台幣 (TWD)'}</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap hidden md:table-cell">{language === 'en' ? 'USD' : '美元 (USD)'}</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap hidden md:table-cell">{language === 'en' ? 'JPY' : '日幣 (JPY)'}</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap hidden lg:table-cell">{t(language).labels.exchangeRate}</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap hidden lg:table-cell">{t(language).labels.fee}</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 text-right whitespace-nowrap">{t(language).labels.totalCost}</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap">{t(language).labels.account}</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 whitespace-nowrap hidden sm:table-cell">{t(language).labels.category}</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 text-center whitespace-nowrap">{t(language).labels.action}</th>
+              <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.date}</th>
+              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden sm:table-cell">{language === 'en' ? 'TWD' : '台幣 (TWD)'}</th>
+              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden md:table-cell">{language === 'en' ? 'USD' : '美元 (USD)'}</th>
+              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden md:table-cell">{language === 'en' ? 'JPY' : '日幣 (JPY)'}</th>
+              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden lg:table-cell">{t(language).labels.exchangeRate}</th>
+              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden lg:table-cell">{t(language).labels.fee}</th>
+              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.totalCost}</th>
+              <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.account}</th>
+              <th className="px-2 sm:px-3 py-2 whitespace-nowrap hidden sm:table-cell">{t(language).labels.category}</th>
+              <th className="px-2 sm:px-3 py-2 text-center whitespace-nowrap">{t(language).labels.action}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -402,9 +402,9 @@ const FundManager: React.FC<Props> = ({
 
                    return (
                      <tr key={cf.id} className="hover:bg-slate-50">
-                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-slate-600 whitespace-nowrap">{cf.date}</td>
+                       <td className="px-2 sm:px-3 py-2 text-slate-600 whitespace-nowrap">{cf.date}</td>
                        
-                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-slate-600 hidden sm:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 hidden sm:table-cell">
                          {cf.amountTWD ? (
                            <span className="text-slate-800">{cf.amountTWD.toLocaleString()}</span>
                          ) : (
@@ -412,34 +412,34 @@ const FundManager: React.FC<Props> = ({
                          )}
                        </td>
                        
-                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-slate-600 hidden md:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 hidden md:table-cell">
                          {isUSD ? cf.amount.toLocaleString() : '-'}
                        </td>
                        
-                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-slate-600 hidden md:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 hidden md:table-cell">
                          {isJPY ? cf.amount.toLocaleString() : '-'}
                        </td>
                        
-                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-slate-500 hidden lg:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right text-slate-500 hidden lg:table-cell">
                          {cf.exchangeRate ? cf.exchangeRate : '-'}
                        </td>
                        
-                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-slate-400 hidden lg:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right text-slate-400 hidden lg:table-cell">
                          {displayFee}
                        </td>
                        
-                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-emerald-700">
+                       <td className="px-2 sm:px-3 py-2 text-right font-bold text-emerald-700">
                          NT${displayTotalTWD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                        </td>
                        
-                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-slate-700 whitespace-nowrap text-xs sm:text-sm">
+                       <td className="px-2 sm:px-3 py-2 text-slate-700 whitespace-nowrap text-xs sm:text-sm">
                          <div className="flex flex-col">
                            <span>{accountName}</span>
                            {cf.type === CashFlowType.TRANSFER && targetName && <span className="text-slate-400 text-xs">→ {targetName}</span>}
                          </div>
                        </td>
                        
-                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-slate-600 hidden sm:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-slate-600 hidden sm:table-cell">
                          <div className="flex flex-col gap-1">
                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold 
                               ${cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.INTEREST ? 'bg-green-100 text-green-700' : 
@@ -452,7 +452,7 @@ const FundManager: React.FC<Props> = ({
                          </div>
                        </td>
                        
-                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
+                       <td className="px-2 sm:px-3 py-2 text-right">
                          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 justify-end items-end sm:items-center">
                            {onUpdate && (
                              <button 
