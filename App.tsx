@@ -1965,19 +1965,80 @@ const App: React.FC = () => {
                 </select>
               </div>
               
-              {/* Exchange Rate Input (only show if baseCurrency is TWD for backward compatibility) */}
-              {baseCurrency === Currency.TWD && (
-                <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="text-slate-500">USD/TWD {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    value={exchangeRate} 
-                    onChange={e => setExchangeRate(parseFloat(e.target.value))}
-                    className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
-                  />
-                </div>
-              )}
+              {/* Exchange Rate Input - 根據基本幣值動態顯示 */}
+              {(() => {
+                if (baseCurrency === Currency.TWD) {
+                  // TWD: 顯示 USD/TWD 輸入框（保持現有邏輯）
+                  return (
+                    <div className="flex justify-between items-center text-xs font-bold">
+                      <span className="text-slate-500">USD/TWD {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
+                      <input 
+                        type="number" 
+                        step="0.0001" 
+                        value={exchangeRate} 
+                        onChange={e => {
+                          const newRate = parseFloat(e.target.value);
+                          setExchangeRate(newRate);
+                          // 同時更新 exchangeRates 映射表
+                          setExchangeRates(prev => {
+                            const newRates = {...prev};
+                            newRates[`${Currency.USD}_${Currency.TWD}`] = newRate;
+                            return newRates;
+                          });
+                        }}
+                        className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
+                      />
+                    </div>
+                  );
+                } else if (baseCurrency === Currency.USD) {
+                  // USD: 顯示 TWD/USD 輸入框
+                  const twdToUsdRate = exchangeRates[`${Currency.TWD}_${Currency.USD}`] || 
+                                      (exchangeRates[`${Currency.USD}_${Currency.TWD}`] ? 
+                                       1 / exchangeRates[`${Currency.USD}_${Currency.TWD}`] : '');
+                  return (
+                    <div className="flex justify-between items-center text-xs font-bold">
+                      <span className="text-slate-500">TWD/USD {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
+                      <input 
+                        type="number" 
+                        step="0.0001" 
+                        value={twdToUsdRate}
+                        onChange={e => {
+                          setExchangeRates(prev => {
+                            const newRates = {...prev};
+                            newRates[`${Currency.TWD}_${Currency.USD}`] = parseFloat(e.target.value);
+                            return newRates;
+                          });
+                        }}
+                        className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
+                      />
+                    </div>
+                  );
+                } else {
+                  // 其他幣值: 顯示 USD/基本幣值 輸入框
+                  const currencyName = getCurrencyName(baseCurrency, language === 'en' ? 'en' : 'zh-TW');
+                  const usdToBaseRate = exchangeRates[`${Currency.USD}_${baseCurrency}`] || 
+                                       (exchangeRates[`${baseCurrency}_${Currency.USD}`] ? 
+                                        1 / exchangeRates[`${baseCurrency}_${Currency.USD}`] : '');
+                  return (
+                    <div className="flex justify-between items-center text-xs font-bold">
+                      <span className="text-slate-500">USD/{currencyName} {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
+                      <input 
+                        type="number" 
+                        step="0.0001" 
+                        value={usdToBaseRate}
+                        onChange={e => {
+                          setExchangeRates(prev => {
+                            const newRates = {...prev};
+                            newRates[`${Currency.USD}_${baseCurrency}`] = parseFloat(e.target.value);
+                            return newRates;
+                          });
+                        }}
+                        className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
+                      />
+                    </div>
+                  );
+                }
+              })()}
             </div>
 
             {/* 導航選單 */}
