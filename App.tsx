@@ -335,16 +335,26 @@ const App: React.FC = () => {
           const jpyToTwd = jpyExchangeRate || prevRates[`${Currency.JPY}_${Currency.TWD}`] || 
                           (prevRates[`${Currency.TWD}_${Currency.JPY}`] ? 1 / prevRates[`${Currency.TWD}_${Currency.JPY}`] : undefined);
           
-          if (jpyToTwd && exchangeRate > 0) {
+          // 獲取 USD/TWD 匯率（可能來自 exchangeRate state 或 exchangeRates）
+          const usdToTwd = exchangeRate || prevRates[`${Currency.USD}_${Currency.TWD}`] || 
+                          (prevRates[`${Currency.TWD}_${Currency.USD}`] ? 1 / prevRates[`${Currency.TWD}_${Currency.USD}`] : undefined);
+          
+          if (jpyToTwd && usdToTwd) {
             // 使用 USD/TWD 和 JPY/TWD 計算 USD/JPY
             // USD/JPY = (USD/TWD) / (JPY/TWD)
-            const usdToJpy = exchangeRate / jpyToTwd;
+            const usdToJpy = usdToTwd / jpyToTwd;
             const newRates = {...prevRates};
             newRates[`${Currency.USD}_${Currency.JPY}`] = usdToJpy;
             newRates[`${Currency.JPY}_${Currency.USD}`] = 1 / usdToJpy;
             // 同時設置 TWD/JPY 和 JPY/TWD 匯率（用於轉換成本）
             newRates[`${Currency.JPY}_${Currency.TWD}`] = jpyToTwd;
             newRates[`${Currency.TWD}_${Currency.JPY}`] = 1 / jpyToTwd;
+            // 同時保存 USD/TWD 匯率（如果還沒有的話）
+            if (!newRates[`${Currency.USD}_${Currency.TWD}`] && !newRates[`${Currency.TWD}_${Currency.USD}`]) {
+              newRates[`${Currency.USD}_${Currency.TWD}`] = usdToTwd;
+              newRates[`${Currency.TWD}_${Currency.USD}`] = 1 / usdToTwd;
+            }
+            console.log(`[匯率設置] 基本幣值為 JPY，設置 TWD/JPY = ${1 / jpyToTwd}, JPY/TWD = ${jpyToTwd}`);
             return newRates;
           } else {
             // 如果沒有 JPY/TWD 匯率，從 API 獲取
@@ -359,6 +369,41 @@ const App: React.FC = () => {
                   const newRates = {...prev};
                   newRates[`${Currency.USD}_${Currency.JPY}`] = usdToJpy;
                   newRates[`${Currency.JPY}_${Currency.USD}`] = 1 / usdToJpy;
+                  
+                  // 同時嘗試獲取或計算 TWD/JPY 匯率（用於轉換成本）
+                  const usdToTwd = exchangeRate || prev[`${Currency.USD}_${Currency.TWD}`] || 
+                                  (prev[`${Currency.TWD}_${Currency.USD}`] ? 1 / prev[`${Currency.TWD}_${Currency.USD}`] : undefined);
+                  
+                  if (usdToTwd) {
+                    // 使用 USD/TWD 和 USD/JPY 計算 TWD/JPY
+                    // TWD/JPY = (TWD/USD) * (USD/JPY) = (1 / USD/TWD) * USD/JPY
+                    const twdToUsd = 1 / usdToTwd;
+                    const twdToJpy = twdToUsd * usdToJpy;
+                    newRates[`${Currency.TWD}_${Currency.JPY}`] = twdToJpy;
+                    newRates[`${Currency.JPY}_${Currency.TWD}`] = 1 / twdToJpy;
+                    console.log(`[匯率設置] 從 API 獲取 USD/JPY，計算 TWD/JPY = ${twdToJpy}`);
+                  } else {
+                    // 如果沒有 USD/TWD，嘗試直接獲取 TWD/JPY
+                    fetchExchangeRatePair(Currency.TWD, Currency.JPY).then(twdToJpy => {
+                      if (!isNaN(twdToJpy) && twdToJpy > 0) {
+                        setExchangeRates(prev => {
+                          const checkTwdKey = `${Currency.TWD}_${Currency.JPY}`;
+                          const checkTwdReverseKey = `${Currency.JPY}_${Currency.TWD}`;
+                          if (prev[checkTwdKey] || prev[checkTwdReverseKey]) {
+                            return prev;
+                          }
+                          const newRates = {...prev};
+                          newRates[`${Currency.TWD}_${Currency.JPY}`] = twdToJpy;
+                          newRates[`${Currency.JPY}_${Currency.TWD}`] = 1 / twdToJpy;
+                          console.log(`[匯率設置] 從 API 獲取 TWD/JPY = ${twdToJpy}`);
+                          return newRates;
+                        });
+                      }
+                    }).catch(() => {
+                      console.warn(`無法獲取 TWD/JPY 匯率，成本轉換可能不準確`);
+                    });
+                  }
+                  
                   return newRates;
                 });
               }
@@ -455,7 +500,7 @@ const App: React.FC = () => {
     
     updateRates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseCurrency, isAuthenticated, accounts]); // 添加 accounts 依賴，當帳戶改變時也更新匯率
+  }, [baseCurrency, isAuthenticated, accounts, exchangeRate, jpyExchangeRate]); // 當匯率改變時也更新
 
   const showAlert = (message: string, title: string = '提示', type: 'info' | 'success' | 'error' = 'info') => {
     setAlertDialog({ isOpen: true, title, message, type });
@@ -1000,7 +1045,15 @@ const App: React.FC = () => {
            if (cf.amountTWD && baseCurrency === Currency.TWD) {
                amountInBase = cf.amountTWD;
            } else if (cf.amountTWD) {
+               // 從 TWD 轉換到基準幣值
+               const beforeConvert = cf.amountTWD;
                amountInBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
+               // 調試：如果轉換後值沒變，可能是匯率缺失
+               if (baseCurrency !== Currency.TWD && Math.abs(amountInBase - beforeConvert) < 0.01 && beforeConvert > 0) {
+                 const rateKey = `${Currency.TWD}_${baseCurrency}`;
+                 const reverseKey = `${baseCurrency}_${Currency.TWD}`;
+                 console.warn(`[成本轉換警告] TWD -> ${baseCurrency} 轉換失敗，匯率可能缺失。amountTWD=${beforeConvert}, 查找的匯率鍵: ${rateKey} 或 ${reverseKey}, exchangeRates=`, exchangeRates);
+               }
            } else {
                amountInBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
            }
@@ -1010,7 +1063,15 @@ const App: React.FC = () => {
            if (cf.amountTWD && baseCurrency === Currency.TWD) {
                amountInBase = cf.amountTWD;
            } else if (cf.amountTWD) {
+               // 從 TWD 轉換到基準幣值
+               const beforeConvert = cf.amountTWD;
                amountInBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
+               // 調試：如果轉換後值沒變，可能是匯率缺失
+               if (baseCurrency !== Currency.TWD && Math.abs(amountInBase - beforeConvert) < 0.01 && beforeConvert > 0) {
+                 const rateKey = `${Currency.TWD}_${baseCurrency}`;
+                 const reverseKey = `${baseCurrency}_${Currency.TWD}`;
+                 console.warn(`[成本轉換警告] TWD -> ${baseCurrency} 轉換失敗，匯率可能缺失。amountTWD=${beforeConvert}, 查找的匯率鍵: ${rateKey} 或 ${reverseKey}, exchangeRates=`, exchangeRates);
+               }
            } else {
                amountInBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
            }
