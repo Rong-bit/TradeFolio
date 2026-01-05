@@ -276,13 +276,47 @@ const App: React.FC = () => {
     if (!isAuthenticated || baseCurrency === Currency.TWD) return;
     
     const updateRates = async () => {
+      // 收集所有帳戶使用的幣值（用於確保有足夠的匯率）
+      const accountCurrencies = new Set<Currency>();
+      accounts.forEach((acc: Account) => {
+        if (acc.currency !== baseCurrency) {
+          accountCurrencies.add(acc.currency);
+        }
+      });
+      
       setExchangeRates(prevRates => {
         const rateKey = `${Currency.USD}_${baseCurrency}`;
         const reverseRateKey = `${baseCurrency}_${Currency.USD}`;
         
         // 如果已經有匯率，不需要重新獲取
         if (prevRates[rateKey] || prevRates[reverseRateKey]) {
-          return prevRates;
+          // 但還是要檢查是否需要為帳戶幣值設置匯率
+          const newRates = {...prevRates};
+          let hasUpdates = false;
+          
+          // 確保所有帳戶幣值都有到基準幣值的匯率（或通過 TWD 中轉）
+          accountCurrencies.forEach(accCurrency => {
+            const accToBaseKey = `${accCurrency}_${baseCurrency}`;
+            const baseToAccKey = `${baseCurrency}_${accCurrency}`;
+            
+            // 如果沒有直接匯率，嘗試通過 TWD 計算
+            if (!newRates[accToBaseKey] && !newRates[baseToAccKey]) {
+              // 嘗試：帳戶幣值 -> TWD -> 基準幣值
+              const accToTwd = newRates[`${accCurrency}_${Currency.TWD}`] || 
+                              (newRates[`${Currency.TWD}_${accCurrency}`] ? 1 / newRates[`${Currency.TWD}_${accCurrency}`] : undefined);
+              const twdToBase = newRates[`${Currency.TWD}_${baseCurrency}`] || 
+                               (newRates[`${baseCurrency}_${Currency.TWD}`] ? 1 / newRates[`${baseCurrency}_${Currency.TWD}`] : undefined);
+              
+              if (accToTwd && twdToBase) {
+                const accToBase = accToTwd * twdToBase;
+                newRates[accToBaseKey] = accToBase;
+                newRates[baseToAccKey] = 1 / accToBase;
+                hasUpdates = true;
+              }
+            }
+          });
+          
+          return hasUpdates ? newRates : prevRates;
         }
         
         if (baseCurrency === Currency.USD) {
@@ -293,16 +327,47 @@ const App: React.FC = () => {
             newRates[`${Currency.TWD}_${Currency.USD}`] = 1 / exchangeRate;
             return newRates;
           }
-        } else if (baseCurrency === Currency.JPY && jpyExchangeRate && exchangeRate > 0) {
-          // JPY: 使用 USD/TWD 和 JPY/TWD 計算 USD/JPY
-          // USD/JPY = (USD/TWD) / (JPY/TWD)
-          const usdToJpy = exchangeRate / jpyExchangeRate;
-          const newRates = {...prevRates};
-          newRates[`${Currency.USD}_${Currency.JPY}`] = usdToJpy;
-          newRates[`${Currency.JPY}_${Currency.USD}`] = 1 / usdToJpy;
-          return newRates;
+        } else if (baseCurrency === Currency.JPY) {
+          // JPY: 嘗試從多個來源獲取匯率
+          // 1. 優先使用 jpyExchangeRate state（如果有的話）
+          // 2. 其次使用 exchangeRates 中已有的 JPY/TWD
+          // 3. 最後從 API 獲取
+          const jpyToTwd = jpyExchangeRate || prevRates[`${Currency.JPY}_${Currency.TWD}`] || 
+                          (prevRates[`${Currency.TWD}_${Currency.JPY}`] ? 1 / prevRates[`${Currency.TWD}_${Currency.JPY}`] : undefined);
+          
+          if (jpyToTwd && exchangeRate > 0) {
+            // 使用 USD/TWD 和 JPY/TWD 計算 USD/JPY
+            // USD/JPY = (USD/TWD) / (JPY/TWD)
+            const usdToJpy = exchangeRate / jpyToTwd;
+            const newRates = {...prevRates};
+            newRates[`${Currency.USD}_${Currency.JPY}`] = usdToJpy;
+            newRates[`${Currency.JPY}_${Currency.USD}`] = 1 / usdToJpy;
+            // 同時設置 TWD/JPY 和 JPY/TWD 匯率（用於轉換成本）
+            newRates[`${Currency.JPY}_${Currency.TWD}`] = jpyToTwd;
+            newRates[`${Currency.TWD}_${Currency.JPY}`] = 1 / jpyToTwd;
+            return newRates;
+          } else {
+            // 如果沒有 JPY/TWD 匯率，從 API 獲取
+            fetchExchangeRatePair(Currency.USD, Currency.JPY).then(usdToJpy => {
+              if (!isNaN(usdToJpy) && usdToJpy > 0) {
+                setExchangeRates(prev => {
+                  const checkKey = `${Currency.USD}_${Currency.JPY}`;
+                  const checkReverseKey = `${Currency.JPY}_${Currency.USD}`;
+                  if (prev[checkKey] || prev[checkReverseKey]) {
+                    return prev;
+                  }
+                  const newRates = {...prev};
+                  newRates[`${Currency.USD}_${Currency.JPY}`] = usdToJpy;
+                  newRates[`${Currency.JPY}_${Currency.USD}`] = 1 / usdToJpy;
+                  return newRates;
+                });
+              }
+            }).catch(error => {
+              console.warn(`無法獲取 USD/JPY 匯率:`, error);
+            });
+          }
         } else {
-          // 其他幣值: 從 API 獲取 USD/基本幣值 匯率
+          // 其他幣值: 從 API 獲取 USD/基本幣值 匯率，並計算 TWD/基本幣值 匯率
           fetchExchangeRatePair(Currency.USD, baseCurrency).then(usdToBaseRate => {
             if (!isNaN(usdToBaseRate) && usdToBaseRate > 0) {
               setExchangeRates(prev => {
@@ -315,6 +380,67 @@ const App: React.FC = () => {
                 const newRates = {...prev};
                 newRates[`${Currency.USD}_${baseCurrency}`] = usdToBaseRate;
                 newRates[`${baseCurrency}_${Currency.USD}`] = 1 / usdToBaseRate;
+                
+                // 如果有 USD/TWD 匯率，計算 TWD/基本幣值 匯率（用於轉換成本）
+                // TWD/基本幣值 = (TWD/USD) * (USD/基本幣值) = (1 / USD/TWD) * USD/基本幣值
+                if (exchangeRate > 0) {
+                  const twdToUsd = 1 / exchangeRate; // TWD/USD
+                  const twdToBase = twdToUsd * usdToBaseRate; // TWD/基本幣值
+                  newRates[`${Currency.TWD}_${baseCurrency}`] = twdToBase;
+                  newRates[`${baseCurrency}_${Currency.TWD}`] = 1 / twdToBase;
+                } else {
+                  // 如果沒有 USD/TWD，嘗試從 exchangeRates 中獲取
+                  const usdToTwd = prev[`${Currency.USD}_${Currency.TWD}`] || 
+                                  (prev[`${Currency.TWD}_${Currency.USD}`] ? 1 / prev[`${Currency.TWD}_${Currency.USD}`] : undefined);
+                  if (usdToTwd) {
+                    const twdToUsd = 1 / usdToTwd;
+                    const twdToBase = twdToUsd * usdToBaseRate;
+                    newRates[`${Currency.TWD}_${baseCurrency}`] = twdToBase;
+                    newRates[`${baseCurrency}_${Currency.TWD}`] = 1 / twdToBase;
+                  } else {
+                    // 如果都沒有，嘗試直接獲取 TWD/基本幣值 匯率
+                    fetchExchangeRatePair(Currency.TWD, baseCurrency).then(twdToBaseRate => {
+                      if (!isNaN(twdToBaseRate) && twdToBaseRate > 0) {
+                        setExchangeRates(prev => {
+                          const checkTwdKey = `${Currency.TWD}_${baseCurrency}`;
+                          const checkTwdReverseKey = `${baseCurrency}_${Currency.TWD}`;
+                          if (prev[checkTwdKey] || prev[checkTwdReverseKey]) {
+                            return prev;
+                          }
+                          const newRates = {...prev};
+                          newRates[`${Currency.TWD}_${baseCurrency}`] = twdToBaseRate;
+                          newRates[`${baseCurrency}_${Currency.TWD}`] = 1 / twdToBaseRate;
+                          return newRates;
+                        });
+                      }
+                    }).catch(() => {
+                      // 如果無法獲取，至少記錄警告
+                      console.warn(`無法獲取 TWD/${baseCurrency} 匯率，成本轉換可能不準確`);
+                    });
+                  }
+                }
+                
+                // 確保所有帳戶幣值都有到基準幣值的匯率（或通過 TWD 中轉）
+                accountCurrencies.forEach(accCurrency => {
+                  const accToBaseKey = `${accCurrency}_${baseCurrency}`;
+                  const baseToAccKey = `${baseCurrency}_${accCurrency}`;
+                  
+                  // 如果沒有直接匯率，嘗試通過 TWD 計算
+                  if (!newRates[accToBaseKey] && !newRates[baseToAccKey]) {
+                    // 嘗試：帳戶幣值 -> TWD -> 基準幣值
+                    const accToTwd = newRates[`${accCurrency}_${Currency.TWD}`] || 
+                                    (newRates[`${Currency.TWD}_${accCurrency}`] ? 1 / newRates[`${Currency.TWD}_${accCurrency}`] : undefined);
+                    const twdToBase = newRates[`${Currency.TWD}_${baseCurrency}`] || 
+                                     (newRates[`${baseCurrency}_${Currency.TWD}`] ? 1 / newRates[`${baseCurrency}_${Currency.TWD}`] : undefined);
+                    
+                    if (accToTwd && twdToBase) {
+                      const accToBase = accToTwd * twdToBase;
+                      newRates[accToBaseKey] = accToBase;
+                      newRates[baseToAccKey] = 1 / accToBase;
+                    }
+                  }
+                });
+                
                 return newRates;
               });
             }
@@ -329,7 +455,7 @@ const App: React.FC = () => {
     
     updateRates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseCurrency, isAuthenticated]); // 只在 baseCurrency 改變時觸發
+  }, [baseCurrency, isAuthenticated, accounts]); // 添加 accounts 依賴，當帳戶改變時也更新匯率
 
   const showAlert = (message: string, title: string = '提示', type: 'info' | 'success' | 'error' = 'info') => {
     setAlertDialog({ isOpen: true, title, message, type });
@@ -785,7 +911,7 @@ const App: React.FC = () => {
             hasNewRates = true;
           }
         } else {
-          // 其他幣值: 獲取 USD/基本幣值 匯率
+          // 其他幣值: 獲取 USD/基本幣值 匯率，並計算 TWD/基本幣值 匯率
           try {
             const usdToBaseRate = await fetchExchangeRatePair(Currency.USD, baseCurrency);
             if (!isNaN(usdToBaseRate) && usdToBaseRate > 0) {
@@ -794,6 +920,25 @@ const App: React.FC = () => {
               updatedExchangeRates[`${baseCurrency}_${Currency.USD}`] = 1 / usdToBaseRate;
               hasNewRates = true;
               msg += `，USD/${baseCurrency} 匯率: ${usdToBaseRate.toFixed(4)}`;
+              
+              // 如果有 USD/TWD 匯率，計算 TWD/基本幣值 匯率（用於轉換成本）
+              if (result.exchangeRate && result.exchangeRate > 0) {
+                const twdToUsd = 1 / result.exchangeRate; // TWD/USD
+                const twdToBase = twdToUsd * usdToBaseRate; // TWD/基本幣值
+                updatedExchangeRates[`${Currency.TWD}_${baseCurrency}`] = twdToBase;
+                updatedExchangeRates[`${baseCurrency}_${Currency.TWD}`] = 1 / twdToBase;
+              } else {
+                // 如果沒有 USD/TWD，嘗試直接獲取 TWD/基本幣值 匯率
+                try {
+                  const twdToBaseRate = await fetchExchangeRatePair(Currency.TWD, baseCurrency);
+                  if (!isNaN(twdToBaseRate) && twdToBaseRate > 0) {
+                    updatedExchangeRates[`${Currency.TWD}_${baseCurrency}`] = twdToBaseRate;
+                    updatedExchangeRates[`${baseCurrency}_${Currency.TWD}`] = 1 / twdToBaseRate;
+                  }
+                } catch (twdError) {
+                  console.warn(`無法獲取 TWD/${baseCurrency} 匯率:`, twdError);
+                }
+              }
             }
           } catch (error) {
             console.warn(`無法獲取 USD/${baseCurrency} 匯率:`, error);
@@ -801,10 +946,19 @@ const App: React.FC = () => {
         }
         
         // 如果有 JPY 帳戶，保存 JPY/TWD 匯率（如果有的話）
+        // 無論基本幣值是什麼，都應該保存 JPY/TWD 和 TWD/JPY 匯率
         if (result.jpyExchangeRate && result.jpyExchangeRate > 0) {
+          setJpyExchangeRate(result.jpyExchangeRate);
           updatedExchangeRates[`${Currency.JPY}_${Currency.TWD}`] = result.jpyExchangeRate;
           updatedExchangeRates[`${Currency.TWD}_${Currency.JPY}`] = 1 / result.jpyExchangeRate;
           hasNewRates = true;
+          
+          // 如果基本幣值是 JPY，同時更新 USD/JPY 匯率
+          if (baseCurrency === Currency.JPY && exchangeRate > 0) {
+            const usdToJpy = exchangeRate / result.jpyExchangeRate;
+            updatedExchangeRates[`${Currency.USD}_${Currency.JPY}`] = usdToJpy;
+            updatedExchangeRates[`${Currency.JPY}_${Currency.USD}`] = 1 / usdToJpy;
+          }
         }
       }
       
