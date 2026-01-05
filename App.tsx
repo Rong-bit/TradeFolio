@@ -59,6 +59,10 @@ const App: React.FC = () => {
   const [priceDetails, setPriceDetails] = useState<Record<string, { change: number, changePercent: number }>>({});
   const [exchangeRate, setExchangeRate] = useState<number>(31.5);
   const [jpyExchangeRate, setJpyExchangeRate] = useState<number | undefined>(undefined);
+  // 新增：基準幣值（預設為 TWD 以保持向後相容）
+  const [baseCurrency, setBaseCurrency] = useState<Currency>(Currency.TWD);
+  // 新增：匯率映射表（key 為 "BASE_TARGET"，例如 "JPY_USD"）
+  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
   const [rebalanceTargets, setRebalanceTargets] = useState<Record<string, number>>({});
   const [rebalanceEnabledItems, setRebalanceEnabledItems] = useState<string[]>([]);
   const [historicalData, setHistoricalData] = useState<HistoricalData>({}); 
@@ -235,6 +239,14 @@ const App: React.FC = () => {
     const jpyRate = localStorage.getItem(getKey('jpyExchangeRate'));
     setJpyExchangeRate(jpyRate ? parseFloat(jpyRate) : undefined);
     
+    // 載入基準幣值（預設為 TWD）
+    const savedBaseCurrency = localStorage.getItem(getKey('baseCurrency'));
+    setBaseCurrency(savedBaseCurrency ? (savedBaseCurrency as Currency) : Currency.TWD);
+    
+    // 載入匯率映射表
+    const savedExchangeRates = load('exchangeRates', {});
+    setExchangeRates(savedExchangeRates);
+    
     setRebalanceTargets(load('rebalanceTargets', {}));
     setRebalanceEnabledItems(load('rebalanceEnabledItems', []));
     setHistoricalData(load('historicalData', {}));
@@ -252,6 +264,8 @@ const App: React.FC = () => {
   useLocalStorageDebounced('priceDetails', priceDetails, 500, userPrefix);
   useLocalStorageDebouncedSimple('exchangeRate', exchangeRate, 500, userPrefix);
   useLocalStorageDebouncedSimple('jpyExchangeRate', jpyExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('baseCurrency', baseCurrency, 500, userPrefix);
+  useLocalStorageDebounced('exchangeRates', exchangeRates, 500, userPrefix);
   useLocalStorageDebounced('rebalanceTargets', rebalanceTargets, 500, userPrefix);
   useLocalStorageDebounced('rebalanceEnabledItems', rebalanceEnabledItems, 500, userPrefix);
   useLocalStorageDebounced('historicalData', historicalData, 500, userPrefix);
