@@ -298,10 +298,12 @@ export const generateAdvancedChartData = (
   transactions: Transaction[],
   cashFlows: CashFlow[],
   accounts: Account[],
-  currentTotalValueTWD: number,
+  currentTotalValueBase: number,
   exchangeRate: number,
   historicalData?: HistoricalData, // New Parameter
-  jpyExchangeRate?: number // JPY to TWD exchange rate
+  jpyExchangeRate?: number, // JPY to TWD exchange rate
+  baseCurrency: Currency = Currency.TWD,
+  exchangeRates: Record<string, number> = {}
 ): ChartDataPoint[] => {
   const years = new Set<string>();
   const allDates = [...transactions.map(t => t.date), ...cashFlows.map(c => c.date)];
@@ -312,28 +314,58 @@ export const generateAdvancedChartData = (
 
   const data: ChartDataPoint[] = [];
   
-  let cumulativeNetInvestedTWD = 0; 
+  let cumulativeNetInvestedBase = 0; 
   let accumulatedEstAssets = 0; 
 
   for (let y = startYear; y <= endYear; y++) {
-    const prevCost = cumulativeNetInvestedTWD; 
+    const prevCost = cumulativeNetInvestedBase; 
     const flowsInYear = cashFlows.filter(c => new Date(c.date).getFullYear() === y);
     const txsInYear = transactions.filter(t => new Date(t.date).getFullYear() === y);
     
-    // 1. Process Net Invested (Cost)
+    // 1. Process Net Invested (Cost) - 轉換為基準幣值
     flowsInYear.forEach(cf => {
       const account = accounts.find(a => a.id === cf.accountId);
-      const isUSD = account?.currency === Currency.USD;
-      let amountTWD = 0;
+      if (!account) return;
+      
+      let amountBase = 0;
+      
+      // 優先使用 amountTWD（如果有的話）
       if (cf.amountTWD && cf.amountTWD > 0) {
-        amountTWD = cf.amountTWD;
+        // 如果有 amountTWD，轉換為基準幣值
+        if (baseCurrency === Currency.TWD) {
+          amountBase = cf.amountTWD;
+        } else {
+          amountBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
+        }
       } else {
-        let rate = isUSD ? exchangeRate : 1;
-        if (isUSD && cf.exchangeRate && cf.exchangeRate > 0) rate = cf.exchangeRate;
-        amountTWD = cf.amount * rate;
+        // 使用帳戶幣值轉換為基準幣值
+        if (account.currency === baseCurrency) {
+          amountBase = cf.amount;
+        } else {
+          // 嘗試使用歷史匯率（如果有）並轉換為基準幣值
+          if (cf.exchangeRate && cf.exchangeRate > 0 && account.currency === Currency.USD && baseCurrency === Currency.TWD) {
+            // 特殊情況：歷史匯率是 TWD/USD，帳戶是 USD，基準幣值是 TWD
+            amountBase = cf.amount * cf.exchangeRate;
+          } else if (cf.exchangeRate && cf.exchangeRate > 0 && account.currency === Currency.USD) {
+            // 歷史匯率是 TWD/USD，需要轉換為基準幣值/USD
+            // 基準幣值/USD = (基準幣值/TWD) * (TWD/USD)
+            const baseToTwd = exchangeRates[`${baseCurrency}_${Currency.TWD}`] ||
+                             (exchangeRates[`${Currency.TWD}_${baseCurrency}`] ? 1 / exchangeRates[`${Currency.TWD}_${baseCurrency}`] : undefined);
+            if (baseToTwd) {
+              amountBase = cf.amount * cf.exchangeRate * baseToTwd;
+            } else {
+              // 如果無法通過 TWD 轉換，使用當前匯率
+              amountBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
+            }
+          } else {
+            // 沒有歷史匯率或不是 USD，使用當前匯率轉換
+            amountBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
+          }
+        }
       }
-      if (cf.type === CashFlowType.DEPOSIT) cumulativeNetInvestedTWD += amountTWD;
-      else if (cf.type === CashFlowType.WITHDRAW) cumulativeNetInvestedTWD -= amountTWD;
+      
+      if (cf.type === CashFlowType.DEPOSIT) cumulativeNetInvestedBase += amountBase;
+      else if (cf.type === CashFlowType.WITHDRAW) cumulativeNetInvestedBase -= amountBase;
     });
 
     // 注意：不處理 TRANSFER_IN 和 TRANSFER_OUT
@@ -341,19 +373,19 @@ export const generateAdvancedChartData = (
     // 如果一個轉入和一個轉出配對，成本應該不變
 
     // Net Inflow for Estimate
-    const netInflowThisYear = cumulativeNetInvestedTWD - prevCost;
+    const netInflowThisYear = cumulativeNetInvestedBase - prevCost;
     accumulatedEstAssets = (accumulatedEstAssets + netInflowThisYear) * 1.08;
     if (accumulatedEstAssets < 0) accumulatedEstAssets = 0;
 
-    const cost = Math.max(0, cumulativeNetInvestedTWD);
+    const cost = Math.max(0, cumulativeNetInvestedBase);
     
     // --- 2. Calculate Total Assets (The Hybrid Logic) ---
     let totalAssets = 0;
     let isRealData = false;
 
     if (y === endYear) {
-      // Current year: Use live calculated value
-      totalAssets = currentTotalValueTWD;
+      // Current year: Use live calculated value (已經是基準幣值)
+      totalAssets = currentTotalValueBase;
       isRealData = true; 
     } else {
        // Historical years: Try to use AI fetched data
@@ -361,13 +393,37 @@ export const generateAdvancedChartData = (
        if (historicalData && historicalData[yearKey]) {
           // YES! We have historical prices
           const histPrices = historicalData[yearKey].prices;
-          const histRate = historicalData[yearKey].exchangeRate || exchangeRate;
-          const histJpyRate = historicalData[yearKey].jpyExchangeRate || jpyExchangeRate;
+          // 歷史匯率是 TWD/其他幣值的匯率，需要轉換為基準幣值/其他幣值的匯率
+          const histRateTwd = historicalData[yearKey].exchangeRate || exchangeRate; // TWD/USD
+          const histJpyRateTwd = historicalData[yearKey].jpyExchangeRate || jpyExchangeRate; // TWD/JPY
+          
+          // 轉換歷史匯率為基準幣值/其他幣值的匯率
+          let histRateBase: number; // 基準幣值/USD
+          let histJpyRateBase: number | undefined; // 基準幣值/JPY
+          
+          if (baseCurrency === Currency.TWD) {
+            histRateBase = histRateTwd;
+            histJpyRateBase = histJpyRateTwd;
+          } else {
+            // 基準幣值/USD = (基準幣值/TWD) * (TWD/USD)
+            const baseToTwd = exchangeRates[`${baseCurrency}_${Currency.TWD}`] ||
+                             (exchangeRates[`${Currency.TWD}_${baseCurrency}`] ? 1 / exchangeRates[`${Currency.TWD}_${baseCurrency}`] : undefined);
+            if (baseToTwd) {
+              histRateBase = baseToTwd * histRateTwd;
+              if (histJpyRateTwd) {
+                histJpyRateBase = baseToTwd * histJpyRateTwd;
+              }
+            } else {
+              // 如果無法轉換，使用當前匯率
+              histRateBase = convertCurrency(1, Currency.USD, baseCurrency, exchangeRates, baseCurrency);
+              histJpyRateBase = histJpyRateTwd ? convertCurrency(1, Currency.JPY, baseCurrency, exchangeRates, baseCurrency) : undefined;
+            }
+          }
           
           const yearEndDate = new Date(`${y}-12-31`);
           const { holdings, cashBalances } = getPortfolioStateAtDate(yearEndDate, transactions, cashFlows, accounts);
           
-          let stockValueTWD = 0;
+          let stockValueBase = 0;
           let hasMissingPrices = false;
           
           Object.entries(holdings).forEach(([key, qty]) => {
@@ -406,37 +462,51 @@ export const generateAdvancedChartData = (
                       hasMissingPrices = true;
                   }
                   
-                  // 根據市場類型使用對應的匯率
+                  // 根據市場類型使用對應的匯率（轉換為基準幣值）
                   if (market === Market.US || market === Market.UK) {
-                      stockValueTWD += qty * price * histRate;
+                      stockValueBase += qty * price * histRateBase;
                   } else if (market === Market.JP) {
                       // 日本市場使用日幣匯率
-                      const rate = histJpyRate || histRate; // 如果沒有日幣匯率，回退到美元匯率
-                      stockValueTWD += qty * price * rate;
+                      const rate = histJpyRateBase || histRateBase; // 如果沒有日幣匯率，回退到美元匯率
+                      stockValueBase += qty * price * rate;
                   } else {
-                      // TWD: Round the value
-                      stockValueTWD += Math.round(qty * price);
+                      // TWD: Round the value，然後轉換為基準幣值
+                      const twdValue = Math.round(qty * price);
+                      if (baseCurrency === Currency.TWD) {
+                        stockValueBase += twdValue;
+                      } else {
+                        stockValueBase += convertCurrency(twdValue, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
+                      }
                   }
               }
           });
 
-          let cashValueTWD = 0;
+          let cashValueBase = 0;
           Object.entries(cashBalances).forEach(([accId, bal]) => {
               const acc = accounts.find(a => a.id === accId);
               if (acc) {
                   if (acc.currency === Currency.USD) {
-                    cashValueTWD += bal * histRate;
+                    cashValueBase += bal * histRateBase;
                   } else if (acc.currency === Currency.JPY) {
                     // 日幣帳戶使用日幣匯率
-                    const rate = histJpyRate || histRate; // 如果沒有日幣匯率，回退到美元匯率
-                    cashValueTWD += bal * rate;
+                    const rate = histJpyRateBase || histRateBase; // 如果沒有日幣匯率，回退到美元匯率
+                    cashValueBase += bal * rate;
                   } else {
-                    cashValueTWD += bal;
+                    // TWD 或其他幣值
+                    if (acc.currency === baseCurrency) {
+                      cashValueBase += bal;
+                    } else if (acc.currency === Currency.TWD) {
+                      // TWD 轉換為基準幣值
+                      cashValueBase += convertCurrency(bal, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
+                    } else {
+                      // 其他幣值轉換為基準幣值
+                      cashValueBase += convertCurrency(bal, acc.currency, baseCurrency, exchangeRates, baseCurrency);
+                    }
                   }
               }
           });
 
-          totalAssets = stockValueTWD + cashValueTWD;
+          totalAssets = stockValueBase + cashValueBase;
           
           // 判斷是否為真實數據：
           // 只要有歷史數據且沒有缺失價格，就標記為真實數據
@@ -446,7 +516,7 @@ export const generateAdvancedChartData = (
               const totalYears = endYear - startYear + 1;
               const currentYearIndex = y - startYear + 1;
               const progress = currentYearIndex / totalYears;
-              const totalProfit = currentTotalValueTWD - cumulativeNetInvestedTWD;
+              const totalProfit = currentTotalValueBase - cumulativeNetInvestedBase;
               totalAssets = cost + (totalProfit * progress);
               isRealData = false;
           } else {
@@ -459,7 +529,7 @@ export const generateAdvancedChartData = (
           const totalYears = endYear - startYear + 1;
           const currentYearIndex = y - startYear + 1;
           const progress = currentYearIndex / totalYears;
-          const totalProfit = currentTotalValueTWD - cumulativeNetInvestedTWD;
+          const totalProfit = currentTotalValueBase - cumulativeNetInvestedBase;
           totalAssets = cost + (totalProfit * progress);
        }
     }
