@@ -271,6 +271,66 @@ const App: React.FC = () => {
   useLocalStorageDebounced('rebalanceEnabledItems', rebalanceEnabledItems, 500, userPrefix);
   useLocalStorageDebounced('historicalData', historicalData, 500, userPrefix);
 
+  // 當基本幣值改變時，自動獲取相關匯率
+  useEffect(() => {
+    if (!isAuthenticated || baseCurrency === Currency.TWD) return;
+    
+    const updateRates = async () => {
+      setExchangeRates(prevRates => {
+        const rateKey = `${Currency.USD}_${baseCurrency}`;
+        const reverseRateKey = `${baseCurrency}_${Currency.USD}`;
+        
+        // 如果已經有匯率，不需要重新獲取
+        if (prevRates[rateKey] || prevRates[reverseRateKey]) {
+          return prevRates;
+        }
+        
+        if (baseCurrency === Currency.USD) {
+          // USD: 如果有 USD/TWD，計算 TWD/USD
+          if (exchangeRate > 0) {
+            const newRates = {...prevRates};
+            newRates[`${Currency.USD}_${Currency.TWD}`] = exchangeRate;
+            newRates[`${Currency.TWD}_${Currency.USD}`] = 1 / exchangeRate;
+            return newRates;
+          }
+        } else if (baseCurrency === Currency.JPY && jpyExchangeRate && exchangeRate > 0) {
+          // JPY: 使用 USD/TWD 和 JPY/TWD 計算 USD/JPY
+          // USD/JPY = (USD/TWD) / (JPY/TWD)
+          const usdToJpy = exchangeRate / jpyExchangeRate;
+          const newRates = {...prevRates};
+          newRates[`${Currency.USD}_${Currency.JPY}`] = usdToJpy;
+          newRates[`${Currency.JPY}_${Currency.USD}`] = 1 / usdToJpy;
+          return newRates;
+        } else {
+          // 其他幣值: 從 API 獲取 USD/基本幣值 匯率
+          fetchExchangeRatePair(Currency.USD, baseCurrency).then(usdToBaseRate => {
+            if (!isNaN(usdToBaseRate) && usdToBaseRate > 0) {
+              setExchangeRates(prev => {
+                // 再次檢查，避免重複設置
+                const checkKey = `${Currency.USD}_${baseCurrency}`;
+                const checkReverseKey = `${baseCurrency}_${Currency.USD}`;
+                if (prev[checkKey] || prev[checkReverseKey]) {
+                  return prev;
+                }
+                const newRates = {...prev};
+                newRates[`${Currency.USD}_${baseCurrency}`] = usdToBaseRate;
+                newRates[`${baseCurrency}_${Currency.USD}`] = 1 / usdToBaseRate;
+                return newRates;
+              });
+            }
+          }).catch(error => {
+            console.warn(`無法獲取 USD/${baseCurrency} 匯率:`, error);
+          });
+        }
+        
+        return prevRates;
+      });
+    };
+    
+    updateRates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseCurrency, isAuthenticated]); // 只在 baseCurrency 改變時觸發
+
   const showAlert = (message: string, title: string = '提示', type: 'info' | 'success' | 'error' = 'info') => {
     setAlertDialog({ isOpen: true, title, message, type });
   };
