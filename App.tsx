@@ -1754,6 +1754,8 @@ const App: React.FC = () => {
                 onBatchAdd={addBatchCashFlows}
                 onDelete={removeCashFlow}
                 onClearAll={handleClearAllCashFlows}
+                baseCurrency={baseCurrency}
+                exchangeRates={exchangeRates}
                 currentExchangeRate={exchangeRate}
                 currentJpyExchangeRate={jpyExchangeRate}
                 language={language}
