@@ -4,7 +4,6 @@ import { Account, Currency } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from '../utils/calculations';
 import { Language, t, translate } from '../utils/i18n';
-import { getCurrencyName, ALL_CURRENCIES } from '../utils/currencyConstants';
 
 interface Props {
   accounts: Account[];
@@ -178,11 +177,9 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
               onChange={(e) => setCurrency(e.target.value as Currency)}
               className="mt-1 block w-full border border-slate-300 rounded-md p-2"
             >
-              {ALL_CURRENCIES.map((curr: Currency) => (
-                <option key={curr} value={curr}>
-                  {getCurrencyName(curr, language === 'en' ? 'en' : 'zh-TW')}
-                </option>
-              ))}
+              <option value={Currency.TWD}>{translations.accounts.currencyTWD}</option>
+              <option value={Currency.USD}>{translations.accounts.currencyUSD}</option>
+              <option value={Currency.JPY}>{translations.accounts.currencyJPY}</option>
             </select>
           </div>
           <div className="flex items-center h-10 pb-2">
@@ -289,11 +286,9 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
                     onChange={(e) => setCurrency(e.target.value as Currency)}
                     className="w-full border border-slate-300 rounded-md p-2"
                   >
-                    {ALL_CURRENCIES.map((curr: Currency) => (
-                      <option key={curr} value={curr}>
-                        {getCurrencyName(curr, language === 'en' ? 'en' : 'zh-TW')}
-                      </option>
-                    ))}
+                    <option value={Currency.TWD}>{translations.accounts.currencyTWD}</option>
+                    <option value={Currency.USD}>{translations.accounts.currencyUSD}</option>
+                    <option value={Currency.JPY}>{translations.accounts.currencyJPY}</option>
                   </select>
                 </div>
                 <div>

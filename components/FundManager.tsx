@@ -2,10 +2,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Account, CashFlow, CashFlowType, Currency } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import { formatCurrency, convertCurrency } from '../utils/calculations';
+import { formatCurrency } from '../utils/calculations';
 import BatchCashFlowModal from './BatchCashFlowModal';
 import { Language, t } from '../utils/i18n';
-import { getCurrencyName } from '../utils/currencyConstants';
 
 interface Props {
   accounts: Account[];
@@ -15,10 +14,8 @@ interface Props {
   onBatchAdd: (cfs: CashFlow[]) => void;
   onDelete: (id: string) => void;
   onClearAll: () => void;
-  baseCurrency?: Currency;
-  exchangeRates?: Record<string, number>;
-  currentExchangeRate?: number; // 保留向後相容
-  currentJpyExchangeRate?: number; // 保留向後相容
+  currentExchangeRate?: number;
+  currentJpyExchangeRate?: number;
   language: Language;
 }
 
@@ -30,10 +27,8 @@ const FundManager: React.FC<Props> = ({
   onBatchAdd, 
   onDelete, 
   onClearAll, 
-  baseCurrency = Currency.TWD,
-  exchangeRates = {},
-  currentExchangeRate = 32, // 保留向後相容
-  currentJpyExchangeRate = 0.21, // 保留向後相容
+  currentExchangeRate = 32,
+  currentJpyExchangeRate = 0.21,
   language
 }) => {
   // Form State
@@ -110,64 +105,40 @@ const FundManager: React.FC<Props> = ({
        numRate = exchangeRate ? parseFloat(exchangeRate) : undefined;
     } else if (isSameCurrency) {
        numRate = 1; // Same currency transfer implies rate 1
-    } else if (account?.currency === baseCurrency && !isTransfer) {
-       numRate = 1; // 基準幣值 Deposit/Withdraw implies rate 1
+    } else if (account?.currency === Currency.TWD && !isTransfer) {
+       numRate = 1; // TWD Deposit/Withdraw implies rate 1
     }
 
-    // Determine amountTWD (實際為基準幣值，保留欄位名以保持向後相容)
+    // Determine amountTWD
     let calculatedTWD: number | undefined = undefined;
     
-    if (!account) {
-      // 如果沒有帳戶，無法計算
-      return;
-    }
-    
-    // 使用基準幣值轉換邏輯
-    if (account.currency === baseCurrency) {
-      // 如果帳戶幣值就是基準幣值
-      if (type === CashFlowType.DEPOSIT) {
-        calculatedTWD = numAmount + numFee;
-      } else if (type === CashFlowType.WITHDRAW) {
-        calculatedTWD = numAmount - numFee;
-      } else {
-        calculatedTWD = numAmount;
-      }
-    } else {
-      // 如果帳戶幣值不是基準幣值，需要轉換
-      let amountInBase: number;
-      
-      if (numRate && numRate > 0) {
-        // 如果有提供匯率，使用匯率轉換
-        // 匯率格式：BASE/ACCOUNT (例如 TWD/USD = 32 表示 1 USD = 32 TWD)
-        if (baseCurrency === Currency.TWD) {
-          // 如果基準幣值是 TWD，匯率是 TWD/ACCOUNT
-          amountInBase = numAmount * numRate;
-        } else {
-          // 如果基準幣值不是 TWD，需要根據匯率計算
-          // 假設 numRate 是 TWD/ACCOUNT，需要轉換為 BASE/ACCOUNT
-          const twdAmount = numAmount * numRate;
-          amountInBase = convertCurrency(twdAmount, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
-        }
-      } else {
-        // 如果沒有提供匯率，使用當前匯率轉換
-        amountInBase = convertCurrency(numAmount, account.currency, baseCurrency, exchangeRates, baseCurrency);
-      }
-      
-      // 處理手續費（手續費通常以基準幣值計）
-      let feeInBase = numFee;
-      if (numFee > 0 && account.currency !== baseCurrency) {
-        // 如果手續費不是基準幣值，需要轉換
-        // 通常手續費已經是基準幣值，但為了安全起見，這裡假設手續費是基準幣值
-        feeInBase = numFee;
-      }
-      
-      if (type === CashFlowType.DEPOSIT) {
-        calculatedTWD = amountInBase + feeInBase;
-      } else if (type === CashFlowType.WITHDRAW) {
-        calculatedTWD = amountInBase - feeInBase;
-      } else {
-        calculatedTWD = amountInBase;
-      }
+    if (account?.currency === Currency.USD && numRate) {
+       // Logic: 
+       // If Deposit: Total Cost = Principal(TWD) + Fee(TWD)
+       // If Withdraw: Total Received = Principal(TWD) - Fee(TWD)
+       if (type === CashFlowType.DEPOSIT) {
+          calculatedTWD = (numAmount * numRate) + numFee;
+       } else if (type === CashFlowType.WITHDRAW) {
+          calculatedTWD = (numAmount * numRate) - numFee;
+       } else {
+          // Transfer from USD -> TWD or USD -> USD
+          calculatedTWD = (numAmount * numRate);
+       }
+    } else if (account?.currency === Currency.JPY && numRate) {
+       // JPY Logic: Similar to USD
+       if (type === CashFlowType.DEPOSIT) {
+          calculatedTWD = (numAmount * numRate) + numFee;
+       } else if (type === CashFlowType.WITHDRAW) {
+          calculatedTWD = (numAmount * numRate) - numFee;
+       } else {
+          // Transfer from JPY -> TWD or JPY -> JPY
+          calculatedTWD = (numAmount * numRate);
+       }
+    } else if (account?.currency === Currency.TWD) {
+        // TWD Logic
+        if (type === CashFlowType.DEPOSIT) calculatedTWD = numAmount + numFee;
+        else if (type === CashFlowType.WITHDRAW) calculatedTWD = numAmount - numFee;
+        else calculatedTWD = numAmount;
     }
     
     const cashFlow: CashFlow = {
@@ -544,9 +515,7 @@ const FundManager: React.FC<Props> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700">
-                        金額 ({selectedAccount ? getCurrencyName(selectedAccount.currency, language === 'en' ? 'en' : 'zh-TW') : getCurrencyName(baseCurrency, language === 'en' ? 'en' : 'zh-TW')})
-                      </label>
+                      <label className="block text-sm font-medium text-slate-700">金額 ({selectedAccount?.currency || 'TWD'})</label>
                       <input type="number" required min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2"/>
                     </div>
                   </div>
@@ -566,48 +535,21 @@ const FundManager: React.FC<Props> = ({
                      {showExchangeRateInput ? (
                        <div>
                          <label className="block text-sm font-medium text-slate-700">
-                            {(() => {
-                              const baseName = getCurrencyName(baseCurrency, language === 'en' ? 'en' : 'zh-TW');
-                              const accountName = selectedAccount ? getCurrencyName(selectedAccount.currency, language === 'en' ? 'en' : 'zh-TW') : '';
-                              
-                              if (isCrossCurrencyTransfer && targetAccount) {
-                                const targetName = getCurrencyName(targetAccount.currency, language === 'en' ? 'en' : 'zh-TW');
-                                return `匯率 (${baseName}/${accountName})`;
-                              } else if (selectedAccount && selectedAccount.currency !== baseCurrency) {
-                                return `匯率 (${baseName}/${accountName})`;
-                              } else {
-                                return '匯率';
-                              }
-                            })()}
+                            {selectedAccount?.currency === Currency.USD ? '匯率 (TWD/USD)' : 
+                             selectedAccount?.currency === Currency.JPY ? '匯率 (TWD/JPY)' : 
+                             '匯率'}
                             {isCrossCurrencyTransfer && <span className="text-xs text-blue-600 ml-1">不同幣別轉帳</span>}
-                            {!isTransfer && selectedAccount && selectedAccount.currency !== baseCurrency && (
-                              <span className="text-xs text-green-600 ml-1">
-                                {getCurrencyName(selectedAccount.currency, language === 'en' ? 'en' : 'zh-TW')}換算
-                              </span>
-                            )}
+                            {!isTransfer && selectedAccount?.currency === Currency.USD && <span className="text-xs text-green-600 ml-1">美金換算</span>}
+                            {!isTransfer && selectedAccount?.currency === Currency.JPY && <span className="text-xs text-orange-600 ml-1">日幣換算</span>}
                          </label>
                          <input 
                            type="number" 
                            step="0.0001" 
-                           placeholder={(() => {
-                             if (!selectedAccount) return '';
-                             if (selectedAccount.currency === baseCurrency) return '1';
-                             
-                             // 嘗試從 exchangeRates 獲取當前匯率
-                             const rateKey = `${baseCurrency}_${selectedAccount.currency}`;
-                             const reverseRateKey = `${selectedAccount.currency}_${baseCurrency}`;
-                             const rate = exchangeRates[rateKey] || (exchangeRates[reverseRateKey] ? 1 / exchangeRates[reverseRateKey] : undefined);
-                             
-                             // 向後相容：如果沒有匯率，使用舊的 currentExchangeRate
-                             if (rate) {
-                               return rate.toFixed(4);
-                             } else if (selectedAccount.currency === Currency.USD && currentExchangeRate) {
-                               return baseCurrency === Currency.TWD ? currentExchangeRate.toString() : '';
-                             } else if (selectedAccount.currency === Currency.JPY && currentJpyExchangeRate) {
-                               return baseCurrency === Currency.TWD ? currentJpyExchangeRate.toString() : '';
-                             }
-                             return '';
-                           })()}
+                           placeholder={
+                             selectedAccount?.currency === Currency.USD ? currentExchangeRate.toString() :
+                             selectedAccount?.currency === Currency.JPY ? currentJpyExchangeRate.toString() :
+                             currentExchangeRate.toString()
+                           } 
                            value={exchangeRate} 
                            onChange={e => setExchangeRate(e.target.value)} 
                            className="mt-1 w-full border border-slate-300 rounded p-2"

@@ -1,12 +1,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChartDataPoint, PortfolioSummary, Holding, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlow, Account, CashFlowType, Currency, Market } from '../types';
-import { formatCurrency, convertCurrency } from '../utils/calculations';
+import { formatCurrency } from '../utils/calculations';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import { analyzePortfolio } from '../services/geminiService';
 import HoldingsTable from './HoldingsTable';
 import { Language, t } from '../utils/i18n';
-import { getCurrencyName } from '../utils/currencyConstants';
 
 interface Props {
   summary: PortfolioSummary;
@@ -60,11 +59,7 @@ const Dashboard: React.FC<Props> = ({
     setLoadingAi(false);
   };
 
-  // 獲取基準幣值（預設為 TWD 以保持向後相容）
-  const baseCurrency = summary.baseCurrency || Currency.TWD;
-  const exchangeRates = summary.exchangeRates || {};
-
-  // 計算市場分布比例（使用基準幣值）
+  // 計算市場分布比例
   const marketDistribution = useMemo(() => {
     const marketValues: Record<Market, number> = {
       [Market.TW]: 0,
@@ -74,11 +69,13 @@ const Dashboard: React.FC<Props> = ({
     };
 
     holdings.forEach(h => {
-      // 根據帳戶幣值轉換為基準幣值
-      const account = accounts.find((a: Account) => a.id === h.accountId);
-      if (!account) return;
-      const valBase = convertCurrency(h.currentValue, account.currency, baseCurrency, exchangeRates, baseCurrency);
-      marketValues[h.market] = (marketValues[h.market] || 0) + valBase;
+      let valTwd = h.currentValue;
+      if (h.market === Market.US || h.market === Market.UK) {
+        valTwd = h.currentValue * summary.exchangeRateUsdToTwd;
+      } else if (h.market === Market.JP) {
+        valTwd = h.currentValue * (summary.jpyExchangeRate || summary.exchangeRateUsdToTwd);
+      }
+      marketValues[h.market] = (marketValues[h.market] || 0) + valTwd;
     });
 
     const totalMarketValue = Object.values(marketValues).reduce((sum, val) => sum + val, 0);
@@ -88,40 +85,36 @@ const Dashboard: React.FC<Props> = ({
       value,
       ratio: totalMarketValue > 0 ? (value / totalMarketValue) * 100 : 0,
     })).filter(item => item.value > 0);
-  }, [holdings, accounts, baseCurrency, exchangeRates]);
+  }, [holdings, summary.exchangeRateUsdToTwd, summary.jpyExchangeRate]);
 
   const costDetails = useMemo(() => {
     return cashFlows
       .filter(cf => cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.WITHDRAW)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map(cf => {
-          const account = accounts.find((a: Account) => a.id === cf.accountId);
+          const account = accounts.find(a => a.id === cf.accountId);
           if (!account) return null;
+          const isUSD = account.currency === Currency.USD;
           
           let rate = 1;
-          let rateSource = getCurrencyName(baseCurrency, language === 'en' ? 'en' : 'zh-TW');
-          let amountBase = 0;
+          let rateSource = translations.dashboard.taiwanDollar;
+          let amountTWD = 0;
 
           if (cf.amountTWD && cf.amountTWD > 0) {
-             // 如果有 amountTWD，需要轉換為基準幣值
-             if (baseCurrency === Currency.TWD) {
-               amountBase = cf.amountTWD;
-             } else {
-               amountBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
-             }
-             rate = cf.amount > 0 ? amountBase / cf.amount : 0; 
+             amountTWD = cf.amountTWD;
+             rate = cf.amount > 0 ? amountTWD / cf.amount : 0; 
              rateSource = translations.dashboard.fixedTWD;
           } else {
-             // 使用帳戶幣值轉換為基準幣值
-             amountBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
-             if (account.currency !== baseCurrency) {
-               rate = amountBase / cf.amount;
+             if (isUSD) {
                if (cf.exchangeRate && cf.exchangeRate > 0) {
-                 rateSource = `${translations.dashboard.historicalRate} (${cf.exchangeRate})`;
+                   rate = cf.exchangeRate;
+                   rateSource = `${translations.dashboard.historicalRate} (${cf.exchangeRate})`;
                } else {
-                 rateSource = `${translations.dashboard.currentRate} (${rate.toFixed(4)})`;
+                   rate = summary.exchangeRateUsdToTwd;
+                   rateSource = `${translations.dashboard.currentRate} (${rate})`;
                }
              }
+             amountTWD = cf.amount * rate;
           }
           
           return {
@@ -130,10 +123,10 @@ const Dashboard: React.FC<Props> = ({
               currency: account.currency,
               rate,
               rateSource,
-              amountTWD: amountBase // 保留欄位名以保持向後相容，但實際為基準幣值
+              amountTWD
           };
       }).filter((item): item is NonNullable<typeof item> => item !== null);
-  }, [cashFlows, accounts, baseCurrency, exchangeRates, language]);
+  }, [cashFlows, accounts, summary.exchangeRateUsdToTwd]);
 
   const verifyTotal = costDetails.reduce((acc, item) => {
       if (item.type === CashFlowType.DEPOSIT) return acc + item.amountTWD;
@@ -170,23 +163,23 @@ const Dashboard: React.FC<Props> = ({
             </button>
           </h4>
           <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
-            {formatCurrency(summary.netInvestedTWD, baseCurrency)}
+            {formatCurrency(summary.netInvestedTWD, 'TWD')}
           </p>
         </div>
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 border-green-500">
           <h4 className="text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
           <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
-            {formatCurrency(summary.totalValueTWD + summary.cashBalanceTWD, baseCurrency)}
+            {formatCurrency(summary.totalValueTWD + summary.cashBalanceTWD, 'TWD')}
           </p>
           <div className="flex justify-between items-end mt-1">
-             <p className="text-[10px] sm:text-xs text-slate-400">{translations.dashboard.includeCash}: {formatCurrency(summary.cashBalanceTWD, baseCurrency)}</p>
+             <p className="text-[10px] sm:text-xs text-slate-400">{translations.dashboard.includeCash}: {formatCurrency(summary.cashBalanceTWD, 'TWD')}</p>
           </div>
         </div>
         <div className={`bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-success' : 'border-danger'}`}>
           <h4 className="text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
           <div className="flex items-baseline gap-2 mt-2">
             <p className={`text-xl sm:text-2xl font-bold ${summary.totalPLTWD >= 0 ? 'text-success' : 'text-danger'}`}>
-               {summary.totalPLTWD >= 0 ? '+' : ''}{formatCurrency(summary.totalPLTWD, baseCurrency)}
+               {summary.totalPLTWD >= 0 ? '+' : ''}{formatCurrency(summary.totalPLTWD, 'TWD')}
             </p>
           </div>
           <p className={`text-[10px] sm:text-xs font-bold mt-1 ${summary.totalPLTWD >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -198,7 +191,7 @@ const Dashboard: React.FC<Props> = ({
           <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
             {summary.annualizedReturn.toFixed(1)}%
           </p>
-          <p className="text-[10px] sm:text-xs text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(summary.netInvestedTWD * 1.08, baseCurrency)}</p>
+          <p className="text-[10px] sm:text-xs text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(summary.netInvestedTWD * 1.08, 'TWD')}</p>
         </div>
       </div>
 
@@ -222,21 +215,21 @@ const Dashboard: React.FC<Props> = ({
           <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4 animate-fade-in border-t border-slate-100">
             <div>
               <p className="text-xs text-slate-500 mb-1">{translations.dashboard.totalCost}</p>
-              <p className="text-lg font-bold text-slate-800">{formatCurrency(summary.netInvestedTWD, baseCurrency)}</p>
+              <p className="text-lg font-bold text-slate-800">{formatCurrency(summary.netInvestedTWD, 'TWD')}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500 mb-1">{translations.dashboard.totalPLAmount}</p>
               <p className={`text-lg font-bold ${summary.totalPLTWD >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(summary.totalPLTWD, baseCurrency)}
+                {formatCurrency(summary.totalPLTWD, 'TWD')}
               </p>
             </div>
             <div>
               <p className="text-xs text-slate-500 mb-1">{translations.dashboard.accumulatedCashDividends}</p>
-              <p className="text-lg font-bold text-yellow-600">{formatCurrency(summary.accumulatedCashDividendsTWD, baseCurrency)}</p>
+              <p className="text-lg font-bold text-yellow-600">{formatCurrency(summary.accumulatedCashDividendsTWD, 'TWD')}</p>
             </div>
              <div>
               <p className="text-xs text-slate-500 mb-1">{translations.dashboard.accumulatedStockDividends}</p>
-              <p className="text-lg font-bold text-yellow-600">{formatCurrency(summary.accumulatedStockDividendsTWD, baseCurrency)}</p>
+              <p className="text-lg font-bold text-yellow-600">{formatCurrency(summary.accumulatedStockDividendsTWD, 'TWD')}</p>
             </div>
              <div>
               <p className="text-xs text-slate-500 mb-1">{translations.dashboard.annualizedReturnRate}</p>
@@ -249,36 +242,8 @@ const Dashboard: React.FC<Props> = ({
               <p className="text-lg font-bold text-slate-700">{summary.avgExchangeRate > 0 ? summary.avgExchangeRate.toFixed(2) : '-'}</p>
             </div>
              <div>
-              <p className="text-xs text-slate-500 mb-1">{(() => {
-                // 根據 baseCurrency 動態顯示匯率標籤
-                if (baseCurrency === Currency.TWD) {
-                  return language === 'en' ? 'USD/TWD' : 'USD/台幣';
-                } else if (baseCurrency === Currency.USD) {
-                  return language === 'en' ? 'TWD/USD' : '台幣/USD';
-                } else {
-                  const currencyName = getCurrencyName(baseCurrency, language === 'en' ? 'en' : 'zh-TW');
-                  return language === 'en' ? `USD/${baseCurrency}` : `USD/${currencyName}`;
-                }
-              })()}</p>
-              <p className="text-lg font-bold text-slate-700">{(() => {
-                // 根據 baseCurrency 獲取主要匯率
-                let rate: number | undefined;
-                if (baseCurrency === Currency.TWD) {
-                  // TWD: 顯示 USD/TWD（保持現有邏輯）
-                  rate = summary.exchangeRateUsdToTwd;
-                } else if (baseCurrency === Currency.USD) {
-                  // USD: 顯示 TWD/USD
-                  rate = exchangeRates[`${Currency.TWD}_${Currency.USD}`] || 
-                         (exchangeRates[`${Currency.USD}_${Currency.TWD}`] ? 
-                          1 / exchangeRates[`${Currency.USD}_${Currency.TWD}`] : undefined);
-                } else {
-                  // 其他幣值: 顯示 USD/基本幣值
-                  rate = exchangeRates[`${Currency.USD}_${baseCurrency}`] || 
-                         (exchangeRates[`${baseCurrency}_${Currency.USD}`] ? 
-                          1 / exchangeRates[`${baseCurrency}_${Currency.USD}`] : undefined);
-                }
-                return rate ? rate.toFixed(4) : '-';
-              })()}</p>
+              <p className="text-xs text-slate-500 mb-1">{translations.dashboard.currentExchangeRate}</p>
+              <p className="text-lg font-bold text-slate-700">{summary.exchangeRateUsdToTwd.toFixed(2)}</p>
             </div>
              <div>
               <p className="text-xs text-slate-500 mb-1">{translations.dashboard.totalReturnRate}</p>
@@ -332,10 +297,10 @@ const Dashboard: React.FC<Props> = ({
                          else if (name === translations.dashboard.chartLabels.totalAssets) suffix = translations.dashboard.chartLabels.estimated;
 
                          if (name.includes(translations.dashboard.chartLabels.accumulatedPL)) {
-                           return [formatCurrency(value, baseCurrency), translations.dashboard.chartLabels.accumulatedPL];
+                           return [formatCurrency(value, 'TWD'), translations.dashboard.chartLabels.accumulatedPL];
                          }
 
-                         return [formatCurrency(value, baseCurrency), name + suffix];
+                         return [formatCurrency(value, 'TWD'), name + suffix];
                       }}
                     />
                     <Legend 
@@ -432,7 +397,7 @@ const Dashboard: React.FC<Props> = ({
                     </div>
                   </div>
                   <div className="w-24 text-right text-sm font-mono text-slate-600">
-                    {formatCurrency(item.value, baseCurrency)}
+                    {formatCurrency(item.value, 'TWD')}
                   </div>
                 </div>
               );
@@ -467,7 +432,7 @@ const Dashboard: React.FC<Props> = ({
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: number) => formatCurrency(value, baseCurrency)} />
+                      <Tooltip formatter={(value: number) => formatCurrency(value, 'TWD')} />
                       <Legend 
                          layout="vertical" 
                          verticalAlign="middle" 
@@ -533,12 +498,11 @@ const Dashboard: React.FC<Props> = ({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {annualPerformance.map(item => {
-                    const displayCurrency = showAnnualInUSD ? Currency.USD : baseCurrency;
-                    // 年度績效數據已經是基準幣值，如果切換到 USD 需要轉換
-                    const startAssets = showAnnualInUSD ? convertCurrency(item.startAssets, baseCurrency, Currency.USD, exchangeRates, baseCurrency) : item.startAssets;
-                    const netInflow = showAnnualInUSD ? convertCurrency(item.netInflow, baseCurrency, Currency.USD, exchangeRates, baseCurrency) : item.netInflow;
-                    const endAssets = showAnnualInUSD ? convertCurrency(item.endAssets, baseCurrency, Currency.USD, exchangeRates, baseCurrency) : item.endAssets;
-                    const profit = showAnnualInUSD ? convertCurrency(item.profit, baseCurrency, Currency.USD, exchangeRates, baseCurrency) : item.profit;
+                    const displayCurrency = showAnnualInUSD ? 'USD' : 'TWD';
+                    const startAssets = showAnnualInUSD ? item.startAssets / summary.exchangeRateUsdToTwd : item.startAssets;
+                    const netInflow = showAnnualInUSD ? item.netInflow / summary.exchangeRateUsdToTwd : item.netInflow;
+                    const endAssets = showAnnualInUSD ? item.endAssets / summary.exchangeRateUsdToTwd : item.endAssets;
+                    const profit = showAnnualInUSD ? item.profit / summary.exchangeRateUsdToTwd : item.profit;
                     
                     return (
                       <tr key={item.year} className="hover:bg-slate-50">
@@ -614,18 +578,17 @@ const Dashboard: React.FC<Props> = ({
                   let profit: number;
                   
                   if (showAccountInUSD) {
-                    displayCurrency = Currency.USD;
-                    // 帳戶績效數據已經是基準幣值，如果切換到 USD 需要轉換
-                    totalAssets = acc.totalAssetsNative || convertCurrency(acc.totalAssetsTWD, baseCurrency, Currency.USD, exchangeRates, baseCurrency);
-                    marketValue = acc.marketValueNative || convertCurrency(acc.marketValueTWD, baseCurrency, Currency.USD, exchangeRates, baseCurrency);
-                    cashBalance = acc.cashBalanceNative || convertCurrency(acc.cashBalanceTWD, baseCurrency, Currency.USD, exchangeRates, baseCurrency);
-                    profit = acc.profitNative || convertCurrency(acc.profitTWD, baseCurrency, Currency.USD, exchangeRates, baseCurrency);
+                    displayCurrency = 'USD';
+                    totalAssets = acc.totalAssetsNative || acc.totalAssetsTWD / summary.exchangeRateUsdToTwd;
+                    marketValue = acc.marketValueNative || acc.marketValueTWD / summary.exchangeRateUsdToTwd;
+                    cashBalance = acc.cashBalanceNative || acc.cashBalanceTWD / summary.exchangeRateUsdToTwd;
+                    profit = acc.profitNative || acc.profitTWD / summary.exchangeRateUsdToTwd;
                   } else {
-                    displayCurrency = baseCurrency;
-                    totalAssets = acc.totalAssetsTWD; // 實際為基準幣值
-                    marketValue = acc.marketValueTWD; // 實際為基準幣值
-                    cashBalance = acc.cashBalanceTWD; // 實際為基準幣值
-                    profit = acc.profitTWD; // 實際為基準幣值
+                    displayCurrency = 'TWD';
+                    totalAssets = acc.totalAssetsTWD;
+                    marketValue = acc.marketValueTWD;
+                    cashBalance = acc.cashBalanceTWD;
+                    profit = acc.profitTWD;
                   }
                   
                   return (
@@ -754,7 +717,7 @@ const Dashboard: React.FC<Props> = ({
                         </div>
                       </td>
                       <td className={`px-4 py-2 text-right font-bold font-mono ${item.type === CashFlowType.DEPOSIT ? 'text-slate-800' : 'text-red-500'}`}>
-                        {item.type === CashFlowType.WITHDRAW ? '-' : ''}{formatCurrency(item.amountTWD, baseCurrency)}
+                        {item.type === CashFlowType.WITHDRAW ? '-' : ''}{formatCurrency(item.amountTWD, 'TWD')}
                       </td>
                     </tr>
                   ))}
@@ -762,7 +725,7 @@ const Dashboard: React.FC<Props> = ({
                 <tfoot className="bg-slate-50 sticky bottom-0 border-t-2 border-slate-300 font-bold text-slate-800">
                   <tr>
                     <td colSpan={5} className="px-4 py-3 text-right">{translations.dashboard.totalNetInvested}</td>
-                    <td className="px-4 py-3 text-right text-lg">{formatCurrency(verifyTotal, baseCurrency)}</td>
+                    <td className="px-4 py-3 text-right text-lg">{formatCurrency(verifyTotal, 'TWD')}</td>
                   </tr>
                 </tfoot>
               </table>
