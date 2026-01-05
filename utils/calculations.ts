@@ -522,8 +522,49 @@ export const convertCurrency = (
     if (reverseRate && reverseRate > 0) {
       return amount / reverseRate;
     }
+    
+    // 如果都沒有，嘗試通過 TWD 中轉（如果基準幣值不是 TWD 且來源幣值不是 TWD）
+    if (baseCurrency !== Currency.TWD && fromCurrency !== Currency.TWD) {
+      // 嘗試：來源幣值 -> TWD -> 基準幣值
+      const fromToTwdKey = `${fromCurrency}_${Currency.TWD}`;
+      const twdToFromKey = `${Currency.TWD}_${fromCurrency}`;
+      const fromToTwd = exchangeRates[fromToTwdKey] || 
+                        (exchangeRates[twdToFromKey] ? 1 / exchangeRates[twdToFromKey] : undefined);
+      
+      const twdToBaseKey = `${Currency.TWD}_${baseCurrency}`;
+      const baseToTwdKey = `${baseCurrency}_${Currency.TWD}`;
+      const twdToBase = exchangeRates[twdToBaseKey] || 
+                        (exchangeRates[baseToTwdKey] ? 1 / exchangeRates[baseToTwdKey] : undefined);
+      
+      if (fromToTwd && twdToBase) {
+        return amount * fromToTwd * twdToBase;
+      }
+    }
+    
+    // 特殊情況：如果來源幣值是 TWD，基準幣值不是 TWD，但沒有直接匯率
+    // 這種情況應該已經被上面的邏輯處理了，但為了安全起見，這裡再檢查一次
+    if (fromCurrency === Currency.TWD && baseCurrency !== Currency.TWD) {
+      // 嘗試通過 USD 中轉：TWD -> USD -> 基準幣值
+      const twdToUsdKey = `${Currency.TWD}_${Currency.USD}`;
+      const usdToTwdKey = `${Currency.USD}_${Currency.TWD}`;
+      const twdToUsd = exchangeRates[twdToUsdKey] || 
+                       (exchangeRates[usdToTwdKey] ? 1 / exchangeRates[usdToTwdKey] : undefined);
+      
+      const usdToBaseKey = `${Currency.USD}_${baseCurrency}`;
+      const baseToUsdKey = `${baseCurrency}_${Currency.USD}`;
+      const usdToBase = exchangeRates[usdToBaseKey] || 
+                        (exchangeRates[baseToUsdKey] ? 1 / exchangeRates[baseToUsdKey] : undefined);
+      
+      if (twdToUsd && usdToBase) {
+        return amount * twdToUsd * usdToBase;
+      }
+      
+      // 如果還是沒有，記錄警告
+      console.warn(`無法找到匯率 TWD -> ${baseCurrency}，這可能表示匯率設置有問題。exchangeRates keys:`, Object.keys(exchangeRates));
+    }
+    
     // 如果都沒有，返回原值（應該記錄錯誤）
-    console.warn(`無法找到匯率 ${fromCurrency} -> ${toCurrency}，使用原值`);
+    console.warn(`無法找到匯率 ${fromCurrency} -> ${toCurrency}，使用原值。exchangeRates keys:`, Object.keys(exchangeRates));
     return amount;
   }
 
