@@ -249,8 +249,36 @@ const Dashboard: React.FC<Props> = ({
               <p className="text-lg font-bold text-slate-700">{summary.avgExchangeRate > 0 ? summary.avgExchangeRate.toFixed(2) : '-'}</p>
             </div>
              <div>
-              <p className="text-xs text-slate-500 mb-1">{translations.dashboard.currentExchangeRate}</p>
-              <p className="text-lg font-bold text-slate-700">{summary.exchangeRateUsdToTwd.toFixed(2)}</p>
+              <p className="text-xs text-slate-500 mb-1">{(() => {
+                // 根據 baseCurrency 動態顯示匯率標籤
+                if (baseCurrency === Currency.TWD) {
+                  return language === 'en' ? 'USD/TWD' : 'USD/台幣';
+                } else if (baseCurrency === Currency.USD) {
+                  return language === 'en' ? 'TWD/USD' : '台幣/USD';
+                } else {
+                  const currencyName = getCurrencyName(baseCurrency, language === 'en' ? 'en' : 'zh-TW');
+                  return language === 'en' ? `USD/${baseCurrency}` : `USD/${currencyName}`;
+                }
+              })()}</p>
+              <p className="text-lg font-bold text-slate-700">{(() => {
+                // 根據 baseCurrency 獲取主要匯率
+                let rate: number | undefined;
+                if (baseCurrency === Currency.TWD) {
+                  // TWD: 顯示 USD/TWD（保持現有邏輯）
+                  rate = summary.exchangeRateUsdToTwd;
+                } else if (baseCurrency === Currency.USD) {
+                  // USD: 顯示 TWD/USD
+                  rate = exchangeRates[`${Currency.TWD}_${Currency.USD}`] || 
+                         (exchangeRates[`${Currency.USD}_${Currency.TWD}`] ? 
+                          1 / exchangeRates[`${Currency.USD}_${Currency.TWD}`] : undefined);
+                } else {
+                  // 其他幣值: 顯示 USD/基本幣值
+                  rate = exchangeRates[`${Currency.USD}_${baseCurrency}`] || 
+                         (exchangeRates[`${baseCurrency}_${Currency.USD}`] ? 
+                          1 / exchangeRates[`${baseCurrency}_${Currency.USD}`] : undefined);
+                }
+                return rate ? rate.toFixed(4) : '-';
+              })()}</p>
             </div>
              <div>
               <p className="text-xs text-slate-500 mb-1">{translations.dashboard.totalReturnRate}</p>
