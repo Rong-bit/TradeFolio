@@ -21,6 +21,7 @@ import { fetchCurrentPrices } from './services/yahooFinanceService';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
 import { v4 as uuidv4 } from 'uuid';
 import { Language, getLanguage, setLanguage as saveLanguage, t, translate } from './utils/i18n';
+import { getCurrencyName, ALL_CURRENCIES } from './utils/currencyConstants';
 
 type View = 'dashboard' | 'history' | 'funds' | 'accounts' | 'rebalance' | 'simulator' | 'help';
 
@@ -686,9 +687,59 @@ const App: React.FC = () => {
 
       // 自動更新匯率邏輯
       let msg = `成功更新 ${Object.keys(newPrices).length} 筆股價`;
-      if (result.exchangeRate && result.exchangeRate > 0) {
-        setExchangeRate(result.exchangeRate);
-        msg += `，並同步更新匯率為 ${result.exchangeRate}`;
+      
+      // 更新匯率映射表
+      const updatedExchangeRates: Record<string, number> = { ...exchangeRates };
+      let hasNewRates = false;
+      
+      // 如果 baseCurrency 是 TWD，更新 USD/TWD 和 JPY/TWD 匯率（向後相容）
+      if (baseCurrency === Currency.TWD) {
+        if (result.exchangeRate && result.exchangeRate > 0) {
+          setExchangeRate(result.exchangeRate);
+          updatedExchangeRates[`${Currency.USD}_${Currency.TWD}`] = result.exchangeRate;
+          hasNewRates = true;
+          msg += `，並同步更新匯率為 ${result.exchangeRate}`;
+        }
+        if (result.jpyExchangeRate && result.jpyExchangeRate > 0) {
+          setJpyExchangeRate(result.jpyExchangeRate);
+          updatedExchangeRates[`${Currency.JPY}_${Currency.TWD}`] = result.jpyExchangeRate;
+          hasNewRates = true;
+        }
+      } else {
+        // 如果 baseCurrency 不是 TWD，需要獲取 baseCurrency 對其他幣值的匯率
+        // 收集所有帳戶使用的幣值
+        const accountCurrencies = new Set<Currency>();
+        accounts.forEach((acc: Account) => {
+          if (acc.currency !== baseCurrency) {
+            accountCurrencies.add(acc.currency);
+          }
+        });
+        
+        // 目前 fetchCurrentPrices 只返回 USD/TWD 和 JPY/TWD 匯率
+        // 如果 baseCurrency 不是 TWD，我們需要：
+        // 1. 如果 baseCurrency 是 USD，需要獲取其他幣值對 USD 的匯率
+        // 2. 如果 baseCurrency 是其他幣值，需要獲取該幣值對其他幣值的匯率
+        // 暫時先處理常見情況：如果 baseCurrency 是 USD，使用 USD/TWD 的倒數作為 TWD/USD
+        if (baseCurrency === Currency.USD && result.exchangeRate && result.exchangeRate > 0) {
+          // USD/TWD 的倒數是 TWD/USD，但我們需要的是其他幣值對 USD 的匯率
+          // 暫時先保存 USD/TWD，後續可以通過轉換計算
+          updatedExchangeRates[`${Currency.USD}_${Currency.TWD}`] = result.exchangeRate;
+          // TWD/USD = 1 / (USD/TWD)
+          updatedExchangeRates[`${Currency.TWD}_${Currency.USD}`] = 1 / result.exchangeRate;
+          hasNewRates = true;
+        }
+        
+        // 如果有 JPY 帳戶，保存 JPY/TWD 匯率（如果有的話）
+        if (result.jpyExchangeRate && result.jpyExchangeRate > 0) {
+          updatedExchangeRates[`${Currency.JPY}_${Currency.TWD}`] = result.jpyExchangeRate;
+          updatedExchangeRates[`${Currency.TWD}_${Currency.JPY}`] = 1 / result.jpyExchangeRate;
+          hasNewRates = true;
+        }
+      }
+      
+      // 更新匯率映射表
+      if (hasNewRates) {
+        setExchangeRates(updatedExchangeRates);
       }
 
       // 只有在非靜默模式下才顯示提示
@@ -1206,16 +1257,38 @@ const App: React.FC = () => {
                  </button>
                )}
 
-               {/* Exchange Rate Input */}
-               <div className="hidden sm:flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
-                  <span className="text-xs text-slate-400 mr-2">USD</span>
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    value={exchangeRate}
-                    onChange={(e) => setExchangeRate(parseFloat(e.target.value))}
-                    className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
-                  />
+               {/* Base Currency Selector & Exchange Rate Input */}
+               <div className="hidden sm:flex items-center gap-2">
+                  {/* Base Currency Selector */}
+                  <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
+                    <span className="text-xs text-slate-400 mr-1">{language === 'en' ? 'Base' : '基準'}</span>
+                    <select
+                      value={baseCurrency}
+                      onChange={(e) => setBaseCurrency(e.target.value as Currency)}
+                      className="bg-transparent text-xs text-white font-medium focus:outline-none cursor-pointer"
+                      title={language === 'en' ? 'Base Currency' : '基準幣值'}
+                    >
+                      {ALL_CURRENCIES.map((curr: Currency) => (
+                        <option key={curr} value={curr} className="bg-slate-800">
+                          {getCurrencyName(curr, language === 'en' ? 'en' : 'zh-TW')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* Exchange Rate Input (only show if baseCurrency is TWD for backward compatibility) */}
+                  {baseCurrency === Currency.TWD && (
+                    <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
+                      <span className="text-xs text-slate-400 mr-2">USD</span>
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        value={exchangeRate}
+                        onChange={(e) => setExchangeRate(parseFloat(e.target.value))}
+                        className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
+                      />
+                    </div>
+                  )}
                </div>
                
                {/* User Profile */}
@@ -1698,18 +1771,37 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            {/* 匯率顯示 */}
+            {/* 基準幣值與匯率顯示 */}
             <div className="p-4 bg-slate-900/50 border-b border-slate-800 space-y-2">
-              <div className="flex justify-between items-center text-xs font-bold">
-                <span className="text-slate-500">USD/TWD {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  value={exchangeRate} 
-                  onChange={e => setExchangeRate(parseFloat(e.target.value))}
-                  className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
-                />
+              {/* Base Currency Selector */}
+              <div className="flex justify-between items-center text-xs font-bold mb-2">
+                <span className="text-slate-500">{language === 'zh-TW' ? '基準幣值' : 'Base Currency'}</span>
+                <select
+                  value={baseCurrency}
+                  onChange={(e) => setBaseCurrency(e.target.value as Currency)}
+                  className="bg-slate-800 text-white text-xs font-medium rounded border border-slate-700 px-2 py-1 cursor-pointer"
+                >
+                  {ALL_CURRENCIES.map((curr: Currency) => (
+                    <option key={curr} value={curr} className="bg-slate-800">
+                      {getCurrencyName(curr, language === 'en' ? 'en' : 'zh-TW')}
+                    </option>
+                  ))}
+                </select>
               </div>
+              
+              {/* Exchange Rate Input (only show if baseCurrency is TWD for backward compatibility) */}
+              {baseCurrency === Currency.TWD && (
+                <div className="flex justify-between items-center text-xs font-bold">
+                  <span className="text-slate-500">USD/TWD {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    value={exchangeRate} 
+                    onChange={e => setExchangeRate(parseFloat(e.target.value))}
+                    className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
+                  />
+                </div>
+              )}
             </div>
 
             {/* 導航選單 */}
