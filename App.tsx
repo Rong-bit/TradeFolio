@@ -5,7 +5,7 @@ import { useLocalStorageDebounced, useLocalStorageDebouncedSimple } from './hook
 import { useFilters } from './hooks/useFilters';
 import { useDeleteState } from './hooks/useDeleteState';
 import { useUIState } from './hooks/useUIState';
-import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR, convertCurrency } from './utils/calculations';
+import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import HoldingsTable from './components/HoldingsTable';
 import Dashboard from './components/Dashboard';
@@ -17,11 +17,10 @@ import BatchImportModal from './components/BatchImportModal';
 import HistoricalDataModal from './components/HistoricalDataModal';
 import BatchUpdateMarketModal from './components/BatchUpdateMarketModal';
 import AssetAllocationSimulator from './components/AssetAllocationSimulator';
-import { fetchCurrentPrices, fetchExchangeRatePair } from './services/yahooFinanceService';
+import { fetchCurrentPrices } from './services/yahooFinanceService';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
 import { v4 as uuidv4 } from 'uuid';
 import { Language, getLanguage, setLanguage as saveLanguage, t, translate } from './utils/i18n';
-import { getCurrencyName, ALL_CURRENCIES } from './utils/currencyConstants';
 
 type View = 'dashboard' | 'history' | 'funds' | 'accounts' | 'rebalance' | 'simulator' | 'help';
 
@@ -60,10 +59,6 @@ const App: React.FC = () => {
   const [priceDetails, setPriceDetails] = useState<Record<string, { change: number, changePercent: number }>>({});
   const [exchangeRate, setExchangeRate] = useState<number>(31.5);
   const [jpyExchangeRate, setJpyExchangeRate] = useState<number | undefined>(undefined);
-  // 新增：基準幣值（預設為 TWD 以保持向後相容）
-  const [baseCurrency, setBaseCurrency] = useState<Currency>(Currency.TWD);
-  // 新增：匯率映射表（key 為 "BASE_TARGET"，例如 "JPY_USD"）
-  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
   const [rebalanceTargets, setRebalanceTargets] = useState<Record<string, number>>({});
   const [rebalanceEnabledItems, setRebalanceEnabledItems] = useState<string[]>([]);
   const [historicalData, setHistoricalData] = useState<HistoricalData>({}); 
@@ -240,14 +235,6 @@ const App: React.FC = () => {
     const jpyRate = localStorage.getItem(getKey('jpyExchangeRate'));
     setJpyExchangeRate(jpyRate ? parseFloat(jpyRate) : undefined);
     
-    // 載入基準幣值（預設為 TWD）
-    const savedBaseCurrency = localStorage.getItem(getKey('baseCurrency'));
-    setBaseCurrency(savedBaseCurrency ? (savedBaseCurrency as Currency) : Currency.TWD);
-    
-    // 載入匯率映射表
-    const savedExchangeRates = load('exchangeRates', {});
-    setExchangeRates(savedExchangeRates);
-    
     setRebalanceTargets(load('rebalanceTargets', {}));
     setRebalanceEnabledItems(load('rebalanceEnabledItems', []));
     setHistoricalData(load('historicalData', {}));
@@ -265,242 +252,9 @@ const App: React.FC = () => {
   useLocalStorageDebounced('priceDetails', priceDetails, 500, userPrefix);
   useLocalStorageDebouncedSimple('exchangeRate', exchangeRate, 500, userPrefix);
   useLocalStorageDebouncedSimple('jpyExchangeRate', jpyExchangeRate, 500, userPrefix);
-  useLocalStorageDebouncedSimple('baseCurrency', baseCurrency, 500, userPrefix);
-  useLocalStorageDebounced('exchangeRates', exchangeRates, 500, userPrefix);
   useLocalStorageDebounced('rebalanceTargets', rebalanceTargets, 500, userPrefix);
   useLocalStorageDebounced('rebalanceEnabledItems', rebalanceEnabledItems, 500, userPrefix);
   useLocalStorageDebounced('historicalData', historicalData, 500, userPrefix);
-
-  // 當基本幣值改變時，自動獲取相關匯率
-  useEffect(() => {
-    if (!isAuthenticated || baseCurrency === Currency.TWD) return;
-    
-    const updateRates = async () => {
-      // 收集所有帳戶使用的幣值（用於確保有足夠的匯率）
-      const accountCurrencies = new Set<Currency>();
-      accounts.forEach((acc: Account) => {
-        if (acc.currency !== baseCurrency) {
-          accountCurrencies.add(acc.currency);
-        }
-      });
-      
-      setExchangeRates(prevRates => {
-        const rateKey = `${Currency.USD}_${baseCurrency}`;
-        const reverseRateKey = `${baseCurrency}_${Currency.USD}`;
-        
-        // 如果已經有匯率，不需要重新獲取
-        if (prevRates[rateKey] || prevRates[reverseRateKey]) {
-          // 但還是要檢查是否需要為帳戶幣值設置匯率
-          const newRates = {...prevRates};
-          let hasUpdates = false;
-          
-          // 確保所有帳戶幣值都有到基準幣值的匯率（或通過 TWD 中轉）
-          accountCurrencies.forEach(accCurrency => {
-            const accToBaseKey = `${accCurrency}_${baseCurrency}`;
-            const baseToAccKey = `${baseCurrency}_${accCurrency}`;
-            
-            // 如果沒有直接匯率，嘗試通過 TWD 計算
-            if (!newRates[accToBaseKey] && !newRates[baseToAccKey]) {
-              // 嘗試：帳戶幣值 -> TWD -> 基準幣值
-              const accToTwd = newRates[`${accCurrency}_${Currency.TWD}`] || 
-                              (newRates[`${Currency.TWD}_${accCurrency}`] ? 1 / newRates[`${Currency.TWD}_${accCurrency}`] : undefined);
-              const twdToBase = newRates[`${Currency.TWD}_${baseCurrency}`] || 
-                               (newRates[`${baseCurrency}_${Currency.TWD}`] ? 1 / newRates[`${baseCurrency}_${Currency.TWD}`] : undefined);
-              
-              if (accToTwd && twdToBase) {
-                const accToBase = accToTwd * twdToBase;
-                newRates[accToBaseKey] = accToBase;
-                newRates[baseToAccKey] = 1 / accToBase;
-                hasUpdates = true;
-              }
-            }
-          });
-          
-          return hasUpdates ? newRates : prevRates;
-        }
-        
-        if (baseCurrency === Currency.USD) {
-          // USD: 如果有 USD/TWD，計算 TWD/USD
-          if (exchangeRate > 0) {
-            const newRates = {...prevRates};
-            newRates[`${Currency.USD}_${Currency.TWD}`] = exchangeRate;
-            newRates[`${Currency.TWD}_${Currency.USD}`] = 1 / exchangeRate;
-            return newRates;
-          }
-        } else if (baseCurrency === Currency.JPY) {
-          // JPY: 嘗試從多個來源獲取匯率
-          // 1. 優先使用 jpyExchangeRate state（如果有的話）
-          // 2. 其次使用 exchangeRates 中已有的 JPY/TWD
-          // 3. 最後從 API 獲取
-          const jpyToTwd = jpyExchangeRate || prevRates[`${Currency.JPY}_${Currency.TWD}`] || 
-                          (prevRates[`${Currency.TWD}_${Currency.JPY}`] ? 1 / prevRates[`${Currency.TWD}_${Currency.JPY}`] : undefined);
-          
-          // 獲取 USD/TWD 匯率（可能來自 exchangeRate state 或 exchangeRates）
-          const usdToTwd = exchangeRate || prevRates[`${Currency.USD}_${Currency.TWD}`] || 
-                          (prevRates[`${Currency.TWD}_${Currency.USD}`] ? 1 / prevRates[`${Currency.TWD}_${Currency.USD}`] : undefined);
-          
-          if (jpyToTwd && usdToTwd) {
-            // 使用 USD/TWD 和 JPY/TWD 計算 USD/JPY
-            // USD/JPY = (USD/TWD) / (JPY/TWD)
-            const usdToJpy = usdToTwd / jpyToTwd;
-            const newRates = {...prevRates};
-            newRates[`${Currency.USD}_${Currency.JPY}`] = usdToJpy;
-            newRates[`${Currency.JPY}_${Currency.USD}`] = 1 / usdToJpy;
-            // 同時設置 TWD/JPY 和 JPY/TWD 匯率（用於轉換成本）
-            newRates[`${Currency.JPY}_${Currency.TWD}`] = jpyToTwd;
-            newRates[`${Currency.TWD}_${Currency.JPY}`] = 1 / jpyToTwd;
-            // 同時保存 USD/TWD 匯率（如果還沒有的話）
-            if (!newRates[`${Currency.USD}_${Currency.TWD}`] && !newRates[`${Currency.TWD}_${Currency.USD}`]) {
-              newRates[`${Currency.USD}_${Currency.TWD}`] = usdToTwd;
-              newRates[`${Currency.TWD}_${Currency.USD}`] = 1 / usdToTwd;
-            }
-            console.log(`[匯率設置] 基本幣值為 JPY，設置 TWD/JPY = ${1 / jpyToTwd}, JPY/TWD = ${jpyToTwd}`);
-            return newRates;
-          } else {
-            // 如果沒有 JPY/TWD 匯率，從 API 獲取
-            fetchExchangeRatePair(Currency.USD, Currency.JPY).then(usdToJpy => {
-              if (!isNaN(usdToJpy) && usdToJpy > 0) {
-                setExchangeRates(prev => {
-                  const checkKey = `${Currency.USD}_${Currency.JPY}`;
-                  const checkReverseKey = `${Currency.JPY}_${Currency.USD}`;
-                  if (prev[checkKey] || prev[checkReverseKey]) {
-                    return prev;
-                  }
-                  const newRates = {...prev};
-                  newRates[`${Currency.USD}_${Currency.JPY}`] = usdToJpy;
-                  newRates[`${Currency.JPY}_${Currency.USD}`] = 1 / usdToJpy;
-                  
-                  // 同時嘗試獲取或計算 TWD/JPY 匯率（用於轉換成本）
-                  const usdToTwd = exchangeRate || prev[`${Currency.USD}_${Currency.TWD}`] || 
-                                  (prev[`${Currency.TWD}_${Currency.USD}`] ? 1 / prev[`${Currency.TWD}_${Currency.USD}`] : undefined);
-                  
-                  if (usdToTwd) {
-                    // 使用 USD/TWD 和 USD/JPY 計算 TWD/JPY
-                    // TWD/JPY = (TWD/USD) * (USD/JPY) = (1 / USD/TWD) * USD/JPY
-                    const twdToUsd = 1 / usdToTwd;
-                    const twdToJpy = twdToUsd * usdToJpy;
-                    newRates[`${Currency.TWD}_${Currency.JPY}`] = twdToJpy;
-                    newRates[`${Currency.JPY}_${Currency.TWD}`] = 1 / twdToJpy;
-                    console.log(`[匯率設置] 從 API 獲取 USD/JPY，計算 TWD/JPY = ${twdToJpy}`);
-                  } else {
-                    // 如果沒有 USD/TWD，嘗試直接獲取 TWD/JPY
-                    fetchExchangeRatePair(Currency.TWD, Currency.JPY).then(twdToJpy => {
-                      if (!isNaN(twdToJpy) && twdToJpy > 0) {
-                        setExchangeRates(prev => {
-                          const checkTwdKey = `${Currency.TWD}_${Currency.JPY}`;
-                          const checkTwdReverseKey = `${Currency.JPY}_${Currency.TWD}`;
-                          if (prev[checkTwdKey] || prev[checkTwdReverseKey]) {
-                            return prev;
-                          }
-                          const newRates = {...prev};
-                          newRates[`${Currency.TWD}_${Currency.JPY}`] = twdToJpy;
-                          newRates[`${Currency.JPY}_${Currency.TWD}`] = 1 / twdToJpy;
-                          console.log(`[匯率設置] 從 API 獲取 TWD/JPY = ${twdToJpy}`);
-                          return newRates;
-                        });
-                      }
-                    }).catch(() => {
-                      console.warn(`無法獲取 TWD/JPY 匯率，成本轉換可能不準確`);
-                    });
-                  }
-                  
-                  return newRates;
-                });
-              }
-            }).catch(error => {
-              console.warn(`無法獲取 USD/JPY 匯率:`, error);
-            });
-          }
-        } else {
-          // 其他幣值: 從 API 獲取 USD/基本幣值 匯率，並計算 TWD/基本幣值 匯率
-          fetchExchangeRatePair(Currency.USD, baseCurrency).then(usdToBaseRate => {
-            if (!isNaN(usdToBaseRate) && usdToBaseRate > 0) {
-              setExchangeRates(prev => {
-                // 再次檢查，避免重複設置
-                const checkKey = `${Currency.USD}_${baseCurrency}`;
-                const checkReverseKey = `${baseCurrency}_${Currency.USD}`;
-                if (prev[checkKey] || prev[checkReverseKey]) {
-                  return prev;
-                }
-                const newRates = {...prev};
-                newRates[`${Currency.USD}_${baseCurrency}`] = usdToBaseRate;
-                newRates[`${baseCurrency}_${Currency.USD}`] = 1 / usdToBaseRate;
-                
-                // 如果有 USD/TWD 匯率，計算 TWD/基本幣值 匯率（用於轉換成本）
-                // TWD/基本幣值 = (TWD/USD) * (USD/基本幣值) = (1 / USD/TWD) * USD/基本幣值
-                if (exchangeRate > 0) {
-                  const twdToUsd = 1 / exchangeRate; // TWD/USD
-                  const twdToBase = twdToUsd * usdToBaseRate; // TWD/基本幣值
-                  newRates[`${Currency.TWD}_${baseCurrency}`] = twdToBase;
-                  newRates[`${baseCurrency}_${Currency.TWD}`] = 1 / twdToBase;
-                } else {
-                  // 如果沒有 USD/TWD，嘗試從 exchangeRates 中獲取
-                  const usdToTwd = prev[`${Currency.USD}_${Currency.TWD}`] || 
-                                  (prev[`${Currency.TWD}_${Currency.USD}`] ? 1 / prev[`${Currency.TWD}_${Currency.USD}`] : undefined);
-                  if (usdToTwd) {
-                    const twdToUsd = 1 / usdToTwd;
-                    const twdToBase = twdToUsd * usdToBaseRate;
-                    newRates[`${Currency.TWD}_${baseCurrency}`] = twdToBase;
-                    newRates[`${baseCurrency}_${Currency.TWD}`] = 1 / twdToBase;
-                  } else {
-                    // 如果都沒有，嘗試直接獲取 TWD/基本幣值 匯率
-                    fetchExchangeRatePair(Currency.TWD, baseCurrency).then(twdToBaseRate => {
-                      if (!isNaN(twdToBaseRate) && twdToBaseRate > 0) {
-                        setExchangeRates(prev => {
-                          const checkTwdKey = `${Currency.TWD}_${baseCurrency}`;
-                          const checkTwdReverseKey = `${baseCurrency}_${Currency.TWD}`;
-                          if (prev[checkTwdKey] || prev[checkTwdReverseKey]) {
-                            return prev;
-                          }
-                          const newRates = {...prev};
-                          newRates[`${Currency.TWD}_${baseCurrency}`] = twdToBaseRate;
-                          newRates[`${baseCurrency}_${Currency.TWD}`] = 1 / twdToBaseRate;
-                          return newRates;
-                        });
-                      }
-                    }).catch(() => {
-                      // 如果無法獲取，至少記錄警告
-                      console.warn(`無法獲取 TWD/${baseCurrency} 匯率，成本轉換可能不準確`);
-                    });
-                  }
-                }
-                
-                // 確保所有帳戶幣值都有到基準幣值的匯率（或通過 TWD 中轉）
-                accountCurrencies.forEach(accCurrency => {
-                  const accToBaseKey = `${accCurrency}_${baseCurrency}`;
-                  const baseToAccKey = `${baseCurrency}_${accCurrency}`;
-                  
-                  // 如果沒有直接匯率，嘗試通過 TWD 計算
-                  if (!newRates[accToBaseKey] && !newRates[baseToAccKey]) {
-                    // 嘗試：帳戶幣值 -> TWD -> 基準幣值
-                    const accToTwd = newRates[`${accCurrency}_${Currency.TWD}`] || 
-                                    (newRates[`${Currency.TWD}_${accCurrency}`] ? 1 / newRates[`${Currency.TWD}_${accCurrency}`] : undefined);
-                    const twdToBase = newRates[`${Currency.TWD}_${baseCurrency}`] || 
-                                     (newRates[`${baseCurrency}_${Currency.TWD}`] ? 1 / newRates[`${baseCurrency}_${Currency.TWD}`] : undefined);
-                    
-                    if (accToTwd && twdToBase) {
-                      const accToBase = accToTwd * twdToBase;
-                      newRates[accToBaseKey] = accToBase;
-                      newRates[baseToAccKey] = 1 / accToBase;
-                    }
-                  }
-                });
-                
-                return newRates;
-              });
-            }
-          }).catch(error => {
-            console.warn(`無法獲取 USD/${baseCurrency} 匯率:`, error);
-          });
-        }
-        
-        return prevRates;
-      });
-    };
-    
-    updateRates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseCurrency, isAuthenticated, accounts, exchangeRate, jpyExchangeRate]); // 當匯率改變時也更新
 
   const showAlert = (message: string, title: string = '提示', type: 'info' | 'success' | 'error' = 'info') => {
     setAlertDialog({ isOpen: true, title, message, type });
@@ -918,98 +672,9 @@ const App: React.FC = () => {
 
       // 自動更新匯率邏輯
       let msg = `成功更新 ${Object.keys(newPrices).length} 筆股價`;
-      
-      // 更新匯率映射表
-      const updatedExchangeRates: Record<string, number> = { ...exchangeRates };
-      let hasNewRates = false;
-      
-      // 如果 baseCurrency 是 TWD，更新 USD/TWD 和 JPY/TWD 匯率（向後相容）
-      if (baseCurrency === Currency.TWD) {
-        if (result.exchangeRate && result.exchangeRate > 0) {
-          setExchangeRate(result.exchangeRate);
-          updatedExchangeRates[`${Currency.USD}_${Currency.TWD}`] = result.exchangeRate;
-          hasNewRates = true;
-          msg += `，並同步更新匯率為 ${result.exchangeRate}`;
-        }
-        if (result.jpyExchangeRate && result.jpyExchangeRate > 0) {
-          setJpyExchangeRate(result.jpyExchangeRate);
-          updatedExchangeRates[`${Currency.JPY}_${Currency.TWD}`] = result.jpyExchangeRate;
-          hasNewRates = true;
-        }
-      } else {
-        // 如果 baseCurrency 不是 TWD，需要獲取 baseCurrency 對其他幣值的匯率
-        // 收集所有帳戶使用的幣值
-        const accountCurrencies = new Set<Currency>();
-        accounts.forEach((acc: Account) => {
-          if (acc.currency !== baseCurrency) {
-            accountCurrencies.add(acc.currency);
-          }
-        });
-        
-        // 根據基本幣值獲取主要匯率
-        if (baseCurrency === Currency.USD) {
-          // USD: 獲取 TWD/USD 匯率
-          if (result.exchangeRate && result.exchangeRate > 0) {
-            // USD/TWD 的倒數是 TWD/USD
-            updatedExchangeRates[`${Currency.USD}_${Currency.TWD}`] = result.exchangeRate;
-            updatedExchangeRates[`${Currency.TWD}_${Currency.USD}`] = 1 / result.exchangeRate;
-            hasNewRates = true;
-          }
-        } else {
-          // 其他幣值: 獲取 USD/基本幣值 匯率，並計算 TWD/基本幣值 匯率
-          try {
-            const usdToBaseRate = await fetchExchangeRatePair(Currency.USD, baseCurrency);
-            if (!isNaN(usdToBaseRate) && usdToBaseRate > 0) {
-              updatedExchangeRates[`${Currency.USD}_${baseCurrency}`] = usdToBaseRate;
-              // 同時保存反向匯率
-              updatedExchangeRates[`${baseCurrency}_${Currency.USD}`] = 1 / usdToBaseRate;
-              hasNewRates = true;
-              msg += `，USD/${baseCurrency} 匯率: ${usdToBaseRate.toFixed(4)}`;
-              
-              // 如果有 USD/TWD 匯率，計算 TWD/基本幣值 匯率（用於轉換成本）
-              if (result.exchangeRate && result.exchangeRate > 0) {
-                const twdToUsd = 1 / result.exchangeRate; // TWD/USD
-                const twdToBase = twdToUsd * usdToBaseRate; // TWD/基本幣值
-                updatedExchangeRates[`${Currency.TWD}_${baseCurrency}`] = twdToBase;
-                updatedExchangeRates[`${baseCurrency}_${Currency.TWD}`] = 1 / twdToBase;
-              } else {
-                // 如果沒有 USD/TWD，嘗試直接獲取 TWD/基本幣值 匯率
-                try {
-                  const twdToBaseRate = await fetchExchangeRatePair(Currency.TWD, baseCurrency);
-                  if (!isNaN(twdToBaseRate) && twdToBaseRate > 0) {
-                    updatedExchangeRates[`${Currency.TWD}_${baseCurrency}`] = twdToBaseRate;
-                    updatedExchangeRates[`${baseCurrency}_${Currency.TWD}`] = 1 / twdToBaseRate;
-                  }
-                } catch (twdError) {
-                  console.warn(`無法獲取 TWD/${baseCurrency} 匯率:`, twdError);
-                }
-              }
-            }
-          } catch (error) {
-            console.warn(`無法獲取 USD/${baseCurrency} 匯率:`, error);
-          }
-        }
-        
-        // 如果有 JPY 帳戶，保存 JPY/TWD 匯率（如果有的話）
-        // 無論基本幣值是什麼，都應該保存 JPY/TWD 和 TWD/JPY 匯率
-        if (result.jpyExchangeRate && result.jpyExchangeRate > 0) {
-          setJpyExchangeRate(result.jpyExchangeRate);
-          updatedExchangeRates[`${Currency.JPY}_${Currency.TWD}`] = result.jpyExchangeRate;
-          updatedExchangeRates[`${Currency.TWD}_${Currency.JPY}`] = 1 / result.jpyExchangeRate;
-          hasNewRates = true;
-          
-          // 如果基本幣值是 JPY，同時更新 USD/JPY 匯率
-          if (baseCurrency === Currency.JPY && exchangeRate > 0) {
-            const usdToJpy = exchangeRate / result.jpyExchangeRate;
-            updatedExchangeRates[`${Currency.USD}_${Currency.JPY}`] = usdToJpy;
-            updatedExchangeRates[`${Currency.JPY}_${Currency.USD}`] = 1 / usdToJpy;
-          }
-        }
-      }
-      
-      // 更新匯率映射表
-      if (hasNewRates) {
-        setExchangeRates(updatedExchangeRates);
+      if (result.exchangeRate && result.exchangeRate > 0) {
+        setExchangeRate(result.exchangeRate);
+        msg += `，並同步更新匯率為 ${result.exchangeRate}`;
       }
 
       // 只有在非靜默模式下才顯示提示
@@ -1031,167 +696,102 @@ const App: React.FC = () => {
   const computedAccounts = useMemo(() => calculateAccountBalances(accounts, cashFlows, transactions), [accounts, cashFlows, transactions]);
 
   const summary = useMemo<PortfolioSummary>(() => {
-    let netInvestedBase = 0; // 淨投入（基準幣值）
-    let totalUsdInflow = 0; // USD 流入總額（用於計算平均匯率）
-    let totalBaseCostForUsd = 0; // 基準幣值成本（用於計算平均匯率）
+    let netInvestedTWD = 0;
+    let totalUsdInflow = 0;
+    let totalTwdCostForUsd = 0;
 
-    cashFlows.forEach((cf: CashFlow) => {
-       const account = accounts.find((a: Account) => a.id === cf.accountId);
-       if (!account) return;
+    cashFlows.forEach(cf => {
+       const account = accounts.find(a => a.id === cf.accountId);
        
-       // 1. Calculate Net Invested (Cost) - 轉換為基準幣值
+       // 1. Calculate Net Invested (Cost)
+       // 注意：只計算 DEPOSIT 和 WITHDRAW，不包含 TRANSFER（帳戶間轉移）
+       // TRANSFER_IN/TRANSFER_OUT 也不計入，因為它們只是帳戶間股票轉移，不影響淨投入成本
        if(cf.type === CashFlowType.DEPOSIT) {
-           let amountInBase: number;
-           if (cf.amountTWD && baseCurrency === Currency.TWD) {
-               amountInBase = cf.amountTWD;
-           } else if (cf.amountTWD) {
-               // 從 TWD 轉換到基準幣值
-               const beforeConvert = cf.amountTWD;
-               amountInBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
-               // 調試：如果轉換後值沒變，可能是匯率缺失
-               if (baseCurrency !== Currency.TWD && Math.abs(amountInBase - beforeConvert) < 0.01 && beforeConvert > 0) {
-                 const rateKey = `${Currency.TWD}_${baseCurrency}`;
-                 const reverseKey = `${baseCurrency}_${Currency.TWD}`;
-                 console.warn(`[成本轉換警告] TWD -> ${baseCurrency} 轉換失敗，匯率可能缺失。amountTWD=${beforeConvert}, 查找的匯率鍵: ${rateKey} 或 ${reverseKey}, exchangeRates=`, exchangeRates);
-               }
-           } else {
-               amountInBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
-           }
-           netInvestedBase += amountInBase;
+           const rate = (cf.exchangeRate || (account?.currency === Currency.USD ? exchangeRate : 1));
+           netInvestedTWD += (cf.amountTWD || cf.amount * rate);
        } else if (cf.type === CashFlowType.WITHDRAW) {
-           let amountInBase: number;
-           if (cf.amountTWD && baseCurrency === Currency.TWD) {
-               amountInBase = cf.amountTWD;
-           } else if (cf.amountTWD) {
-               // 從 TWD 轉換到基準幣值
-               const beforeConvert = cf.amountTWD;
-               amountInBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
-               // 調試：如果轉換後值沒變，可能是匯率缺失
-               if (baseCurrency !== Currency.TWD && Math.abs(amountInBase - beforeConvert) < 0.01 && beforeConvert > 0) {
-                 const rateKey = `${Currency.TWD}_${baseCurrency}`;
-                 const reverseKey = `${baseCurrency}_${Currency.TWD}`;
-                 console.warn(`[成本轉換警告] TWD -> ${baseCurrency} 轉換失敗，匯率可能缺失。amountTWD=${beforeConvert}, 查找的匯率鍵: ${rateKey} 或 ${reverseKey}, exchangeRates=`, exchangeRates);
-               }
-           } else {
-               amountInBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
-           }
-           netInvestedBase -= amountInBase;
+           const rate = (cf.exchangeRate || (account?.currency === Currency.USD ? exchangeRate : 1));
+           netInvestedTWD -= (cf.amountTWD || cf.amount * rate);
        }
 
        // 2. Calculate Avg Exchange Rate (Accumulate USD Inflows)
-       if (cf.type === CashFlowType.DEPOSIT && account.currency === Currency.USD) {
+       if (cf.type === CashFlowType.DEPOSIT && account?.currency === Currency.USD) {
            totalUsdInflow += cf.amount;
-           let costInBase: number;
-           if (cf.amountTWD && baseCurrency === Currency.TWD) {
-               costInBase = cf.amountTWD;
-           } else if (cf.amountTWD) {
-               costInBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
-           } else {
-               costInBase = convertCurrency(cf.amount, Currency.USD, baseCurrency, exchangeRates, baseCurrency);
-           }
-           totalBaseCostForUsd += costInBase;
+           const cost = cf.amountTWD || (cf.amount * (cf.exchangeRate || exchangeRate));
+           totalTwdCostForUsd += cost;
        }
        
        if (cf.type === CashFlowType.TRANSFER && cf.targetAccountId) {
-           const targetAccount = accounts.find((a: Account) => a.id === cf.targetAccountId);
-           if (targetAccount && account.currency === Currency.TWD && targetAccount.currency === Currency.USD) {
-               const costInBase = convertCurrency(cf.amount, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
+           const targetAccount = accounts.find(a => a.id === cf.targetAccountId);
+           if (account?.currency === Currency.TWD && targetAccount?.currency === Currency.USD) {
+               const costTwd = cf.amount;
                let usdReceived = 0;
                if (cf.exchangeRate && cf.exchangeRate > 0) {
                    usdReceived = cf.amount / cf.exchangeRate;
                } else {
-                   const rateKey = `${Currency.TWD}_${Currency.USD}`;
-                   const reverseRateKey = `${Currency.USD}_${Currency.TWD}`;
-                   const rate = exchangeRates[rateKey] || (exchangeRates[reverseRateKey] ? 1 / exchangeRates[reverseRateKey] : exchangeRate);
-                   usdReceived = cf.amount / rate;
+                   usdReceived = cf.amount / exchangeRate;
                }
                totalUsdInflow += usdReceived;
-               totalBaseCostForUsd += costInBase;
+               totalTwdCostForUsd += costTwd;
            }
        }
     });
 
-    // 計算股票總價值（轉換為基準幣值）
-    const stockValueBase = baseHoldings.reduce((sum: number, h: Holding) => {
-      const account = accounts.find((a: Account) => a.id === h.accountId);
-      if (!account) return sum;
-      const valueInBase = convertCurrency(h.currentValue, account.currency, baseCurrency, exchangeRates, baseCurrency);
-      return sum + valueInBase;
+    const stockValueTWD = baseHoldings.reduce((sum: number, h: Holding) => {
+      // UK 和 JP 市場股票也用 USD 匯率（因為是用美金買的）
+      if (h.market === Market.US || h.market === Market.UK || h.market === Market.JP) return sum + h.currentValue * exchangeRate;
+      return sum + h.currentValue; // TW
     }, 0);
+    const cashValueTWD = computedAccounts.reduce((sum: number, a: Account) => sum + (a.currency === Currency.USD ? a.balance * exchangeRate : a.balance), 0);
+    const totalValueTWD = stockValueTWD;
+    const totalAssets = totalValueTWD + cashValueTWD;
+    const totalPLTWD = totalAssets - netInvestedTWD;
+    const totalPLPercent = netInvestedTWD > 0 ? (totalPLTWD / netInvestedTWD) * 100 : 0;
+    const annualizedReturn = calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate);
     
-    // 計算現金總價值（轉換為基準幣值）
-    const cashValueBase = computedAccounts.reduce((sum: number, a: Account) => {
-      const valueInBase = convertCurrency(a.balance, a.currency, baseCurrency, exchangeRates, baseCurrency);
-      return sum + valueInBase;
-    }, 0);
-    
-    const totalValueBase = stockValueBase;
-    const totalAssets = totalValueBase + cashValueBase;
-    const totalPLBase = totalAssets - netInvestedBase;
-    const totalPLPercent = netInvestedBase > 0 ? (totalPLBase / netInvestedBase) * 100 : 0;
-    const annualizedReturn = calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate, baseCurrency, exchangeRates);
-    
-    // 計算累積現金股利（轉換為基準幣值）
-    const accumulatedCashDividendsBase = transactions.filter((t: Transaction) => t.type === TransactionType.CASH_DIVIDEND).reduce((sum: number, t: Transaction) => {
-        const account = accounts.find((a: Account) => a.id === t.accountId);
-        if (!account) return sum;
+    const accumulatedCashDividendsTWD = transactions.filter(t => t.type === TransactionType.CASH_DIVIDEND).reduce((sum, t) => {
         const amt = t.amount || (t.price * t.quantity);
-        const amtInBase = convertCurrency(amt, account.currency, baseCurrency, exchangeRates, baseCurrency);
-        return sum + amtInBase;
+        // UK 和 JP 市場也用 USD 匯率
+        if (t.market === Market.US || t.market === Market.UK || t.market === Market.JP) return sum + amt * exchangeRate;
+        return sum + amt; // TW
     }, 0);
 
-    // 計算累積股票股利（轉換為基準幣值）
-    const accumulatedStockDividendsBase = transactions.filter((t: Transaction) => t.type === TransactionType.DIVIDEND).reduce((sum: number, t: Transaction) => {
-        const account = accounts.find((a: Account) => a.id === t.accountId);
-        if (!account) return sum;
+    const accumulatedStockDividendsTWD = transactions.filter(t => t.type === TransactionType.DIVIDEND).reduce((sum, t) => {
         const amt = t.amount || (t.price * t.quantity);
-        const amtInBase = convertCurrency(amt, account.currency, baseCurrency, exchangeRates, baseCurrency);
-        return sum + amtInBase;
+        // UK 和 JP 市場也用 USD 匯率
+        if (t.market === Market.US || t.market === Market.UK || t.market === Market.JP) return sum + amt * exchangeRate;
+        return sum + amt; // TW
     }, 0);
 
-    // 計算平均匯率（USD 對基準幣值）
-    const avgExchangeRate = totalUsdInflow > 0 ? totalBaseCostForUsd / totalUsdInflow : 0;
-    
-    // 獲取 USD 對基準幣值的匯率（用於向後相容）
-    const usdToBaseRate = convertCurrency(1, Currency.USD, baseCurrency, exchangeRates, baseCurrency);
-    // 獲取 JPY 對基準幣值的匯率（如果有的話）
-    const jpyToBaseRate = exchangeRates[`${Currency.JPY}_${baseCurrency}`] || 
-                          (exchangeRates[`${baseCurrency}_${Currency.JPY}`] ? 1 / exchangeRates[`${baseCurrency}_${Currency.JPY}`] : undefined);
+    const avgExchangeRate = totalUsdInflow > 0 ? totalTwdCostForUsd / totalUsdInflow : 0;
 
     return {
-        totalCostTWD: 0, // 保留向後相容
-        totalValueTWD: totalValueBase, // 保留向後相容（實際為基準幣值）
-        totalPLTWD: totalPLBase, // 保留向後相容（實際為基準幣值）
+        totalCostTWD: 0,
+        totalValueTWD,
+        totalPLTWD,
         totalPLPercent,
-        cashBalanceTWD: cashValueBase, // 保留向後相容（實際為基準幣值）
-        netInvestedTWD: netInvestedBase, // 保留向後相容（實際為基準幣值）
+        cashBalanceTWD: cashValueTWD,
+        netInvestedTWD,
         annualizedReturn,
-        exchangeRateUsdToTwd: baseCurrency === Currency.TWD ? exchangeRate : usdToBaseRate, // 保留向後相容
-        jpyExchangeRate: baseCurrency === Currency.TWD ? jpyExchangeRate : jpyToBaseRate, // 保留向後相容
-        accumulatedCashDividendsTWD: accumulatedCashDividendsBase, // 保留向後相容（實際為基準幣值）
-        accumulatedStockDividendsTWD: accumulatedStockDividendsBase, // 保留向後相容（實際為基準幣值）
-        avgExchangeRate,
-        baseCurrency, // 新增
-        exchangeRates // 新增
+        exchangeRateUsdToTwd: exchangeRate,
+        accumulatedCashDividendsTWD,
+        accumulatedStockDividendsTWD,
+        avgExchangeRate
     };
-  }, [baseHoldings, computedAccounts, cashFlows, exchangeRate, jpyExchangeRate, accounts, transactions, baseCurrency, exchangeRates]);
+  }, [baseHoldings, computedAccounts, cashFlows, exchangeRate, accounts, transactions]);
 
   // Step 4: Final Holdings with Weights
   const holdings = useMemo(() => {
     const totalAssets = summary.totalValueTWD + summary.cashBalanceTWD;
     return baseHoldings.map((h: Holding) => {
-        // 根據帳戶幣值轉換為基準幣值
-        const account = accounts.find((a: Account) => a.id === h.accountId);
-        if (!account) {
-            return { ...h, weight: 0 };
-        }
-        const valBase = convertCurrency(h.currentValue, account.currency, baseCurrency, exchangeRates, baseCurrency);
+        // UK 和 JP 市場也用 USD 匯率
+        const valTwd = (h.market === Market.US || h.market === Market.UK || h.market === Market.JP) ? h.currentValue * exchangeRate : h.currentValue;
         return {
             ...h,
-            weight: totalAssets > 0 ? (valBase / totalAssets) * 100 : 0
+            weight: totalAssets > 0 ? (valTwd / totalAssets) * 100 : 0
         };
     });
-  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, accounts, baseCurrency, exchangeRates]);
+  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate]);
 
   // --- Auto Update Prices on Load ---
   useEffect(() => {
@@ -1207,7 +807,7 @@ const App: React.FC = () => {
   }, [isAuthenticated, baseHoldings.length, hasAutoUpdated]);
 
   // 修復 useMemo 依賴項：只依賴 summary 中實際使用的屬性，而不是整個物件
-  const chartData = useMemo(() => generateAdvancedChartData(transactions, cashFlows, accounts, summary.totalValueTWD + summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate, baseCurrency, exchangeRates), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate, baseCurrency, exchangeRates]);
+  const chartData = useMemo(() => generateAdvancedChartData(transactions, cashFlows, accounts, summary.totalValueTWD + summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate]);
   // 修復 useMemo 依賴項：只依賴 summary 中實際使用的屬性
   const assetAllocation = useMemo(() => calculateAssetAllocation(holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate), [holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate]);
   const annualPerformance = useMemo(() => calculateAnnualPerformance(chartData), [chartData]);
@@ -1592,92 +1192,16 @@ const App: React.FC = () => {
                  </button>
                )}
 
-               {/* Base Currency Selector & Exchange Rate Input */}
-               <div className="hidden sm:flex items-center gap-2">
-                  {/* Base Currency Selector */}
-                  <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
-                    <span className="text-xs text-slate-400 mr-1">{language === 'en' ? 'Base' : '基準'}</span>
-                    <select
-                      value={baseCurrency}
-                      onChange={(e) => setBaseCurrency(e.target.value as Currency)}
-                      className="bg-transparent text-xs text-white font-medium focus:outline-none cursor-pointer"
-                      title={language === 'en' ? 'Base Currency' : '基準幣值'}
-                    >
-                      {ALL_CURRENCIES.map((curr: Currency) => (
-                        <option key={curr} value={curr} className="bg-slate-800">
-                          {getCurrencyName(curr, language === 'en' ? 'en' : 'zh-TW')}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  {/* Exchange Rate Input - 根據基本幣值動態顯示 */}
-                  {(() => {
-                    if (baseCurrency === Currency.TWD) {
-                      // TWD: 顯示 USD/TWD 輸入框（保持現有邏輯）
-                      return (
-                        <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
-                          <span className="text-xs text-slate-400 mr-2">USD</span>
-                          <input 
-                            type="number" 
-                            step="0.0001" 
-                            value={exchangeRate}
-                            onChange={(e) => {
-                              const newRate = parseFloat(e.target.value);
-                              setExchangeRate(newRate);
-                              // 同時更新 exchangeRates 映射表
-                              const newRates = {...exchangeRates};
-                              newRates[`${Currency.USD}_${Currency.TWD}`] = newRate;
-                              setExchangeRates(newRates);
-                            }}
-                            className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
-                          />
-                        </div>
-                      );
-                    } else if (baseCurrency === Currency.USD) {
-                      // USD: 顯示 TWD/USD 輸入框
-                      const twdToUsdRate = exchangeRates[`${Currency.TWD}_${Currency.USD}`] || 
-                                          (exchangeRates[`${Currency.USD}_${Currency.TWD}`] ? 
-                                           1 / exchangeRates[`${Currency.USD}_${Currency.TWD}`] : '');
-                      return (
-                        <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
-                          <span className="text-xs text-slate-400 mr-2">TWD</span>
-                          <input 
-                            type="number" 
-                            step="0.0001" 
-                            value={twdToUsdRate}
-                            onChange={(e) => {
-                              const newRates = {...exchangeRates};
-                              newRates[`${Currency.TWD}_${Currency.USD}`] = parseFloat(e.target.value);
-                              setExchangeRates(newRates);
-                            }}
-                            className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
-                          />
-                        </div>
-                      );
-                    } else {
-                      // 其他幣值: 顯示 USD/基本幣值 輸入框
-                      const usdToBaseRate = exchangeRates[`${Currency.USD}_${baseCurrency}`] || 
-                                           (exchangeRates[`${baseCurrency}_${Currency.USD}`] ? 
-                                            1 / exchangeRates[`${baseCurrency}_${Currency.USD}`] : '');
-                      return (
-                        <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
-                          <span className="text-xs text-slate-400 mr-2">USD</span>
-                          <input 
-                            type="number" 
-                            step="0.0001" 
-                            value={usdToBaseRate}
-                            onChange={(e) => {
-                              const newRates = {...exchangeRates};
-                              newRates[`${Currency.USD}_${baseCurrency}`] = parseFloat(e.target.value);
-                              setExchangeRates(newRates);
-                            }}
-                            className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
-                          />
-                        </div>
-                      );
-                    }
-                  })()}
+               {/* Exchange Rate Input */}
+               <div className="hidden sm:flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
+                  <span className="text-xs text-slate-400 mr-2">USD</span>
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    value={exchangeRate}
+                    onChange={(e) => setExchangeRate(parseFloat(e.target.value))}
+                    className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
+                  />
                </div>
                
                {/* User Profile */}
@@ -2094,8 +1618,6 @@ const App: React.FC = () => {
                 onBatchAdd={addBatchCashFlows}
                 onDelete={removeCashFlow}
                 onClearAll={handleClearAllCashFlows}
-                baseCurrency={baseCurrency}
-                exchangeRates={exchangeRates}
                 currentExchangeRate={exchangeRate}
                 currentJpyExchangeRate={jpyExchangeRate}
                 language={language}
@@ -2162,98 +1684,18 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            {/* 基準幣值與匯率顯示 */}
+            {/* 匯率顯示 */}
             <div className="p-4 bg-slate-900/50 border-b border-slate-800 space-y-2">
-              {/* Base Currency Selector */}
-              <div className="flex justify-between items-center text-xs font-bold mb-2">
-                <span className="text-slate-500">{language === 'zh-TW' ? '基準幣值' : 'Base Currency'}</span>
-                <select
-                  value={baseCurrency}
-                  onChange={(e) => setBaseCurrency(e.target.value as Currency)}
-                  className="bg-slate-800 text-white text-xs font-medium rounded border border-slate-700 px-2 py-1 cursor-pointer"
-                >
-                  {ALL_CURRENCIES.map((curr: Currency) => (
-                    <option key={curr} value={curr} className="bg-slate-800">
-                      {getCurrencyName(curr, language === 'en' ? 'en' : 'zh-TW')}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex justify-between items-center text-xs font-bold">
+                <span className="text-slate-500">USD/TWD {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  value={exchangeRate} 
+                  onChange={e => setExchangeRate(parseFloat(e.target.value))}
+                  className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
+                />
               </div>
-              
-              {/* Exchange Rate Input - 根據基本幣值動態顯示 */}
-              {(() => {
-                if (baseCurrency === Currency.TWD) {
-                  // TWD: 顯示 USD/TWD 輸入框（保持現有邏輯）
-                  return (
-                    <div className="flex justify-between items-center text-xs font-bold">
-                      <span className="text-slate-500">USD/TWD {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
-                      <input 
-                        type="number" 
-                        step="0.0001" 
-                        value={exchangeRate} 
-                        onChange={e => {
-                          const newRate = parseFloat(e.target.value);
-                          setExchangeRate(newRate);
-                          // 同時更新 exchangeRates 映射表
-                          setExchangeRates(prev => {
-                            const newRates = {...prev};
-                            newRates[`${Currency.USD}_${Currency.TWD}`] = newRate;
-                            return newRates;
-                          });
-                        }}
-                        className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
-                      />
-                    </div>
-                  );
-                } else if (baseCurrency === Currency.USD) {
-                  // USD: 顯示 TWD/USD 輸入框
-                  const twdToUsdRate = exchangeRates[`${Currency.TWD}_${Currency.USD}`] || 
-                                      (exchangeRates[`${Currency.USD}_${Currency.TWD}`] ? 
-                                       1 / exchangeRates[`${Currency.USD}_${Currency.TWD}`] : '');
-                  return (
-                    <div className="flex justify-between items-center text-xs font-bold">
-                      <span className="text-slate-500">TWD/USD {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
-                      <input 
-                        type="number" 
-                        step="0.0001" 
-                        value={twdToUsdRate}
-                        onChange={e => {
-                          setExchangeRates(prev => {
-                            const newRates = {...prev};
-                            newRates[`${Currency.TWD}_${Currency.USD}`] = parseFloat(e.target.value);
-                            return newRates;
-                          });
-                        }}
-                        className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
-                      />
-                    </div>
-                  );
-                } else {
-                  // 其他幣值: 顯示 USD/基本幣值 輸入框
-                  const currencyName = getCurrencyName(baseCurrency, language === 'en' ? 'en' : 'zh-TW');
-                  const usdToBaseRate = exchangeRates[`${Currency.USD}_${baseCurrency}`] || 
-                                       (exchangeRates[`${baseCurrency}_${Currency.USD}`] ? 
-                                        1 / exchangeRates[`${baseCurrency}_${Currency.USD}`] : '');
-                  return (
-                    <div className="flex justify-between items-center text-xs font-bold">
-                      <span className="text-slate-500">USD/{currencyName} {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
-                      <input 
-                        type="number" 
-                        step="0.0001" 
-                        value={usdToBaseRate}
-                        onChange={e => {
-                          setExchangeRates(prev => {
-                            const newRates = {...prev};
-                            newRates[`${Currency.USD}_${baseCurrency}`] = parseFloat(e.target.value);
-                            return newRates;
-                          });
-                        }}
-                        className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
-                      />
-                    </div>
-                  );
-                }
-              })()}
             </div>
 
             {/* 導航選單 */}
