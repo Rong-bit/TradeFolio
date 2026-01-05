@@ -1129,7 +1129,7 @@ const App: React.FC = () => {
     const totalAssets = totalValueBase + cashValueBase;
     const totalPLBase = totalAssets - netInvestedBase;
     const totalPLPercent = netInvestedBase > 0 ? (totalPLBase / netInvestedBase) * 100 : 0;
-    const annualizedReturn = calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate);
+    const annualizedReturn = calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate, baseCurrency, exchangeRates);
     
     // 計算累積現金股利（轉換為基準幣值）
     const accumulatedCashDividendsBase = transactions.filter((t: Transaction) => t.type === TransactionType.CASH_DIVIDEND).reduce((sum: number, t: Transaction) => {
