@@ -900,32 +900,64 @@ export const calculateGenericXIRR = (flows: { amount: number, date: number }[]):
 export const calculateXIRR = (
   cashFlows: CashFlow[],
   accounts: Account[],
-  currentTotalValueTWD: number,
-  exchangeRate: number
+  currentTotalValueBase: number,
+  exchangeRate: number,
+  baseCurrency: Currency = Currency.TWD,
+  exchangeRates: Record<string, number> = {}
 ): number => {
   const xirrFlows: { amount: number, date: number }[] = [];
 
   cashFlows.forEach(cf => {
     if (cf.type !== CashFlowType.DEPOSIT && cf.type !== CashFlowType.WITHDRAW) return;
 
-    let amountTWD = 0;
+    const account = accounts.find(a => a.id === cf.accountId);
+    if (!account) return;
+    
+    let amountBase = 0;
+    
+    // 優先使用 amountTWD（如果有的話）
     if (cf.amountTWD && cf.amountTWD > 0) {
-      amountTWD = cf.amountTWD;
+      // 如果有 amountTWD，轉換為基準幣值
+      if (baseCurrency === Currency.TWD) {
+        amountBase = cf.amountTWD;
+      } else {
+        amountBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
+      }
     } else {
-      const acc = accounts.find(a => a.id === cf.accountId);
-      const isUSD = acc?.currency === Currency.USD;
-      const rate = isUSD ? (cf.exchangeRate || exchangeRate) : 1;
-      amountTWD = cf.amount * rate;
+      // 使用帳戶幣值轉換為基準幣值
+      if (account.currency === baseCurrency) {
+        amountBase = cf.amount;
+      } else {
+        // 嘗試使用歷史匯率（如果有）並轉換為基準幣值
+        if (cf.exchangeRate && cf.exchangeRate > 0 && account.currency === Currency.USD && baseCurrency === Currency.TWD) {
+          // 特殊情況：歷史匯率是 TWD/USD，帳戶是 USD，基準幣值是 TWD
+          amountBase = cf.amount * cf.exchangeRate;
+        } else if (cf.exchangeRate && cf.exchangeRate > 0 && account.currency === Currency.USD) {
+          // 歷史匯率是 TWD/USD，需要轉換為基準幣值/USD
+          // 基準幣值/USD = (基準幣值/TWD) * (TWD/USD)
+          const baseToTwd = exchangeRates[`${baseCurrency}_${Currency.TWD}`] ||
+                           (exchangeRates[`${Currency.TWD}_${baseCurrency}`] ? 1 / exchangeRates[`${Currency.TWD}_${baseCurrency}`] : undefined);
+          if (baseToTwd) {
+            amountBase = cf.amount * cf.exchangeRate * baseToTwd;
+          } else {
+            // 如果無法通過 TWD 轉換，使用當前匯率
+            amountBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
+          }
+        } else {
+          // 沒有歷史匯率或不是 USD，使用當前匯率轉換
+          amountBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
+        }
+      }
     }
 
     if (cf.type === CashFlowType.DEPOSIT) {
-      xirrFlows.push({ amount: -amountTWD, date: new Date(cf.date).getTime() });
+      xirrFlows.push({ amount: -amountBase, date: new Date(cf.date).getTime() });
     } else if (cf.type === CashFlowType.WITHDRAW) {
-      xirrFlows.push({ amount: amountTWD, date: new Date(cf.date).getTime() });
+      xirrFlows.push({ amount: amountBase, date: new Date(cf.date).getTime() });
     }
   });
 
-  xirrFlows.push({ amount: currentTotalValueTWD, date: Date.now() });
+  xirrFlows.push({ amount: currentTotalValueBase, date: Date.now() });
 
   return calculateGenericXIRR(xirrFlows);
 };
