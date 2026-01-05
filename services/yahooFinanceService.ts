@@ -1,3 +1,4 @@
+import { Currency } from '../types';
 
 export interface PriceData {
   price: number;
@@ -415,73 +416,124 @@ const fetchExchangeRate = async (retryCount: number = 0, proxyIndex: number = 0)
 };
 
 /**
- * 取得日幣對台幣的即時匯率
- * @returns JPY/TWD 匯率（1 日幣 = X 台幣）
+ * 通用匯率查詢函數
+ * @param baseCurrency 基準幣值
+ * @param targetCurrency 目標幣值
+ * @param retryCount 重試次數
+ * @param proxyIndex 代理索引
+ * @returns 匯率（1 基準幣值 = X 目標幣值），例如 JPYUSD=X 返回 1 日幣 = X 美金。如果查詢失敗返回 NaN
  */
-const fetchJPYExchangeRate = async (): Promise<number> => {
+export const fetchExchangeRatePair = async (
+  baseCurrency: Currency,
+  targetCurrency: Currency,
+  retryCount: number = 0,
+  proxyIndex: number = 0
+): Promise<number> => {
+  // 如果相同幣值，返回 1
+  if (baseCurrency === targetCurrency) {
+    return 1;
+  }
+
+  const maxRetries = 3;
+  const retryDelay = 5000;
+  
+  // Yahoo Finance 格式：BASETARGET=X（例如 USDJPY=X, JPYUSD=X）
+  const symbol = `${baseCurrency}${targetCurrency}=X`;
+  
   try {
-    // 使用 JPYTWD=X 作為查詢符號
-    const baseUrl = `https://query1.finance.yahoo.com/v8/finance/chart/JPYTWD=X?interval=1d&range=1d`;
+    console.log(`[調試] 開始取得匯率 ${symbol} (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
     
-    const response = await fetchWithProxy(baseUrl);
+    const baseUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+    
+    const response = await fetchWithProxy(baseUrl, proxyIndex);
 
     if (!response || !response.ok) {
-      console.error('無法取得日幣匯率資訊');
-      return 0.21; // 預設匯率（約 1 JPY = 0.21 TWD）
+      if ((response?.status === 429 || response?.status === 408) && retryCount < maxRetries) {
+        const nextProxyIndex = (proxyIndex + 1) % 5;
+        console.warn(`[調試] 取得匯率時遇到速率限制 (HTTP ${response?.status})，等待 ${retryDelay / 1000} 秒後重試 (${retryCount + 1}/${maxRetries})，切換代理服務...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return fetchExchangeRatePair(baseCurrency, targetCurrency, retryCount + 1, nextProxyIndex);
+      }
+      console.error(`[調試] ✗ 取得匯率失敗: ${response?.status || '無法連接'}`);
+      return NaN;
     }
 
-    // 先讀取響應文本，檢查是否為有效的 JSON
     let text: string;
     let data: any;
     
     try {
       text = await response.text();
       
-      // 檢查響應是否為錯誤訊息
       if (!text || text.trim().length === 0) {
-        console.error('取得日幣匯率時發生錯誤: 響應為空');
-        return 0.21; // 預設匯率
+        console.error('取得匯率時發生錯誤: 響應為空');
+        return NaN;
       }
       
-      // 檢查是否為 HTML 錯誤頁面或純文本錯誤訊息
-      if (text.trim().startsWith('Edge:') || text.trim().startsWith('Too many') || 
-          text.includes('<!DOCTYPE') || text.includes('<html')) {
+      const isRateLimitError = text.trim().startsWith('Edge:') || 
+                               text.trim().startsWith('Too many') || 
+                               text.trim().startsWith('Too Many');
+      
+      if (isRateLimitError) {
+        if (retryCount < maxRetries) {
+          const errorPreview = text.substring(0, 200);
+          const nextProxyIndex = (proxyIndex + 1) % 5;
+          console.warn(`[調試] 取得匯率時遇到速率限制: ${errorPreview}，等待 ${retryDelay / 1000} 秒後重試 (${retryCount + 1}/${maxRetries})，切換代理服務...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          return fetchExchangeRatePair(baseCurrency, targetCurrency, retryCount + 1, nextProxyIndex);
+        }
         const errorPreview = text.substring(0, 200);
-        console.error(`取得日幣匯率時發生錯誤: 收到錯誤訊息而非 JSON。內容: ${errorPreview}`);
-        return 0.21; // 預設匯率
+        console.error(`[調試] ✗ 取得匯率失敗: 收到速率限制錯誤（已重試 ${maxRetries} 次）。內容: ${errorPreview}`);
+        return NaN;
+      }
+      
+      if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+        const errorPreview = text.substring(0, 200);
+        console.error(`取得匯率時發生錯誤: 收到 HTML 錯誤頁面。內容: ${errorPreview}`);
+        return NaN;
       }
     } catch (textError: any) {
-      console.error('取得日幣匯率時發生錯誤: 無法讀取響應文本', textError?.message || textError);
-      return 0.21; // 預設匯率
+      console.error('取得匯率時發生錯誤: 無法讀取響應文本', textError?.message || textError);
+      return NaN;
     }
     
     try {
       data = JSON.parse(text);
     } catch (parseError: any) {
-      // 如果不是有效的 JSON，可能是錯誤訊息（如 "Edge: Too many requests"）
       const errorPreview = text.substring(0, 200);
-      console.error(`取得日幣匯率時發生錯誤: 響應不是有效的 JSON。內容: ${errorPreview}`);
-      return 0.21; // 預設匯率
+      console.error(`取得匯率時發生錯誤: 響應不是有效的 JSON。內容: ${errorPreview}`);
+      return NaN;
     }
     
     if (!data.chart || !data.chart.result || data.chart.result.length === 0) {
-      return 0.21; // 預設匯率
+      return NaN;
     }
 
     const result = data.chart.result[0];
     const meta = result.meta;
-    const rate = meta.regularMarketPrice || meta.previousClose || 0.21;
+    const rate = meta.regularMarketPrice || meta.previousClose;
     
-    return rate;
-  } catch (error: any) {
-    // 避免重複顯示 JSON 解析錯誤（已經在內部處理了）
-    if (error instanceof SyntaxError && error.message?.includes('JSON')) {
-      // JSON 解析錯誤已經在內部處理，這裡不需要再次記錄
-      return 0.21;
+    if (rate && rate > 0) {
+      console.log(`[調試] ✓ 成功取得匯率 ${symbol}: ${rate.toFixed(4)}`);
+      return rate;
     }
-    console.error('取得日幣匯率時發生錯誤:', error?.message || error);
-    return 0.21; // 預設匯率
+    
+    return NaN;
+  } catch (error: any) {
+    if (error instanceof SyntaxError && error.message?.includes('JSON')) {
+      return NaN;
+    }
+    console.error('取得匯率時發生錯誤:', error?.message || error);
+    return NaN;
   }
+};
+
+/**
+ * 取得日幣對台幣的即時匯率（保留作為向後相容，使用通用函數實現）
+ * @returns JPY/TWD 匯率（1 日幣 = X 台幣）
+ */
+const fetchJPYExchangeRate = async (): Promise<number> => {
+  const rate = await fetchExchangeRatePair(Currency.JPY, Currency.TWD);
+  return isNaN(rate) ? 0.21 : rate; // 預設匯率（約 1 JPY = 0.21 TWD）
 };
 
 /**
