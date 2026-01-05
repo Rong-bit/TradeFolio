@@ -178,7 +178,7 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
               onChange={(e) => setCurrency(e.target.value as Currency)}
               className="mt-1 block w-full border border-slate-300 rounded-md p-2"
             >
-              {ALL_CURRENCIES.map(curr => (
+              {ALL_CURRENCIES.map((curr: Currency) => (
                 <option key={curr} value={curr}>
                   {getCurrencyName(curr, language === 'en' ? 'en' : 'zh-TW')}
                 </option>
