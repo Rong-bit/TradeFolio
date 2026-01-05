@@ -523,7 +523,26 @@ export const convertCurrency = (
       return amount / reverseRate;
     }
     
-    // 如果都沒有，嘗試通過 TWD 中轉（如果基準幣值不是 TWD 且來源幣值不是 TWD）
+    // 如果都沒有，嘗試通過 USD 中轉（優先，因為大多數幣種都有 USD 匯率）
+    if (baseCurrency !== Currency.USD && fromCurrency !== Currency.USD) {
+      // 嘗試：來源幣值 -> USD -> 基準幣值
+      const fromToUsdKey = `${fromCurrency}_${Currency.USD}`;
+      const usdToFromKey = `${Currency.USD}_${fromCurrency}`;
+      const fromToUsd = exchangeRates[fromToUsdKey] || 
+                        (exchangeRates[usdToFromKey] ? 1 / exchangeRates[usdToFromKey] : undefined);
+      
+      const usdToBaseKey = `${Currency.USD}_${baseCurrency}`;
+      const baseToUsdKey = `${baseCurrency}_${Currency.USD}`;
+      const usdToBase = exchangeRates[usdToBaseKey] || 
+                        (exchangeRates[baseToUsdKey] ? 1 / exchangeRates[baseToUsdKey] : undefined);
+      
+      if (fromToUsd && usdToBase) {
+        console.log(`[轉換] 透過 USD 中轉: ${fromCurrency} -> USD -> ${baseCurrency}`);
+        return amount * fromToUsd * usdToBase;
+      }
+    }
+    
+    // 如果 USD 中轉失敗，嘗試通過 TWD 中轉（如果基準幣值不是 TWD 且來源幣值不是 TWD）
     if (baseCurrency !== Currency.TWD && fromCurrency !== Currency.TWD) {
       // 嘗試：來源幣值 -> TWD -> 基準幣值
       const fromToTwdKey = `${fromCurrency}_${Currency.TWD}`;
@@ -537,6 +556,7 @@ export const convertCurrency = (
                         (exchangeRates[baseToTwdKey] ? 1 / exchangeRates[baseToTwdKey] : undefined);
       
       if (fromToTwd && twdToBase) {
+        console.log(`[轉換] 透過 TWD 中轉: ${fromCurrency} -> TWD -> ${baseCurrency}`);
         return amount * fromToTwd * twdToBase;
       }
     }
