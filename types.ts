@@ -9,31 +9,7 @@ export enum Market {
 export enum Currency {
   TWD = 'TWD',
   USD = 'USD',
-  JPY = 'JPY',
-  // 亞洲
-  HKD = 'HKD', // 港幣
-  SGD = 'SGD', // 新加坡幣
-  CNY = 'CNY', // 人民幣
-  KRW = 'KRW', // 韓元
-  THB = 'THB', // 泰銖
-  MYR = 'MYR', // 馬來西亞令吉
-  IDR = 'IDR', // 印尼盾
-  VND = 'VND', // 越南盾
-  PHP = 'PHP', // 菲律賓披索
-  // 歐洲
-  EUR = 'EUR', // 歐元
-  GBP = 'GBP', // 英鎊
-  CHF = 'CHF', // 瑞士法郎
-  SEK = 'SEK', // 瑞典克朗
-  NOK = 'NOK', // 挪威克朗
-  DKK = 'DKK', // 丹麥克朗
-  // 其他
-  AUD = 'AUD', // 澳幣
-  CAD = 'CAD', // 加幣
-  NZD = 'NZD', // 紐幣
-  ZAR = 'ZAR', // 南非蘭特
-  BRL = 'BRL', // 巴西里爾
-  MXN = 'MXN'  // 墨西哥披索
+  JPY = 'JPY'
 }
 
 export enum TransactionType {
@@ -119,23 +95,19 @@ export interface Holding {
 }
 
 export interface PortfolioSummary {
-  totalCostTWD: number; // 保留向後相容（實際為基準幣值）
-  totalValueTWD: number; // 保留向後相容（實際為基準幣值）
-  totalPLTWD: number; // 保留向後相容（實際為基準幣值）
+  totalCostTWD: number;
+  totalValueTWD: number;
+  totalPLTWD: number;
   totalPLPercent: number;
-  cashBalanceTWD: number; // Total cash across accounts converted to base currency (保留向後相容)
-  netInvestedTWD: number; // Total cash deposits - withdrawals (保留向後相容)
+  cashBalanceTWD: number; // Total cash across accounts converted to TWD
+  netInvestedTWD: number; // Total cash deposits - withdrawals
   annualizedReturn: number; // CAGR
-  exchangeRateUsdToTwd: number; // 保留向後相容（實際為基準幣值對 USD 的匯率）
-  jpyExchangeRate?: number; // 保留向後相容（實際為基準幣值對 JPY 的匯率，optional）
+  exchangeRateUsdToTwd: number;
+  jpyExchangeRate?: number; // JPY to TWD exchange rate (optional)
   // Detailed fields
-  accumulatedCashDividendsTWD: number; // 保留向後相容（實際為基準幣值）
-  accumulatedStockDividendsTWD: number; // 保留向後相容（實際為基準幣值）
+  accumulatedCashDividendsTWD: number;
+  accumulatedStockDividendsTWD: number;
   avgExchangeRate: number;
-  // 新增：基準幣值
-  baseCurrency?: Currency; // 基準幣值（預設為 TWD 以保持向後相容）
-  // 新增：匯率映射表（key 為 "BASE_TARGET"，例如 "JPY_USD"）
-  exchangeRates?: Record<string, number>; // 匯率映射表
 }
 
 export interface ChartDataPoint {
