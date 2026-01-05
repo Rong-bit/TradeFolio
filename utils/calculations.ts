@@ -488,6 +488,68 @@ export const generateAdvancedChartData = (
   return data;
 };
 
+/**
+ * 幣值轉換工具函數
+ * @param amount 金額
+ * @param fromCurrency 來源幣值
+ * @param toCurrency 目標幣值
+ * @param exchangeRates 匯率映射表（key 為 "BASE_TARGET"，例如 "JPY_USD" 表示 1 JPY = X USD）
+ * @param baseCurrency 基準幣值（用於決定匯率方向）
+ * @returns 轉換後的金額
+ */
+export const convertCurrency = (
+  amount: number,
+  fromCurrency: Currency,
+  toCurrency: Currency,
+  exchangeRates: Record<string, number>,
+  baseCurrency: Currency = Currency.TWD
+): number => {
+  // 如果相同幣值，直接返回
+  if (fromCurrency === toCurrency) {
+    return amount;
+  }
+
+  // 如果轉換到基準幣值
+  if (toCurrency === baseCurrency) {
+    const rateKey = `${fromCurrency}_${baseCurrency}`;
+    const rate = exchangeRates[rateKey];
+    if (rate && rate > 0) {
+      return amount * rate;
+    }
+    // 如果沒有直接匯率，嘗試反向匯率
+    const reverseRateKey = `${baseCurrency}_${fromCurrency}`;
+    const reverseRate = exchangeRates[reverseRateKey];
+    if (reverseRate && reverseRate > 0) {
+      return amount / reverseRate;
+    }
+    // 如果都沒有，返回原值（應該記錄錯誤）
+    console.warn(`無法找到匯率 ${fromCurrency} -> ${toCurrency}，使用原值`);
+    return amount;
+  }
+
+  // 如果從基準幣值轉換
+  if (fromCurrency === baseCurrency) {
+    const rateKey = `${baseCurrency}_${toCurrency}`;
+    const rate = exchangeRates[rateKey];
+    if (rate && rate > 0) {
+      return amount * rate;
+    }
+    // 如果沒有直接匯率，嘗試反向匯率
+    const reverseRateKey = `${toCurrency}_${baseCurrency}`;
+    const reverseRate = exchangeRates[reverseRateKey];
+    if (reverseRate && reverseRate > 0) {
+      return amount / reverseRate;
+    }
+    // 如果都沒有，返回原值（應該記錄錯誤）
+    console.warn(`無法找到匯率 ${fromCurrency} -> ${toCurrency}，使用原值`);
+    return amount;
+  }
+
+  // 如果都不是基準幣值，先轉換到基準幣值，再轉換到目標幣值
+  const baseAmount = convertCurrency(amount, fromCurrency, baseCurrency, exchangeRates, baseCurrency);
+  return convertCurrency(baseAmount, baseCurrency, toCurrency, exchangeRates, baseCurrency);
+};
+
 export const formatCurrency = (val: number, currency: string): string => {
   // 將 -0 或接近 0 的值轉換為 0，避免顯示 "-0" 或 "-$0.00"
   const normalizedVal = Math.abs(val) < 0.0001 ? 0 : val;
