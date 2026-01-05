@@ -17,7 +17,7 @@ import BatchImportModal from './components/BatchImportModal';
 import HistoricalDataModal from './components/HistoricalDataModal';
 import BatchUpdateMarketModal from './components/BatchUpdateMarketModal';
 import AssetAllocationSimulator from './components/AssetAllocationSimulator';
-import { fetchCurrentPrices } from './services/yahooFinanceService';
+import { fetchCurrentPrices, fetchExchangeRatePair } from './services/yahooFinanceService';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
 import { v4 as uuidv4 } from 'uuid';
 import { Language, getLanguage, setLanguage as saveLanguage, t, translate } from './utils/i18n';
@@ -715,18 +715,29 @@ const App: React.FC = () => {
           }
         });
         
-        // 目前 fetchCurrentPrices 只返回 USD/TWD 和 JPY/TWD 匯率
-        // 如果 baseCurrency 不是 TWD，我們需要：
-        // 1. 如果 baseCurrency 是 USD，需要獲取其他幣值對 USD 的匯率
-        // 2. 如果 baseCurrency 是其他幣值，需要獲取該幣值對其他幣值的匯率
-        // 暫時先處理常見情況：如果 baseCurrency 是 USD，使用 USD/TWD 的倒數作為 TWD/USD
-        if (baseCurrency === Currency.USD && result.exchangeRate && result.exchangeRate > 0) {
-          // USD/TWD 的倒數是 TWD/USD，但我們需要的是其他幣值對 USD 的匯率
-          // 暫時先保存 USD/TWD，後續可以通過轉換計算
-          updatedExchangeRates[`${Currency.USD}_${Currency.TWD}`] = result.exchangeRate;
-          // TWD/USD = 1 / (USD/TWD)
-          updatedExchangeRates[`${Currency.TWD}_${Currency.USD}`] = 1 / result.exchangeRate;
-          hasNewRates = true;
+        // 根據基本幣值獲取主要匯率
+        if (baseCurrency === Currency.USD) {
+          // USD: 獲取 TWD/USD 匯率
+          if (result.exchangeRate && result.exchangeRate > 0) {
+            // USD/TWD 的倒數是 TWD/USD
+            updatedExchangeRates[`${Currency.USD}_${Currency.TWD}`] = result.exchangeRate;
+            updatedExchangeRates[`${Currency.TWD}_${Currency.USD}`] = 1 / result.exchangeRate;
+            hasNewRates = true;
+          }
+        } else {
+          // 其他幣值: 獲取 USD/基本幣值 匯率
+          try {
+            const usdToBaseRate = await fetchExchangeRatePair(Currency.USD, baseCurrency);
+            if (!isNaN(usdToBaseRate) && usdToBaseRate > 0) {
+              updatedExchangeRates[`${Currency.USD}_${baseCurrency}`] = usdToBaseRate;
+              // 同時保存反向匯率
+              updatedExchangeRates[`${baseCurrency}_${Currency.USD}`] = 1 / usdToBaseRate;
+              hasNewRates = true;
+              msg += `，USD/${baseCurrency} 匯率: ${usdToBaseRate.toFixed(4)}`;
+            }
+          } catch (error) {
+            console.warn(`無法獲取 USD/${baseCurrency} 匯率:`, error);
+          }
         }
         
         // 如果有 JPY 帳戶，保存 JPY/TWD 匯率（如果有的話）
@@ -1325,19 +1336,73 @@ const App: React.FC = () => {
                     </select>
                   </div>
                   
-                  {/* Exchange Rate Input (only show if baseCurrency is TWD for backward compatibility) */}
-                  {baseCurrency === Currency.TWD && (
-                    <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
-                      <span className="text-xs text-slate-400 mr-2">USD</span>
-                      <input 
-                        type="number" 
-                        step="0.01" 
-                        value={exchangeRate}
-                        onChange={(e) => setExchangeRate(parseFloat(e.target.value))}
-                        className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
-                      />
-                    </div>
-                  )}
+                  {/* Exchange Rate Input - 根據基本幣值動態顯示 */}
+                  {(() => {
+                    if (baseCurrency === Currency.TWD) {
+                      // TWD: 顯示 USD/TWD 輸入框（保持現有邏輯）
+                      return (
+                        <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
+                          <span className="text-xs text-slate-400 mr-2">USD</span>
+                          <input 
+                            type="number" 
+                            step="0.0001" 
+                            value={exchangeRate}
+                            onChange={(e) => {
+                              const newRate = parseFloat(e.target.value);
+                              setExchangeRate(newRate);
+                              // 同時更新 exchangeRates 映射表
+                              const newRates = {...exchangeRates};
+                              newRates[`${Currency.USD}_${Currency.TWD}`] = newRate;
+                              setExchangeRates(newRates);
+                            }}
+                            className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
+                          />
+                        </div>
+                      );
+                    } else if (baseCurrency === Currency.USD) {
+                      // USD: 顯示 TWD/USD 輸入框
+                      const twdToUsdRate = exchangeRates[`${Currency.TWD}_${Currency.USD}`] || 
+                                          (exchangeRates[`${Currency.USD}_${Currency.TWD}`] ? 
+                                           1 / exchangeRates[`${Currency.USD}_${Currency.TWD}`] : '');
+                      return (
+                        <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
+                          <span className="text-xs text-slate-400 mr-2">TWD</span>
+                          <input 
+                            type="number" 
+                            step="0.0001" 
+                            value={twdToUsdRate}
+                            onChange={(e) => {
+                              const newRates = {...exchangeRates};
+                              newRates[`${Currency.TWD}_${Currency.USD}`] = parseFloat(e.target.value);
+                              setExchangeRates(newRates);
+                            }}
+                            className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
+                          />
+                        </div>
+                      );
+                    } else {
+                      // 其他幣值: 顯示 USD/基本幣值 輸入框
+                      const usdToBaseRate = exchangeRates[`${Currency.USD}_${baseCurrency}`] || 
+                                           (exchangeRates[`${baseCurrency}_${Currency.USD}`] ? 
+                                            1 / exchangeRates[`${baseCurrency}_${Currency.USD}`] : '');
+                      return (
+                        <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
+                          <span className="text-xs text-slate-400 mr-2">USD</span>
+                          <input 
+                            type="number" 
+                            step="0.0001" 
+                            value={usdToBaseRate}
+                            onChange={(e) => {
+                              const newRates = {...exchangeRates};
+                              newRates[`${Currency.USD}_${baseCurrency}`] = parseFloat(e.target.value);
+                              setExchangeRates(newRates);
+                            }}
+                            className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
+                          />
+                        </div>
+                      );
+                    }
+                  })()}
                </div>
                
                {/* User Profile */}
@@ -2078,5 +2143,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-
