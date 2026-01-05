@@ -5,7 +5,7 @@ import { useLocalStorageDebounced, useLocalStorageDebouncedSimple } from './hook
 import { useFilters } from './hooks/useFilters';
 import { useDeleteState } from './hooks/useDeleteState';
 import { useUIState } from './hooks/useUIState';
-import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR } from './utils/calculations';
+import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR, convertCurrency } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import HoldingsTable from './components/HoldingsTable';
 import Dashboard from './components/Dashboard';
@@ -761,102 +761,151 @@ const App: React.FC = () => {
   const computedAccounts = useMemo(() => calculateAccountBalances(accounts, cashFlows, transactions), [accounts, cashFlows, transactions]);
 
   const summary = useMemo<PortfolioSummary>(() => {
-    let netInvestedTWD = 0;
-    let totalUsdInflow = 0;
-    let totalTwdCostForUsd = 0;
+    let netInvestedBase = 0; // 淨投入（基準幣值）
+    let totalUsdInflow = 0; // USD 流入總額（用於計算平均匯率）
+    let totalBaseCostForUsd = 0; // 基準幣值成本（用於計算平均匯率）
 
-    cashFlows.forEach(cf => {
-       const account = accounts.find(a => a.id === cf.accountId);
+    cashFlows.forEach((cf: CashFlow) => {
+       const account = accounts.find((a: Account) => a.id === cf.accountId);
+       if (!account) return;
        
-       // 1. Calculate Net Invested (Cost)
-       // 注意：只計算 DEPOSIT 和 WITHDRAW，不包含 TRANSFER（帳戶間轉移）
-       // TRANSFER_IN/TRANSFER_OUT 也不計入，因為它們只是帳戶間股票轉移，不影響淨投入成本
+       // 1. Calculate Net Invested (Cost) - 轉換為基準幣值
        if(cf.type === CashFlowType.DEPOSIT) {
-           const rate = (cf.exchangeRate || (account?.currency === Currency.USD ? exchangeRate : 1));
-           netInvestedTWD += (cf.amountTWD || cf.amount * rate);
+           let amountInBase: number;
+           if (cf.amountTWD && baseCurrency === Currency.TWD) {
+               amountInBase = cf.amountTWD;
+           } else if (cf.amountTWD) {
+               amountInBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
+           } else {
+               amountInBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
+           }
+           netInvestedBase += amountInBase;
        } else if (cf.type === CashFlowType.WITHDRAW) {
-           const rate = (cf.exchangeRate || (account?.currency === Currency.USD ? exchangeRate : 1));
-           netInvestedTWD -= (cf.amountTWD || cf.amount * rate);
+           let amountInBase: number;
+           if (cf.amountTWD && baseCurrency === Currency.TWD) {
+               amountInBase = cf.amountTWD;
+           } else if (cf.amountTWD) {
+               amountInBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
+           } else {
+               amountInBase = convertCurrency(cf.amount, account.currency, baseCurrency, exchangeRates, baseCurrency);
+           }
+           netInvestedBase -= amountInBase;
        }
 
        // 2. Calculate Avg Exchange Rate (Accumulate USD Inflows)
-       if (cf.type === CashFlowType.DEPOSIT && account?.currency === Currency.USD) {
+       if (cf.type === CashFlowType.DEPOSIT && account.currency === Currency.USD) {
            totalUsdInflow += cf.amount;
-           const cost = cf.amountTWD || (cf.amount * (cf.exchangeRate || exchangeRate));
-           totalTwdCostForUsd += cost;
+           let costInBase: number;
+           if (cf.amountTWD && baseCurrency === Currency.TWD) {
+               costInBase = cf.amountTWD;
+           } else if (cf.amountTWD) {
+               costInBase = convertCurrency(cf.amountTWD, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
+           } else {
+               costInBase = convertCurrency(cf.amount, Currency.USD, baseCurrency, exchangeRates, baseCurrency);
+           }
+           totalBaseCostForUsd += costInBase;
        }
        
        if (cf.type === CashFlowType.TRANSFER && cf.targetAccountId) {
-           const targetAccount = accounts.find(a => a.id === cf.targetAccountId);
-           if (account?.currency === Currency.TWD && targetAccount?.currency === Currency.USD) {
-               const costTwd = cf.amount;
+           const targetAccount = accounts.find((a: Account) => a.id === cf.targetAccountId);
+           if (targetAccount && account.currency === Currency.TWD && targetAccount.currency === Currency.USD) {
+               const costInBase = convertCurrency(cf.amount, Currency.TWD, baseCurrency, exchangeRates, baseCurrency);
                let usdReceived = 0;
                if (cf.exchangeRate && cf.exchangeRate > 0) {
                    usdReceived = cf.amount / cf.exchangeRate;
                } else {
-                   usdReceived = cf.amount / exchangeRate;
+                   const rateKey = `${Currency.TWD}_${Currency.USD}`;
+                   const reverseRateKey = `${Currency.USD}_${Currency.TWD}`;
+                   const rate = exchangeRates[rateKey] || (exchangeRates[reverseRateKey] ? 1 / exchangeRates[reverseRateKey] : exchangeRate);
+                   usdReceived = cf.amount / rate;
                }
                totalUsdInflow += usdReceived;
-               totalTwdCostForUsd += costTwd;
+               totalBaseCostForUsd += costInBase;
            }
        }
     });
 
-    const stockValueTWD = baseHoldings.reduce((sum: number, h: Holding) => {
-      // UK 和 JP 市場股票也用 USD 匯率（因為是用美金買的）
-      if (h.market === Market.US || h.market === Market.UK || h.market === Market.JP) return sum + h.currentValue * exchangeRate;
-      return sum + h.currentValue; // TW
+    // 計算股票總價值（轉換為基準幣值）
+    const stockValueBase = baseHoldings.reduce((sum: number, h: Holding) => {
+      const account = accounts.find((a: Account) => a.id === h.accountId);
+      if (!account) return sum;
+      const valueInBase = convertCurrency(h.currentValue, account.currency, baseCurrency, exchangeRates, baseCurrency);
+      return sum + valueInBase;
     }, 0);
-    const cashValueTWD = computedAccounts.reduce((sum: number, a: Account) => sum + (a.currency === Currency.USD ? a.balance * exchangeRate : a.balance), 0);
-    const totalValueTWD = stockValueTWD;
-    const totalAssets = totalValueTWD + cashValueTWD;
-    const totalPLTWD = totalAssets - netInvestedTWD;
-    const totalPLPercent = netInvestedTWD > 0 ? (totalPLTWD / netInvestedTWD) * 100 : 0;
+    
+    // 計算現金總價值（轉換為基準幣值）
+    const cashValueBase = computedAccounts.reduce((sum: number, a: Account) => {
+      const valueInBase = convertCurrency(a.balance, a.currency, baseCurrency, exchangeRates, baseCurrency);
+      return sum + valueInBase;
+    }, 0);
+    
+    const totalValueBase = stockValueBase;
+    const totalAssets = totalValueBase + cashValueBase;
+    const totalPLBase = totalAssets - netInvestedBase;
+    const totalPLPercent = netInvestedBase > 0 ? (totalPLBase / netInvestedBase) * 100 : 0;
     const annualizedReturn = calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate);
     
-    const accumulatedCashDividendsTWD = transactions.filter(t => t.type === TransactionType.CASH_DIVIDEND).reduce((sum, t) => {
+    // 計算累積現金股利（轉換為基準幣值）
+    const accumulatedCashDividendsBase = transactions.filter((t: Transaction) => t.type === TransactionType.CASH_DIVIDEND).reduce((sum: number, t: Transaction) => {
+        const account = accounts.find((a: Account) => a.id === t.accountId);
+        if (!account) return sum;
         const amt = t.amount || (t.price * t.quantity);
-        // UK 和 JP 市場也用 USD 匯率
-        if (t.market === Market.US || t.market === Market.UK || t.market === Market.JP) return sum + amt * exchangeRate;
-        return sum + amt; // TW
+        const amtInBase = convertCurrency(amt, account.currency, baseCurrency, exchangeRates, baseCurrency);
+        return sum + amtInBase;
     }, 0);
 
-    const accumulatedStockDividendsTWD = transactions.filter(t => t.type === TransactionType.DIVIDEND).reduce((sum, t) => {
+    // 計算累積股票股利（轉換為基準幣值）
+    const accumulatedStockDividendsBase = transactions.filter((t: Transaction) => t.type === TransactionType.DIVIDEND).reduce((sum: number, t: Transaction) => {
+        const account = accounts.find((a: Account) => a.id === t.accountId);
+        if (!account) return sum;
         const amt = t.amount || (t.price * t.quantity);
-        // UK 和 JP 市場也用 USD 匯率
-        if (t.market === Market.US || t.market === Market.UK || t.market === Market.JP) return sum + amt * exchangeRate;
-        return sum + amt; // TW
+        const amtInBase = convertCurrency(amt, account.currency, baseCurrency, exchangeRates, baseCurrency);
+        return sum + amtInBase;
     }, 0);
 
-    const avgExchangeRate = totalUsdInflow > 0 ? totalTwdCostForUsd / totalUsdInflow : 0;
+    // 計算平均匯率（USD 對基準幣值）
+    const avgExchangeRate = totalUsdInflow > 0 ? totalBaseCostForUsd / totalUsdInflow : 0;
+    
+    // 獲取 USD 對基準幣值的匯率（用於向後相容）
+    const usdToBaseRate = convertCurrency(1, Currency.USD, baseCurrency, exchangeRates, baseCurrency);
+    // 獲取 JPY 對基準幣值的匯率（如果有的話）
+    const jpyToBaseRate = exchangeRates[`${Currency.JPY}_${baseCurrency}`] || 
+                          (exchangeRates[`${baseCurrency}_${Currency.JPY}`] ? 1 / exchangeRates[`${baseCurrency}_${Currency.JPY}`] : undefined);
 
     return {
-        totalCostTWD: 0,
-        totalValueTWD,
-        totalPLTWD,
+        totalCostTWD: 0, // 保留向後相容
+        totalValueTWD: totalValueBase, // 保留向後相容（實際為基準幣值）
+        totalPLTWD: totalPLBase, // 保留向後相容（實際為基準幣值）
         totalPLPercent,
-        cashBalanceTWD: cashValueTWD,
-        netInvestedTWD,
+        cashBalanceTWD: cashValueBase, // 保留向後相容（實際為基準幣值）
+        netInvestedTWD: netInvestedBase, // 保留向後相容（實際為基準幣值）
         annualizedReturn,
-        exchangeRateUsdToTwd: exchangeRate,
-        accumulatedCashDividendsTWD,
-        accumulatedStockDividendsTWD,
-        avgExchangeRate
+        exchangeRateUsdToTwd: baseCurrency === Currency.TWD ? exchangeRate : usdToBaseRate, // 保留向後相容
+        jpyExchangeRate: baseCurrency === Currency.TWD ? jpyExchangeRate : jpyToBaseRate, // 保留向後相容
+        accumulatedCashDividendsTWD: accumulatedCashDividendsBase, // 保留向後相容（實際為基準幣值）
+        accumulatedStockDividendsTWD: accumulatedStockDividendsBase, // 保留向後相容（實際為基準幣值）
+        avgExchangeRate,
+        baseCurrency, // 新增
+        exchangeRates // 新增
     };
-  }, [baseHoldings, computedAccounts, cashFlows, exchangeRate, accounts, transactions]);
+  }, [baseHoldings, computedAccounts, cashFlows, exchangeRate, jpyExchangeRate, accounts, transactions, baseCurrency, exchangeRates]);
 
   // Step 4: Final Holdings with Weights
   const holdings = useMemo(() => {
     const totalAssets = summary.totalValueTWD + summary.cashBalanceTWD;
     return baseHoldings.map((h: Holding) => {
-        // UK 和 JP 市場也用 USD 匯率
-        const valTwd = (h.market === Market.US || h.market === Market.UK || h.market === Market.JP) ? h.currentValue * exchangeRate : h.currentValue;
+        // 根據帳戶幣值轉換為基準幣值
+        const account = accounts.find((a: Account) => a.id === h.accountId);
+        if (!account) {
+            return { ...h, weight: 0 };
+        }
+        const valBase = convertCurrency(h.currentValue, account.currency, baseCurrency, exchangeRates, baseCurrency);
         return {
             ...h,
-            weight: totalAssets > 0 ? (valTwd / totalAssets) * 100 : 0
+            weight: totalAssets > 0 ? (valBase / totalAssets) * 100 : 0
         };
     });
-  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate]);
+  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, accounts, baseCurrency, exchangeRates]);
 
   // --- Auto Update Prices on Load ---
   useEffect(() => {
