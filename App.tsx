@@ -1207,7 +1207,7 @@ const App: React.FC = () => {
   }, [isAuthenticated, baseHoldings.length, hasAutoUpdated]);
 
   // 修復 useMemo 依賴項：只依賴 summary 中實際使用的屬性，而不是整個物件
-  const chartData = useMemo(() => generateAdvancedChartData(transactions, cashFlows, accounts, summary.totalValueTWD + summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate]);
+  const chartData = useMemo(() => generateAdvancedChartData(transactions, cashFlows, accounts, summary.totalValueTWD + summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate, baseCurrency, exchangeRates), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate, baseCurrency, exchangeRates]);
   // 修復 useMemo 依賴項：只依賴 summary 中實際使用的屬性
   const assetAllocation = useMemo(() => calculateAssetAllocation(holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate), [holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate]);
   const annualPerformance = useMemo(() => calculateAnnualPerformance(chartData), [chartData]);
@@ -2479,4 +2479,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
