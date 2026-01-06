@@ -372,26 +372,18 @@ const Dashboard: React.FC<Props> = ({
                 [Market.JP]: 'bg-red-500',
               };
               
-              // 當百分比小於 15% 時，將文字顯示在進度條外面，避免白色文字在白色背景上看不到
-              const showLabelOutside = item.ratio < 15;
-              
               return (
                 <div key={item.market} className="flex items-center gap-4">
                   <div className="w-20 text-sm font-medium text-slate-700">{marketNames[item.market]}</div>
                   <div className="flex-1 bg-slate-200 rounded-full h-6 overflow-hidden relative">
                     <div 
-                      className={`h-full ${marketColors[item.market]} transition-all duration-500 ${showLabelOutside ? '' : 'flex items-center justify-end pr-2'}`}
+                      className={`h-full ${marketColors[item.market]} transition-all duration-500`}
                       style={{ width: `${item.ratio}%` }}
                     >
-                      {!showLabelOutside && (
-                        <span className="text-white text-xs font-bold">{item.ratio.toFixed(1)}%</span>
-                      )}
                     </div>
-                    {showLabelOutside && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-700 text-xs font-bold ml-2 whitespace-nowrap">
-                        {item.ratio.toFixed(1)}%
-                      </span>
-                    )}
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-700 text-xs font-bold ml-2 whitespace-nowrap">
+                      {item.ratio.toFixed(1)}%
+                    </span>
                   </div>
                   <div className="w-24 text-right text-sm font-mono text-slate-600">
                     {formatCurrency(item.value, 'TWD')}
