@@ -136,6 +136,19 @@ const Dashboard: React.FC<Props> = ({
 
   return (
     <div className="space-y-6">
+      {/* Investment Risk Warning */}
+      <div className="bg-red-50 border-2 border-red-400 rounded-xl p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          <div className="flex-1">
+            <h4 className="text-sm font-bold text-red-900 mb-1">{translations.dashboard.riskWarning}</h4>
+            <p className="text-xs text-red-800 leading-relaxed">{translations.dashboard.riskWarningDesc}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 border-purple-500 relative">
@@ -149,13 +162,13 @@ const Dashboard: React.FC<Props> = ({
               🔍 {translations.dashboard.detail}
             </button>
           </h4>
-          <p className="text-2xl sm:text-3xl font-bold text-slate-800 mt-2">
+          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
             {formatCurrency(summary.netInvestedTWD, 'TWD')}
           </p>
         </div>
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 border-green-500">
           <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
-          <p className="text-2xl sm:text-3xl font-bold text-slate-800 mt-2">
+          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
             {formatCurrency(summary.totalValueTWD + summary.cashBalanceTWD, 'TWD')}
           </p>
           <div className="flex justify-between items-end mt-1">
@@ -165,7 +178,7 @@ const Dashboard: React.FC<Props> = ({
         <div className={`bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-success' : 'border-danger'}`}>
           <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
           <div className="flex items-baseline gap-2 mt-2">
-            <p className={`text-2xl sm:text-3xl font-bold ${summary.totalPLTWD >= 0 ? 'text-success' : 'text-danger'}`}>
+            <p className={`text-xl sm:text-2xl font-bold ${summary.totalPLTWD >= 0 ? 'text-success' : 'text-danger'}`}>
                {summary.totalPLTWD >= 0 ? '+' : ''}{formatCurrency(summary.totalPLTWD, 'TWD')}
             </p>
           </div>
@@ -175,7 +188,7 @@ const Dashboard: React.FC<Props> = ({
         </div>
          <div className="bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 border-blue-500">
           <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
-          <p className="text-2xl sm:text-3xl font-bold text-slate-800 mt-2">
+          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
             {summary.annualizedReturn.toFixed(1)}%
           </p>
           <p className="text-[10px] sm:text-xs text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(summary.netInvestedTWD * 1.08, 'TWD')}</p>
@@ -474,15 +487,15 @@ const Dashboard: React.FC<Props> = ({
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm sm:text-base text-left">
+              <table className="min-w-full text-sm text-left">
                 <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
                   <tr>
-                    <th className="px-3 py-2">{translations.dashboard.year}</th>
-                    <th className="px-3 py-2 text-right">{translations.dashboard.startAssets}</th>
-                    <th className="px-3 py-2 text-right">{translations.dashboard.annualNetInflow}</th>
-                    <th className="px-3 py-2 text-right">{translations.dashboard.endAssets}</th>
-                    <th className="px-3 py-2 text-right">{translations.dashboard.annualProfit}</th>
-                    <th className="px-3 py-2 text-right">{translations.dashboard.annualROI}</th>
+                    <th className="px-6 py-3">{translations.dashboard.year}</th>
+                    <th className="px-6 py-3 text-right">{translations.dashboard.startAssets}</th>
+                    <th className="px-6 py-3 text-right">{translations.dashboard.annualNetInflow}</th>
+                    <th className="px-6 py-3 text-right">{translations.dashboard.endAssets}</th>
+                    <th className="px-6 py-3 text-right">{translations.dashboard.annualProfit}</th>
+                    <th className="px-6 py-3 text-right">{translations.dashboard.annualROI}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -495,17 +508,17 @@ const Dashboard: React.FC<Props> = ({
                     
                     return (
                       <tr key={item.year} className="hover:bg-slate-50">
-                        <td className="px-3 py-2 font-bold text-slate-700">
+                        <td className="px-6 py-3 font-bold text-slate-700">
                           {item.year}
                           {item.isRealData && <span title={language === 'zh-TW' ? '真實歷史數據' : 'Real historical data'} className="ml-2 text-xs cursor-help">✅</span>}
                         </td>
-                        <td className="px-3 py-2 text-right text-slate-500">{formatCurrency(startAssets, displayCurrency)}</td>
-                        <td className="px-3 py-2 text-right text-slate-500">{formatCurrency(netInflow, displayCurrency)}</td>
-                        <td className="px-3 py-2 text-right font-medium">{formatCurrency(endAssets, displayCurrency)}</td>
-                        <td className={`px-3 py-2 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td className="px-6 py-3 text-right text-slate-500">{formatCurrency(startAssets, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right text-slate-500">{formatCurrency(netInflow, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right font-medium">{formatCurrency(endAssets, displayCurrency)}</td>
+                        <td className={`px-6 py-3 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
                           {formatCurrency(profit, displayCurrency)}
                         </td>
-                        <td className={`px-3 py-2 text-right font-bold ${item.roi >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td className={`px-6 py-3 text-right font-bold ${item.roi >= 0 ? 'text-success' : 'text-danger'}`}>
                           {item.roi.toFixed(2)}%
                         </td>
                       </tr>
@@ -651,6 +664,12 @@ const Dashboard: React.FC<Props> = ({
             >
               {loadingAi ? translations.dashboard.analyzing : translations.dashboard.startAnalysis}
             </button>
+          </div>
+
+          <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-500/50 rounded-lg">
+            <p className="text-xs text-yellow-200 leading-relaxed">
+              <strong className="text-yellow-300">⚠️ {translations.dashboard.notInvestmentAdvice}</strong>
+            </p>
           </div>
 
           {aiAnalysis && (
