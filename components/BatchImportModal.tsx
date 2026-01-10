@@ -471,7 +471,8 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 // Other 類型需要根據 Description 判斷具體類型
                 // 1. REIN（股息再投入）- 識別為 DIVIDEND
                 // 2. XFER（轉帳）- 識別為 TRANSFER_IN/OUT
-                // 3. 其他情況根據數量判斷
+                // 3. 稅務相關記錄（NRA ADJ, TAX WITHHELD 等）- 跳過
+                // 4. 其他情況根據數量判斷
                 
                 // 調試：檢查 Description 列是否正確獲取
                 // 如果 descriptionVal 為空，嘗試從所有列中查找包含 REIN 的列
@@ -500,6 +501,19 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                             }
                         }
                     }
+                }
+                
+                // 優先檢查是否為稅務相關記錄（應該跳過，不計入失敗數）
+                const isTaxRelated = descriptionUpper.includes('NRA ADJ') || 
+                                   descriptionUpper.includes('NON-RES TAX') || 
+                                   descriptionUpper.includes('TAX WITHHELD') || 
+                                   descriptionUpper.includes('WITHHELD') ||
+                                   descriptionUpper.includes('NON RESIDENT') ||
+                                   (descriptionUpper.includes('ADJ') && (descriptionUpper.includes('TAX') || descriptionUpper.includes('NRA')));
+                
+                if (isTaxRelated) {
+                    // 稅務相關記錄，跳過（不屬於股票交易）
+                    return;
                 }
                 
                 // 檢查是否為股息再投入：檢查 Description 中是否包含 REIN，或者檢查是否有 Symbol、正數量但 Price 為空（這通常是股息再投入的特徵）
@@ -605,21 +619,33 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                         return;
                     }
                 } else {
-                    // 其他 Other 類型 - 根據數量判斷
+                    // 其他 Other 類型 - 需要根據具體情況判斷
+                    // 如果沒有 Symbol，跳過這筆記錄（可能是現金操作，不屬於股票交易）
                     if (!tickerVal || tickerVal === '') {
-                        // 如果沒有 Symbol，跳過這筆記錄（可能是現金操作，不屬於股票交易）
                         return;
                     }
-                    // 根據數量正負判斷轉入/轉出
-                    if (rawQty > 0 || amountVal > 0) {
+                    
+                    // 檢查是否是稅務或調整記錄（數量為 0 且金額很小，通常小於 10）
+                    if (quantityVal === 0 && Math.abs(amountVal) > 0 && Math.abs(amountVal) < 10) {
+                        // 很可能是稅務或調整記錄，跳過
+                        return;
+                    }
+                    
+                    // 如果數量為 0 且金額也為 0，跳過（無意義記錄）
+                    if (quantityVal === 0 && Math.abs(amountVal) === 0) {
+                        return;
+                    }
+                    
+                    // 只有當有實際的數量變化時，才判斷為轉帳
+                    if (rawQty > 0 && quantityVal > 0) {
                         type = TransactionType.TRANSFER_IN;
                         noteVal = 'Batch Import - 轉入 (Firstrade)';
-                    } else if (rawQty < 0 || amountVal < 0) {
+                    } else if (rawQty < 0 && quantityVal > 0) {
                         type = TransactionType.TRANSFER_OUT;
                         noteVal = 'Batch Import - 轉出 (Firstrade)';
                         amountVal = Math.abs(amountVal);
                     } else {
-                        // 無法判斷，跳過
+                        // 無法判斷為有效的股票交易，跳過
                         return;
                     }
                 }
