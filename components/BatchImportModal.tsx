@@ -18,9 +18,9 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
   const [activeTab, setActiveTab] = useState<'file' | 'paste'>('paste'); // Default to paste for ease
 
   // Helper to parse date MM/DD/YYYY or YYYY/MM/DD to YYYY-MM-DD
-  const parseDate = (dateStr: string) => {
+  const parseDate = (dateStr: string | undefined) => {
     try {
-      if (!dateStr || !dateStr.trim()) return new Date().toISOString().split('T')[0];
+      if (!dateStr || typeof dateStr !== 'string' || !dateStr.trim()) return new Date().toISOString().split('T')[0];
       
       const trimmed = dateStr.trim();
       const parts = trimmed.split('/');
@@ -90,8 +90,8 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
   };
 
   // Helper to clean currency string "$1,234.56" -> 1234.56, "-6,674.00" -> -6674.00
-  const parseNumber = (str: string) => {
-    if (!str) return 0;
+  const parseNumber = (str: string | undefined) => {
+    if (!str || typeof str !== 'string') return 0;
     // 保留負號，移除貨幣符號和逗號
     const cleaned = str.replace(/[$,]/g, '');
     const result = parseFloat(cleaned);
@@ -238,18 +238,24 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             // 使用 TradeDate 作為日期，如果沒有則使用 SettledDate
             const settledDateIdx = headers.indexOf('SettledDate');
             const dateColumnIdx = tradeDateIdx !== -1 ? tradeDateIdx : (settledDateIdx !== -1 ? settledDateIdx : 0);
-            dateVal = parseDate(cols[dateColumnIdx]);
+            dateVal = parseDate(cols[dateColumnIdx] || '');
             
-            tickerVal = (symbolIdx !== -1 && cols[symbolIdx]) ? cols[symbolIdx].trim() : '';
-            const rawQty = parseNumber(cols[qtyIdx !== -1 ? qtyIdx : 1]);
+            // 安全地获取各个列的值，避免 undefined 错误
+            tickerVal = (symbolIdx !== -1 && symbolIdx < cols.length && cols[symbolIdx]) ? String(cols[symbolIdx]).trim() : '';
+            const rawQty = parseNumber((qtyIdx !== -1 && qtyIdx < cols.length) ? cols[qtyIdx] : (cols[1] || ''));
             quantityVal = Math.abs(rawQty);
-            priceVal = parseNumber(cols[priceIdx !== -1 ? priceIdx : 2]);
-            feesVal = Math.abs(parseNumber(cols[commissionFeeIdx !== -1 ? commissionFeeIdx : 10]));
-            amountVal = parseNumber(cols[amountIdx !== -1 ? amountIdx : 8]);
+            priceVal = parseNumber((priceIdx !== -1 && priceIdx < cols.length) ? cols[priceIdx] : (cols[2] || ''));
+            feesVal = Math.abs(parseNumber((commissionFeeIdx !== -1 && commissionFeeIdx < cols.length) ? cols[commissionFeeIdx] : (cols[10] || '')));
+            amountVal = parseNumber((amountIdx !== -1 && amountIdx < cols.length) ? cols[amountIdx] : (cols[8] || ''));
 
-            const actionVal = cols[actionIdx !== -1 ? actionIdx : 3] || '';
-            const actionLower = actionVal.toLowerCase();
-            const recordType = recordTypeIdx !== -1 ? cols[recordTypeIdx].toLowerCase() : '';
+            const actionVal = (actionIdx !== -1 && actionIdx < cols.length && cols[actionIdx]) 
+                ? String(cols[actionIdx]) 
+                : ((cols[3] && cols.length > 3) ? String(cols[3]) : '');
+            const actionLower = (actionVal || '').toLowerCase();
+            const recordTypeVal = (recordTypeIdx !== -1 && recordTypeIdx < cols.length && cols[recordTypeIdx]) 
+                ? String(cols[recordTypeIdx]) 
+                : '';
+            const recordType = recordTypeVal ? recordTypeVal.toLowerCase() : '';
 
             // 跳過不需要解析的 Action 類型
             if (actionLower.includes('reinvest dividend') || actionLower.includes('nra tax adj')) {
