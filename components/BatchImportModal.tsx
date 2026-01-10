@@ -305,7 +305,21 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 type = TransactionType.SELL;
             } else if (actionLower.includes('dividend')) {
                 // Firstrade 的 Dividend 可能是現金股息或再投資股息
-                if (recordType === 'financial' || (priceVal === 0 && quantityVal === 0)) {
+                // 判斷標準：
+                // 1. 股息再投入：RecordType = "Trade" 且 Quantity > 0 且 Price > 0
+                // 2. 現金股息：RecordType = "Financial" 或 (Quantity = 0 且 Price = 0)
+                const isReinvestDividend = recordType === 'trade' && quantityVal > 0 && priceVal > 0;
+                const isCashDividend = recordType === 'financial' || (quantityVal === 0 && priceVal === 0);
+                
+                if (isReinvestDividend) {
+                    // 股息再投入（股票股息）：自動買入股票，有數量和價格
+                    type = TransactionType.DIVIDEND;
+                    feesVal = 0; // 股息不應該有手續費
+                    // 確保 amountVal 正確（應該是價格 × 數量）
+                    if (amountVal <= 0 || amountVal > 1000000) {
+                        amountVal = priceVal * quantityVal;
+                    }
+                } else if (isCashDividend) {
                     // 現金股息：使用 Amount 作為股息金額
                     type = TransactionType.CASH_DIVIDEND;
                     // 確保 amountVal 是正確的值（不應該是 CUSIP）
@@ -330,9 +344,35 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                     quantityVal = 1;
                     feesVal = 0; // 股息不應該有手續費
                 } else {
-                    // 再投資股息（股票股息），有數量
-                    type = TransactionType.DIVIDEND;
-                    feesVal = 0; // 股息不應該有手續費
+                    // 無法確定類型，根據數量判斷
+                    if (quantityVal > 0 && priceVal > 0) {
+                        // 有數量和價格，視為再投資股息
+                        type = TransactionType.DIVIDEND;
+                        feesVal = 0;
+                        if (amountVal <= 0 || amountVal > 1000000) {
+                            amountVal = priceVal * quantityVal;
+                        }
+                    } else {
+                        // 沒有數量或價格，視為現金股息
+                        type = TransactionType.CASH_DIVIDEND;
+                        if (amountVal <= 0 || amountVal > 1000000) {
+                            const interestIdx = headers.indexOf('Interest');
+                            if (interestIdx !== -1 && interestIdx < cols.length && cols[interestIdx]) {
+                                const interestVal = parseNumber(cols[interestIdx]);
+                                if (interestVal > 0 && interestVal <= 1000000) {
+                                    amountVal = interestVal;
+                                } else {
+                                    return; // 無法確定股息金額，跳過
+                                }
+                            } else {
+                                return; // 無法確定股息金額，跳過
+                            }
+                        }
+                        amountVal = Math.abs(amountVal);
+                        priceVal = amountVal;
+                        quantityVal = 1;
+                        feesVal = 0;
+                    }
                 }
             } else if (actionLower.includes('interest')) {
                 // 利息收入，跳過（通常不屬於股票交易）
