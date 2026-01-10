@@ -241,12 +241,36 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             dateVal = parseDate(cols[dateColumnIdx] || '');
             
             // 安全地获取各个列的值，避免 undefined 错误
+            // Firstrade 标准列顺序: Symbol(0), Quantity(1), Price(2), Action(3), Descriptor(4), 
+            // TradeDate(5), SettledDate(6), Interest(7), Amount(8), Commission Fee(9), CUSIP(10), RecordType(11)
             tickerVal = (symbolIdx !== -1 && symbolIdx < cols.length && cols[symbolIdx]) ? String(cols[symbolIdx]).trim() : '';
             const rawQty = parseNumber((qtyIdx !== -1 && qtyIdx < cols.length) ? cols[qtyIdx] : (cols[1] || ''));
             quantityVal = Math.abs(rawQty);
             priceVal = parseNumber((priceIdx !== -1 && priceIdx < cols.length) ? cols[priceIdx] : (cols[2] || ''));
-            feesVal = Math.abs(parseNumber((commissionFeeIdx !== -1 && commissionFeeIdx < cols.length) ? cols[commissionFeeIdx] : (cols[10] || '')));
-            amountVal = parseNumber((amountIdx !== -1 && amountIdx < cols.length) ? cols[amountIdx] : (cols[8] || ''));
+            // Commission Fee 在索引 9，不要使用索引 10（那是 CUSIP）
+            let rawFeesStr = (commissionFeeIdx !== -1 && commissionFeeIdx < cols.length) ? cols[commissionFeeIdx] : (cols.length > 9 ? cols[9] : '0');
+            // 檢查是否是科學記數法（CUSIP 可能是科學記數法）或異常大的數字
+            if (rawFeesStr && (rawFeesStr.includes('E+') || rawFeesStr.includes('e+') || parseFloat(rawFeesStr.replace(/[$,]/g, '')) > 1000)) {
+                // 這可能是 CUSIP 或其他錯誤數據，設為 0
+                rawFeesStr = '0';
+            }
+            feesVal = Math.abs(parseNumber(rawFeesStr));
+            // 如果解析出的手續費異常大（可能是 CUSIP），設為 0
+            if (feesVal > 1000) {
+                feesVal = 0;
+            }
+            // Amount 在索引 8
+            let rawAmountStr = (amountIdx !== -1 && amountIdx < cols.length) ? cols[amountIdx] : (cols.length > 8 ? cols[8] : '0');
+            // 檢查是否是科學記數法（CUSIP 可能是科學記數法）或異常大的數字
+            if (rawAmountStr && (rawAmountStr.includes('E+') || rawAmountStr.includes('e+'))) {
+                // 這可能是 CUSIP，不是 Amount，設為 0
+                rawAmountStr = '0';
+            }
+            amountVal = parseNumber(rawAmountStr);
+            // 如果解析出的金額異常大（可能是 CUSIP），設為 0
+            if (amountVal > 1000000) {
+                amountVal = 0;
+            }
 
             const actionVal = (actionIdx !== -1 && actionIdx < cols.length && cols[actionIdx]) 
                 ? String(cols[actionIdx]) 
@@ -264,18 +288,51 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
 
             // 根據 Action 和 RecordType 判斷交易類型
             if (actionLower.includes('buy')) {
+                // 檢查是否有有效的價格或金額
+                // 如果 Price = 0 且 Amount 無效，可能是數據錯誤，跳過
+                if (priceVal === 0 && (amountVal === 0 || isNaN(amountVal))) {
+                    // 檢查是否可能是再投資股息（應該有數量）
+                    if (quantityVal > 0 && recordType !== 'trade') {
+                        // 可能是再投資股息，但被標記為 BUY，跳過（應該由 DIVIDEND 處理）
+                        return;
+                    } else {
+                        // 無效的 BUY 記錄，跳過
+                        return;
+                    }
+                }
                 type = TransactionType.BUY;
             } else if (actionLower.includes('sell')) {
                 type = TransactionType.SELL;
             } else if (actionLower.includes('dividend')) {
                 // Firstrade 的 Dividend 可能是現金股息或再投資股息
-                if (recordType === 'financial') {
+                if (recordType === 'financial' || (priceVal === 0 && quantityVal === 0)) {
+                    // 現金股息：使用 Amount 作為股息金額
                     type = TransactionType.CASH_DIVIDEND;
+                    // 確保 amountVal 是正確的值（不應該是 CUSIP）
+                    // 如果 amountVal 還是 0 或異常，嘗試從 Interest 列獲取
+                    if (amountVal <= 0 || amountVal > 1000000) {
+                        const interestIdx = headers.indexOf('Interest');
+                        if (interestIdx !== -1 && interestIdx < cols.length && cols[interestIdx]) {
+                            const interestVal = parseNumber(cols[interestIdx]);
+                            if (interestVal > 0 && interestVal <= 1000000) {
+                                amountVal = interestVal;
+                            } else {
+                                // 無法確定股息金額，跳過這筆記錄
+                                return;
+                            }
+                        } else {
+                            // 無法確定股息金額，跳過
+                            return;
+                        }
+                    }
                     amountVal = Math.abs(amountVal);
                     priceVal = amountVal; // 現金股息用 amount 作為 price
                     quantityVal = 1;
+                    feesVal = 0; // 股息不應該有手續費
                 } else {
+                    // 再投資股息（股票股息），有數量
                     type = TransactionType.DIVIDEND;
+                    feesVal = 0; // 股息不應該有手續費
                 }
             } else if (actionLower.includes('interest')) {
                 // 利息收入，跳過（通常不屬於股票交易）
