@@ -129,9 +129,11 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
       let currentFailures = 0;
       let headers: string[] = [];
       
-      // Detection: Check if it looks like Schwab CSV (has specific headers)
+      // Detection: Check if it looks like Schwab CSV or Firstrade CSV (has specific headers)
       const firstLine = lines.find(l => l.trim().length > 0) || '';
-      const isSchwabCSV = firstLine.includes('Date') && firstLine.includes('Action') && firstLine.includes(',');
+      // Firstrade 有 TradeDate 列，嘉信只有 Date 列
+      const isFirstradeCSV = firstLine.includes('TradeDate') && firstLine.includes('Action') && firstLine.includes('Symbol') && firstLine.includes(',');
+      const isSchwabCSV = !isFirstradeCSV && firstLine.includes('Date') && firstLine.includes('Action') && firstLine.includes(',');
       const isTabSeparated = firstLine.includes('\t');
 
       lines.forEach((line, index) => {
@@ -205,6 +207,99 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             }
             
             // 為 Schwab CSV 設置 amountVal（如果還沒設置的話）
+            if (amountVal === 0 && amountIdx !== -1) {
+                amountVal = parseNumber(cols[amountIdx]);
+            }
+
+        } else if (isFirstradeCSV) {
+            // --- Logic for Firstrade CSV ---
+            const cleanLine = line.trim();
+            if (index === 0 || (cleanLine.includes('TradeDate') && cleanLine.includes('Action'))) {
+              headers = cleanLine.split(',').map(h => h.replace(/"/g, '').trim());
+              return; // Header row is not a failure
+            }
+            const columns = cleanLine.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || cleanLine.split(',');
+            const cols = columns.map(c => c.replace(/^"|"$/g, '').trim());
+            
+            if (cols.length < 5) {
+                currentFailures++;
+                return;
+            }
+
+            const tradeDateIdx = headers.indexOf('TradeDate');
+            const actionIdx = headers.indexOf('Action');
+            const symbolIdx = headers.indexOf('Symbol');
+            const qtyIdx = headers.indexOf('Quantity');
+            const priceIdx = headers.indexOf('Price');
+            const commissionFeeIdx = headers.indexOf('Commission Fee');
+            const amountIdx = headers.indexOf('Amount');
+            const recordTypeIdx = headers.indexOf('RecordType');
+
+            // 使用 TradeDate 作為日期，如果沒有則使用 SettledDate
+            const settledDateIdx = headers.indexOf('SettledDate');
+            const dateColumnIdx = tradeDateIdx !== -1 ? tradeDateIdx : (settledDateIdx !== -1 ? settledDateIdx : 0);
+            dateVal = parseDate(cols[dateColumnIdx]);
+            
+            tickerVal = (symbolIdx !== -1 && cols[symbolIdx]) ? cols[symbolIdx].trim() : '';
+            const rawQty = parseNumber(cols[qtyIdx !== -1 ? qtyIdx : 1]);
+            quantityVal = Math.abs(rawQty);
+            priceVal = parseNumber(cols[priceIdx !== -1 ? priceIdx : 2]);
+            feesVal = Math.abs(parseNumber(cols[commissionFeeIdx !== -1 ? commissionFeeIdx : 10]));
+            amountVal = parseNumber(cols[amountIdx !== -1 ? amountIdx : 8]);
+
+            const actionVal = cols[actionIdx !== -1 ? actionIdx : 3] || '';
+            const actionLower = actionVal.toLowerCase();
+            const recordType = recordTypeIdx !== -1 ? cols[recordTypeIdx].toLowerCase() : '';
+
+            // 跳過不需要解析的 Action 類型
+            if (actionLower.includes('reinvest dividend') || actionLower.includes('nra tax adj')) {
+                return; // 直接跳過，不計入失敗數
+            }
+
+            // 根據 Action 和 RecordType 判斷交易類型
+            if (actionLower.includes('buy')) {
+                type = TransactionType.BUY;
+            } else if (actionLower.includes('sell')) {
+                type = TransactionType.SELL;
+            } else if (actionLower.includes('dividend')) {
+                // Firstrade 的 Dividend 可能是現金股息或再投資股息
+                if (recordType === 'financial') {
+                    type = TransactionType.CASH_DIVIDEND;
+                    amountVal = Math.abs(amountVal);
+                    priceVal = amountVal; // 現金股息用 amount 作為 price
+                    quantityVal = 1;
+                } else {
+                    type = TransactionType.DIVIDEND;
+                }
+            } else if (actionLower.includes('interest')) {
+                // 利息收入，跳過（通常不屬於股票交易）
+                return;
+            } else if (actionLower.includes('other') || actionLower.includes('wire funds') || actionLower.includes('xfer cas')) {
+                // 轉帳或其他操作 - 需要有 Symbol 才能處理為轉帳
+                if (!tickerVal || tickerVal === '') {
+                    // 如果沒有 Symbol，跳過這筆記錄（可能是現金轉帳，不屬於股票交易）
+                    return;
+                }
+                // 根據數量正負判斷轉入/轉出
+                if (rawQty > 0 || amountVal > 0) {
+                    type = TransactionType.TRANSFER_IN;
+                    noteVal = 'Batch Import - 轉入 (Firstrade)';
+                } else if (rawQty < 0 || amountVal < 0) {
+                    type = TransactionType.TRANSFER_OUT;
+                    noteVal = 'Batch Import - 轉出 (Firstrade)';
+                    amountVal = Math.abs(amountVal);
+                } else {
+                    // 無法判斷，跳過
+                    return;
+                }
+            }
+
+            // 如果沒有找到有效的交易類型，跳過這筆記錄
+            if (!type) {
+                return;
+            }
+
+            // 為 Firstrade CSV 設置 amountVal（如果還沒設置的話）
             if (amountVal === 0 && amountIdx !== -1) {
                 amountVal = parseNumber(cols[amountIdx]);
             }
@@ -485,7 +580,9 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
               </div>
             ) : (
               <div className="space-y-3">
-                <label className="block text-sm text-slate-600">支援嘉信 (Charles Schwab) CSV 匯出檔</label>
+                <label className="block text-sm text-slate-600">
+                  支援 CSV 匯出檔：嘉信 (Charles Schwab)、Firstrade
+                </label>
                 <input 
                   type="file" 
                   accept=".csv"
