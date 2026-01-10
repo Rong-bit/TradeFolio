@@ -329,7 +329,7 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 // 如果找不到列名，使用默認位置（索引 4）
                 descriptionVal = String(cols[4]).trim();
             }
-            const descriptionUpper = (descriptionVal || '').toUpperCase();
+            let descriptionUpper = (descriptionVal || '').toUpperCase();
 
             // 跳過不需要解析的 Action 類型
             if (actionLower.includes('reinvest dividend') || actionLower.includes('nra tax adj')) {
@@ -433,11 +433,42 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 // 2. XFER（轉帳）- 識別為 TRANSFER_IN/OUT
                 // 3. 其他情況根據數量判斷
                 
-                // 檢查是否為股息再投入：檢查 Description 中是否包含 REIN，或者檢查是否有 Symbol、正數量但 Price 為空（這通常是股息再投入的特徵）
-                const isReinvest = descriptionUpper.includes('REIN') || descriptionUpper.includes('REINVEST') ||
-                                  (tickerVal && tickerVal !== '' && quantityVal > 0 && priceVal === 0 && recordType === 'financial' && amountVal < 0);
+                // 調試：檢查 Description 列是否正確獲取
+                // 如果 descriptionVal 為空，嘗試從所有列中查找包含 REIN 的列
+                // 同時也嘗試從 Description 索引附近的列查找
+                if (!descriptionVal || descriptionVal === '') {
+                    // 嘗試在 Description 索引附近的列中查找（索引 3, 4, 5）
+                    for (let offset = -1; offset <= 1; offset++) {
+                        const tryIdx = (descriptionIdx !== -1 ? descriptionIdx : 4) + offset;
+                        if (tryIdx >= 0 && tryIdx < cols.length && cols[tryIdx]) {
+                            const tryVal = String(cols[tryIdx]).trim();
+                            if (tryVal && tryVal.length > 10) { // Description 通常較長
+                                descriptionVal = tryVal;
+                                descriptionUpper = descriptionVal.toUpperCase();
+                                break;
+                            }
+                        }
+                    }
+                    // 如果還是找不到，嘗試在所有列中查找包含 REIN 的內容
+                    if (!descriptionVal || descriptionVal === '') {
+                        for (let i = 0; i < cols.length; i++) {
+                            const colVal = String(cols[i] || '').trim().toUpperCase();
+                            if (colVal.includes('REIN') || colVal.includes('REINVEST')) {
+                                descriptionVal = String(cols[i] || '').trim();
+                                descriptionUpper = descriptionVal.toUpperCase();
+                                break;
+                            }
+                        }
+                    }
+                }
                 
-                if (isReinvest || descriptionUpper.includes('REIN') || descriptionUpper.includes('REINVEST')) {
+                // 檢查是否為股息再投入：檢查 Description 中是否包含 REIN，或者檢查是否有 Symbol、正數量但 Price 為空（這通常是股息再投入的特徵）
+                // 優先檢查 Description，如果 Description 為空，則使用其他特徵判斷
+                const hasReinInDescription = descriptionUpper.includes('REIN') || descriptionUpper.includes('REINVEST');
+                const hasReinvestCharacteristics = tickerVal && tickerVal !== '' && quantityVal > 0 && priceVal === 0 && recordType === 'financial' && amountVal < 0;
+                const isReinvest = hasReinInDescription || hasReinvestCharacteristics;
+                
+                if (isReinvest) {
                     // 股息再投入：自動用股息購買股票
                     // 必須有 Symbol 和數量才能處理
                     if (!tickerVal || tickerVal === '' || quantityVal <= 0) {
