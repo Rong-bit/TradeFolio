@@ -231,7 +231,22 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             const symbolIdx = headers.indexOf('Symbol');
             const qtyIdx = headers.indexOf('Quantity');
             const priceIdx = headers.indexOf('Price');
-            const commissionFeeIdx = headers.indexOf('Commission Fee');
+            // 嘗試多種可能的列名格式
+            let commissionFeeIdx = headers.indexOf('Commission Fee');
+            if (commissionFeeIdx === -1) {
+                commissionFeeIdx = headers.findIndex(h => h.toLowerCase().trim() === 'commission fee');
+            }
+            if (commissionFeeIdx === -1) {
+                commissionFeeIdx = headers.findIndex(h => h.toLowerCase().includes('commission') && h.toLowerCase().includes('fee'));
+            }
+            if (commissionFeeIdx === -1) {
+                commissionFeeIdx = headers.findIndex(h => h.toLowerCase().includes('fee') || h.toLowerCase().includes('commission'));
+            }
+            // 如果還是找不到，根據 Firstrade 標準格式，Commission Fee 應該在索引 9
+            if (commissionFeeIdx === -1 && headers.length > 9) {
+                // 使用默認位置（索引 9）
+                commissionFeeIdx = 9;
+            }
             const amountIdx = headers.indexOf('Amount');
             const recordTypeIdx = headers.indexOf('RecordType');
 
@@ -248,15 +263,37 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             quantityVal = Math.abs(rawQty);
             priceVal = parseNumber((priceIdx !== -1 && priceIdx < cols.length) ? cols[priceIdx] : (cols[2] || ''));
             // Commission Fee 在索引 9，不要使用索引 10（那是 CUSIP）
-            let rawFeesStr = (commissionFeeIdx !== -1 && commissionFeeIdx < cols.length) ? cols[commissionFeeIdx] : (cols.length > 9 ? cols[9] : '0');
-            // 檢查是否是科學記數法（CUSIP 可能是科學記數法）或異常大的數字
-            if (rawFeesStr && (rawFeesStr.includes('E+') || rawFeesStr.includes('e+') || parseFloat(rawFeesStr.replace(/[$,]/g, '')) > 1000)) {
-                // 這可能是 CUSIP 或其他錯誤數據，設為 0
+            // 先嘗試從列名獲取，如果找不到則使用默認索引 9
+            let rawFeesStr = '';
+            if (commissionFeeIdx !== -1 && commissionFeeIdx < cols.length) {
+                rawFeesStr = cols[commissionFeeIdx] || '';
+            } else if (cols.length > 9) {
+                // 如果找不到列名，使用默認位置（索引 9）
+                rawFeesStr = cols[9] || '';
+            } else {
                 rawFeesStr = '0';
             }
+            
+            // 檢查是否是科學記數法（CUSIP 可能是科學記數法）或異常大的數字
+            // 正常手續費通常在 0-100 之間，超過 100 可能是錯誤數據（如 CUSIP）
+            if (rawFeesStr && typeof rawFeesStr === 'string') {
+                const trimmedFeesStr = rawFeesStr.trim();
+                if (trimmedFeesStr.includes('E+') || trimmedFeesStr.includes('e+')) {
+                    // 科學記數法，可能是 CUSIP，設為 0
+                    rawFeesStr = '0';
+                } else {
+                    const feesNum = parseFloat(trimmedFeesStr.replace(/[$,]/g, '') || '0');
+                    if (!isNaN(feesNum) && feesNum > 100) {
+                        // 手續費超過 100，可能是 CUSIP 或其他錯誤數據，設為 0
+                        rawFeesStr = '0';
+                    }
+                }
+            }
+            
             feesVal = Math.abs(parseNumber(rawFeesStr));
-            // 如果解析出的手續費異常大（可能是 CUSIP），設為 0
-            if (feesVal > 1000) {
+            // 再次驗證：如果解析出的手續費異常大（>100），設為 0（正常手續費不會超過 100）
+            // 但保留小數點後的手續費（如 0.09, 2.33 等）
+            if (feesVal > 100) {
                 feesVal = 0;
             }
             // Amount 在索引 8
