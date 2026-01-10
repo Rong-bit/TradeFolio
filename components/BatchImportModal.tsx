@@ -231,21 +231,16 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             const symbolIdx = headers.indexOf('Symbol');
             const qtyIdx = headers.indexOf('Quantity');
             const priceIdx = headers.indexOf('Price');
-            // 嘗試多種可能的列名格式
-            let commissionFeeIdx = headers.indexOf('Commission Fee');
-            if (commissionFeeIdx === -1) {
-                commissionFeeIdx = headers.findIndex(h => h.toLowerCase().trim() === 'commission fee');
+            const descriptionIdx = headers.indexOf('Description');
+            // Firstrade 的列名是分開的：Commission 和 Fee
+            // Fee 列才是手續費（索引 10），Commission 列通常是 0（索引 9）
+            let feeIdx = headers.indexOf('Fee');
+            if (feeIdx === -1) {
+                feeIdx = headers.findIndex(h => h.toLowerCase().trim() === 'fee');
             }
-            if (commissionFeeIdx === -1) {
-                commissionFeeIdx = headers.findIndex(h => h.toLowerCase().includes('commission') && h.toLowerCase().includes('fee'));
-            }
-            if (commissionFeeIdx === -1) {
-                commissionFeeIdx = headers.findIndex(h => h.toLowerCase().includes('fee') || h.toLowerCase().includes('commission'));
-            }
-            // 如果還是找不到，根據 Firstrade 標準格式，Commission Fee 應該在索引 9
-            if (commissionFeeIdx === -1 && headers.length > 9) {
-                // 使用默認位置（索引 9）
-                commissionFeeIdx = 9;
+            if (feeIdx === -1) {
+                // 如果找不到，根據 Firstrade 標準格式，Fee 應該在索引 10
+                feeIdx = headers.length > 10 ? 10 : -1;
             }
             const amountIdx = headers.indexOf('Amount');
             const recordTypeIdx = headers.indexOf('RecordType');
@@ -256,20 +251,20 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             dateVal = parseDate(cols[dateColumnIdx] || '');
             
             // 安全地获取各个列的值，避免 undefined 错误
-            // Firstrade 标准列顺序: Symbol(0), Quantity(1), Price(2), Action(3), Descriptor(4), 
-            // TradeDate(5), SettledDate(6), Interest(7), Amount(8), Commission Fee(9), CUSIP(10), RecordType(11)
+            // Firstrade 标准列顺序: Symbol(0), Quantity(1), Price(2), Action(3), Description(4), 
+            // TradeDate(5), SettledDate(6), Interest(7), Amount(8), Commission(9), Fee(10), CUSIP(11), RecordType(12)
             tickerVal = (symbolIdx !== -1 && symbolIdx < cols.length && cols[symbolIdx]) ? String(cols[symbolIdx]).trim() : '';
             const rawQty = parseNumber((qtyIdx !== -1 && qtyIdx < cols.length) ? cols[qtyIdx] : (cols[1] || ''));
             quantityVal = Math.abs(rawQty);
             priceVal = parseNumber((priceIdx !== -1 && priceIdx < cols.length) ? cols[priceIdx] : (cols[2] || ''));
-            // Commission Fee 在索引 9，不要使用索引 10（那是 CUSIP）
-            // 先嘗試從列名獲取，如果找不到則使用默認索引 9
+            // Fee 列在索引 10，這是手續費（不是 Commission，也不是 CUSIP）
+            // 先嘗試從列名獲取，如果找不到則使用默認索引 10
             let rawFeesStr = '';
-            if (commissionFeeIdx !== -1 && commissionFeeIdx < cols.length) {
-                rawFeesStr = cols[commissionFeeIdx] || '';
-            } else if (cols.length > 9) {
-                // 如果找不到列名，使用默認位置（索引 9）
-                rawFeesStr = cols[9] || '';
+            if (feeIdx !== -1 && feeIdx < cols.length) {
+                rawFeesStr = cols[feeIdx] || '';
+            } else if (cols.length > 10) {
+                // 如果找不到列名，使用默認位置（索引 10）
+                rawFeesStr = cols[10] || '';
             } else {
                 rawFeesStr = '0';
             }
@@ -292,7 +287,7 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             
             feesVal = Math.abs(parseNumber(rawFeesStr));
             // 再次驗證：如果解析出的手續費異常大（>100），設為 0（正常手續費不會超過 100）
-            // 但保留小數點後的手續費（如 0.09, 2.33 等）
+            // 但保留小數點後的手續費（如 0.09, 2.33, 0.41, 0.35, 1.19 等）
             if (feesVal > 100) {
                 feesVal = 0;
             }
@@ -317,6 +312,11 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 ? String(cols[recordTypeIdx]) 
                 : '';
             const recordType = recordTypeVal ? recordTypeVal.toLowerCase() : '';
+            // 獲取 Description 列（用於判斷 REIN、XFER 等特殊類型）
+            const descriptionVal = (descriptionIdx !== -1 && descriptionIdx < cols.length && cols[descriptionIdx]) 
+                ? String(cols[descriptionIdx]) 
+                : ((cols.length > 4) ? String(cols[4] || '') : '');
+            const descriptionUpper = (descriptionVal || '').toUpperCase();
 
             // 跳過不需要解析的 Action 類型
             if (actionLower.includes('reinvest dividend') || actionLower.includes('nra tax adj')) {
@@ -414,24 +414,84 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             } else if (actionLower.includes('interest')) {
                 // 利息收入，跳過（通常不屬於股票交易）
                 return;
-            } else if (actionLower.includes('other') || actionLower.includes('wire funds') || actionLower.includes('xfer cas')) {
-                // 轉帳或其他操作 - 需要有 Symbol 才能處理為轉帳
-                if (!tickerVal || tickerVal === '') {
-                    // 如果沒有 Symbol，跳過這筆記錄（可能是現金轉帳，不屬於股票交易）
-                    return;
-                }
-                // 根據數量正負判斷轉入/轉出
-                if (rawQty > 0 || amountVal > 0) {
-                    type = TransactionType.TRANSFER_IN;
-                    noteVal = 'Batch Import - 轉入 (Firstrade)';
-                } else if (rawQty < 0 || amountVal < 0) {
-                    type = TransactionType.TRANSFER_OUT;
-                    noteVal = 'Batch Import - 轉出 (Firstrade)';
-                    amountVal = Math.abs(amountVal);
+            } else if (actionLower.includes('other')) {
+                // Other 類型需要根據 Description 判斷具體類型
+                // 1. REIN（股息再投入）- 識別為 DIVIDEND
+                // 2. XFER（轉帳）- 識別為 TRANSFER_IN/OUT
+                // 3. 其他情況根據數量判斷
+                
+                if (descriptionUpper.includes('REIN') || descriptionUpper.includes('REINVEST')) {
+                    // 股息再投入：自動用股息購買股票
+                    type = TransactionType.DIVIDEND;
+                    feesVal = 0; // 股息不應該有手續費
+                    
+                    // 從 Description 中提取價格（格式：REIN @ 513.2849）
+                    const priceMatch = descriptionVal.match(/REIN\s*@\s*([\d.]+)/i);
+                    if (priceMatch && priceMatch[1]) {
+                        const extractedPrice = parseNumber(priceMatch[1]);
+                        if (extractedPrice > 0) {
+                            priceVal = extractedPrice;
+                        }
+                    }
+                    
+                    // 確保有數量和價格
+                    if (quantityVal > 0) {
+                        // 如果 Price 為空，使用 Amount / Quantity 計算
+                        if (priceVal === 0 && amountVal !== 0) {
+                            priceVal = Math.abs(amountVal) / quantityVal;
+                        }
+                        // 確保 amountVal 正確（應該是價格 × 數量，或使用 Amount 列的絕對值）
+                        if (amountVal < 0) {
+                            amountVal = Math.abs(amountVal);
+                        }
+                        if (amountVal === 0 && priceVal > 0) {
+                            amountVal = priceVal * quantityVal;
+                        }
+                    } else {
+                        // 沒有數量，可能是數據錯誤，跳過
+                        return;
+                    }
+                    noteVal = 'Batch Import - 股息再投入 (Firstrade)';
+                } else if (descriptionUpper.includes('XFER') || descriptionUpper.includes('TRANSFER')) {
+                    // 轉帳操作 - 需要有 Symbol 才能處理為股票轉帳
+                    if (!tickerVal || tickerVal === '') {
+                        // 如果沒有 Symbol，是現金轉帳，跳過（不屬於股票交易）
+                        return;
+                    }
+                    // 根據數量正負或 Amount 正負判斷轉入/轉出
+                    if (rawQty > 0 || (amountVal > 0 && rawQty === 0)) {
+                        type = TransactionType.TRANSFER_IN;
+                        noteVal = 'Batch Import - 轉入 (Firstrade)';
+                    } else if (rawQty < 0 || amountVal < 0) {
+                        type = TransactionType.TRANSFER_OUT;
+                        noteVal = 'Batch Import - 轉出 (Firstrade)';
+                        amountVal = Math.abs(amountVal);
+                    } else {
+                        // 無法判斷，跳過
+                        return;
+                    }
                 } else {
-                    // 無法判斷，跳過
-                    return;
+                    // 其他 Other 類型 - 根據數量判斷
+                    if (!tickerVal || tickerVal === '') {
+                        // 如果沒有 Symbol，跳過這筆記錄（可能是現金操作，不屬於股票交易）
+                        return;
+                    }
+                    // 根據數量正負判斷轉入/轉出
+                    if (rawQty > 0 || amountVal > 0) {
+                        type = TransactionType.TRANSFER_IN;
+                        noteVal = 'Batch Import - 轉入 (Firstrade)';
+                    } else if (rawQty < 0 || amountVal < 0) {
+                        type = TransactionType.TRANSFER_OUT;
+                        noteVal = 'Batch Import - 轉出 (Firstrade)';
+                        amountVal = Math.abs(amountVal);
+                    } else {
+                        // 無法判斷，跳過
+                        return;
+                    }
                 }
+            } else if (actionLower.includes('wire funds') || actionLower.includes('xfer cas')) {
+                // 現金轉帳，跳過（不屬於股票交易）
+                return;
             }
 
             // 如果沒有找到有效的交易類型，跳過這筆記錄
