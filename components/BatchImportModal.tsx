@@ -231,7 +231,14 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             const symbolIdx = headers.indexOf('Symbol');
             const qtyIdx = headers.indexOf('Quantity');
             const priceIdx = headers.indexOf('Price');
-            const descriptionIdx = headers.indexOf('Description');
+            // 嘗試多種可能的列名
+            let descriptionIdx = headers.indexOf('Description');
+            if (descriptionIdx === -1) {
+                descriptionIdx = headers.indexOf('Descriptor');
+            }
+            if (descriptionIdx === -1) {
+                descriptionIdx = headers.findIndex(h => h.toLowerCase().includes('description') || h.toLowerCase().includes('descriptor'));
+            }
             // Firstrade 的列名是分開的：Commission 和 Fee
             // Fee 列才是手續費（索引 10），Commission 列通常是 0（索引 9）
             let feeIdx = headers.indexOf('Fee');
@@ -426,7 +433,11 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 // 2. XFER（轉帳）- 識別為 TRANSFER_IN/OUT
                 // 3. 其他情況根據數量判斷
                 
-                if (descriptionUpper.includes('REIN') || descriptionUpper.includes('REINVEST')) {
+                // 檢查是否為股息再投入：檢查 Description 中是否包含 REIN，或者檢查是否有 Symbol、正數量但 Price 為空（這通常是股息再投入的特徵）
+                const isReinvest = descriptionUpper.includes('REIN') || descriptionUpper.includes('REINVEST') ||
+                                  (tickerVal && tickerVal !== '' && quantityVal > 0 && priceVal === 0 && recordType === 'financial' && amountVal < 0);
+                
+                if (isReinvest || descriptionUpper.includes('REIN') || descriptionUpper.includes('REINVEST')) {
                     // 股息再投入：自動用股息購買股票
                     // 必須有 Symbol 和數量才能處理
                     if (!tickerVal || tickerVal === '' || quantityVal <= 0) {
@@ -437,38 +448,69 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                     type = TransactionType.DIVIDEND;
                     feesVal = 0; // 股息不應該有手續費
                     
-                    // 從 Description 中提取價格（格式：REIN @ 513.2849）
-                    const priceMatch = descriptionVal.match(/REIN\s*@\s*([\d.]+)/i);
-                    if (priceMatch && priceMatch[1]) {
-                        const extractedPrice = parseNumber(priceMatch[1]);
-                        if (extractedPrice > 0) {
-                            priceVal = extractedPrice;
+                    // 確保 amountVal 正確：股息再投入的 Amount 是負數（支出），需要先轉為正數
+                    let workingAmount = amountVal;
+                    if (workingAmount < 0) {
+                        workingAmount = Math.abs(workingAmount);
+                    }
+                    
+                    // 從 Description 中提取價格（格式：REIN @ 513.2849 或 REIN @  513.2849）
+                    // 嘗試多種格式：REIN @ 513.2849, REIN @  513.2849, REIN@513.2849
+                    let extractedPrice = 0;
+                    const pricePatterns = [
+                        /REIN\s*@\s*(\d+\.?\d*)/i,  // REIN @ 513.2849
+                        /REIN\s*@\s*\s*(\d+\.?\d*)/i, // REIN @  513.2849 (多個空格)
+                        /@\s*(\d+\.?\d*)\s*REC/i,    // @ 513.2849 REC
+                    ];
+                    
+                    for (const pattern of pricePatterns) {
+                        const match = descriptionVal.match(pattern);
+                        if (match && match[1]) {
+                            const parsed = parseNumber(match[1]);
+                            if (parsed > 0) {
+                                extractedPrice = parsed;
+                                break;
+                            }
                         }
                     }
                     
-                    // 確保有價格：如果 Price 列為空，使用 Amount / Quantity 計算
-                    if (priceVal === 0 || isNaN(priceVal)) {
-                        if (amountVal !== 0 && !isNaN(amountVal) && quantityVal > 0) {
-                            // 使用 Amount 的絕對值除以數量得到價格
-                            priceVal = Math.abs(amountVal) / quantityVal;
+                    // 如果從 Description 中提取到價格，使用它
+                    if (extractedPrice > 0) {
+                        priceVal = extractedPrice;
+                    }
+                    
+                    // 如果 Price 列有值，優先使用 Price 列（但應該檢查 Price 列是否正確）
+                    if (priceVal > 0 && !isNaN(priceVal)) {
+                        // Price 列或從 Description 提取的價格有效
+                    } else {
+                        // 如果 Price 列為空或無效，使用 Amount / Quantity 計算
+                        if (workingAmount > 0 && !isNaN(workingAmount) && quantityVal > 0) {
+                            priceVal = workingAmount / quantityVal;
                         } else {
-                            // 無法確定價格，跳過
-                            return;
+                            // 無法確定價格，嘗試從原始 Price 列獲取（雖然可能為 0）
+                            // 如果還是無法確定，跳過
+                            if (priceVal === 0 || isNaN(priceVal)) {
+                                return; // 無法確定價格，跳過
+                            }
                         }
                     }
                     
-                    // 確保 amountVal 正確：股息再投入的 Amount 是負數（支出），需要轉為正數
-                    if (amountVal < 0) {
-                        amountVal = Math.abs(amountVal);
-                    }
-                    // 如果 amountVal 為 0 或無效，使用價格 × 數量計算
-                    if (amountVal === 0 || isNaN(amountVal)) {
-                        if (priceVal > 0 && quantityVal > 0) {
-                            amountVal = priceVal * quantityVal;
+                    // 確保 amountVal 正確：使用計算出的價格和數量，或使用原始 Amount（轉為正數）
+                    if (priceVal > 0 && quantityVal > 0) {
+                        const calculatedAmount = priceVal * quantityVal;
+                        // 使用計算出的金額，或者原始金額（如果合理）
+                        if (workingAmount > 0 && Math.abs(calculatedAmount - workingAmount) / Math.max(calculatedAmount, workingAmount) < 0.1) {
+                            // 計算值和原始值接近（誤差 < 10%），使用原始值
+                            amountVal = workingAmount;
                         } else {
-                            // 無法確定金額，跳過
-                            return;
+                            // 使用計算值
+                            amountVal = calculatedAmount;
                         }
+                    } else if (workingAmount > 0) {
+                        amountVal = workingAmount;
+                    } else {
+                        // 無法確定金額，跳過
+                        return;
                     }
                     
                     noteVal = 'Batch Import - 股息再投入 (Firstrade)';
