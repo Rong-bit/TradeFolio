@@ -218,8 +218,37 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
               headers = cleanLine.split(',').map(h => h.replace(/"/g, '').trim());
               return; // Header row is not a failure
             }
-            const columns = cleanLine.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || cleanLine.split(',');
-            const cols = columns.map(c => c.replace(/^"|"$/g, '').trim());
+            
+            // 移除行尾的 \r\n
+            const trimmedLine = cleanLine.replace(/\r\n?$/, '').trim();
+            
+            // 使用简单的 split(',') 方法，因为 Firstrade CSV 格式固定，字段用逗号分隔
+            // 先尝试处理引号包裹的字段
+            let cols: string[] = [];
+            let currentField = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < trimmedLine.length; i++) {
+                const char = trimmedLine[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    cols.push(currentField.trim());
+                    currentField = '';
+                } else {
+                    currentField += char;
+                }
+            }
+            // 添加最后一个字段
+            if (currentField || trimmedLine.endsWith(',')) {
+                cols.push(currentField.trim());
+            }
+            
+            // 如果解析出来的列数太少，使用备用方法
+            if (cols.length < 5) {
+                const columns = trimmedLine.split(',');
+                cols = columns.map(c => c.replace(/^"|"$/g, '').trim());
+            }
             
             if (cols.length < 5) {
                 currentFailures++;
@@ -323,11 +352,22 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             // 獲取 Description 列（用於判斷 REIN、XFER 等特殊類型）
             // 先嘗試從列名獲取，如果找不到則使用默認索引 4
             let descriptionVal = '';
-            if (descriptionIdx !== -1 && descriptionIdx < cols.length && cols[descriptionIdx]) {
-                descriptionVal = String(cols[descriptionIdx]).trim();
-            } else if (cols.length > 4 && cols[4]) {
-                // 如果找不到列名，使用默認位置（索引 4）
-                descriptionVal = String(cols[4]).trim();
+            if (descriptionIdx !== -1 && descriptionIdx < cols.length) {
+                descriptionVal = String(cols[descriptionIdx] || '').trim();
+            }
+            // 如果還是空的，使用默認位置（索引 4，因為格式是：Symbol,Quantity,Price,Action,Description,...）
+            if (!descriptionVal && cols.length > 4) {
+                descriptionVal = String(cols[4] || '').trim();
+            }
+            // 如果還是空的，嘗試在其他列中查找（Description 通常較長且包含公司名稱）
+            if (!descriptionVal) {
+                for (let i = 3; i < Math.min(cols.length, 6); i++) {
+                    const testVal = String(cols[i] || '').trim();
+                    if (testVal && testVal.length > 20) { // Description 通常較長
+                        descriptionVal = testVal;
+                        break;
+                    }
+                }
             }
             let descriptionUpper = (descriptionVal || '').toUpperCase();
 
@@ -465,7 +505,8 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 // 檢查是否為股息再投入：檢查 Description 中是否包含 REIN，或者檢查是否有 Symbol、正數量但 Price 為空（這通常是股息再投入的特徵）
                 // 優先檢查 Description，如果 Description 為空，則使用其他特徵判斷
                 const hasReinInDescription = descriptionUpper.includes('REIN') || descriptionUpper.includes('REINVEST');
-                const hasReinvestCharacteristics = tickerVal && tickerVal !== '' && quantityVal > 0 && priceVal === 0 && recordType === 'financial' && amountVal < 0;
+                // 股息再投入的特徵：Symbol + 正數量 + Price = 0 + RecordType = Financial + Amount < 0
+                const hasReinvestCharacteristics = tickerVal && tickerVal !== '' && quantityVal > 0 && (priceVal === 0 || isNaN(priceVal)) && recordType === 'financial' && amountVal < 0;
                 const isReinvest = hasReinInDescription || hasReinvestCharacteristics;
                 
                 if (isReinvest) {
