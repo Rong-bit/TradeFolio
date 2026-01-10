@@ -298,9 +298,10 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 // 這可能是 CUSIP，不是 Amount，設為 0
                 rawAmountStr = '0';
             }
+            // 先解析原始值（可能是負數，如股息再投入）
             amountVal = parseNumber(rawAmountStr);
-            // 如果解析出的金額異常大（可能是 CUSIP），設為 0
-            if (amountVal > 1000000) {
+            // 如果解析出的金額異常大（可能是 CUSIP），設為 0（保留負數，因為股息再投入的 Amount 是負數）
+            if (Math.abs(amountVal) > 1000000) {
                 amountVal = 0;
             }
 
@@ -313,9 +314,14 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 : '';
             const recordType = recordTypeVal ? recordTypeVal.toLowerCase() : '';
             // 獲取 Description 列（用於判斷 REIN、XFER 等特殊類型）
-            const descriptionVal = (descriptionIdx !== -1 && descriptionIdx < cols.length && cols[descriptionIdx]) 
-                ? String(cols[descriptionIdx]) 
-                : ((cols.length > 4) ? String(cols[4] || '') : '');
+            // 先嘗試從列名獲取，如果找不到則使用默認索引 4
+            let descriptionVal = '';
+            if (descriptionIdx !== -1 && descriptionIdx < cols.length && cols[descriptionIdx]) {
+                descriptionVal = String(cols[descriptionIdx]).trim();
+            } else if (cols.length > 4 && cols[4]) {
+                // 如果找不到列名，使用默認位置（索引 4）
+                descriptionVal = String(cols[4]).trim();
+            }
             const descriptionUpper = (descriptionVal || '').toUpperCase();
 
             // 跳過不需要解析的 Action 類型
@@ -422,6 +428,12 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 
                 if (descriptionUpper.includes('REIN') || descriptionUpper.includes('REINVEST')) {
                     // 股息再投入：自動用股息購買股票
+                    // 必須有 Symbol 和數量才能處理
+                    if (!tickerVal || tickerVal === '' || quantityVal <= 0) {
+                        // 如果沒有 Symbol 或數量，可能是數據錯誤，跳過
+                        return;
+                    }
+                    
                     type = TransactionType.DIVIDEND;
                     feesVal = 0; // 股息不應該有手續費
                     
@@ -434,23 +446,31 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                         }
                     }
                     
-                    // 確保有數量和價格
-                    if (quantityVal > 0) {
-                        // 如果 Price 為空，使用 Amount / Quantity 計算
-                        if (priceVal === 0 && amountVal !== 0) {
+                    // 確保有價格：如果 Price 列為空，使用 Amount / Quantity 計算
+                    if (priceVal === 0 || isNaN(priceVal)) {
+                        if (amountVal !== 0 && !isNaN(amountVal) && quantityVal > 0) {
+                            // 使用 Amount 的絕對值除以數量得到價格
                             priceVal = Math.abs(amountVal) / quantityVal;
+                        } else {
+                            // 無法確定價格，跳過
+                            return;
                         }
-                        // 確保 amountVal 正確（應該是價格 × 數量，或使用 Amount 列的絕對值）
-                        if (amountVal < 0) {
-                            amountVal = Math.abs(amountVal);
-                        }
-                        if (amountVal === 0 && priceVal > 0) {
-                            amountVal = priceVal * quantityVal;
-                        }
-                    } else {
-                        // 沒有數量，可能是數據錯誤，跳過
-                        return;
                     }
+                    
+                    // 確保 amountVal 正確：股息再投入的 Amount 是負數（支出），需要轉為正數
+                    if (amountVal < 0) {
+                        amountVal = Math.abs(amountVal);
+                    }
+                    // 如果 amountVal 為 0 或無效，使用價格 × 數量計算
+                    if (amountVal === 0 || isNaN(amountVal)) {
+                        if (priceVal > 0 && quantityVal > 0) {
+                            amountVal = priceVal * quantityVal;
+                        } else {
+                            // 無法確定金額，跳過
+                            return;
+                        }
+                    }
+                    
                     noteVal = 'Batch Import - 股息再投入 (Firstrade)';
                 } else if (descriptionUpper.includes('XFER') || descriptionUpper.includes('TRANSFER')) {
                     // 轉帳操作 - 需要有 Symbol 才能處理為股票轉帳
