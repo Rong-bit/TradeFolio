@@ -1274,7 +1274,10 @@ export const translate = (key: string, lang: Language, params?: Record<string, s
   
   if (typeof value === 'string' && params) {
     return value.replace(/\{(\w+)\}/g, (match, paramKey) => {
-      return params[paramKey]?.toString() || match;
+      if (paramKey in params) {
+        return params[paramKey]?.toString() ?? '';
+      }
+      return match;
     });
   }
   
