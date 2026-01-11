@@ -1394,20 +1394,30 @@ const App: React.FC = () => {
                   {/* 篩選結果統計 */}
                   <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                     <div className="text-sm text-slate-600">
-                      {translate('history.showingRecords', language, { count: filteredRecords.length })}
                       {(() => {
+                        // 計算實際的顯示記錄數（內部轉帳只算一筆，去除重複的 isTargetRecord）
+                        const uniqueShowingCount = filteredRecords.filter(r => {
+                          // 如果是轉帳的目標記錄（isTargetRecord），不計算（因為已經在來源記錄中計算了）
+                          return !(r.type === 'CASHFLOW' && (r as any).isTargetRecord);
+                        }).length;
+                        
                         // 計算實際的總記錄數（內部轉帳只算一筆）
                         const actualTotal = transactions.length + cashFlows.length;
                         const isFiltered = filteredRecords.length !== combinedRecords.length;
                         
-                        return isFiltered && (
-                          <span className="text-slate-500">
-                            {translate('history.totalRecords', language, { 
-                              total: actualTotal, 
-                              transactionCount: transactions.length,
-                              hasCashFlow: includeCashFlow ? (language === 'zh-TW' ? ` + ${cashFlows.length} 筆現金流` : ` + ${cashFlows.length} cash flows`) : ''
-                            })}
-                          </span>
+                        return (
+                          <>
+                            {translate('history.showingRecords', language, { count: uniqueShowingCount })}
+                            {isFiltered && (
+                              <span className="text-slate-500">
+                                {translate('history.totalRecords', language, { 
+                                  total: actualTotal, 
+                                  transactionCount: transactions.length,
+                                  hasCashFlow: includeCashFlow ? (language === 'zh-TW' ? ` + ${cashFlows.length} 筆現金流` : ` + ${cashFlows.length} cash flows`) : ''
+                                })}
+                              </span>
+                            )}
+                          </>
                         );
                       })()}
                       {!includeCashFlow && cashFlows.length > 0 && (
