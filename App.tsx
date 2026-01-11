@@ -1395,15 +1395,21 @@ const App: React.FC = () => {
                   <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                     <div className="text-sm text-slate-600">
                       {translate('history.showingRecords', language, { count: filteredRecords.length })}
-                      {filteredRecords.length !== combinedRecords.length && (
-                        <span className="text-slate-500">
-                          {translate('history.totalRecords', language, { 
-                            total: combinedRecords.length, 
-                            transactionCount: transactions.length,
-                            hasCashFlow: includeCashFlow ? (language === 'zh-TW' ? ` + ${cashFlows.length} 筆現金流` : ` + ${cashFlows.length} cash flows`) : ''
-                          })}
-                        </span>
-                      )}
+                      {(() => {
+                        // 計算實際的總記錄數（內部轉帳只算一筆）
+                        const actualTotal = transactions.length + cashFlows.length;
+                        const isFiltered = filteredRecords.length !== combinedRecords.length;
+                        
+                        return isFiltered && (
+                          <span className="text-slate-500">
+                            {translate('history.totalRecords', language, { 
+                              total: actualTotal, 
+                              transactionCount: transactions.length,
+                              hasCashFlow: includeCashFlow ? (language === 'zh-TW' ? ` + ${cashFlows.length} 筆現金流` : ` + ${cashFlows.length} cash flows`) : ''
+                            })}
+                          </span>
+                        );
+                      })()}
                       {!includeCashFlow && cashFlows.length > 0 && (
                         <span className="text-amber-600 ml-2">
                           {language === 'zh-TW' ? '（' : '('}{translate('history.hiddenCashFlowRecords', language, { count: cashFlows.length })}{language === 'zh-TW' ? '）' : ')'}
