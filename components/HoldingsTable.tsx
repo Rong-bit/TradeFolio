@@ -112,7 +112,6 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
     setIsUpdating(true);
       try {
       await onAutoUpdate();
-      alert(language === 'zh-TW' ? "股價與匯率更新完成！" : "Prices and exchange rates updated successfully!");
     } catch (error) {
       alert(language === 'zh-TW' ? "更新失敗，請確認網路或 API Key。" : "Update failed. Please check your network or API Key.");
     } finally {
