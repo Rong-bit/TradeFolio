@@ -303,7 +303,7 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
         
         {/* 4. Current Price */}
         <td className="px-3 py-2 text-right">
-           <div className="flex items-center justify-end gap-1 group-hover:bg-white bg-slate-50/50 rounded px-1 transition-colors">
+           <div className="flex items-center justify-end gap-0.5 group-hover:bg-white bg-slate-50/50 rounded px-1 transition-colors">
              <span className="text-slate-400 text-xs">$</span>
              <input 
               type="number"
