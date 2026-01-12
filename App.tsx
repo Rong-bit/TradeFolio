@@ -1473,6 +1473,8 @@ const App: React.FC = () => {
                      <tbody className="divide-y divide-slate-100">
                        {filteredRecords.map(record => {
                          const accName = accounts.find(a => a.id === record.accountId)?.name;
+                         const balance = (record as any).balance || 0;
+                         const normalizedBalance = Math.abs(balance) < 0.0001 ? 0 : balance;
                          
                          // 根據記錄類型設定徽章顏色
                          let badgeColor = 'bg-gray-100 text-gray-700';
@@ -1547,18 +1549,18 @@ const App: React.FC = () => {
                                {record.amount % 1 === 0 ? record.amount.toString() : record.amount.toFixed(2)}
                                <div className="md:hidden mt-0.5">
                                  <span className={`text-[10px] font-normal ${
-                                   (record as any).balance >= 0 ? 'text-green-600' : 'text-red-600'
+                                   normalizedBalance >= 0 ? 'text-green-600' : 'text-red-600'
                                  }`}>
-                                   {(record as any).balance?.toFixed(2) || '0.00'}
+                                   {normalizedBalance.toFixed(2)}
                                  </span>
                                </div>
                              </td>
                              <td className="px-2 sm:px-3 py-2 text-right hidden md:table-cell">
                                 <div className="flex flex-col items-end">
                                   <span className={`font-medium text-xs sm:text-sm ${
-                                    (record as any).balance >= 0 ? 'text-green-600' : 'text-red-600'
+                                    normalizedBalance >= 0 ? 'text-green-600' : 'text-red-600'
                                   }`}>
-                                    {(record as any).balance?.toFixed(2) || '0.00'}
+                                    {normalizedBalance.toFixed(2)}
                                   </span>
                                   <span className="text-[10px] text-slate-400">
                                     {accounts.find(a => a.id === record.accountId)?.currency || 'TWD'}
