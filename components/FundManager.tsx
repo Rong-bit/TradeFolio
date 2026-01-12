@@ -46,6 +46,8 @@ const FundManager: React.FC<Props> = ({
   const [isBatchOpen, setIsBatchOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [editingCashFlow, setEditingCashFlow] = useState<CashFlow | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingCashFlow, setPendingCashFlow] = useState<CashFlow | null>(null);
 
   // Filter State
   const [filterAccount, setFilterAccount] = useState<string>('');
@@ -154,10 +156,19 @@ const FundManager: React.FC<Props> = ({
       note
     };
 
+    // 顯示確認對話框，不直接儲存
+    setPendingCashFlow(cashFlow);
+    setShowConfirmDialog(true);
+  };
+
+  // 確認並儲存資金記錄
+  const confirmAndSave = () => {
+    if (!pendingCashFlow) return;
+    
     if (editingCashFlow && onUpdate) {
-      onUpdate(cashFlow);
+      onUpdate(pendingCashFlow);
     } else {
-      onAdd(cashFlow);
+      onAdd(pendingCashFlow);
     }
 
     // Reset Fields
@@ -165,7 +176,15 @@ const FundManager: React.FC<Props> = ({
     setFee('');
     setNote('');
     setEditingCashFlow(null);
+    setShowConfirmDialog(false);
+    setPendingCashFlow(null);
     setIsFormOpen(false); // Close Modal
+  };
+
+  // 取消確認，返回編輯
+  const cancelConfirm = () => {
+    setShowConfirmDialog(false);
+    setPendingCashFlow(null);
   };
 
   const getTypeName = (type: CashFlowType) => {
@@ -478,6 +497,92 @@ const FundManager: React.FC<Props> = ({
         </table>
       </div>
       
+      {/* 確認對話框 */}
+      {showConfirmDialog && pendingCashFlow && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-slate-900 p-4">
+              <h3 className="text-white font-bold text-lg">{language === 'en' ? 'Confirm Fund Record' : '確認資金記錄'}</h3>
+            </div>
+            <div className="p-6 space-y-3">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 font-medium">{language === 'en' ? 'Please carefully confirm the following information:' : '請仔細確認以下資訊是否正確：'}</p>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{language === 'en' ? 'Date:' : '日期：'}</span>
+                  <span className="font-medium">{pendingCashFlow.date}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{language === 'en' ? 'Type:' : '類型：'}</span>
+                  <span className="font-medium">{getTypeName(pendingCashFlow.type)}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{language === 'en' ? 'Account:' : '帳戶：'}</span>
+                  <span className="font-medium">{accounts.find(a => a.id === pendingCashFlow.accountId)?.name || pendingCashFlow.accountId} ({accounts.find(a => a.id === pendingCashFlow.accountId)?.currency || ''})</span>
+                </div>
+                {pendingCashFlow.targetAccountId && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-600">{language === 'en' ? 'Target Account:' : '目標帳戶：'}</span>
+                    <span className="font-medium">{accounts.find(a => a.id === pendingCashFlow.targetAccountId)?.name || pendingCashFlow.targetAccountId} ({accounts.find(a => a.id === pendingCashFlow.targetAccountId)?.currency || ''})</span>
+                  </div>
+                )}
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{language === 'en' ? 'Amount:' : '金額：'}</span>
+                  <span className="font-medium">
+                    {pendingCashFlow.amount.toLocaleString()} {accounts.find(a => a.id === pendingCashFlow.accountId)?.currency || ''}
+                  </span>
+                </div>
+                {pendingCashFlow.exchangeRate && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-600">{language === 'en' ? 'Exchange Rate:' : '匯率：'}</span>
+                    <span className="font-medium">{pendingCashFlow.exchangeRate}</span>
+                  </div>
+                )}
+                {pendingCashFlow.fee && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-600">{language === 'en' ? 'Fee:' : '手續費：'}</span>
+                    <span className="font-medium">{pendingCashFlow.fee.toLocaleString()} TWD</span>
+                  </div>
+                )}
+                {pendingCashFlow.note && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-600">{language === 'en' ? 'Note:' : '備註：'}</span>
+                    <span className="font-medium text-right max-w-[60%]">{pendingCashFlow.note}</span>
+                  </div>
+                )}
+                {pendingCashFlow.amountTWD && (
+                  <div className="border-t-2 border-slate-300 pt-2 mt-2">
+                    <div className="flex justify-between">
+                      <span className="text-slate-700 font-semibold">{language === 'en' ? 'Total (TWD):' : '總金額 (TWD)：'}</span>
+                      <span className="font-bold text-lg text-slate-900">
+                        {pendingCashFlow.amountTWD.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={cancelConfirm}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50"
+                >
+                  {language === 'en' ? 'Back to Edit' : '返回修改'}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmAndSave}
+                  className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
+                >
+                  {language === 'en' ? 'Confirm Save' : '確認儲存'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 4. Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50 animate-fade-in">
