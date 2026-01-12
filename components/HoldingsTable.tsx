@@ -298,7 +298,7 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
         
         {/* 3. Quantity */}
         <td className="px-3 py-2 text-right font-mono text-slate-600">
-          {h.quantity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
+          {h.quantity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 5 })}
         </td>
         
         {/* 4. Current Price */}
