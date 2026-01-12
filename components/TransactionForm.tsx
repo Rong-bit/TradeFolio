@@ -27,6 +27,9 @@ const TransactionForm: React.FC<Props> = ({ accounts, holdings = [], onAdd, onUp
     note: ''
   });
 
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingTransaction, setPendingTransaction] = useState<Transaction | null>(null);
+
   // 當進入編輯模式時，載入現有交易資料
   useEffect(() => {
     if (editingTransaction) {
@@ -113,12 +116,53 @@ const TransactionForm: React.FC<Props> = ({ accounts, holdings = [], onAdd, onUp
       amount: finalAmount // 儲存計算後的總金額
     };
     
+    // 顯示確認對話框，不直接儲存
+    setPendingTransaction(newTx);
+    setShowConfirmDialog(true);
+  };
+
+  // 確認並儲存交易
+  const confirmAndSave = () => {
+    if (!pendingTransaction) return;
+    
     if (isEditing) {
-      onUpdate(newTx);
+      onUpdate(pendingTransaction);
     } else {
-      onAdd(newTx);
+      onAdd(pendingTransaction);
     }
+    setShowConfirmDialog(false);
+    setPendingTransaction(null);
     onClose();
+  };
+
+  // 取消確認，返回編輯
+  const cancelConfirm = () => {
+    setShowConfirmDialog(false);
+    setPendingTransaction(null);
+  };
+
+  // 取得交易類型的中文名稱
+  const getTypeName = (type: TransactionType): string => {
+    switch (type) {
+      case TransactionType.BUY: return '買入';
+      case TransactionType.SELL: return '賣出';
+      case TransactionType.CASH_DIVIDEND: return '現金股息';
+      case TransactionType.DIVIDEND: return '股票股息';
+      case TransactionType.TRANSFER_IN: return '匯入持股';
+      case TransactionType.TRANSFER_OUT: return '匯出持股';
+      default: return type;
+    }
+  };
+
+  // 取得市場的貨幣符號
+  const getCurrency = (market: Market): string => {
+    switch (market) {
+      case Market.TW: return 'TWD';
+      case Market.JP: return 'JPY';
+      case Market.UK: return 'USD';
+      case Market.US: return 'USD';
+      default: return 'USD';
+    }
   };
 
   // 從 holdings 中根據 ticker 查找對應的市場
@@ -176,13 +220,104 @@ const TransactionForm: React.FC<Props> = ({ accounts, holdings = [], onAdd, onUp
     return price * quantity;
   };
 
+  // 取得帳戶名稱
+  const getAccountName = (accountId: string): string => {
+    const account = accounts.find(a => a.id === accountId);
+    return account ? `${account.name} (${account.currency})` : accountId;
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
-        <div className="bg-slate-900 p-4 flex justify-between items-center">
-          <h2 className="text-white font-bold text-lg">{isEditing ? '編輯交易' : '新增交易'}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">&times;</button>
+    <>
+      {/* 確認對話框 */}
+      {showConfirmDialog && pendingTransaction && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-slate-900 p-4">
+              <h3 className="text-white font-bold text-lg">確認交易資訊</h3>
+            </div>
+            <div className="p-6 space-y-3">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 font-medium">請仔細確認以下資訊是否正確：</p>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">日期：</span>
+                  <span className="font-medium">{pendingTransaction.date}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">交易帳戶：</span>
+                  <span className="font-medium">{getAccountName(pendingTransaction.accountId)}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">市場：</span>
+                  <span className="font-medium">{pendingTransaction.market}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">代號：</span>
+                  <span className="font-medium">{pendingTransaction.ticker}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">類型：</span>
+                  <span className="font-medium">{getTypeName(pendingTransaction.type)}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">價格：</span>
+                  <span className="font-medium">
+                    {pendingTransaction.price.toFixed(2)} {getCurrency(pendingTransaction.market)}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">數量：</span>
+                  <span className="font-medium">{pendingTransaction.quantity} 股</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">手續費：</span>
+                  <span className="font-medium">
+                    {pendingTransaction.fees.toFixed(2)} {getCurrency(pendingTransaction.market)}
+                  </span>
+                </div>
+                {pendingTransaction.note && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-600">備註：</span>
+                    <span className="font-medium text-right max-w-[60%]">{pendingTransaction.note}</span>
+                  </div>
+                )}
+                <div className="border-t-2 border-slate-300 pt-2 mt-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-700 font-semibold">總金額：</span>
+                    <span className="font-bold text-lg text-slate-900">
+                      {pendingTransaction.amount?.toFixed(2) || '0.00'} {getCurrency(pendingTransaction.market)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={cancelConfirm}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50"
+                >
+                  返回修改
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmAndSave}
+                  className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
+                >
+                  確認儲存
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      )}
+
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+          <div className="bg-slate-900 p-4 flex justify-between items-center">
+            <h2 className="text-white font-bold text-lg">{isEditing ? '編輯交易' : '新增交易'}</h2>
+            <button onClick={onClose} className="text-slate-400 hover:text-white">&times;</button>
+          </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -332,6 +467,7 @@ const TransactionForm: React.FC<Props> = ({ accounts, holdings = [], onAdd, onUp
         </form>
       </div>
     </div>
+    </>
   );
 };
 
