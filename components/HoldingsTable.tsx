@@ -298,7 +298,15 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
         
         {/* 3. Quantity */}
         <td className="px-3 py-2 text-right font-mono text-slate-600">
-          {h.quantity.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 5 })}
+          {(() => {
+            const num = h.quantity;
+            if (num % 1 === 0) {
+              return num.toLocaleString('en-US');
+            }
+            // 使用 toFixed(5) 确保显示最多5位小数，然后移除尾部的零
+            const fixed = num.toFixed(5);
+            return fixed.replace(/\.?0+$/, '');
+          })()}
         </td>
         
         {/* 4. Current Price */}
