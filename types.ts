@@ -9,7 +9,28 @@ export enum Market {
 export enum Currency {
   TWD = 'TWD',
   USD = 'USD',
-  JPY = 'JPY'
+  JPY = 'JPY',
+  HKD = 'HKD',
+  SGD = 'SGD',
+  CNY = 'CNY',
+  KRW = 'KRW',
+  THB = 'THB',
+  MYR = 'MYR',
+  IDR = 'IDR',
+  VND = 'VND',
+  PHP = 'PHP',
+  EUR = 'EUR',
+  GBP = 'GBP',
+  CHF = 'CHF',
+  SEK = 'SEK',
+  NOK = 'NOK',
+  DKK = 'DKK',
+  AUD = 'AUD',
+  CAD = 'CAD',
+  NZD = 'NZD',
+  ZAR = 'ZAR',
+  BRL = 'BRL',
+  MXN = 'MXN'
 }
 
 export enum TransactionType {
