@@ -6,7 +6,6 @@ import { useFilters } from './hooks/useFilters';
 import { useDeleteState } from './hooks/useDeleteState';
 import { useUIState } from './hooks/useUIState';
 import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR } from './utils/calculations';
-import { createExchangeRates, ExchangeRates, convertToBaseCurrency } from './utils/exchangeRates';
 import TransactionForm from './components/TransactionForm';
 import HoldingsTable from './components/HoldingsTable';
 import Dashboard from './components/Dashboard';
@@ -22,8 +21,6 @@ import { fetchCurrentPrices } from './services/yahooFinanceService';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
 import { v4 as uuidv4 } from 'uuid';
 import { Language, getLanguage, setLanguage as saveLanguage, t, translate } from './utils/i18n';
-import { checkSubscriptionStatus } from './services/subscriptionService';
-import SubscriptionModal from './components/SubscriptionModal';
 
 type View = 'dashboard' | 'history' | 'funds' | 'accounts' | 'rebalance' | 'simulator' | 'help';
 
@@ -62,8 +59,6 @@ const App: React.FC = () => {
   const [priceDetails, setPriceDetails] = useState<Record<string, { change: number, changePercent: number }>>({});
   const [exchangeRate, setExchangeRate] = useState<number>(31.5);
   const [jpyExchangeRate, setJpyExchangeRate] = useState<number | undefined>(undefined);
-  const [baseCurrency, setBaseCurrency] = useState<Currency>(Currency.TWD);
-  const [exchangeRates, setExchangeRates] = useState<ExchangeRates>(() => createExchangeRates(Currency.TWD, 31.5));
   const [rebalanceTargets, setRebalanceTargets] = useState<Record<string, number>>({});
   const [rebalanceEnabledItems, setRebalanceEnabledItems] = useState<string[]>([]);
   const [historicalData, setHistoricalData] = useState<HistoricalData>({}); 
@@ -107,7 +102,6 @@ const App: React.FC = () => {
   const [view, setView] = useState<View>('dashboard');
   const [hasAutoUpdated, setHasAutoUpdated] = useState(false);
   const [language, setLanguage] = useState<Language>(getLanguage());
-  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   // isMobileMenuOpen 已經從 useUIState hook 中取得
   
   // 篩選狀態（使用 useReducer 管理）
@@ -153,7 +147,7 @@ const App: React.FC = () => {
     saveLanguage(lang);
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const email = loginEmail.trim();
     const password = loginPassword.trim();
@@ -171,62 +165,21 @@ const App: React.FC = () => {
       }
     }
 
-    // 2. Authorized Login (手動授權名單)
+    // 2. Authorized Login
     if (GLOBAL_AUTHORIZED_USERS.includes(email)) {
       loginSuccess(email, false);
       return;
     }
 
-    // 3. 檢查內購訂閱狀態
-    try {
-      const subscriptionStatus = await checkSubscriptionStatus(email);
-      if (subscriptionStatus.status === 'active' && subscriptionStatus.expiryDate) {
-        const now = new Date();
-        if (subscriptionStatus.expiryDate > now) {
-          // 訂閱有效，登入為會員
-          loginSuccess(email, false);
-          return;
-        }
-      }
-    } catch (error) {
-      console.error('檢查訂閱狀態失敗:', error);
-      // 如果檢查失敗，繼續執行訪客登入
-    }
-
-    // 4. Unauthorized - Guest Login (非會員仍可使用基本功能)
+    // 3. Unauthorized - Guest Login
     loginSuccess(email, true);
-    const guestMessage = language === 'zh-TW' 
-      ? "已為您登入「非會員模式」。\n\n您可以免費使用基本功能。如需解鎖進階功能（再平衡、AI 分析等），請點擊「升級為會員」購買訂閱。"
-      : "Logged in as Guest.\n\nYou can use basic features for free. To unlock advanced features (Rebalance, AI Analysis, etc.), please click 'Upgrade to Premium' to purchase a subscription.";
-    showAlert(guestMessage, language === 'zh-TW' ? "登入成功" : "Login Success", "info");
+    showAlert("已為您登入「非會員模式」。\n\n您尚未註冊，若需開通會員模式，請按'申請開通'發送申請信通知管理員開通權限。", "登入成功", "info");
   };
 
   const handleContactAdmin = () => {
-    // 打開訂閱模態框
-    setIsSubscriptionModalOpen(true);
-  };
-
-  const handlePurchaseSuccess = async () => {
-    // 購買成功後，重新檢查訂閱狀態並更新用戶狀態
-    if (currentUser) {
-      try {
-        const subscriptionStatus = await checkSubscriptionStatus(currentUser);
-        if (subscriptionStatus.status === 'active' && subscriptionStatus.expiryDate) {
-          const now = new Date();
-          if (subscriptionStatus.expiryDate > now) {
-            setIsGuest(false);
-            localStorage.setItem('tf_is_guest', 'false');
-            showAlert(
-              language === 'zh-TW' ? '會員權限已啟用！' : 'Premium activated!',
-              language === 'zh-TW' ? '升級成功' : 'Upgrade Success',
-              'success'
-            );
-          }
-        }
-      } catch (error) {
-        console.error('更新訂閱狀態失敗:', error);
-      }
-    }
+    const subject = encodeURIComponent("TradeFolio 購買/權限開通申請");
+    const body = encodeURIComponent(`Hi 管理員,\n\n我的帳號是: ${currentUser}\n\n我目前是非會員身份，希望申請/購買完整權限。\n\n請協助處理，謝謝。`);
+    window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
   };
 
   const loginSuccess = (user: string, isGuestUser: boolean) => {
@@ -255,8 +208,6 @@ const App: React.FC = () => {
     setPriceDetails({});
     setExchangeRate(31.5);
     setJpyExchangeRate(undefined);
-    setBaseCurrency(Currency.TWD);
-    setExchangeRates(createExchangeRates(Currency.TWD, 31.5));
     setRebalanceTargets({});
     setRebalanceEnabledItems([]);
     setHistoricalData({});
@@ -279,25 +230,10 @@ const App: React.FC = () => {
     setPriceDetails(load('priceDetails', {}));
     
     const rate = localStorage.getItem(getKey('exchangeRate'));
-    const usdRate = rate ? parseFloat(rate) : 31.5;
-    setExchangeRate(usdRate);
+    setExchangeRate(rate ? parseFloat(rate) : 31.5);
     
     const jpyRate = localStorage.getItem(getKey('jpyExchangeRate'));
-    const jpyRateVal = jpyRate ? parseFloat(jpyRate) : undefined;
-    setJpyExchangeRate(jpyRateVal);
-    
-    // 載入基準幣值
-    const savedBaseCurrency = localStorage.getItem(getKey('baseCurrency'));
-    const baseCurr = savedBaseCurrency ? (savedBaseCurrency as Currency) : Currency.TWD;
-    setBaseCurrency(baseCurr);
-    
-    // 載入匯率映射（如果存在），否則基於當前匯率創建
-    const savedExchangeRates = load('exchangeRates', null);
-    if (savedExchangeRates) {
-      setExchangeRates(savedExchangeRates);
-    } else {
-      setExchangeRates(createExchangeRates(baseCurr, usdRate, jpyRateVal));
-    }
+    setJpyExchangeRate(jpyRate ? parseFloat(jpyRate) : undefined);
     
     setRebalanceTargets(load('rebalanceTargets', {}));
     setRebalanceEnabledItems(load('rebalanceEnabledItems', []));
@@ -316,18 +252,9 @@ const App: React.FC = () => {
   useLocalStorageDebounced('priceDetails', priceDetails, 500, userPrefix);
   useLocalStorageDebouncedSimple('exchangeRate', exchangeRate, 500, userPrefix);
   useLocalStorageDebouncedSimple('jpyExchangeRate', jpyExchangeRate, 500, userPrefix);
-  useLocalStorageDebouncedSimple('baseCurrency', baseCurrency, 500, userPrefix);
-  useLocalStorageDebounced('exchangeRates', exchangeRates, 500, userPrefix);
   useLocalStorageDebounced('rebalanceTargets', rebalanceTargets, 500, userPrefix);
   useLocalStorageDebounced('rebalanceEnabledItems', rebalanceEnabledItems, 500, userPrefix);
   useLocalStorageDebounced('historicalData', historicalData, 500, userPrefix);
-
-  // 當基準幣值或匯率改變時，更新匯率映射
-  useEffect(() => {
-    if (isAuthenticated && currentUser) {
-      setExchangeRates(createExchangeRates(baseCurrency, exchangeRate, jpyExchangeRate));
-    }
-  }, [baseCurrency, exchangeRate, jpyExchangeRate, isAuthenticated, currentUser]);
 
   const showAlert = (message: string, title: string = '提示', type: 'info' | 'success' | 'error' = 'info') => {
     setAlertDialog({ isOpen: true, title, message, type });
@@ -768,54 +695,26 @@ const App: React.FC = () => {
   
   const computedAccounts = useMemo(() => calculateAccountBalances(accounts, cashFlows, transactions), [accounts, cashFlows, transactions]);
 
-  // 輔助函數：獲取市場對應的貨幣
-  const getMarketCurrency = (market: Market): Currency => {
-    if (market === Market.US || market === Market.UK) return Currency.USD;
-    if (market === Market.JP) return Currency.JPY;
-    return Currency.TWD;
-  };
-
   const summary = useMemo<PortfolioSummary>(() => {
-    // 輔助函數：將TWD金額轉換為基準幣值
-    const convertTWDToBase = (amountTWD: number): number => {
-      if (baseCurrency === Currency.TWD) return amountTWD;
-      return convertToBaseCurrency(amountTWD, Currency.TWD, exchangeRates);
-    };
-    let netInvestedBase = 0;
+    let netInvestedTWD = 0;
     let totalUsdInflow = 0;
     let totalTwdCostForUsd = 0;
 
     cashFlows.forEach(cf => {
        const account = accounts.find(a => a.id === cf.accountId);
        
-       // 1. Calculate Net Invested (Cost) - 使用基準幣值
+       // 1. Calculate Net Invested (Cost)
        // 注意：只計算 DEPOSIT 和 WITHDRAW，不包含 TRANSFER（帳戶間轉移）
        // TRANSFER_IN/TRANSFER_OUT 也不計入，因為它們只是帳戶間股票轉移，不影響淨投入成本
        if(cf.type === CashFlowType.DEPOSIT) {
-           let amountBase: number;
-           if (cf.amountTWD !== undefined && cf.amountTWD > 0) {
-             // 如果存在amountTWD，先轉換為基準幣值
-             amountBase = convertTWDToBase(cf.amountTWD);
-           } else {
-             // 否則根據帳戶貨幣轉換
-             const amount = convertToBaseCurrency(cf.amount, account?.currency || Currency.TWD, exchangeRates);
-             const fee = cf.fee ? convertToBaseCurrency(cf.fee, account?.currency || Currency.TWD, exchangeRates) : 0;
-             amountBase = amount + fee;
-           }
-           netInvestedBase += amountBase;
+           const rate = (cf.exchangeRate || (account?.currency === Currency.USD ? exchangeRate : 1));
+           netInvestedTWD += (cf.amountTWD || cf.amount * rate);
        } else if (cf.type === CashFlowType.WITHDRAW) {
-           let amountBase: number;
-           if (cf.amountTWD !== undefined && cf.amountTWD > 0) {
-             amountBase = convertTWDToBase(cf.amountTWD);
-           } else {
-             const amount = convertToBaseCurrency(cf.amount, account?.currency || Currency.TWD, exchangeRates);
-             const fee = cf.fee ? convertToBaseCurrency(cf.fee, account?.currency || Currency.TWD, exchangeRates) : 0;
-             amountBase = amount - fee;
-           }
-           netInvestedBase -= amountBase;
+           const rate = (cf.exchangeRate || (account?.currency === Currency.USD ? exchangeRate : 1));
+           netInvestedTWD -= (cf.amountTWD || cf.amount * rate);
        }
 
-       // 2. Calculate Avg Exchange Rate (Accumulate USD Inflows) - 保持原有邏輯
+       // 2. Calculate Avg Exchange Rate (Accumulate USD Inflows)
        if (cf.type === CashFlowType.DEPOSIT && account?.currency === Currency.USD) {
            totalUsdInflow += cf.amount;
            const cost = cf.amountTWD || (cf.amount * (cf.exchangeRate || exchangeRate));
@@ -838,66 +737,61 @@ const App: React.FC = () => {
        }
     });
 
-    // 計算股票價值（基準幣值）
-    const stockValueBase = baseHoldings.reduce((sum: number, h: Holding) => {
-      const marketCurrency = getMarketCurrency(h.market);
-      return sum + convertToBaseCurrency(h.currentValue, marketCurrency, exchangeRates);
+    const stockValueTWD = baseHoldings.reduce((sum: number, h: Holding) => {
+      // UK 和 JP 市場股票也用 USD 匯率（因為是用美金買的）
+      if (h.market === Market.US || h.market === Market.UK || h.market === Market.JP) return sum + h.currentValue * exchangeRate;
+      return sum + h.currentValue; // TW
     }, 0);
-    
-    // 計算現金價值（基準幣值）
-    const cashValueBase = computedAccounts.reduce((sum: number, a: Account) => {
-      return sum + convertToBaseCurrency(a.balance, a.currency, exchangeRates);
-    }, 0);
-    
-    const totalValueBase = stockValueBase;
-    const totalAssets = totalValueBase + cashValueBase;
-    const totalPLBase = totalAssets - netInvestedBase;
-    const totalPLPercent = netInvestedBase > 0 ? (totalPLBase / netInvestedBase) * 100 : 0;
+    const cashValueTWD = computedAccounts.reduce((sum: number, a: Account) => sum + (a.currency === Currency.USD ? a.balance * exchangeRate : a.balance), 0);
+    const totalValueTWD = stockValueTWD;
+    const totalAssets = totalValueTWD + cashValueTWD;
+    const totalPLTWD = totalAssets - netInvestedTWD;
+    const totalPLPercent = netInvestedTWD > 0 ? (totalPLTWD / netInvestedTWD) * 100 : 0;
     const annualizedReturn = calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate);
     
-    // 計算累積股息（基準幣值）
-    const accumulatedCashDividendsBase = transactions.filter(t => t.type === TransactionType.CASH_DIVIDEND).reduce((sum, t) => {
+    const accumulatedCashDividendsTWD = transactions.filter(t => t.type === TransactionType.CASH_DIVIDEND).reduce((sum, t) => {
         const amt = t.amount || (t.price * t.quantity);
-        const marketCurrency = getMarketCurrency(t.market);
-        return sum + convertToBaseCurrency(amt, marketCurrency, exchangeRates);
+        // UK 和 JP 市場也用 USD 匯率
+        if (t.market === Market.US || t.market === Market.UK || t.market === Market.JP) return sum + amt * exchangeRate;
+        return sum + amt; // TW
     }, 0);
 
-    const accumulatedStockDividendsBase = transactions.filter(t => t.type === TransactionType.DIVIDEND).reduce((sum, t) => {
+    const accumulatedStockDividendsTWD = transactions.filter(t => t.type === TransactionType.DIVIDEND).reduce((sum, t) => {
         const amt = t.amount || (t.price * t.quantity);
-        const marketCurrency = getMarketCurrency(t.market);
-        return sum + convertToBaseCurrency(amt, marketCurrency, exchangeRates);
+        // UK 和 JP 市場也用 USD 匯率
+        if (t.market === Market.US || t.market === Market.UK || t.market === Market.JP) return sum + amt * exchangeRate;
+        return sum + amt; // TW
     }, 0);
 
     const avgExchangeRate = totalUsdInflow > 0 ? totalTwdCostForUsd / totalUsdInflow : 0;
 
     return {
         totalCostTWD: 0,
-        totalValueTWD: totalValueBase,
-        totalPLTWD: totalPLBase,
+        totalValueTWD,
+        totalPLTWD,
         totalPLPercent,
-        cashBalanceTWD: cashValueBase,
-        netInvestedTWD: netInvestedBase,
+        cashBalanceTWD: cashValueTWD,
+        netInvestedTWD,
         annualizedReturn,
         exchangeRateUsdToTwd: exchangeRate,
-        accumulatedCashDividendsTWD: accumulatedCashDividendsBase,
-        accumulatedStockDividendsTWD: accumulatedStockDividendsBase,
+        accumulatedCashDividendsTWD,
+        accumulatedStockDividendsTWD,
         avgExchangeRate
     };
-  }, [baseHoldings, computedAccounts, cashFlows, exchangeRate, accounts, transactions, baseCurrency, exchangeRates]);
+  }, [baseHoldings, computedAccounts, cashFlows, exchangeRate, accounts, transactions]);
 
   // Step 4: Final Holdings with Weights
   const holdings = useMemo(() => {
     const totalAssets = summary.totalValueTWD + summary.cashBalanceTWD;
     return baseHoldings.map((h: Holding) => {
-        // 使用基準幣值計算權重
-        const marketCurrency = getMarketCurrency(h.market);
-        const valBase = convertToBaseCurrency(h.currentValue, marketCurrency, exchangeRates);
+        // UK 和 JP 市場也用 USD 匯率
+        const valTwd = (h.market === Market.US || h.market === Market.UK || h.market === Market.JP) ? h.currentValue * exchangeRate : h.currentValue;
         return {
             ...h,
-            weight: totalAssets > 0 ? (valBase / totalAssets) * 100 : 0
+            weight: totalAssets > 0 ? (valTwd / totalAssets) * 100 : 0
         };
     });
-  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRates]);
+  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate]);
 
   // --- Auto Update Prices on Load ---
   useEffect(() => {
@@ -1353,7 +1247,7 @@ const App: React.FC = () => {
                      onClick={handleContactAdmin}
                      className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow"
                    >
-                     {language === 'en' ? 'Upgrade' : '升級為會員'}
+                     {language === 'en' ? 'Upgrade' : '申請開通'}
                    </button>
                 )}
             </h2>
@@ -1376,7 +1270,6 @@ const App: React.FC = () => {
                  isGuest={isGuest}
                  onUpdateHistorical={handleOpenHistoricalModal}
                  language={language}
-                 baseCurrency={baseCurrency}
                />
             )}
 
@@ -1501,16 +1394,32 @@ const App: React.FC = () => {
                   {/* 篩選結果統計 */}
                   <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                     <div className="text-sm text-slate-600">
-                      {translate('history.showingRecords', language, { count: filteredRecords.length })}
-                      {filteredRecords.length !== combinedRecords.length && (
-                        <span className="text-slate-500">
-                          {translate('history.totalRecords', language, { 
-                            total: combinedRecords.length, 
-                            transactionCount: transactions.length,
-                            hasCashFlow: includeCashFlow ? (language === 'zh-TW' ? ` + ${cashFlows.length} 筆現金流` : ` + ${cashFlows.length} cash flows`) : ''
-                          })}
-                        </span>
-                      )}
+                      {(() => {
+                        // 計算實際的顯示記錄數（內部轉帳只算一筆，去除重複的 isTargetRecord）
+                        const uniqueShowingCount = filteredRecords.filter(r => {
+                          // 如果是轉帳的目標記錄（isTargetRecord），不計算（因為已經在來源記錄中計算了）
+                          return !(r.type === 'CASHFLOW' && (r as any).isTargetRecord);
+                        }).length;
+                        
+                        // 計算實際的總記錄數（內部轉帳只算一筆）
+                        const actualTotal = transactions.length + cashFlows.length;
+                        const isFiltered = filteredRecords.length !== combinedRecords.length;
+                        
+                        return (
+                          <>
+                            {translate('history.showingRecords', language, { count: uniqueShowingCount })}
+                            {isFiltered && (
+                              <span className="text-slate-500">
+                                {translate('history.totalRecords', language, { 
+                                  total: actualTotal, 
+                                  transactionCount: transactions.length,
+                                  hasCashFlow: includeCashFlow ? (language === 'zh-TW' ? ` + ${cashFlows.length} 筆現金流` : ` + ${cashFlows.length} cash flows`) : ''
+                                })}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                       {!includeCashFlow && cashFlows.length > 0 && (
                         <span className="text-amber-600 ml-2">
                           {language === 'zh-TW' ? '（' : '('}{translate('history.hiddenCashFlowRecords', language, { count: cashFlows.length })}{language === 'zh-TW' ? '）' : ')'}
@@ -1564,6 +1473,8 @@ const App: React.FC = () => {
                      <tbody className="divide-y divide-slate-100">
                        {filteredRecords.map(record => {
                          const accName = accounts.find(a => a.id === record.accountId)?.name;
+                         const balance = (record as any).balance || 0;
+                         const normalizedBalance = Math.abs(balance) < 0.0001 ? 0 : balance;
                          
                          // 根據記錄類型設定徽章顏色
                          let badgeColor = 'bg-gray-100 text-gray-700';
@@ -1638,18 +1549,18 @@ const App: React.FC = () => {
                                {record.amount % 1 === 0 ? record.amount.toString() : record.amount.toFixed(2)}
                                <div className="md:hidden mt-0.5">
                                  <span className={`text-[10px] font-normal ${
-                                   (record as any).balance >= 0 ? 'text-green-600' : 'text-red-600'
+                                   normalizedBalance >= 0 ? 'text-green-600' : 'text-red-600'
                                  }`}>
-                                   {(record as any).balance?.toFixed(2) || '0.00'}
+                                   {normalizedBalance.toFixed(2)}
                                  </span>
                                </div>
                              </td>
                              <td className="px-2 sm:px-3 py-2 text-right hidden md:table-cell">
                                 <div className="flex flex-col items-end">
                                   <span className={`font-medium text-xs sm:text-sm ${
-                                    (record as any).balance >= 0 ? 'text-green-600' : 'text-red-600'
+                                    normalizedBalance >= 0 ? 'text-green-600' : 'text-red-600'
                                   }`}>
-                                    {(record as any).balance?.toFixed(2) || '0.00'}
+                                    {normalizedBalance.toFixed(2)}
                                   </span>
                                   <span className="text-[10px] text-slate-400">
                                     {accounts.find(a => a.id === record.accountId)?.currency || 'TWD'}
@@ -1763,7 +1674,6 @@ const App: React.FC = () => {
                  authorizedUsers={GLOBAL_AUTHORIZED_USERS}
                  currentUser={currentUser}
                  language={language}
-                 onOpenSubscription={handleContactAdmin}
                />
             )}
          </div>
@@ -1877,8 +1787,8 @@ const App: React.FC = () => {
         </div>
       )}
       
-      {/* Footer - Hidden on mobile */}
-      <footer className="hidden md:block bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800">
+      {/* Footer */}
+      <footer className="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-sm">© 2025 TradeFolio. Designed & Developed by <span className="text-indigo-400 font-bold">Jun-rong, Huang</span></p>
           <p className="text-[10px] mt-2 text-slate-500">此應用程式所有交易數據皆儲存於本地端，保障您的隱私安全。</p>
@@ -2023,17 +1933,6 @@ const App: React.FC = () => {
             </button>
           </div>
         </div>
-      )}
-
-      {/* Subscription Modal */}
-      {isAuthenticated && (
-        <SubscriptionModal
-          isOpen={isSubscriptionModalOpen}
-          onClose={() => setIsSubscriptionModalOpen(false)}
-          email={currentUser}
-          language={language}
-          onPurchaseSuccess={handlePurchaseSuccess}
-        />
       )}
     </div>
   );
