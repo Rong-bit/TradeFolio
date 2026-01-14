@@ -1,12 +1,14 @@
 import React, { useRef, useState } from 'react';
 import { Language, t, translate } from '../utils/i18n';
+import { useSubscription } from '../hooks/useSubscription';
 
 interface Props {
-  onExport: () => void;
+  onExport: () => void | Promise<void>;
   onImport: (file: File) => void;
   authorizedUsers: string[]; 
   currentUser: string;
   language: Language;
+  onOpenSubscription?: () => void;
 }
 
 const HelpView: React.FC<Props> = ({ 
@@ -14,14 +16,18 @@ const HelpView: React.FC<Props> = ({
   onImport, 
   authorizedUsers,
   currentUser,
-  language
+  language,
+  onOpenSubscription
 }) => {
   const translations = t(language);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { subscription, isLoading, isActive, restore } = useSubscription(currentUser);
   
   // State for custom confirmation modals
   const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -74,6 +80,41 @@ const HelpView: React.FC<Props> = ({
     navigator.clipboard.writeText(content);
     setCopyFeedback(true);
     setTimeout(() => setCopyFeedback(false), 2000);
+  };
+
+  const handleRestore = async () => {
+    try {
+      setRestoring(true);
+      setRestoreMessage(null);
+      const restored = await restore();
+      if (restored) {
+        setRestoreMessage(language === 'zh-TW' ? '購買已恢復！' : 'Purchases restored!');
+      } else {
+        setRestoreMessage(language === 'zh-TW' ? '未找到可恢復的購買記錄' : 'No purchases found to restore');
+      }
+    } catch (error: any) {
+      setRestoreMessage(error.message || (language === 'zh-TW' ? '恢復失敗' : 'Restore failed'));
+    } finally {
+      setRestoring(false);
+      setTimeout(() => setRestoreMessage(null), 5000);
+    }
+  };
+
+  const getSubscriptionStatusText = () => {
+    if (isLoading) {
+      return language === 'zh-TW' ? '檢查中...' : 'Checking...';
+    }
+    if (isActive && subscription) {
+      const expiryDate = subscription.expiryDate;
+      if (expiryDate) {
+        const dateStr = expiryDate.toLocaleDateString(language === 'zh-TW' ? 'zh-TW' : 'en-US');
+        return language === 'zh-TW' 
+          ? `訂閱有效至：${dateStr}` 
+          : `Valid until: ${dateStr}`;
+      }
+      return language === 'zh-TW' ? '訂閱有效' : 'Subscription active';
+    }
+    return language === 'zh-TW' ? '尚未訂閱' : 'Not subscribed';
   };
 
   return (
@@ -133,7 +174,69 @@ const HelpView: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Contact Section */}
+      {/* Subscription Status Section */}
+      <div className="bg-white p-6 rounded-lg shadow border-l-4 border-indigo-500">
+        <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          {language === 'zh-TW' ? '訂閱狀態' : 'Subscription Status'}
+        </h3>
+        
+        <div className="space-y-4">
+          <div className={`p-4 rounded-lg border-2 ${
+            isActive 
+              ? 'bg-green-50 border-green-200' 
+              : 'bg-slate-50 border-slate-200'
+          }`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-medium text-slate-700">
+                {language === 'zh-TW' ? '當前狀態：' : 'Current Status: '}
+              </span>
+              <span className={`font-bold ${
+                isActive ? 'text-green-700' : 'text-slate-600'
+              }`}>
+                {getSubscriptionStatusText()}
+              </span>
+            </div>
+            {subscription && subscription.productId && (
+              <p className="text-sm text-slate-600 mt-2">
+                {language === 'zh-TW' ? '產品：' : 'Product: '}
+                {subscription.productId.includes('monthly') 
+                  ? (language === 'zh-TW' ? '月訂閱' : 'Monthly')
+                  : (language === 'zh-TW' ? '年訂閱' : 'Yearly')}
+              </p>
+            )}
+          </div>
+
+          <div className="flex justify-center">
+            <button
+              onClick={handleRestore}
+              disabled={restoring}
+              className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-4 rounded transition shadow flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+              </svg>
+              {restoring 
+                ? (language === 'zh-TW' ? '恢復中...' : 'Restoring...')
+                : (language === 'zh-TW' ? '恢復購買' : 'Restore Purchases')}
+            </button>
+          </div>
+
+          {restoreMessage && (
+            <div className={`p-3 rounded-lg ${
+              restoreMessage.includes('成功') || restoreMessage.includes('restored')
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}>
+              <p className="text-sm">{restoreMessage}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Purchase & Contact Section */}
       <div className="bg-white p-6 rounded-lg shadow border-l-4 border-amber-500">
          <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -141,21 +244,57 @@ const HelpView: React.FC<Props> = ({
             </svg>
             {translations.help.contact}
          </h3>
-         <div className="text-sm text-slate-700 leading-relaxed bg-amber-50 p-4 rounded border border-amber-100">
-             <p className="mb-2 font-bold">{translations.help.contactTitle}</p>
-             <p className="mb-4">
+         
+         <div className="space-y-4">
+           {/* Purchase Section */}
+           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border-2 border-indigo-200">
+             <p className="mb-2 font-bold text-slate-800 text-base">
+               {language === 'zh-TW' ? '💳 購買會員訂閱' : '💳 Purchase Subscription'}
+             </p>
+             <p className="text-sm text-slate-600 mb-4">
+               {language === 'zh-TW' 
+                 ? '透過 App Store 內購購買會員，即可解鎖進階功能（再平衡、AI 分析等）。' 
+                 : 'Purchase a subscription through App Store in-app purchase to unlock advanced features (Rebalance, AI Analysis, etc.).'}
+             </p>
+             {onOpenSubscription ? (
+               <button
+                 onClick={onOpenSubscription}
+                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-lg flex items-center justify-center gap-2"
+               >
+                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                   <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                   <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+                 </svg>
+                 {language === 'zh-TW' ? '立即購買會員' : 'Purchase Premium'}
+               </button>
+             ) : (
+               <p className="text-xs text-slate-500 italic">
+                 {language === 'zh-TW' 
+                   ? '（請在 iOS 裝置上使用 App Store 內購功能）' 
+                   : '(Please use App Store in-app purchase on iOS device)'}
+               </p>
+             )}
+           </div>
+
+           {/* Contact Section */}
+           <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+             <p className="mb-2 font-bold text-slate-800 text-base">{translations.help.contactTitle}</p>
+             <p className="text-sm text-slate-700 mb-4">
                  {translations.help.contactDesc}
              </p>
-             <a 
-               href="mailto:hjr640511@gmail.com"
-               className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded shadow transition"
-             >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                   <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                   <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                </svg>
-                {translations.help.contactEmail}
-             </a>
+             <div className="flex flex-col sm:flex-row gap-2">
+               <a 
+                 href="mailto:hjr640511@gmail.com"
+                 className="flex-1 inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg shadow transition"
+               >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                  </svg>
+                  {translations.help.contactEmail}
+               </a>
+             </div>
+           </div>
          </div>
       </div>
 
