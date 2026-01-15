@@ -1806,7 +1806,8 @@ const App: React.FC = () => {
           onClose={() => {
             setIsFormOpen(false);
             setTransactionToEdit(null);
-          }} 
+          }}
+          language={language}
         />
       )}
       {isImportOpen && (
