@@ -31,6 +31,8 @@ const FundManager: React.FC<Props> = ({
   currentJpyExchangeRate = 0.21,
   language
 }) => {
+  const translations = t(language);
+  const ff = translations.fundForm;
   // Form State
   const [type, setType] = useState<CashFlowType>(CashFlowType.DEPOSIT);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -88,7 +90,7 @@ const FundManager: React.FC<Props> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accountId) return alert("請先建立帳戶");
+    if (!accountId) return alert(ff.errorNoAccount);
 
     const numAmount = parseFloat(amount);
     const numFee = fee ? parseFloat(fee) : 0;
@@ -483,10 +485,10 @@ const FundManager: React.FC<Props> = ({
                                }} 
                                className="text-blue-400 hover:text-blue-600 text-[10px] sm:text-xs border border-blue-200 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded hover:bg-blue-50 whitespace-nowrap"
                              >
-                               編輯
+                               {translations.common.edit}
                              </button>
                            )}
-                           <button onClick={() => onDelete(cf.id)} className="text-red-400 hover:text-red-600 text-[10px] sm:text-xs border border-red-200 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded hover:bg-red-50 whitespace-nowrap">刪除</button>
+                           <button onClick={() => onDelete(cf.id)} className="text-red-400 hover:text-red-600 text-[10px] sm:text-xs border border-red-200 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded hover:bg-red-50 whitespace-nowrap">{translations.common.delete}</button>
                          </div>
                        </td>
                      </tr>
@@ -502,59 +504,59 @@ const FundManager: React.FC<Props> = ({
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="bg-slate-900 p-4">
-              <h3 className="text-white font-bold text-lg">{language === 'en' ? 'Confirm Fund Record' : '確認資金記錄'}</h3>
+              <h3 className="text-white font-bold text-lg">{ff.confirmTitle}</h3>
             </div>
             <div className="p-6 space-y-3">
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-sm text-yellow-800 font-medium">{language === 'en' ? 'Please carefully confirm the following information:' : '請仔細確認以下資訊是否正確：'}</p>
+                <p className="text-sm text-yellow-800 font-medium">{ff.confirmMessage}</p>
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{language === 'en' ? 'Date:' : '日期：'}</span>
+                  <span className="text-slate-600">{ff.dateLabel}</span>
                   <span className="font-medium">{pendingCashFlow.date}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{language === 'en' ? 'Type:' : '類型：'}</span>
+                  <span className="text-slate-600">{ff.typeLabel}</span>
                   <span className="font-medium">{getTypeName(pendingCashFlow.type)}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{language === 'en' ? 'Account:' : '帳戶：'}</span>
+                  <span className="text-slate-600">{ff.accountLabel}</span>
                   <span className="font-medium">{accounts.find(a => a.id === pendingCashFlow.accountId)?.name || pendingCashFlow.accountId} ({accounts.find(a => a.id === pendingCashFlow.accountId)?.currency || ''})</span>
                 </div>
                 {pendingCashFlow.targetAccountId && (
                   <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{language === 'en' ? 'Target Account:' : '目標帳戶：'}</span>
+                    <span className="text-slate-600">{ff.targetAccountLabel}</span>
                     <span className="font-medium">{accounts.find(a => a.id === pendingCashFlow.targetAccountId)?.name || pendingCashFlow.targetAccountId} ({accounts.find(a => a.id === pendingCashFlow.targetAccountId)?.currency || ''})</span>
                   </div>
                 )}
                 <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{language === 'en' ? 'Amount:' : '金額：'}</span>
+                  <span className="text-slate-600">{ff.amountLabel}</span>
                   <span className="font-medium">
                     {pendingCashFlow.amount.toLocaleString()} {accounts.find(a => a.id === pendingCashFlow.accountId)?.currency || ''}
                   </span>
                 </div>
                 {pendingCashFlow.exchangeRate && (
                   <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{language === 'en' ? 'Exchange Rate:' : '匯率：'}</span>
+                    <span className="text-slate-600">{ff.exchangeRateLabel}</span>
                     <span className="font-medium">{pendingCashFlow.exchangeRate}</span>
                   </div>
                 )}
                 {pendingCashFlow.fee && (
                   <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{language === 'en' ? 'Fee:' : '手續費：'}</span>
+                    <span className="text-slate-600">{ff.feesLabel}</span>
                     <span className="font-medium">{pendingCashFlow.fee.toLocaleString()} TWD</span>
                   </div>
                 )}
                 {pendingCashFlow.note && (
                   <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{language === 'en' ? 'Note:' : '備註：'}</span>
+                    <span className="text-slate-600">{ff.noteLabel}</span>
                     <span className="font-medium text-right max-w-[60%]">{pendingCashFlow.note}</span>
                   </div>
                 )}
                 {pendingCashFlow.amountTWD && (
                   <div className="border-t-2 border-slate-300 pt-2 mt-2">
                     <div className="flex justify-between">
-                      <span className="text-slate-700 font-semibold">{language === 'en' ? 'Total (TWD):' : '總金額 (TWD)：'}</span>
+                      <span className="text-slate-700 font-semibold">{ff.totalTWD}</span>
                       <span className="font-bold text-lg text-slate-900">
                         {pendingCashFlow.amountTWD.toFixed(2)}
                       </span>
@@ -568,14 +570,14 @@ const FundManager: React.FC<Props> = ({
                   onClick={cancelConfirm}
                   className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50"
                 >
-                  {language === 'en' ? 'Back to Edit' : '返回修改'}
+                  {ff.backToEdit}
                 </button>
                 <button
                   type="button"
                   onClick={confirmAndSave}
                   className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
                 >
-                  {language === 'en' ? 'Confirm Save' : '確認儲存'}
+                  {ff.confirmSave}
                 </button>
               </div>
             </div>
@@ -588,7 +590,7 @@ const FundManager: React.FC<Props> = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50 animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
              <div className="bg-slate-900 p-3 sm:p-4 flex justify-between items-center shrink-0">
-                <h2 className="text-white font-bold text-base sm:text-lg">{editingCashFlow ? (language === 'en' ? 'Edit Fund Record' : '編輯資金紀錄') : (language === 'en' ? 'Add Fund Record' : '新增資金紀錄')}</h2>
+                <h2 className="text-white font-bold text-base sm:text-lg">{editingCashFlow ? ff.editFundRecord : ff.addFundRecord}</h2>
                 <button onClick={() => {
                   setIsFormOpen(false);
                   setEditingCashFlow(null);
@@ -599,28 +601,28 @@ const FundManager: React.FC<Props> = ({
                 <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700">日期</label>
+                      <label className="block text-sm font-medium text-slate-700">{ff.date}</label>
                       <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2"/>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700">類型</label>
+                      <label className="block text-sm font-medium text-slate-700">{ff.type}</label>
                       <select value={type} onChange={e => setType(e.target.value as CashFlowType)} className="mt-1 w-full border border-slate-300 rounded p-2">
-                        <option value={CashFlowType.DEPOSIT}>匯入資金 (Import/Salary)</option>
-                        <option value={CashFlowType.WITHDRAW}>匯出資金 (Export/Living)</option>
-                        <option value={CashFlowType.TRANSFER}>內部轉帳 (Transfer)</option>
-                        <option value={CashFlowType.INTEREST}>利息收入 (Interest)</option>
+                        <option value={CashFlowType.DEPOSIT}>{ff.typeDeposit}</option>
+                        <option value={CashFlowType.WITHDRAW}>{ff.typeWithdraw}</option>
+                        <option value={CashFlowType.TRANSFER}>{ff.typeTransfer}</option>
+                        <option value={CashFlowType.INTEREST}>{ff.typeInterest}</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700">
-                        {type === CashFlowType.TRANSFER ? '來源帳戶' : '帳戶'}
+                        {type === CashFlowType.TRANSFER ? ff.sourceAccount : ff.account}
                       </label>
                       <select value={accountId} onChange={e => setAccountId(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2">
                         {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700">金額 ({selectedAccount?.currency || 'TWD'})</label>
+                      <label className="block text-sm font-medium text-slate-700">{ff.amount} ({selectedAccount?.currency || 'TWD'})</label>
                       <input type="number" required min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2"/>
                     </div>
                   </div>
@@ -628,9 +630,9 @@ const FundManager: React.FC<Props> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-slate-50 p-3 sm:p-4 rounded border border-slate-100">
                      {type === CashFlowType.TRANSFER && (
                          <div className="sm:col-span-2">
-                           <label className="block text-sm font-medium text-slate-700">轉入目標帳戶</label>
+                           <label className="block text-sm font-medium text-slate-700">{ff.targetAccount}</label>
                            <select required value={targetAccountId} onChange={e => setTargetAccountId(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2 bg-white">
-                              <option value="">選擇帳戶...</option>
+                              <option value="">{ff.selectAccount}</option>
                               {accounts.filter(a => a.id !== accountId).map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
                            </select>
                          </div>
@@ -640,12 +642,12 @@ const FundManager: React.FC<Props> = ({
                      {showExchangeRateInput ? (
                        <div>
                          <label className="block text-sm font-medium text-slate-700">
-                            {selectedAccount?.currency === Currency.USD ? '匯率 (TWD/USD)' : 
-                             selectedAccount?.currency === Currency.JPY ? '匯率 (TWD/JPY)' : 
-                             '匯率'}
-                            {isCrossCurrencyTransfer && <span className="text-xs text-blue-600 ml-1">不同幣別轉帳</span>}
-                            {!isTransfer && selectedAccount?.currency === Currency.USD && <span className="text-xs text-green-600 ml-1">美金換算</span>}
-                            {!isTransfer && selectedAccount?.currency === Currency.JPY && <span className="text-xs text-orange-600 ml-1">日幣換算</span>}
+                            {selectedAccount?.currency === Currency.USD ? ff.exchangeRateUSD : 
+                             selectedAccount?.currency === Currency.JPY ? ff.exchangeRateJPY : 
+                             ff.exchangeRate}
+                            {isCrossCurrencyTransfer && <span className="text-xs text-blue-600 ml-1">{ff.crossCurrencyTransfer}</span>}
+                            {!isTransfer && selectedAccount?.currency === Currency.USD && <span className="text-xs text-green-600 ml-1">{ff.usdConversion}</span>}
+                            {!isTransfer && selectedAccount?.currency === Currency.JPY && <span className="text-xs text-orange-600 ml-1">{ff.jpyConversion}</span>}
                          </label>
                          <input 
                            type="number" 
@@ -665,20 +667,20 @@ const FundManager: React.FC<Props> = ({
                         isSameCurrencyTransfer && (
                             <div className="pb-2 flex items-end h-full">
                                 <span className="text-sm font-bold text-slate-500 bg-slate-200 px-3 py-1.5 rounded-full">
-                                   同幣別轉帳 (匯率 1.0)
+                                   {ff.sameCurrencyTransfer}
                                 </span>
                             </div>
                         )
                      )}
 
                      <div>
-                        <label className="block text-sm font-medium text-slate-700">手續費 (TWD) <span className="text-xs text-slate-400 font-normal">匯費/轉帳費</span></label>
+                        <label className="block text-sm font-medium text-slate-700">{ff.fees} <span className="text-xs text-slate-400 font-normal">{ff.feesNote}</span></label>
                         <input type="number" step="1" placeholder="0" value={fee} onChange={e => setFee(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2"/>
                      </div>
                   </div>
 
                   <div>
-                     <label className="block text-sm font-medium text-slate-700">備註</label>
+                     <label className="block text-sm font-medium text-slate-700">{ff.note}</label>
                      <input type="text" value={note} onChange={e => setNote(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2"/>
                   </div>
 
@@ -691,13 +693,13 @@ const FundManager: React.FC<Props> = ({
                       }}
                       className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50 text-sm sm:text-base"
                     >
-                      取消
+                      {ff.cancel}
                     </button>
                     <button 
                       type="submit" 
                       className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 shadow-lg shadow-slate-900/20 text-sm sm:text-base"
                     >
-                      {editingCashFlow ? '更新記錄' : '確認執行'}
+                      {editingCashFlow ? ff.updateRecord : ff.confirmExecute}
                     </button>
                   </div>
                 </form>
@@ -710,10 +712,10 @@ const FundManager: React.FC<Props> = ({
       {isClearConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
            <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6 max-w-sm w-full mx-4">
-              <h3 className="text-base sm:text-lg font-bold text-red-600 mb-2">{language === 'en' ? 'Confirm Clear All Fund Records?' : '確認清空所有資金紀錄？'}</h3>
-              <p className="text-sm sm:text-base text-slate-600 mb-6">{language === 'en' ? 'This will delete all deposit, withdrawal, transfer and interest records. This action cannot be undone. Please backup your data first.' : '此操作將刪除所有的入金、出金、轉帳與利息紀錄，且無法復原。建議先備份資料。'}</p>
+              <h3 className="text-base sm:text-lg font-bold text-red-600 mb-2">{translations.funds.confirmClearAll}</h3>
+              <p className="text-sm sm:text-base text-slate-600 mb-6">{translations.funds.confirmClearAllMessage}</p>
               <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                 <button onClick={() => setIsClearConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50 text-sm sm:text-base">{t(language).common.cancel}</button>
+                 <button onClick={() => setIsClearConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50 text-sm sm:text-base">{translations.common.cancel}</button>
                  <button 
                    onClick={() => {
                        onClearAll();
@@ -721,7 +723,7 @@ const FundManager: React.FC<Props> = ({
                    }} 
                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base"
                  >
-                   {language === 'en' ? 'Confirm Clear' : '確認清空'}
+                   {translations.funds.confirmClear}
                  </button>
               </div>
            </div>
