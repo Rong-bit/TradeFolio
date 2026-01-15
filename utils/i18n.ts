@@ -151,6 +151,9 @@ export interface Translations {
     totalRecords: string;
     last30Days: string;
     thisYear: string;
+    confirmClearAll: string;
+    confirmClearAllMessage: string;
+    confirmClear: string;
   };
   // 交易記錄
   history: {
@@ -375,6 +378,100 @@ export interface Translations {
     androidPublishTitle: string;
     androidPublishDesc: string;
   };
+  // 交易表單
+  transactionForm: {
+    addTransaction: string;
+    editTransaction: string;
+    date: string;
+    account: string;
+    market: string;
+    ticker: string;
+    tickerPlaceholder: string;
+    category: string;
+    price: string;
+    quantity: string;
+    quantityFixed: string;
+    fees: string;
+    note: string;
+    cancel: string;
+    saveTransaction: string;
+    updateTransaction: string;
+    confirmTitle: string;
+    confirmMessage: string;
+    dateLabel: string;
+    accountLabel: string;
+    marketLabel: string;
+    tickerLabel: string;
+    typeLabel: string;
+    priceLabel: string;
+    quantityLabel: string;
+    feesLabel: string;
+    noteLabel: string;
+    totalAmount: string;
+    shares: string;
+    backToEdit: string;
+    confirmSave: string;
+    previewTitle: string;
+    calculationFormula: string;
+    marketTW: string;
+    marketUS: string;
+    marketUK: string;
+    marketJP: string;
+    typeBuy: string;
+    typeSell: string;
+    typeDividend: string;
+    typeCashDividend: string;
+    typeTransferIn: string;
+    typeTransferOut: string;
+    placeholderPrice: string;
+    placeholderQuantity: string;
+    errorNoAccount: string;
+    feesShort: string;
+    formulaNote: string;
+  };
+  // 資金管理表單
+  fundForm: {
+    addFundRecord: string;
+    editFundRecord: string;
+    date: string;
+    type: string;
+    account: string;
+    sourceAccount: string;
+    amount: string;
+    targetAccount: string;
+    selectAccount: string;
+    exchangeRate: string;
+    exchangeRateUSD: string;
+    exchangeRateJPY: string;
+    crossCurrencyTransfer: string;
+    usdConversion: string;
+    jpyConversion: string;
+    sameCurrencyTransfer: string;
+    fees: string;
+    feesNote: string;
+    note: string;
+    cancel: string;
+    updateRecord: string;
+    confirmExecute: string;
+    typeDeposit: string;
+    typeWithdraw: string;
+    typeTransfer: string;
+    typeInterest: string;
+    confirmTitle: string;
+    confirmMessage: string;
+    dateLabel: string;
+    typeLabel: string;
+    accountLabel: string;
+    targetAccountLabel: string;
+    amountLabel: string;
+    exchangeRateLabel: string;
+    feesLabel: string;
+    noteLabel: string;
+    totalTWD: string;
+    backToEdit: string;
+    confirmSave: string;
+    errorNoAccount: string;
+  };
 }
 
 // 繁體中文翻譯
@@ -520,6 +617,9 @@ const zhTW: Translations = {
     totalRecords: '共 {total} 筆',
     last30Days: '最近30天',
     thisYear: '今年',
+    confirmClearAll: '確認清空所有資金紀錄？',
+    confirmClearAllMessage: '此操作將刪除所有的入金、出金、轉帳與利息紀錄，且無法復原。建議先備份資料。',
+    confirmClear: '確認清空',
   },
   history: {
     operations: '操作選項',
@@ -806,6 +906,98 @@ A: 股價與匯率因為是抓取網頁現值，故現值會慢三分鐘至五�
     androidPublishTitle: '如何將此工具上架到 Google Play？',
     androidPublishDesc: '您可以透過 TWA 技術將網頁轉為 Android App：\n1. 註冊 Google 開發者帳號 ($25)。\n2. 使用 Bubblewrap CLI 工具封裝您的網站網址。\n3. 在 Play Console 上傳 AAB 檔並提交審核。',
   },
+  transactionForm: {
+    addTransaction: '新增交易',
+    editTransaction: '編輯交易',
+    date: '日期',
+    account: '交易帳戶',
+    market: '市場',
+    ticker: '代號 (Ticker)',
+    tickerPlaceholder: 'e.g. 2330, AAPL, or DTLA',
+    category: '類別',
+    price: '價格',
+    quantity: '數量 (股)',
+    quantityFixed: '數量 (固定為 1)',
+    fees: '手續費 / 稅金',
+    note: '備註',
+    cancel: '取消',
+    saveTransaction: '儲存交易',
+    updateTransaction: '更新交易',
+    confirmTitle: '確認交易資訊',
+    confirmMessage: '請仔細確認以下資訊是否正確：',
+    dateLabel: '日期：',
+    accountLabel: '交易帳戶：',
+    marketLabel: '市場：',
+    tickerLabel: '代號：',
+    typeLabel: '類型：',
+    priceLabel: '價格：',
+    quantityLabel: '數量：',
+    feesLabel: '手續費：',
+    noteLabel: '備註：',
+    totalAmount: '總金額：',
+    shares: '股',
+    backToEdit: '返回修改',
+    confirmSave: '確認儲存',
+    previewTitle: '計算金額預覽：',
+    calculationFormula: '計算公式：',
+    marketTW: '台股 (TW)',
+    marketUS: '美股 (US)',
+    marketUK: '英國股 (UK)',
+    marketJP: '日本股 (JP)',
+    typeBuy: '買入 (Buy)',
+    typeSell: '賣出 (Sell)',
+    typeDividend: '股票股息 (Reinvest)',
+    typeCashDividend: '現金股息 (Cash)',
+    typeTransferIn: '匯入持股 (Transfer In)',
+    typeTransferOut: '匯出持股 (Transfer Out)',
+    placeholderPrice: '單價',
+    placeholderQuantity: '股息總額',
+    errorNoAccount: '請先建立並選擇證券帳戶',
+    feesShort: '手續費',
+    formulaNote: ' (台股向下取整)',
+  },
+  fundForm: {
+    addFundRecord: '新增資金紀錄',
+    editFundRecord: '編輯資金紀錄',
+    date: '日期',
+    type: '類型',
+    account: '帳戶',
+    sourceAccount: '來源帳戶',
+    amount: '金額',
+    targetAccount: '轉入目標帳戶',
+    selectAccount: '選擇帳戶...',
+    exchangeRate: '匯率',
+    exchangeRateUSD: '匯率 (TWD/USD)',
+    exchangeRateJPY: '匯率 (TWD/JPY)',
+    crossCurrencyTransfer: '不同幣別轉帳',
+    usdConversion: '美金換算',
+    jpyConversion: '日幣換算',
+    sameCurrencyTransfer: '同幣別轉帳 (匯率 1.0)',
+    fees: '手續費 (TWD)',
+    feesNote: '匯費/轉帳費',
+    note: '備註',
+    cancel: '取消',
+    updateRecord: '更新記錄',
+    confirmExecute: '確認執行',
+    typeDeposit: '匯入資金 (Import/Salary)',
+    typeWithdraw: '匯出資金 (Export/Living)',
+    typeTransfer: '內部轉帳 (Transfer)',
+    typeInterest: '利息收入 (Interest)',
+    confirmTitle: '確認資金記錄',
+    confirmMessage: '請仔細確認以下資訊是否正確：',
+    dateLabel: '日期：',
+    typeLabel: '類型：',
+    accountLabel: '帳戶：',
+    targetAccountLabel: '目標帳戶：',
+    amountLabel: '金額：',
+    exchangeRateLabel: '匯率：',
+    feesLabel: '手續費：',
+    noteLabel: '備註：',
+    totalTWD: '總金額 (TWD)：',
+    backToEdit: '返回修改',
+    confirmSave: '確認儲存',
+    errorNoAccount: '請先建立帳戶',
+  },
 };
 
 // 英文翻譯
@@ -951,6 +1143,9 @@ const en: Translations = {
     totalRecords: 'Total {total}',
     last30Days: 'Last 30 Days',
     thisYear: 'This Year',
+    confirmClearAll: 'Confirm Clear All Fund Records?',
+    confirmClearAllMessage: 'This will delete all deposit, withdrawal, transfer and interest records. This action cannot be undone. Please backup your data first.',
+    confirmClear: 'Confirm Clear',
   },
   history: {
     operations: 'Operations',
@@ -1237,6 +1432,98 @@ A: Stock prices and exchange rates are scraped from web current values, so the c
     androidPublish: 'Android Store Publishing Guide',
     androidPublishTitle: 'How to publish this tool on Google Play?',
     androidPublishDesc: 'You can convert the web app to an Android App using TWA:\n1. Register for a Google Developer account ($25).\n2. Use Bubblewrap CLI to wrap your website URL.\n3. Upload the AAB file to Play Console and submit for review.',
+  },
+  transactionForm: {
+    addTransaction: 'Add Transaction',
+    editTransaction: 'Edit Transaction',
+    date: 'Date',
+    account: 'Account',
+    market: 'Market',
+    ticker: 'Ticker',
+    tickerPlaceholder: 'e.g. 2330, AAPL, or DTLA',
+    category: 'Category',
+    price: 'Price',
+    quantity: 'Quantity (Shares)',
+    quantityFixed: 'Quantity (Fixed at 1)',
+    fees: 'Fees / Taxes',
+    note: 'Note',
+    cancel: 'Cancel',
+    saveTransaction: 'Save Transaction',
+    updateTransaction: 'Update Transaction',
+    confirmTitle: 'Confirm Transaction',
+    confirmMessage: 'Please carefully review the following information:',
+    dateLabel: 'Date:',
+    accountLabel: 'Account:',
+    marketLabel: 'Market:',
+    tickerLabel: 'Ticker:',
+    typeLabel: 'Type:',
+    priceLabel: 'Price:',
+    quantityLabel: 'Quantity:',
+    feesLabel: 'Fees:',
+    noteLabel: 'Note:',
+    totalAmount: 'Total Amount:',
+    shares: 'shares',
+    backToEdit: 'Back to Edit',
+    confirmSave: 'Confirm & Save',
+    previewTitle: 'Amount Preview:',
+    calculationFormula: 'Calculation Formula:',
+    marketTW: 'Taiwan (TW)',
+    marketUS: 'US (US)',
+    marketUK: 'UK (UK)',
+    marketJP: 'Japan (JP)',
+    typeBuy: 'Buy',
+    typeSell: 'Sell',
+    typeDividend: 'Stock Dividend (Reinvest)',
+    typeCashDividend: 'Cash Dividend',
+    typeTransferIn: 'Transfer In',
+    typeTransferOut: 'Transfer Out',
+    placeholderPrice: 'Price per Share',
+    placeholderQuantity: 'Total Dividend',
+    errorNoAccount: 'Please create and select a brokerage account first',
+    feesShort: 'fees',
+    formulaNote: ' (TW floor)',
+  },
+  fundForm: {
+    addFundRecord: 'Add Fund Record',
+    editFundRecord: 'Edit Fund Record',
+    date: 'Date',
+    type: 'Type',
+    account: 'Account',
+    sourceAccount: 'Source Account',
+    amount: 'Amount',
+    targetAccount: 'Target Account',
+    selectAccount: 'Select Account...',
+    exchangeRate: 'Exchange Rate',
+    exchangeRateUSD: 'Exchange Rate (TWD/USD)',
+    exchangeRateJPY: 'Exchange Rate (TWD/JPY)',
+    crossCurrencyTransfer: 'Cross-currency Transfer',
+    usdConversion: 'USD Conversion',
+    jpyConversion: 'JPY Conversion',
+    sameCurrencyTransfer: 'Same Currency Transfer (Rate 1.0)',
+    fees: 'Fees (TWD)',
+    feesNote: 'Transfer/Wire Fee',
+    note: 'Note',
+    cancel: 'Cancel',
+    updateRecord: 'Update Record',
+    confirmExecute: 'Confirm & Save',
+    typeDeposit: 'Deposit',
+    typeWithdraw: 'Withdraw',
+    typeTransfer: 'Transfer',
+    typeInterest: 'Interest',
+    confirmTitle: 'Confirm Fund Record',
+    confirmMessage: 'Please carefully confirm the following information:',
+    dateLabel: 'Date:',
+    typeLabel: 'Type:',
+    accountLabel: 'Account:',
+    targetAccountLabel: 'Target Account:',
+    amountLabel: 'Amount:',
+    exchangeRateLabel: 'Exchange Rate:',
+    feesLabel: 'Fees:',
+    noteLabel: 'Note:',
+    totalTWD: 'Total (TWD):',
+    backToEdit: 'Back to Edit',
+    confirmSave: 'Confirm Save',
+    errorNoAccount: 'Please create an account first',
   },
 };
 
