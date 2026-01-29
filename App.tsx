@@ -177,7 +177,7 @@ const App: React.FC = () => {
   };
 
   const handleContactAdmin = () => {
-    const subject = encodeURIComponent("TradeFolio 購買/權限開通申請");
+    const subject = encodeURIComponent("TradeView 購買/權限開通申請");
     const body = encodeURIComponent(`Hi 管理員,\n\n我的帳號是: ${currentUser}\n\n我目前是非會員身份，希望申請/購買完整權限。\n\n請協助處理，謝謝。`);
     window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
   };
@@ -468,7 +468,7 @@ const App: React.FC = () => {
       // Sanitize filename
       const safeUser = (currentUser || 'guest').replace(/[^a-zA-Z0-9@._-]/g, '_');
       const dateStr = new Date().toISOString().split('T')[0];
-      const filename = `tradefolio_${safeUser}_${dateStr}.json`;
+      const filename = `TradeView_${safeUser}_${dateStr}.json`;
 
       // 檢測是否在 Android WebView/TWA 環境中
       const isAndroid = /Android/i.test(navigator.userAgent);
@@ -484,8 +484,8 @@ const App: React.FC = () => {
           // 檢查是否可以分享檔案
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
-              title: 'TradeFolio 備份檔案',
-              text: `TradeFolio 備份：${filename}`,
+              title: 'TradeView 備份檔案',
+              text: `TradeView 備份：${filename}`,
               files: [file]
             });
             return; // 成功分享，提前返回
@@ -497,8 +497,8 @@ const App: React.FC = () => {
               try {
                 const dataUrl = reader.result as string;
                 await navigator.share({
-                  title: 'TradeFolio 備份檔案',
-                  text: `TradeFolio 備份：${filename}\n\n請點擊下方連結或使用「另存連結為」功能下載檔案。`,
+                  title: 'TradeView 備份檔案',
+                  text: `TradeView 備份：${filename}\n\n請點擊下方連結或使用「另存連結為」功能下載檔案。`,
                   url: dataUrl
                 });
               } catch (err: any) {
@@ -543,8 +543,8 @@ const App: React.FC = () => {
                 const dataUrl = `data:application/json;base64,${base64Data}`;
                 
                 await Share.share({
-                  title: 'TradeFolio 備份檔案',
-                  text: `TradeFolio 備份：${filename}`,
+                  title: 'TradeView 備份檔案',
+                  text: `TradeView 備份：${filename}`,
                   url: dataUrl,
                   dialogTitle: '儲存備份檔案'
                 });
@@ -1147,7 +1147,7 @@ const App: React.FC = () => {
                   T
                </div>
                <div className="hidden sm:block">
-                  <h1 className="font-bold text-lg leading-none bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">TradeFolio</h1>
+                  <h1 className="font-bold text-lg leading-none bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">TradeView</h1>
                   <p className="text-[10px] text-slate-400 leading-none mt-0.5">{language === 'en' ? 'Portfolio Management' : '台美股資產管理'}</p>
                </div>
             </div>
@@ -1690,7 +1690,7 @@ const App: React.FC = () => {
             {/* 選單標題 */}
             <div className="p-6 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
               <div>
-                <h3 className="text-white font-bold text-lg">TradeFolio</h3>
+                <h3 className="text-white font-bold text-lg">TradeView</h3>
                 <p className="text-slate-400 text-xs mt-1">{currentUser}</p>
               </div>
               <button 
@@ -1790,7 +1790,7 @@ const App: React.FC = () => {
       {/* Footer */}
       <footer className="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-sm">© 2025 TradeFolio. Designed & Developed by <span className="text-indigo-400 font-bold">Jun-rong, Huang</span></p>
+          <p className="text-sm">© 2025 TradeView. Designed & Developed by <span className="text-indigo-400 font-bold">Jun-rong, Huang</span></p>
           <p className="text-[10px] mt-2 text-slate-500">此應用程式所有交易數據皆儲存於本地端，保障您的隱私安全。</p>
         </div>
       </footer>
