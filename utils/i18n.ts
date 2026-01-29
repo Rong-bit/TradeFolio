@@ -507,7 +507,7 @@ const zhTW: Translations = {
     help: '系統管理與備份',
   },
   login: {
-    title: 'TradeFolio 登入',
+    title: 'TradeView 登入',
     subtitle: '台美股資產管理系統',
     email: 'Email',
     password: 'Password',
@@ -832,13 +832,13 @@ const zhTW: Translations = {
     confirmImportMessage: '您即將匯入 {fileName}。',
     confirmImportWarning: '這將會完全清除目前的交易紀錄與設定，且無法復原。',
     confirmOverride: '確認覆蓋',
-    documentationContent: `# TradeFolio 使用說明書
+    documentationContent: `# TradeView 使用說明書
 
 > **隱私與安全聲明** :
 > 本系統採用離線優先架構，**所有交易資料皆儲存於您的個人電腦或手機瀏覽器中**，不會上傳至任何伺服器。**系統不涉及收集個人資料**，請安心使用。
 
 ## 1. 系統簡介
-TradeFolio 是一個支援台股與美股的資產管理工具，協助投資人追蹤資產變化、計算報酬率並管理資金流向。
+TradeView 是一個支援台股與美股的資產管理工具，協助投資人追蹤資產變化、計算報酬率並管理資金流向。
 
 ## 2. 快速開始
 1. **建立帳戶**: 前往「證券戶管理」新增您的銀行或證券帳戶。
@@ -1033,7 +1033,7 @@ const en: Translations = {
     help: 'System Management & Backup',
   },
   login: {
-    title: 'TradeFolio Login',
+    title: 'TradeView Login',
     subtitle: 'Taiwan & US Stock Portfolio Management',
     email: 'Email',
     password: 'Password',
@@ -1359,13 +1359,13 @@ const en: Translations = {
     confirmImportMessage: 'You are about to import {fileName}.',
     confirmImportWarning: 'This will completely clear your current transaction records and settings, and cannot be undone.',
     confirmOverride: 'Confirm Override',
-    documentationContent: `# TradeFolio User Manual
+    documentationContent: `# TradeView User Manual
 
 > **Privacy & Security Statement**:
 > This system adopts an offline-first architecture. **All transaction data is stored on your personal computer or mobile browser** and is not uploaded to any server. **The system does not involve collecting personal information**. Please use with confidence.
 
 ## 1. System Introduction
-TradeFolio is an asset management tool that supports Taiwan and US stocks, helping investors track asset changes, calculate returns, and manage fund flows.
+TradeView is an asset management tool that supports Taiwan and US stocks, helping investors track asset changes, calculate returns, and manage fund flows.
 
 ## 2. Quick Start
 1. **Create Account**: Go to "Account Management" to add your bank or brokerage account.
