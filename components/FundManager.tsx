@@ -733,4 +733,3 @@ const FundManager: React.FC<Props> = ({
 };
 
 export default FundManager;
-
