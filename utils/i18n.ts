@@ -46,8 +46,6 @@ export interface Translations {
     login: string;
     privacy: string;
     privacyDesc: string;
-    riskDisclaimer: string;
-    riskDisclaimerDesc: string;
   };
   // 儀表板
   dashboard: {
@@ -124,8 +122,6 @@ export interface Translations {
     startAnalysis: string;
     analyzing: string;
     viewCalculationDetails: string;
-    riskWarning: string;
-    riskWarningDesc: string;
     notInvestmentAdvice: string;
   };
   // 資金管理
@@ -514,8 +510,6 @@ const zhTW: Translations = {
     login: '登入',
     privacy: '隱私聲明',
     privacyDesc: '資料都在個人電腦與手機，系統不涉及個資問題，記得定時備份。',
-    riskDisclaimer: '投資風險警告',
-    riskDisclaimerDesc: '⚠️ 投資有風險，過往績效不代表未來表現。本應用程式僅提供資產統計與管理功能，不提供投資建議，亦不具備證券交易功能。所有投資決策應由使用者自行判斷，並承擔相關風險。',
   },
   dashboard: {
     netCost: '淨投入成本',
@@ -591,8 +585,6 @@ const zhTW: Translations = {
     startAnalysis: '開始分析',
     analyzing: '分析中...',
     viewCalculationDetails: '查看計算明細',
-    riskWarning: '⚠️ 投資風險警告',
-    riskWarningDesc: '本應用程式提供的所有資訊、分析與建議僅供參考，不構成任何投資建議。投資有風險，過往績效不代表未來表現。使用者應自行評估投資風險，並諮詢專業財務顧問。',
     notInvestmentAdvice: '本應用程式不提供投資建議，所有分析結果僅供參考。',
   },
   funds: {
@@ -1040,8 +1032,6 @@ const en: Translations = {
     login: 'Login',
     privacy: 'Privacy Notice',
     privacyDesc: 'All data is stored locally on your device. The system does not collect personal information. Please remember to backup regularly.',
-    riskDisclaimer: 'Investment Risk Warning',
-    riskDisclaimerDesc: '⚠️ Investments carry risk. Past performance does not guarantee future results. This application provides asset tracking and management features only. It does not provide investment advice and does not have securities trading functionality. All investment decisions should be made by users at their own discretion, and users bear all related risks.',
   },
   dashboard: {
     netCost: 'Net Cost',
@@ -1117,8 +1107,6 @@ const en: Translations = {
     startAnalysis: 'Start Analysis',
     analyzing: 'Analyzing...',
     viewCalculationDetails: 'View Details',
-    riskWarning: '⚠️ Investment Risk Warning',
-    riskWarningDesc: 'All information, analysis, and suggestions provided by this application are for reference only and do not constitute investment advice. Investments carry risk. Past performance does not guarantee future results. Users should evaluate investment risks independently and consult professional financial advisors.',
     notInvestmentAdvice: 'This application does not provide investment advice. All analysis results are for reference only.',
   },
   funds: {
