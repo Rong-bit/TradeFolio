@@ -379,20 +379,18 @@ const FundManager: React.FC<Props> = ({
           <thead className="bg-slate-50 text-slate-500 uppercase">
             <tr>
               <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.date}</th>
-              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden sm:table-cell">{language === 'en' ? 'TWD' : '台幣 (TWD)'}</th>
-              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden md:table-cell">{language === 'en' ? 'USD' : '美元 (USD)'}</th>
-              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden md:table-cell">{language === 'en' ? 'JPY' : '日幣 (JPY)'}</th>
-              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden lg:table-cell">{t(language).labels.exchangeRate}</th>
-              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden lg:table-cell">{t(language).labels.fee}</th>
+              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.amount}</th>
+              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.exchangeRate}</th>
+              <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.fee}</th>
               <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.totalCost}</th>
               <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.account}</th>
-              <th className="px-2 sm:px-3 py-2 whitespace-nowrap hidden sm:table-cell">{t(language).labels.category}</th>
+              <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.category}</th>
               <th className="px-2 sm:px-3 py-2 text-center whitespace-nowrap">{t(language).labels.action}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filteredFlows.length === 0 ? (
-                <tr><td colSpan={10} className="p-8 text-center text-slate-400">{language === 'en' ? 'No matching records found.' : '沒有符合條件的資金紀錄。'}</td></tr>
+                <tr><td colSpan={8} className="p-8 text-center text-slate-400">{language === 'en' ? 'No matching records found.' : '沒有符合條件的資金紀錄。'}</td></tr>
             ) : (
                 filteredFlows.map(cf => {
                    const account = accounts.find(a => a.id === cf.accountId);
@@ -423,31 +421,24 @@ const FundManager: React.FC<Props> = ({
                        }
                    }
 
+                   // 單一「金額」欄：顯示原幣金額 + 幣別
+                   const amountWithCurrency = account?.currency
+                     ? `${cf.amount.toLocaleString()} ${account.currency}`
+                     : cf.amount.toLocaleString();
+
                    return (
                      <tr key={cf.id} className="hover:bg-slate-50">
                        <td className="px-2 sm:px-3 py-2 text-slate-600 whitespace-nowrap">{cf.date}</td>
                        
-                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 hidden sm:table-cell">
-                         {cf.amountTWD ? (
-                           <span className="text-slate-800">{cf.amountTWD.toLocaleString()}</span>
-                         ) : (
-                           isTWD ? cf.amount.toLocaleString() : '-'
-                         )}
+                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600">
+                         {amountWithCurrency}
                        </td>
                        
-                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 hidden md:table-cell">
-                         {isUSD ? cf.amount.toLocaleString() : '-'}
-                       </td>
-                       
-                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 hidden md:table-cell">
-                         {isJPY ? cf.amount.toLocaleString() : '-'}
-                       </td>
-                       
-                       <td className="px-2 sm:px-3 py-2 text-right text-slate-500 hidden lg:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right text-slate-500">
                          {cf.exchangeRate ? cf.exchangeRate : '-'}
                        </td>
                        
-                       <td className="px-2 sm:px-3 py-2 text-right text-slate-400 hidden lg:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right text-slate-400">
                          {displayFee}
                        </td>
                        
@@ -462,7 +453,7 @@ const FundManager: React.FC<Props> = ({
                          </div>
                        </td>
                        
-                       <td className="px-2 sm:px-3 py-2 text-slate-600 hidden sm:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-slate-600">
                          <div className="flex flex-col gap-1">
                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold 
                               ${cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.INTEREST ? 'bg-green-100 text-green-700' : 
