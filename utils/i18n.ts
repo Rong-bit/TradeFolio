@@ -46,6 +46,8 @@ export interface Translations {
     login: string;
     privacy: string;
     privacyDesc: string;
+    riskDisclaimer: string;
+    riskDisclaimerDesc: string;
   };
   // 儀表板
   dashboard: {
@@ -510,6 +512,8 @@ const zhTW: Translations = {
     login: '登入',
     privacy: '隱私聲明',
     privacyDesc: '資料都在個人電腦與手機，系統不涉及個資問題，記得定時備份。',
+    riskDisclaimer: '風險聲明',
+    riskDisclaimerDesc: '投資有風險，過往績效不代表未來表現，請謹慎評估自身風險承受能力。',
   },
   dashboard: {
     netCost: '淨投入成本',
@@ -1032,6 +1036,8 @@ const en: Translations = {
     login: 'Login',
     privacy: 'Privacy Notice',
     privacyDesc: 'All data is stored locally on your device. The system does not collect personal information. Please remember to backup regularly.',
+    riskDisclaimer: 'Risk Disclaimer',
+    riskDisclaimerDesc: 'Investing involves risks. Past performance does not guarantee future results. Please carefully assess your risk tolerance.',
   },
   dashboard: {
     netCost: 'Net Cost',
