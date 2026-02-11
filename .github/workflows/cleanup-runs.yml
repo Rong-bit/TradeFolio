@@ -20,7 +20,9 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
+          # 設為 0，這樣失敗的紀錄就不會因為「要保留 6 個」而被留下來
+          keep_minimum_runs: 0
           retain_days: 6
-          keep_minimum_runs: 6
           # 關鍵設定：刪除除了 success 以外的所有狀態 (失敗、取消等)
           delete_run_by_conclusion_pattern: "action_required,cancelled,failure,skipped,stale,timed_out"
+
