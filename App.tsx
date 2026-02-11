@@ -1347,7 +1347,7 @@ const App: React.FC = () => {
                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                    </svg>
-                   <span>{(language === 'en' || language === 'de' || language === 'fr' || language === 'hi' || language === 'ar' || language === 'pt') ? 'Upgrade' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'zh-CN' ? '升级' : '申請開通'}</span>
+                   <span>{t(language).common.upgrade}</span>
                  </button>
                )}
 
@@ -1419,7 +1419,7 @@ const App: React.FC = () => {
                      onClick={handleContactAdmin}
                      className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow"
                    >
-                     {(language === 'en' || language === 'de' || language === 'fr' || language === 'hi' || language === 'ar' || language === 'pt') ? 'Upgrade' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'zh-CN' ? '升级' : '申請開通'}
+                     {t(language).common.upgrade}
                    </button>
                 )}
             </h2>
@@ -1976,7 +1976,7 @@ const App: React.FC = () => {
                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                   </svg>
-                  {(language === 'en' || language === 'de' || language === 'fr' || language === 'hi' || language === 'ar' || language === 'pt') ? 'Upgrade' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'zh-CN' ? '升级' : '申請開通'}
+                  {t(language).common.upgrade}
                 </button>
               )}
               <button 
