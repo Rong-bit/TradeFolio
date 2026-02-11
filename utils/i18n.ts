@@ -3189,7 +3189,7 @@ A: 股价与汇率因抓取网页现值，故现值会延迟三至五分钟不�
 // 德文翻譯
 const de: Translations = {
   baseCurrency: { TWD: 'TWD', USD: 'USD', JPY: 'JPY', EUR: 'EUR', GBP: 'GBP', HKD: 'HKD', KRW: 'KRW', CAD: 'CAD', INR: 'INR' },
-  common: { confirm: 'Bestätigen', cancel: 'Abbrechen', delete: 'Löschen', edit: 'Bearbeiten', save: 'Speichern', close: 'Schließen', loading: 'Laden...', search: 'Suchen', logoutConfirm: 'Möchten Sie sich abmelden?', upgrade: 'Upgrade' },
+  common: { confirm: 'Bestätigen', cancel: 'Abbrechen', delete: 'Löschen', edit: 'Bearbeiten', save: 'Speichern', close: 'Schließen', loading: 'Laden...', search: 'Suchen', logoutConfirm: 'Möchten Sie sich abmelden?', upgrade: 'Aktualisieren' },
   nav: { dashboard: 'Dashboard', history: 'Transaktionen', funds: 'Fonds', accounts: 'Konten', rebalance: 'Rebalancing', simulator: 'Simulator', help: 'System', logout: 'Abmelden' },
   pages: { dashboard: 'Portfolio-Dashboard', history: 'Verlauf (Transaktionen + Cashflow)', funds: 'Fondsverwaltung', accounts: 'Kontoverwaltung', rebalance: 'Rebalancing', simulator: 'Asset-Allocation-Simulator', help: 'System & Backup' },
   login: { title: 'TradeView Anmeldung', subtitle: 'Taiwan- & US-Aktien Portfolio', email: 'E-Mail', password: 'Passwort', login: 'Anmelden', privacy: 'Datenschutz', privacyDesc: 'Daten werden lokal gespeichert. Keine Erfassung personenbezogener Daten.', riskDisclaimer: 'Risikohinweis', riskDisclaimerDesc: 'Investitionen bergen Risiken. Vergangene Performance garantiert keine zukünftigen Ergebnisse.' },
@@ -3531,7 +3531,7 @@ TradeView ist ein Vermögensverwaltungstool für Taiwan- und US-Aktien.
 const fr: Translations = {
   ...en,
   baseCurrency: { TWD: 'Dollar taïwanais', USD: 'Dollar américain', JPY: 'Yen japonais', EUR: 'Euro', GBP: 'Livre sterling', HKD: 'Dollar HK', KRW: 'Won coréen', CAD: 'Dollar canadien', INR: 'Roupie indienne' },
-  common: { ...en.common, confirm: 'Confirmer', cancel: 'Annuler', delete: 'Supprimer', edit: 'Modifier', save: 'Enregistrer', close: 'Fermer', loading: 'Chargement...', search: 'Rechercher', logoutConfirm: 'Déconnexion ?' },
+  common: { ...en.common, confirm: 'Confirmer', cancel: 'Annuler', delete: 'Supprimer', edit: 'Modifier', save: 'Enregistrer', close: 'Fermer', loading: 'Chargement...', search: 'Rechercher', logoutConfirm: 'Déconnexion ?', upgrade: 'Mettre à niveau' },
   nav: { dashboard: 'Tableau de bord', history: 'Historique', funds: 'Fonds', accounts: 'Comptes', rebalance: 'Rééquilibrage', simulator: 'Simulateur', help: 'Aide', logout: 'Déconnexion' },
   pages: { ...en.pages, dashboard: 'Portefeuille', history: 'Historique (transactions et flux)', funds: 'Gestion des fonds', accounts: 'Comptes', rebalance: 'Rééquilibrage', simulator: 'Simulateur d\'allocation', help: 'Paramètres et sauvegarde' },
   login: { title: 'Connexion TradeView', subtitle: 'Portefeuille actions Taiwan et US', email: 'E-mail', password: 'Mot de passe', login: 'Connexion', privacy: 'Confidentialité', privacyDesc: 'Données stockées localement. Aucune collecte de données personnelles.', riskDisclaimer: 'Avertissement', riskDisclaimerDesc: 'Les investissements comportent des risques. Les performances passées ne garantissent pas les résultats futurs.' },
@@ -3899,7 +3899,7 @@ TradeView est un outil de gestion d'actifs pour actions Taiwan et US.
 const hi: Translations = {
   ...en,
   baseCurrency: { TWD: 'ताइवान डॉलर', USD: 'अमेरिकी डॉलर', JPY: 'जापानी येन', EUR: 'यूरो', GBP: 'ब्रिटिश पाउंड', HKD: 'हाँगकाँग डॉलर', KRW: 'कोरियाई वॉन', CAD: 'कैनेडियन डॉलर', INR: 'भारतीय रुपया' },
-  common: { ...en.common, confirm: 'पुष्टि', cancel: 'रद्द', delete: 'हटाएं', edit: 'संपादित', save: 'सहेजें', close: 'बंद', loading: 'लोड हो रहा...', search: 'खोज', logoutConfirm: 'लॉग आउट करें?' },
+  common: { ...en.common, confirm: 'पुष्टि', cancel: 'रद्द', delete: 'हटाएं', edit: 'संपादित', save: 'सहेजें', close: 'बंद', loading: 'लोड हो रहा...', search: 'खोज', logoutConfirm: 'लॉग आउट करें?', upgrade: 'अपग्रेड' },
   nav: { dashboard: 'डैशबोर्ड', history: 'इतिहास', funds: 'निधि', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'सिम्युलेटर', help: 'सहायता', logout: 'लॉग आउट' },
   pages: { ...en.pages, dashboard: 'पोर्टफोलियो', history: 'लेनदेन और नकदी प्रवाह', funds: 'निधि प्रबंधन', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'आवंटन सिम्युलेटर', help: 'सेटिंग और बैकअप' },
   login: { title: 'TradeView लॉगिन', subtitle: 'ताइवान और US स्टॉक पोर्टफोलियो', email: 'ईमेल', password: 'पासवर्ड', login: 'लॉग इन', privacy: 'गोपनीयता', privacyDesc: 'डेटा लोकल संग्रहीत। कोई निजी डेटा एकत्र नहीं।', riskDisclaimer: 'चेतावनी', riskDisclaimerDesc: 'निवेश में जोखिम है।' },
@@ -4369,7 +4369,7 @@ TradeView ताइवान और US स्टॉक के लिए सं�
 const ar: Translations = {
   ...en,
   baseCurrency: { ...en.baseCurrency, TWD: 'دولار تايواني', USD: 'دولار أمريكي', JPY: 'ين ياباني', EUR: 'يورو', GBP: 'جنيه إسترليني', HKD: 'دولار هونغ كونغ', KRW: 'وون كوري', CAD: 'دولار كندي', INR: 'روبية هندية' },
-  common: { ...en.common, confirm: 'تأكيد', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', save: 'حفظ', close: 'إغلاق', loading: 'جاري التحميل...', search: 'بحث', logoutConfirm: 'تسجيل الخروج؟' },
+  common: { ...en.common, confirm: 'تأكيد', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', save: 'حفظ', close: 'إغلاق', loading: 'جاري التحميل...', search: 'بحث', logoutConfirm: 'تسجيل الخروج؟', upgrade: 'ترقية' },
   nav: { dashboard: 'لوحة التحكم', history: 'السجل', funds: 'الأموال', accounts: 'الحسابات', rebalance: 'إعادة التوازن', simulator: 'المحاكي', help: 'النظام', logout: 'تسجيل الخروج' },
   pages: { ...en.pages, dashboard: 'لوحة المحفظة', history: 'السجل (المعاملات والتدفق)', funds: 'إدارة الأموال', accounts: 'إدارة الحسابات', rebalance: 'إعادة التوازن', simulator: 'محاكي التخصيص', help: 'النظام والنسخ' },
   login: { title: 'تسجيل الدخول TradeView', subtitle: 'محفظة أسهم تايوان والولايات المتحدة', email: 'البريد', password: 'كلمة المرور', login: 'دخول', privacy: 'الخصوصية', privacyDesc: 'البيانات مخزنة محلياً. لا جمع للبيانات الشخصية.', riskDisclaimer: 'إخلاء المسؤولية', riskDisclaimerDesc: 'الاستثمار ينطوي على مخاطر.' },
@@ -4839,7 +4839,7 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
 const pt: Translations = {
   ...en,
   baseCurrency: { ...en.baseCurrency, TWD: 'Dólar taiwanês', USD: 'Dólar americano', JPY: 'Iene japonês', EUR: 'Euro', GBP: 'Libra esterlina', HKD: 'Dólar de Hong Kong', KRW: 'Won coreano', CAD: 'Dólar canadense', INR: 'Rúpia indiana' },
-  common: { ...en.common, confirm: 'Confirmar', cancel: 'Cancelar', delete: 'Excluir', edit: 'Editar', save: 'Salvar', close: 'Fechar', loading: 'Carregando...', search: 'Buscar', logoutConfirm: 'Sair?' },
+  common: { ...en.common, confirm: 'Confirmar', cancel: 'Cancelar', delete: 'Excluir', edit: 'Editar', save: 'Salvar', close: 'Fechar', loading: 'Carregando...', search: 'Buscar', logoutConfirm: 'Sair?', upgrade: 'Atualizar' },
   nav: { dashboard: 'Painel', history: 'Histórico', funds: 'Fundos', accounts: 'Contas', rebalance: 'Rebalanceamento', simulator: 'Simulador', help: 'Sistema', logout: 'Sair' },
   pages: { ...en.pages, dashboard: 'Painel da carteira', history: 'Histórico (transações e fluxo)', funds: 'Gestão de fundos', accounts: 'Gestão de contas', rebalance: 'Rebalanceamento', simulator: 'Simulador de alocação', help: 'Sistema e backup' },
   login: { title: 'Login TradeView', subtitle: 'Carteira de ações Taiwan e EUA', email: 'E-mail', password: 'Senha', login: 'Entrar', privacy: 'Privacidade', privacyDesc: 'Dados armazenados localmente. Sem coleta de dados pessoais.', riskDisclaimer: 'Aviso', riskDisclaimerDesc: 'Investimentos envolvem riscos.' },
