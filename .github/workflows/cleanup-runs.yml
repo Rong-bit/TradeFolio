@@ -1,9 +1,11 @@
+代碼
+yaml
 name: Cleanup Old Workflow Runs
 
 on:
   schedule:
-    - cron: '0 2 1 * *' # 每月1號執行
-  workflow_dispatch: # 讓你可以手動按按鈕執行
+    - cron: '0 2 1 * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,6 +19,8 @@ jobs:
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }} # 自動抓你的倉庫名稱
-          retain_days: 6 # 只留最近 6 天
-          keep_minimum_runs: 6 # 至少留 6 個紀錄
+          repository: ${{ github.repository }}
+          retain_days: 6
+          keep_minimum_runs: 6
+          # 關鍵設定：刪除除了 success 以外的所有狀態 (失敗、取消等)
+          delete_run_by_conclusion_pattern: "action_required,cancelled,failure,skipped,stale,timed_out"
