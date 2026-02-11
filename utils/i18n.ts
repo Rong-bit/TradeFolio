@@ -2150,23 +2150,61 @@ TradeViewは台湾・米国株に対応した資産管理ツールです。資�
 4. **レポート**：「ダッシュボード」で資産推移・パフォーマンスを確認。
 
 ## 3. 機能詳細
-**資金管理**：入金・出金・送金・利息。
-**取引種別**：買い/売り・株式配当・現金配当。
+
+### 資金管理 (Fund Management)
+* **入金 (Import)**: 外部資金の流入（給与など）。
+* **出金 (Export)**: 資金の流出（生活費の引き出しなど）。
+* **送金 (Transfer)**: 異なる口座間の資金移動（銀行から証券口座など）。
+* **利息**: 預金または証券口座の利息を記録。
+
+### 取引種別
+* **Buy/Sell**: 一般的な売買。
+* **Dividend**: 株式配当（株数が増加）。
+* **Cash Dividend**: 現金配当（残高が増加）。
 
 ## 4. よくある質問(FAQ)
-Q: 年率リターンはどう計算？ A: 資金加重リターンを採用。入出金のタイミングを考慮して推定します。
-Q: 為替設定は？ A: 右上でUSD/TWDを設定するか、送金時にその時点のレートを指定。
-Q: データとプライバシー？ A: データはすべて端末内のみ。個資の心配はありません。端末障害やキャッシュ削除に備え、**定期的に「バックアップ」でJSONを保存**することを推奨します。
-Q: バックアップがダウンロードできない？ A: LINE内で開いているとポップアップがブロックされることがあります。ChromeやSafariなどのブラウザで操作してください。
-Q: 株価が更新されない？ A: 銘柄の市場設定を確認。誤りがあれば「取引履歴」の「市場一括変更」で修正。
-Q: 会員のメリットは？ A: リバランス・チャート・年間成績表が使え、投資結果を把握しやすくなります。
-Q: 株価・為替が「AI更新」の現値と違う？ A: ウェブの現値を取得しているため数分遅れがあります。売買の基準は証券会社のリアルタイムを優先してください。本アプリは資産統計用であり、証券取引機能はありません。投資にはリスクがあります。緊急資金の確保をお忘れなく。
+Q: 年率リターンはどう計算されますか？
+A: システムは資金加重リターンの概念を採用し、資金の出入りのタイミングを考慮して推定します。
 
-## 5. 免責事項
-- 投資にはリスクがあります。過去の実績は将来を保証しません。
-- 本アプリは資産の記録・管理のみを提供し、投資助言は行いません。
-- 証券の売買機能はなく、実際の取引は行えません。
-- 投資判断とリスクはすべてユーザーが負います。必要に応じて専門家にご相談ください。`,
+Q: 為替レートはどのように設定しますか？
+A: 右上でグローバルUSD/TWD為替レートを設定するか、送金時にその時点のレートを指定できます。
+
+Q: データの保存とプライバシーは？
+A: 前述の通り、**データは完全にお使いの端末（パソコンまたはスマートフォン）に保存**され、個人情報の問題はありません。端末の故障やブラウザキャッシュの削除によるデータ損失を避けるため、**定期的に下の「バックアップデータ」機能を使用して**JSONファイルを保存することを強く推奨します。
+
+Q: バックアップファイルをダウンロードできませんか？
+A: LINEでリンクを開いている場合、システムがポップアップウィンドウをブロックして正常にダウンロードできない場合があります。ブラウザ（ChromeやSafariなど）で操作することをお勧めします。
+
+Q: なぜ株価が更新されないのですか？
+A: その銘柄の市場設定が正しいか確認してください。誤っている場合は「取引履歴」で「市場一括変更」を選択して市場を変更してください。
+
+Q: 会員のメリットは何ですか？
+A: インターフェースにリバランス、チャート、年間パフォーマンス表が追加され、ユーザーが投資結果をよりよく理解できるようになります。
+
+Q: 会員の年間パフォーマンス表にチェックマークがあるのはなぜですか？
+A: チェックマークがある部分はその年度末のパフォーマンスを示し、チェックマークがない部分は報酬率に基づいて逆算したパフォーマンス推定値であり、推定効果のみです。
+
+Q: 株価と為替レートが「AI連網更新株価&為替レート」で取得した現値と異なるのはなぜですか？
+A: 株価と為替レートはウェブページの現値を取得しているため、現値は3〜5分遅れる場合があります。売買の参考値として使用しないでください。売買の参考は証券会社を主としてください。本ソフトウェアは資産統計機能にのみ適しており、緊急予備金、旅行基金、退職金、定期預金、株式債券などの統計参考に使用できますが、証券取引売買機能はありません。また、投資には利益と損失があります。緊急予備金を確保することを忘れないでください。ご利用ありがとうございます。
+
+## 5. 重要な免責事項
+
+**投資リスク警告**：
+- ⚠️ 投資にはリスクがあります。過去の実績は将来の結果を保証するものではありません。
+- 本アプリケーションは資産統計と管理機能のみを提供し、投資助言は提供しません。
+- 本アプリケーションは証券取引機能を備えておらず、実際の売買操作を行うことはできません。
+- すべての投資決定はユーザー自身が判断し、関連するリスクを負担する必要があります。
+- ユーザーは投資リスクを独自に評価し、必要に応じて専門の財務アドバイザーに相談する必要があります。
+
+**投資助言ではない声明**：
+- 本アプリケーションが提供するすべての情報、分析、チャート、AI推奨事項は参考のみであり、いかなる投資助言も構成しません。
+- 本アプリケーションは投資結果や報酬率を保証するものではありません。
+- ユーザーは自身の状況に基づいて投資決定を行い、すべての投資決定に対して責任を負います。
+
+**データの正確性**：
+- 本アプリケーションが提供する株価、為替レートなどのデータは、ネットワーク遅延により実際の市場価格と異なる場合があります。
+- ユーザーは本アプリケーションのデータを実際の売買の唯一の参考基準として使用すべきではありません。
+- 証券会社または金融機関が提供するリアルタイム見積もりを基準とすることをお勧めします。`,
     androidPublish: 'Android公開ガイド',
     androidPublishTitle: 'Google Playへの公開方法',
     androidPublishDesc: 'TWAでWebアプリをラップしてAndroid化できます。\n1. Googleデベロッパーアカウント登録（25ドル）。\n2. Bubblewrap CLIでサイトURLをラップ。\n3. Play ConsoleでAABをアップロードし審査に提出。',
@@ -2698,23 +2736,61 @@ TradeView는 대만·미국 주식 자산 관리 도구로, 자산 추이·수�
 4. **보고서**: "대시보드"에서 자산 추이·성과 확인.
 
 ## 3. 기능 상세
-**자금 관리**: 입금·출금·송금·이자.
-**거래 유형**: 매수/매도·주식 배당·현금 배당.
+
+### 자금 관리 (Fund Management)
+* **입금 (Import)**: 외부 자금 유입 (급여 등).
+* **출금 (Export)**: 자금 유출 (생활비 인출 등).
+* **송금 (Transfer)**: 서로 다른 계좌 간 자금 이동 (은행에서 증권 계좌로 등).
+* **이자**: 예금 또는 증권 계좌 이자 기록.
+
+### 거래 유형
+* **Buy/Sell**: 일반 매매.
+* **Dividend**: 주식 배당 (주식 수 증가).
+* **Cash Dividend**: 현금 배당 (잔액 증가).
 
 ## 4. 자주 묻는 질문(FAQ)
-Q: 연평균 수익률은 어떻게 계산되나요? A: 자금 가중 수익률을 사용하며, 입출금 시점을 반영해 추정합니다.
-Q: 환율 설정은? A: 우측 상단에서 USD/TWD 설정 또는 송금 시 해당 시점 환율 지정.
-Q: 데이터와 개인정보? A: 데이터는 모두 기기 내에만 저장됩니다. 기기 고장·캐시 삭제에 대비해 **정기적으로 "백업"으로 JSON 저장**을 권장합니다.
-Q: 백업 파일을 다운로드할 수 없어요. A: LINE에서 링크를 열면 팝업이 차단될 수 있습니다. Chrome·Safari 등 브라우저에서 이용하세요.
-Q: 주가가 갱신되지 않아요. A: 종목의 시장 설정을 확인하세요. 잘못되었으면 "거래 내역"의 "시장 일괄 변경"으로 수정.
-Q: 회원 혜택은? A: 리밸런싱·차트·연간 성과표를 사용해 투자 결과를 파악하기 쉽습니다.
-Q: 주가·환율이 "AI 업데이트" 현행가와 다릅니다. A: 웹 현행가를 가져오므로 수 분 지연될 수 있습니다. 매매 기준은 증권사 실시간 시세를 우선하세요. 본 앱은 자산 통계용이며 증권 매매 기능은 없습니다. 투자에는 위험이 있으며 비상 자금을 마련하세요.
+Q: 연평균 수익률은 어떻게 계산되나요?
+A: 시스템은 자금 가중 수익률 개념을 채택하여 자금 유입 및 유출 시점을 고려하여 추정합니다.
 
-## 5. 면책 조항
-- 투자에는 위험이 따릅니다. 과거 실적은 미래를 보장하지 않습니다.
-- 본 앱은 자산 기록·관리만 제공하며 투자 조언을 하지 않습니다.
-- 증권 매매 기능이 없으며 실제 매매는 불가합니다.
-- 투자 결정과 위험은 전적으로 이용자에게 있으며, 필요 시 전문가와 상담하세요.`,
+Q: 환율은 어떻게 설정하나요?
+A: 우측 상단에서 전역 USD/TWD 환율을 설정하거나 송금 시 해당 시점의 환율을 지정할 수 있습니다.
+
+Q: 데이터 저장 및 개인정보는?
+A: 앞서 언급한 바와 같이, **데이터는 완전히 사용자의 기기(컴퓨터 또는 스마트폰)에 저장**되며 개인정보 문제는 없습니다. 기기 손상 또는 브라우저 캐시 삭제로 인한 데이터 손실을 방지하기 위해 **아래의 "백업 데이터" 기능을 정기적으로 사용하여** JSON 파일을 저장하는 것을 강력히 권장합니다.
+
+Q: 백업 파일을 다운로드할 수 없나요?
+A: LINE에서 링크를 열면 시스템이 팝업 창을 차단하여 정상적으로 다운로드할 수 없는 경우가 있습니다. 브라우저(Chrome 또는 Safari 등)에서 작업하는 것을 권장합니다.
+
+Q: 주가가 업데이트되지 않는 이유는 무엇인가요?
+A: 해당 종목의 시장 설정이 올바른지 확인하세요. 잘못된 경우 "거래 내역"에서 "시장 일괄 변경"을 선택하여 시장을 변경하세요.
+
+Q: 회원의 혜택은 무엇인가요?
+A: 인터페이스에 리밸런싱, 차트, 연간 성과표가 추가되어 사용자가 투자 결과를 더 잘 이해할 수 있습니다.
+
+Q: 회원의 연간 성과표에 체크 표시가 있는 이유는 무엇인가요?
+A: 체크 표시가 있는 부분은 해당 연도 말의 성과를 보여주며, 체크 표시가 없는 부분은 수익률을 기반으로 역산한 성과 추정치이며 추정 효과에 불과합니다.
+
+Q: 주가와 환율이 "AI 연동 업데이트 주가&환율"로 얻은 현행가와 다른 이유는 무엇인가요?
+A: 주가와 환율은 웹페이지의 현행가를 가져오기 때문에 현행가는 3~5분 지연될 수 있습니다. 매매의 참고값으로 사용하지 마세요. 매매의 참고는 증권사를 기준으로 하세요. 본 소프트웨어는 자산 통계 기능에만 적합하며, 비상 예비금, 여행 기금, 퇴직금, 정기 예금, 주식 채권 등의 통계 참고에 사용할 수 있지만 증권 거래 매매 기능은 없습니다. 또한 투자에는 수익과 손실이 있습니다. 비상 예비금을 확보하는 것을 잊지 마세요. 이용해 주셔서 감사합니다.
+
+## 5. 중요한 면책 조항
+
+**투자 위험 경고**:
+- ⚠️ 투자에는 위험이 따릅니다. 과거 실적은 미래 결과를 보장하지 않습니다.
+- 본 애플리케이션은 자산 통계 및 관리 기능만 제공하며 투자 조언을 제공하지 않습니다.
+- 본 애플리케이션은 증권 거래 기능을 갖추고 있지 않으며 실제 매매 작업을 수행할 수 없습니다.
+- 모든 투자 결정은 사용자가 자체 판단하여 관련 위험을 부담해야 합니다.
+- 사용자는 투자 위험을 독립적으로 평가하고 필요시 전문 재무 고문에게 상담해야 합니다.
+
+**투자 조언이 아닌 성명**:
+- 본 애플리케이션이 제공하는 모든 정보, 분석, 차트, AI 권장 사항은 참고용일 뿐이며 어떠한 투자 조언도 구성하지 않습니다.
+- 본 애플리케이션은 투자 결과나 수익률을 보장하지 않습니다.
+- 사용자는 자신의 상황에 따라 투자 결정을 내리며 모든 투자 결정에 대해 책임을 집니다.
+
+**데이터 정확성**:
+- 본 애플리케이션이 제공하는 주가, 환율 등의 데이터는 네트워크 지연으로 인해 실제 시장 가격과 다를 수 있습니다.
+- 사용자는 본 애플리케이션의 데이터를 실제 매매의 유일한 참고 기준으로 사용해서는 안 됩니다.
+- 증권사 또는 금융 기관이 제공하는 실시간 시세를 기준으로 하는 것을 권장합니다.`,
     androidPublish: 'Android 배포 가이드',
     androidPublishTitle: 'Google Play 배포 방법',
     androidPublishDesc: 'TWA로 웹앱을 래핑해 Android 앱으로 만들 수 있습니다.\n1. Google 개발자 계정 등록(25달러).\n2. Bubblewrap CLI로 사이트 URL 래핑.\n3. Play Console에 AAB 업로드 후 심사 제출.',
@@ -3485,27 +3561,69 @@ holdings: {
 > **Datenschutz**: Offline-First-Architektur. **Alle Daten werden nur auf Ihrem Gerät gespeichert**, nicht auf Servern. **Keine Erfassung personenbezogener Daten.**
 
 ## 1. Einführung
-TradeView ist ein Vermögensverwaltungstool für Taiwan- und US-Aktien.
+TradeView ist ein Vermögensverwaltungstool für Taiwan- und US-Aktien, das Anlegern hilft, Vermögensänderungen zu verfolgen, Renditen zu berechnen und Geldströme zu verwalten.
 
 ## 2. Schnellstart
-1. **Konto anlegen**: Unter „Konten“ Konto hinzufügen.
-2. **Geld erfassen**: Unter „Fonds“ Einzahlungen erfassen.
-3. **Transaktion**: „Transaktion hinzufügen“ für Kauf/Verkauf.
-4. **Berichte**: „Dashboard“ für Vermögensverlauf.
+1. **Konto erstellen**: Gehen Sie zu „Kontoverwaltung", um Ihr Bank- oder Depotkonto hinzuzufügen.
+2. **Geld einzahlen**: Gehen Sie zu „Fondsverwaltung" und wählen Sie „Einzahlung", um Gehalt oder Einlagen im System zu erfassen.
+3. **Transaktion hinzufügen**: Klicken Sie oben rechts auf „Transaktion hinzufügen", um Kauf-/Verkaufsaufzeichnungen einzugeben.
+4. **Berichte anzeigen**: Kehren Sie zum „Dashboard" zurück, um Vermögensdiagramme und Performance anzuzeigen.
+## 3. Funktionen im Detail
 
-## 3. Funktionen
-**Fonds**: Einzahlung, Auszahlung, Überweisung, Zinsen.
-**Transaktionen**: Kauf/Verkauf, Aktien- und Bardividende.
+### Fondsverwaltung (Fund Management)
+* **Einzahlung (Import)**: Externer Geldzufluss (z.B. Gehalt).
+* **Auszahlung (Export)**: Geldabfluss (z.B. Lebenshaltungskosten).
+* **Überweisung (Transfer)**: Geldbewegung zwischen verschiedenen Konten (z.B. Bank zu Depotkonto).
+* **Zinsen**: Erfassung von Zinsen auf Einlagen oder Depotkonten.
 
-## 4. FAQ
-**Rendite?** Geldgewichtete Rendite, Ein- und Auszahlungszeitpunkte berücksichtigt.
-**Wechselkurs?** Oben rechts oder bei Überweisung.
-**Daten?** Nur lokal auf Ihrem Gerät. Bitte regelmäßig „Backup“ nutzen.
-**Preise?** Markt prüfen, ggf. „Markt stapelweise aktualisieren“.
+### Transaktionstypen
+* **Buy/Sell**: Allgemeine Käufe/Verkäufe.
+* **Dividend**: Aktiendividende (Anzahl der Aktien erhöht sich).
+* **Cash Dividend**: Bardividende (Guthaben erhöht sich).
 
-## 5. Haftungsausschluss
-- Investitionen bergen Risiken. Keine Anlageberatung.
-- Keine Wertpapierhandelsfunktion. Alle Entscheidungen und Risiken beim Nutzer.`,
+## 4. Häufig gestellte Fragen (FAQ)
+Q: Wie wird die annualisierte Rendite berechnet?
+A: Das System verwendet das Konzept der geldgewichteten Rendite und berücksichtigt den Zeitpunkt von Ein- und Auszahlungen für die Schätzung.
+
+Q: Wie wird der Wechselkurs festgelegt?
+A: Sie können den globalen USD/TWD-Wechselkurs oben rechts festlegen oder beim Überweisen den aktuellen Wechselkurs angeben.
+
+Q: Datenspeicherung und Datenschutz?
+A: Wie bereits erwähnt, **werden Daten vollständig auf Ihrem persönlichen Gerät (Computer oder Mobiltelefon) gespeichert** und betreffen keine Datenschutzprobleme. Um Datenverlust durch Geräteschäden oder gelöschten Browser-Cache zu vermeiden, **wird dringend empfohlen, regelmäßig die Funktion „Daten sichern" unten zu verwenden**, um JSON-Dateien selbst zu speichern.
+
+Q: Kann die Sicherungsdatei nicht heruntergeladen werden?
+A: Wenn Sie den Link in LINE öffnen, kann das System Popup-Fenster blockieren und normale Downloads verhindern. Es wird empfohlen, einen Browser (wie Chrome oder Safari) für die Operationen zu verwenden.
+
+Q: Warum können Aktienkurse nicht aktualisiert werden?
+A: Überprüfen Sie, ob die Markteinstellung für diese Aktie korrekt ist. Wenn falsch, wählen Sie „Markt stapelweise aktualisieren" in „Transaktionsverlauf", um den Markt zu ändern.
+
+Q: Was sind die Vorteile einer Mitgliedschaft?
+A: Die Benutzeroberfläche enthält Rebalancing, Diagramme und Jahresleistungstabellen, sodass Benutzer ihre Investitionsergebnisse besser verstehen können.
+
+Q: Warum gibt es Häkchen in der Jahresleistungstabelle der Mitglieder?
+A: Die Teile mit Häkchen zeigen die Leistung am Ende dieses Jahres. Die Teile ohne Häkchen sind Leistungsschätzungen, die durch Rückrechnung basierend auf Ihrer Rendite berechnet werden und nur geschätzte Effekte sind.
+
+Q: Warum unterscheiden sich Aktienkurse und Wechselkurse von den aktuellen Preisen, die durch Klicken auf „KI aktualisiert Kurse & Wechselkurse" erhalten werden?
+A: Da Aktienkurse und Wechselkurse von Webseiten aktueller Werte abgerufen werden, können die aktuellen Werte um drei bis fünf Minuten verzögert sein. Verwenden Sie sie daher nicht als Referenzwerte für Kauf und Verkauf. Es wird empfohlen, sich bei Kauf und Verkauf hauptsächlich auf Wertpapierfirmen zu beziehen. Diese Software eignet sich nur für statistische Vermögensfunktionen wie Notfallreserven, Reisefonds, Rentenfonds, Festgeld, Aktien und Anleihen usw. Sie hat keine Wertpapierhandelsfunktionen. Außerdem haben Investitionen Gewinne und Verluste. Denken Sie daran, Notfallreserven bereitzustellen. Vielen Dank für Ihre Nutzung.
+
+## 5. Wichtige Haftungsausschlüsse
+
+**Anlagerisikowarnung**:
+- ⚠️ Investitionen bergen Risiken. Die vergangene Leistung garantiert keine zukünftigen Ergebnisse.
+- Diese Anwendung bietet nur Funktionen zur Vermögensstatistik und -verwaltung und bietet keine Anlageberatung.
+- Diese Anwendung verfügt nicht über Wertpapierhandelsfunktionen und kann keine tatsächlichen Kauf-/Verkaufsoperationen durchführen.
+- Alle Investitionsentscheidungen sollten vom Benutzer selbst getroffen werden, und der Benutzer trägt alle damit verbundenen Risiken.
+- Benutzer sollten Anlagerisiken selbst bewerten und bei Bedarf professionelle Finanzberater konsultieren.
+
+**Keine Anlageberatungserklärung**:
+- Alle von dieser Anwendung bereitgestellten Informationen, Analysen, Diagramme und KI-Empfehlungen dienen nur als Referenz und stellen keine Anlageberatung dar.
+- Diese Anwendung garantiert keine Investitionsergebnisse oder Renditen.
+- Benutzer sollten Investitionsentscheidungen basierend auf ihren eigenen Umständen treffen und für alle Investitionsentscheidungen verantwortlich sein.
+
+**Datengenauigkeit**:
+- Von dieser Anwendung bereitgestellte Daten wie Aktienkurse und Wechselkurse können aufgrund von Netzwerkverzögerungen von den tatsächlichen Marktpreisen abweichen.
+- Benutzer sollten die Daten dieser Anwendung nicht als einzige Referenzbasis für tatsächliche Transaktionen verwenden.
+- Es wird empfohlen, sich an Echtzeitkurse zu halten, die von Wertpapierfirmen oder Finanzinstituten bereitgestellt werden.`,
     androidPublish: 'Android-Store-Veröffentlichung',
     androidPublishTitle: 'Wie bei Google Play veröffentlichen?',
     androidPublishDesc: 'Mit TWA die Web-App als Android-App packen:\n1. Google-Developer-Konto (25 USD).\n2. Bubblewrap CLI mit Ihrer Website-URL.\n3. AAB in Play Console hochladen und einreichen.',
@@ -3931,27 +4049,70 @@ const fr: Translations = {
 > **Confidentialité** : architecture hors ligne. **Toutes les données sont stockées sur votre appareil**, pas sur des serveurs. **Aucune collecte de données personnelles.**
 
 ## 1. Présentation
-TradeView est un outil de gestion d'actifs pour actions Taiwan et US.
+TradeView est un outil de gestion d'actifs pour actions Taiwan et US qui aide les investisseurs à suivre les changements d'actifs, calculer les rendements et gérer les flux de fonds.
 
-## 2. Démarrage
-1. **Créer un compte** : dans « Comptes », ajouter un compte.
-2. **Saisir les fonds** : dans « Fonds », enregistrer les dépôts.
-3. **Transaction** : « Ajouter une transaction » pour acheter/vendre.
-4. **Rapports** : « Tableau de bord » pour l'évolution du patrimoine.
+## 2. Démarrage rapide
+1. **Créer un compte** : Allez dans « Gestion des comptes » pour ajouter votre compte bancaire ou de courtage.
+2. **Importer des fonds** : Allez dans « Gestion des fonds », sélectionnez « Importer des fonds » pour enregistrer votre salaire ou vos dépôts dans le système.
+3. **Ajouter une transaction** : Cliquez sur « Ajouter une transaction » en haut à droite pour saisir les achats/ventes d'actions.
+4. **Voir les rapports** : Retournez au « Tableau de bord » pour voir les graphiques d'actifs et les performances.
 
-## 3. Fonctions
-**Fonds** : Dépôt, retrait, virement, intérêts.
-**Transactions** : Achat/vente, dividende en actions, dividende en espèces.
+## 3. Fonctions détaillées
 
-## 4. FAQ
-**Rendement ?** Rendement pondéré par les flux (entrées/sorties).
-**Taux de change ?** En haut à droite ou lors du virement.
-**Données ?** Uniquement sur votre appareil. Faites des sauvegardes régulières.
-**Prix ?** Vérifier le marché ; « Mise à jour du marché en lot » si besoin.
+### Gestion des fonds (Fund Management)
+* **Importer (Import)** : Entrée de fonds externes (par exemple, salaire).
+* **Exporter (Export)** : Sortie de fonds (par exemple, retrait de frais de subsistance).
+* **Virement (Transfer)** : Mouvement de fonds entre différents comptes (par exemple, banque vers compte de courtage).
+* **Intérêts** : Enregistrement des intérêts sur dépôts ou comptes de courtage.
 
-## 5. Avertissements
-- Les investissements comportent des risques. Ceci n'est pas un conseil en investissement.
-- Aucune fonction de trading. Toutes les décisions et risques restent à la charge de l'utilisateur.`,
+### Types de transactions
+* **Buy/Sell** : Achat/vente général.
+* **Dividend** : Dividende en actions (le nombre d'actions augmente).
+* **Cash Dividend** : Dividende en espèces (le solde augmente).
+
+## 4. Questions fréquemment posées (FAQ)
+Q : Comment le taux de rendement annualisé est-il calculé ?
+R : Le système utilise le concept de rendement pondéré par les flux monétaires et prend en compte le moment des entrées et sorties de fonds pour l'estimation.
+
+Q : Comment définir le taux de change ?
+R : Vous pouvez définir le taux de change global USD/TWD en haut à droite, ou spécifier le taux de change actuel lors du virement.
+
+Q : Stockage des données et confidentialité ?
+R : Comme mentionné précédemment, **les données sont entièrement stockées sur votre appareil personnel (ordinateur ou téléphone mobile)** et ne posent aucun problème de confidentialité. Pour éviter la perte de données due à des dommages à l'appareil ou à l'effacement du cache du navigateur, **il est fortement recommandé d'utiliser régulièrement la fonction « Sauvegarder les données » ci-dessous** pour sauvegarder vous-même les fichiers JSON.
+
+Q : Impossible de télécharger le fichier de sauvegarde ?
+R : Si vous ouvrez le lien dans LINE, le système peut bloquer les fenêtres pop-up et empêcher les téléchargements normaux. Il est recommandé d'utiliser un navigateur (comme Chrome ou Safari) pour les opérations.
+
+Q : Pourquoi les prix des actions ne peuvent-ils pas être mis à jour ?
+R : Vérifiez si le paramètre de marché pour cette action est correct. Si incorrect, sélectionnez « Mise à jour du marché en lot » dans « Historique des transactions » pour changer le marché.
+
+Q : Quels sont les avantages de l'adhésion ?
+R : L'interface comprendra le rééquilibrage, les graphiques et les tableaux de performance annuels, permettant aux utilisateurs de mieux comprendre leurs résultats d'investissement.
+
+Q : Pourquoi y a-t-il des coches dans le tableau de performance annuel des membres ?
+R : Les parties avec coches montrent la performance à la fin de cette année. Les parties sans coches sont des estimations de performance calculées par rétro-ingénierie basées sur votre taux de rendement, ce ne sont que des effets estimés.
+
+Q : Pourquoi les prix des actions et les taux de change diffèrent-ils des prix actuels obtenus en cliquant sur « IA met à jour les prix et les taux de change » ?
+R : Comme les prix des actions et les taux de change sont récupérés à partir des valeurs actuelles des pages Web, les valeurs actuelles peuvent être retardées de trois à cinq minutes. Ne les utilisez donc pas comme valeurs de référence pour l'achat et la vente. Il est recommandé de se référer principalement aux sociétés de valeurs mobilières pour l'achat et la vente. Ce logiciel convient uniquement aux fonctions statistiques d'actifs telles que les réserves d'urgence, les fonds de voyage, les fonds de retraite, les dépôts à terme, les actions et obligations, etc. Il n'a pas de fonctions de trading de valeurs mobilières. De plus, les investissements ont des gains et des pertes. N'oubliez pas de prévoir des réserves d'urgence. Merci de votre utilisation.
+
+## 5. Avertissements importants
+
+**Avertissement sur les risques d'investissement** :
+- ⚠️ Les investissements comportent des risques. Les performances passées ne garantissent pas les résultats futurs.
+- Cette application fournit uniquement des fonctions de statistiques et de gestion d'actifs et ne fournit pas de conseils en investissement.
+- Cette application ne dispose pas de fonctions de trading de valeurs mobilières et ne peut pas effectuer d'opérations d'achat/vente réelles.
+- Toutes les décisions d'investissement doivent être prises par l'utilisateur à sa propre discrétion, et l'utilisateur assume tous les risques associés.
+- Les utilisateurs doivent évaluer les risques d'investissement par eux-mêmes et consulter des conseillers financiers professionnels si nécessaire.
+
+**Déclaration de non-conseil en investissement** :
+- Toutes les informations, analyses, graphiques et recommandations IA fournis par cette application sont à titre de référence uniquement et ne constituent aucun conseil en investissement.
+- Cette application ne garantit aucun résultat d'investissement ou taux de rendement.
+- Les utilisateurs doivent prendre des décisions d'investissement basées sur leurs propres circonstances et sont responsables de toutes les décisions d'investissement.
+
+**Précision des données** :
+- Les données telles que les prix des actions et les taux de change fournis par cette application peuvent différer des prix du marché réel en raison de retards réseau.
+- Les utilisateurs ne doivent pas utiliser les données de cette application comme seule base de référence pour les transactions réelles.
+- Il est recommandé de se référer aux cotations en temps réel fournies par les sociétés de valeurs mobilières ou les institutions financières.`,
     androidPublish: 'Publication sur le Play Store',
     androidPublishTitle: 'Comment publier sur Google Play ?',
     androidPublishDesc: 'Emballer l\'app web en app Android avec TWA :\n1. Compte Google Developer (25 $).\n2. Bubblewrap CLI avec l’URL du site.\n3. Téléverser le AAB dans Play Console et soumettre.',
@@ -4403,27 +4564,70 @@ const hi: Translations = {
 > **गोपनीयता**: ऑफ़लाइन-फर्स्ट। **सभी डेटा आपके डिवाइस पर संग्रहीत**, सर्वर पर नहीं। **कोई निजी डेटा संग्रह नहीं।**
 
 ## 1. परिचय
-TradeView ताइवान और US स्टॉक के लिए संपत्ति प्रबंधन टूल है।
+TradeView ताइवान और US स्टॉक के लिए एक संपत्ति प्रबंधन टूल है जो निवेशकों को संपत्ति परिवर्तनों को ट्रैक करने, रिटर्न की गणना करने और धन प्रवाह का प्रबंधन करने में मदद करता है।
 
 ## 2. त्वरित शुरुआत
-1. **खाता बनाएं**: "खाते" में खाता जोड़ें।
-2. **फंड दर्ज करें**: "निधि" में जमा दर्ज करें।
-3. **लेनदेन**: खरीद/बिक्री के लिए "लेनदेन जोड़ें"।
-4. **रिपोर्ट**: "डैशबोर्ड" पर संपत्ति देखें।
+1. **खाता बनाएं**: "खाता प्रबंधन" पर जाएं अपना बैंक या ब्रोकरेज खाता जोड़ने के लिए।
+2. **फंड आयात करें**: "फंड प्रबंधन" पर जाएं, "फंड आयात करें" चुनें अपने वेतन या जमा को सिस्टम में दर्ज करने के लिए।
+3. **लेनदेन जोड़ें**: शीर्ष दाईं ओर "लेनदेन जोड़ें" पर क्लिक करें स्टॉक खरीद/बिक्री रिकॉर्ड दर्ज करने के लिए।
+4. **रिपोर्ट देखें**: "डैशबोर्ड" पर वापस जाएं संपत्ति लाइन चार्ट और प्रदर्शन देखने के लिए।
 
-## 3. सुविधाएं
-**निधि**: जमा, निकासी, ट्रांसफर, ब्याज।
-**लेनदेन**: खरीद/बिक्री, स्टॉक डिविडेंड, कैश डिविडेंड।
+## 3. विस्तृत कार्य
 
-## 4. FAQ
-**रिटर्न?** धन-भारित रिटर्न, जमा/निकासी समय शामिल।
-**विनिमय दर?** ऊपर दाएं या ट्रांसफर समय निर्दिष्ट।
-**डेटा?** केवल आपके डिवाइस पर। नियमित "बैकअप" करें।
-**कीमतें?** बाजार जांचें; जरूरत हो तो "बैच अपडेट मार्केट"।
+### फंड प्रबंधन (Fund Management)
+* **आयात (Import)**: बाहरी धन प्रवाह (जैसे वेतन)।
+* **निर्यात (Export)**: धन बहिर्वाह (जैसे जीवन यापन व्यय निकासी)।
+* **ट्रांसफर (Transfer)**: विभिन्न खातों के बीच धन आवागमन (जैसे बैंक से ब्रोकरेज खाता)।
+* **ब्याज**: जमा या ब्रोकरेज खाते पर ब्याज रिकॉर्ड करना।
 
-## 5. अस्वीकरण
-- निवेश में जोखिम है। निवेश सलाह नहीं।
-- सिक्योरिटीज़ ट्रेडिंग नहीं। सभी निर्णय और जोखिम उपयोगकर्ता पर।`,
+### लेनदेन प्रकार
+* **Buy/Sell**: सामान्य खरीद/बिक्री।
+* **Dividend**: स्टॉक लाभांश (शेयरों की संख्या बढ़ती है)।
+* **Cash Dividend**: नकद लाभांश (शेष बढ़ता है)।
+
+## 4. अक्सर पूछे जाने वाले प्रश्न (FAQ)
+प्र: वार्षिक रिटर्न दर की गणना कैसे की जाती है?
+उ: सिस्टम धन-भारित रिटर्न अवधारणा का उपयोग करता है और अनुमान के लिए धन प्रवाह और बहिर्वाह के समय को ध्यान में रखता है।
+
+प्र: विनिमय दर कैसे निर्धारित करें?
+उ: आप शीर्ष दाईं ओर वैश्विक USD/TWD विनिमय दर सेट कर सकते हैं, या फंड ट्रांसफर करते समय वर्तमान विनिमय दर निर्दिष्ट कर सकते हैं।
+
+प्र: डेटा भंडारण और गोपनीयता?
+उ: जैसा कि पहले उल्लेख किया गया है, **डेटा पूरी तरह से आपके व्यक्तिगत डिवाइस (कंप्यूटर या मोबाइल फोन) पर संग्रहीत होता है** और कोई गोपनीयता समस्या शामिल नहीं है। डिवाइस क्षति या ब्राउज़र कैश मिटाने के कारण डेटा हानि से बचने के लिए, **नीचे "डेटा बैकअप" फ़ंक्शन का नियमित रूप से उपयोग करने की दृढ़ता से सिफारिश की जाती है** JSON फ़ाइलें स्वयं सहेजने के लिए।
+
+प्र: बैकअप फ़ाइल डाउनलोड नहीं हो सकती?
+उ: यदि आप LINE में लिंक खोलते हैं, तो सिस्टम पॉपअप विंडो को ब्लॉक कर सकता है और सामान्य डाउनलोड को रोक सकता है। ऑपरेशन के लिए ब्राउज़र (जैसे Chrome या Safari) का उपयोग करने की सिफारिश की जाती है।
+
+प्र: स्टॉक कीमतें अपडेट क्यों नहीं हो सकतीं?
+उ: जांचें कि उस स्टॉक के लिए बाजार सेटिंग सही है या नहीं। यदि गलत है, तो बाजार बदलने के लिए "लेनदेन इतिहास" में "बैच अपडेट मार्केट" चुनें।
+
+प्र: सदस्यता के क्या लाभ हैं?
+उ: इंटरफ़ेस में रीबैलेंसिंग, चार्ट और वार्षिक प्रदर्शन तालिकाएं शामिल होंगी, जिससे उपयोगकर्ता अपने निवेश परिणामों को बेहतर ढंग से समझ सकेंगे।
+
+प्र: सदस्यों की वार्षिक प्रदर्शन तालिका में चेकमार्क क्यों हैं?
+उ: चेकमार्क वाले भाग उस वर्ष के अंत में प्रदर्शन दिखाते हैं। चेकमार्क के बिना भाग आपकी रिटर्न दर के आधार पर रिवर्स इंजीनियरिंग द्वारा गणना की गई प्रदर्शन अनुमान हैं, जो केवल अनुमानित प्रभाव हैं।
+
+प्र: स्टॉक कीमतें और विनिमय दरें "AI नेटवर्क अपडेट स्टॉक कीमतें और विनिमय दरें" पर क्लिक करके प्राप्त वर्तमान मूल्यों से अलग क्यों हैं?
+उ: चूंकि स्टॉक कीमतें और विनिमय दरें वेब पेज के वर्तमान मूल्यों से प्राप्त की जाती हैं, वर्तमान मूल्य तीन से पांच मिनट तक देरी से हो सकते हैं। इसलिए उन्हें खरीद और बिक्री के संदर्भ मूल्यों के रूप में उपयोग न करें, खरीद और बिक्री के संदर्भ के लिए प्रतिभूति कंपनियों को मुख्य रूप से सुझाव दिया जाता है। यह सॉफ़्टवेयर केवल सांख्यिकीय संपत्ति कार्यों के लिए उपयुक्त है, जैसे आपातकालीन आरक्षित निधि, यात्रा निधि, सेवानिवृत्ति निधि, सावधि जमा, स्टॉक और बॉन्ड आदि के सांख्यिकीय संदर्भ, इसमें प्रतिभूति व्यापार खरीद/बिक्री कार्य नहीं हैं; इसके अलावा, निवेश में लाभ और हानि होती है, कृपया आपातकालीन आरक्षित निधि आरक्षित करें, आपके उपयोग के लिए धन्यवाद।
+
+## 5. महत्वपूर्ण अस्वीकरण
+
+**निवेश जोखिम चेतावनी**:
+- ⚠️ निवेश में जोखिम होता है, पिछला प्रदर्शन भविष्य के परिणामों की गारंटी नहीं देता है।
+- यह एप्लिकेशन केवल संपत्ति सांख्यिकी और प्रबंधन कार्य प्रदान करता है, निवेश सलाह प्रदान नहीं करता है।
+- यह एप्लिकेशन प्रतिभूति व्यापार कार्यों से सुसज्जित नहीं है और वास्तविक खरीद/बिक्री ऑपरेशन नहीं कर सकता है।
+- सभी निवेश निर्णय उपयोगकर्ता द्वारा स्वयं निर्णय लिए जाने चाहिए, और उपयोगकर्ता सभी संबंधित जोखिमों को वहन करता है।
+- उपयोगकर्ताओं को स्वतंत्र रूप से निवेश जोखिमों का मूल्यांकन करना चाहिए और आवश्यकता पड़ने पर पेशेवर वित्तीय सलाहकारों से परामर्श करना चाहिए।
+
+**गैर-निवेश सलाह घोषणा**:
+- इस एप्लिकेशन द्वारा प्रदान की गई सभी जानकारी, विश्लेषण, चार्ट और AI सुझाव केवल संदर्भ के लिए हैं और कोई निवेश सलाह नहीं बनाते हैं।
+- यह एप्लिकेशन किसी भी निवेश परिणाम या रिटर्न दर की गारंटी नहीं देता है।
+- उपयोगकर्ताओं को अपनी परिस्थितियों के आधार पर निवेश निर्णय लेने चाहिए और सभी निवेश निर्णयों के लिए जिम्मेदार होना चाहिए।
+
+**डेटा सटीकता**:
+- इस एप्लिकेशन द्वारा प्रदान किए गए स्टॉक कीमतें, विनिमय दरें आदि डेटा नेटवर्क विलंब के कारण वास्तविक बाजार मूल्यों से भिन्न हो सकते हैं।
+- उपयोगकर्ताओं को इस एप्लिकेशन के डेटा को वास्तविक खरीद/बिक्री के एकमात्र संदर्भ आधार के रूप में उपयोग नहीं करना चाहिए।
+- प्रतिभूति कंपनियों या वित्तीय संस्थानों द्वारा प्रदान किए गए वास्तविक समय उद्धरणों को मानक के रूप में सुझाव दिया जाता है।`,
     androidPublish: 'Android स्टोर प्रकाशन',
     androidPublishTitle: 'Google Play पर कैसे प्रकाशित करें?',
     androidPublishDesc: 'TWA से वेब ऐप को Android ऐप में लपेटें:\n1. Google डेवलपर खाता ($25)।\n2. Bubblewrap CLI से साइट URL लपेटें।\n3. Play Console में AAB अपलोड करें और सबमिट करें।',
@@ -4875,27 +5079,70 @@ const ar: Translations = {
 > **الخصوصية**: بنية دون اتصال. **جميع البيانات مخزنة على جهازك فقط**، لا على خوادم. **لا جمع للبيانات الشخصية.**
 
 ## 1. مقدمة
-TradeView أداة إدارة أصول لأسهم تايوان والولايات المتحدة.
+TradeView أداة إدارة أصول لأسهم تايوان والولايات المتحدة تساعد المستثمرين على تتبع تغيرات الأصول وحساب العوائد وإدارة تدفقات الأموال.
 
 ## 2. البدء السريع
-1. **إنشاء حساب**: في "الحسابات" أضف حساباً.
-2. **إدخال الأموال**: في "الأموال" سجّل الإيداعات.
-3. **معاملة**: "إضافة معاملة" للشراء/البيع.
-4. **التقارير**: "لوحة التحكم" لمتابعة الأصول.
+1. **إنشاء حساب**: اذهب إلى "إدارة الحسابات" لإضافة حسابك المصرفي أو حساب الوساطة.
+2. **استيراد الأموال**: اذهب إلى "إدارة الأموال"، اختر "استيراد الأموال" لتسجيل راتبك أو ودائعك في النظام.
+3. **إضافة معاملة**: انقر على "إضافة معاملة" في أعلى اليمين لإدخال سجلات شراء/بيع الأسهم.
+4. **عرض التقارير**: ارجع إلى "لوحة التحكم" لعرض مخططات الأصول والأداء.
 
-## 3. الميزات
-**الأموال**: إيداع، سحب، تحويل، فائدة.
-**المعاملات**: شراء/بيع، توزيع أسهم، توزيع نقدي.
+## 3. الميزات التفصيلية
 
-## 4. أسئلة شائعة
-**العائد؟** عائد مرجح بالمال، مع توقيت التدفقات.
-**سعر الصرف؟** في الأعلى يميناً أو عند التحويل.
-**البيانات؟** محلياً على جهازك فقط. استخدم "النسخ الاحتياطي" بانتظام.
-**الأسعار؟** تحقق من السوق؛ "تحديث السوق دفعة واحدة" إن لزم.
+### إدارة الأموال (Fund Management)
+* **الاستيراد (Import)**: تدفق الأموال الخارجية (مثل الراتب).
+* **التصدير (Export)**: تدفق الأموال للخارج (مثل سحب نفقات المعيشة).
+* **التحويل (Transfer)**: حركة الأموال بين حسابات مختلفة (مثل البنك إلى حساب الوساطة).
+* **الفائدة**: تسجيل الفائدة على الودائع أو حسابات الوساطة.
 
-## 5. إخلاء المسؤولية
-- الاستثمار ينطوي على مخاطر. هذا ليس نصيحة استثمارية.
-- لا وظيفة تداول أوراق مالية. كل القرارات والمخاطر على المستخدم.`,
+### أنواع المعاملات
+* **Buy/Sell**: شراء/بيع عام.
+* **Dividend**: توزيعات الأسهم (يزيد عدد الأسهم).
+* **Cash Dividend**: توزيعات نقدية (يزيد الرصيد).
+
+## 4. الأسئلة الشائعة (FAQ)
+س: كيف يتم حساب معدل العائد السنوي؟
+ج: يستخدم النظام مفهوم العائد المرجح بالأموال ويأخذ في الاعتبار توقيت تدفقات الأموال الداخلة والخارجة للتقدير.
+
+س: كيف يتم تحديد سعر الصرف؟
+ج: يمكنك تعيين سعر الصرف العالمي USD/TWD في أعلى اليمين، أو تحديد سعر الصرف الحالي عند التحويل.
+
+س: تخزين البيانات والخصوصية؟
+ج: كما ذكرنا سابقاً، **يتم تخزين البيانات بالكامل على جهازك الشخصي (الكمبيوتر أو الهاتف المحمول)** ولا تتضمن أي مشاكل خصوصية. لتجنب فقدان البيانات بسبب تلف الجهاز أو مسح ذاكرة التخزين المؤقت للمتصفح، **يُنصح بشدة باستخدام وظيفة "نسخ احتياطي للبيانات" أدناه بانتظام** لحفظ ملفات JSON بنفسك.
+
+س: لا يمكن تنزيل ملف النسخ الاحتياطي؟
+ج: إذا فتحت الرابط في LINE، قد يحجب النظام النوافذ المنبثقة ويمنع التنزيلات العادية. يُنصح باستخدام متصفح (مثل Chrome أو Safari) للعمليات.
+
+س: لماذا لا يمكن تحديث أسعار الأسهم؟
+ج: تحقق من إعداد السوق لهذا السهم صحيح أم لا. إذا كان غير صحيح، اختر "تحديث السوق دفعة واحدة" في "سجل المعاملات" لتغيير السوق.
+
+س: ما هي مزايا العضوية؟
+ج: ستتضمن الواجهة إعادة التوازن والرسوم البيانية وجداول الأداء السنوية، مما يسمح للمستخدمين بفهم نتائج استثماراتهم بشكل أفضل.
+
+س: لماذا توجد علامات صح في جدول الأداء السنوي للأعضاء؟
+ج: الأجزاء ذات علامات الصح تُظهر الأداء في نهاية هذا العام. الأجزاء بدون علامات الصح هي تقديرات الأداء المحسوبة بالهندسة العكسية بناءً على معدل العائد الخاص بك، وهي مجرد تأثيرات تقديرية.
+
+س: لماذا تختلف أسعار الأسهم وأسعار الصرف عن الأسعار الحالية التي تم الحصول عليها بالنقر على "AI تحديث أسعار الأسهم وأسعار الصرف"؟
+ج: نظراً لأن أسعار الأسهم وأسعار الصرف يتم جلبها من القيم الحالية لصفحات الويب، قد تتأخر القيم الحالية من ثلاث إلى خمس دقائق. لذلك لا تستخدمها كقيم مرجعية للشراء والبيع، يُنصح بالرجوع إلى شركات الأوراق المالية بشكل أساسي للشراء والبيع. هذا البرنامج مناسب فقط لوظائف الأصول الإحصائية مثل احتياطيات الطوارئ وصناديق السفر وصناديق التقاعد والودائع الثابتة والأسهم والسندات وما إلى ذلك، وليس لديه وظائف تداول الأوراق المالية للشراء/البيع؛ بالإضافة إلى ذلك، الاستثمارات لها مكاسب وخسائر، يرجى تخصيص احتياطيات الطوارئ، شكراً لاستخدامك.
+
+## 5. إخلاء المسؤولية المهم
+
+**تحذير مخاطر الاستثمار**:
+- ⚠️ الاستثمار ينطوي على مخاطر، الأداء السابق لا يضمن النتائج المستقبلية.
+- يوفر هذا التطبيق وظائف إحصاءات وإدارة الأصول فقط ولا يوفر نصائح استثمارية.
+- لا يحتوي هذا التطبيق على وظائف تداول الأوراق المالية ولا يمكنه تنفيذ عمليات شراء/بيع فعلية.
+- يجب أن تتخذ جميع قرارات الاستثمار من قبل المستخدم وفقاً لتقديره الخاص، ويتحمل المستخدم جميع المخاطر المرتبطة بها.
+- يجب على المستخدمين تقييم مخاطر الاستثمار بشكل مستقل واستشارة المستشارين الماليين المحترفين عند الحاجة.
+
+**بيان عدم تقديم نصيحة استثمارية**:
+- جميع المعلومات والتحليلات والرسوم البيانية والتوصيات من AI المقدمة من هذا التطبيق هي للإشارة فقط ولا تشكل أي نصيحة استثمارية.
+- لا يضمن هذا التطبيق أي نتائج استثمارية أو معدلات عائد.
+- يجب على المستخدمين اتخاذ قرارات استثمارية بناءً على ظروفهم الخاصة وهم مسؤولون عن جميع قرارات الاستثمار.
+
+**دقة البيانات**:
+- قد تختلف البيانات مثل أسعار الأسهم وأسعار الصرف المقدمة من هذا التطبيق عن أسعار السوق الفعلية بسبب تأخيرات الشبكة.
+- لا ينبغي للمستخدمين استخدام بيانات هذا التطبيق كأساس مرجعي وحيد للمعاملات الفعلية.
+- يُنصح بالرجوع إلى الأسعار في الوقت الفعلي المقدمة من شركات الأوراق المالية أو المؤسسات المالية.`,
     androidPublish: 'نشر متجر Android',
     androidPublishTitle: 'كيف تنشر على Google Play؟',
     androidPublishDesc: 'لف تطبيق الويب كتطبيق أندرويد بـ TWA:\n1. حساب مطور Google (25$).\n2. Bubblewrap CLI مع رابط الموقع.\n3. ارفع AAB إلى Play Console وقدم للمراجعة.',
@@ -5321,27 +5568,70 @@ const pt: Translations = {
 > **Privacidade**: Arquitetura offline-first. **Todos os dados ficam no seu dispositivo**, não em servidores. **Sem recolha de dados pessoais.**
 
 ## 1. Introdução
-TradeView é uma ferramenta de gestão de ativos para ações de Taiwan e EUA.
+TradeView é uma ferramenta de gestão de ativos para ações de Taiwan e EUA que ajuda os investidores a acompanhar mudanças de ativos, calcular retornos e gerir fluxos de fundos.
 
 ## 2. Início rápido
-1. **Criar conta**: Em "Contas", adicione uma conta.
-2. **Registar fundos**: Em "Fundos", registe depósitos.
-3. **Transação**: "Adicionar transação" para comprar/vender.
-4. **Relatórios**: "Painel" para evolução do património.
+1. **Criar conta**: Vá para "Gestão de Contas" para adicionar sua conta bancária ou de corretagem.
+2. **Importar fundos**: Vá para "Gestão de Fundos", selecione "Importar fundos" para registar seu salário ou depósitos no sistema.
+3. **Adicionar transação**: Clique em "Adicionar transação" no canto superior direito para inserir registos de compra/venda de ações.
+4. **Ver relatórios**: Volte ao "Painel" para ver gráficos de ativos e desempenho.
 
-## 3. Funcionalidades
-**Fundos**: Depósito, levantamento, transferência, juros.
-**Transações**: Compra/venda, dividendo em ações, dividendo em dinheiro.
+## 3. Funcionalidades detalhadas
 
-## 4. FAQ
-**Retorno?** Retorno ponderado pelo dinheiro, com timing dos fluxos.
-**Taxa de câmbio?** No canto superior direito ou ao transferir.
-**Dados?** Apenas no seu dispositivo. Use "Backup" regularmente.
-**Preços?** Verifique o mercado; "Atualizar mercado em lote" se necessário.
+### Gestão de Fundos (Fund Management)
+* **Importar (Import)**: Entrada de fundos externos (por exemplo, salário).
+* **Exportar (Export)**: Saída de fundos (por exemplo, retirada de despesas de subsistência).
+* **Transferência (Transfer)**: Movimento de fundos entre diferentes contas (por exemplo, banco para conta de corretagem).
+* **Juros**: Registo de juros sobre depósitos ou contas de corretagem.
 
-## 5. Avisos legais
-- Investimentos envolvem riscos. Isto não é aconselhamento de investimento.
-- Sem função de negociação de valores. Todas as decisões e riscos são do utilizador.`,
+### Tipos de Transações
+* **Buy/Sell**: Compra/venda geral.
+* **Dividend**: Dividendo em ações (o número de ações aumenta).
+* **Cash Dividend**: Dividendo em dinheiro (o saldo aumenta).
+
+## 4. Perguntas frequentes (FAQ)
+P: Como é calculada a taxa de retorno anualizada?
+R: O sistema utiliza o conceito de retorno ponderado pelo dinheiro e considera o momento dos fluxos de entrada e saída de fundos para a estimativa.
+
+P: Como definir a taxa de câmbio?
+R: Pode definir a taxa de câmbio global USD/TWD no canto superior direito, ou especificar a taxa de câmbio atual ao transferir fundos.
+
+P: Armazenamento de dados e privacidade?
+R: Como mencionado anteriormente, **os dados são completamente armazenados no seu dispositivo pessoal (computador ou telemóvel)** e não envolvem problemas de privacidade. Para evitar perda de dados devido a danos no dispositivo ou limpeza da cache do navegador, **é altamente recomendado usar regularmente a função "Backup de dados" abaixo** para guardar ficheiros JSON por si mesmo.
+
+P: Não consegue descarregar o ficheiro de backup?
+R: Se abrir o link no LINE, o sistema pode bloquear janelas pop-up e impedir descarregamentos normais. É recomendado usar um navegador (como Chrome ou Safari) para as operações.
+
+P: Por que os preços das ações não podem ser atualizados?
+R: Verifique se a configuração de mercado para essa ação está correta. Se incorreta, selecione "Atualizar mercado em lote" em "Histórico de transações" para alterar o mercado.
+
+P: Quais são os benefícios da adesão?
+R: A interface incluirá rebalanceamento, gráficos e tabelas de desempenho anual, permitindo que os utilizadores compreendam melhor os seus resultados de investimento.
+
+P: Por que há marcas de verificação na tabela de desempenho anual dos membros?
+R: As partes com marcas de verificação mostram o desempenho no final desse ano. As partes sem marcas de verificação são estimativas de desempenho calculadas por engenharia reversa com base na sua taxa de retorno, são apenas efeitos estimados.
+
+P: Por que os preços das ações e as taxas de câmbio diferem dos preços atuais obtidos ao clicar em "IA atualiza preços e taxas de câmbio"?
+R: Como os preços das ações e as taxas de câmbio são obtidos a partir dos valores atuais das páginas web, os valores atuais podem estar atrasados de três a cinco minutos. Portanto, não os use como valores de referência para compra e venda. É recomendado referir-se principalmente a empresas de valores mobiliários para compra e venda. Este software é adequado apenas para funções estatísticas de ativos, como reservas de emergência, fundos de viagem, fundos de reforma, depósitos a prazo, ações e obrigações, etc. Não tem funções de negociação de valores mobiliários. Além disso, os investimentos têm ganhos e perdas. Lembre-se de reservar reservas de emergência. Obrigado pelo seu uso.
+
+## 5. Avisos legais importantes
+
+**Aviso de risco de investimento**:
+- ⚠️ Os investimentos envolvem riscos. O desempenho passado não garante resultados futuros.
+- Esta aplicação fornece apenas funções de estatísticas e gestão de ativos e não fornece aconselhamento de investimento.
+- Esta aplicação não possui funções de negociação de valores mobiliários e não pode realizar operações de compra/venda reais.
+- Todas as decisões de investimento devem ser tomadas pelo utilizador por sua própria conta e risco, e o utilizador assume todos os riscos relacionados.
+- Os utilizadores devem avaliar os riscos de investimento de forma independente e consultar consultores financeiros profissionais quando necessário.
+
+**Declaração de não aconselhamento de investimento**:
+- Todas as informações, análises, gráficos e recomendações de IA fornecidas por esta aplicação são apenas para referência e não constituem qualquer aconselhamento de investimento.
+- Esta aplicação não garante quaisquer resultados de investimento ou taxas de retorno.
+- Os utilizadores devem tomar decisões de investimento com base nas suas próprias circunstâncias e são responsáveis por todas as decisões de investimento.
+
+**Precisão dos dados**:
+- Dados como preços das ações e taxas de câmbio fornecidos por esta aplicação podem diferir dos preços de mercado reais devido a atrasos na rede.
+- Os utilizadores não devem usar os dados desta aplicação como única base de referência para transações reais.
+- É recomendado referir-se a cotações em tempo real fornecidas por empresas de valores mobiliários ou instituições financeiras.`,
     androidPublish: 'Publicação na loja Android',
     androidPublishTitle: 'Como publicar no Google Play?',
     androidPublishDesc: 'Empacotar a app web como app Android com TWA:\n1. Conta Google Developer (25 USD).\n2. Bubblewrap CLI com o URL do site.\n3. Enviar ficheiro AAB para a Play Console e submeter.',
