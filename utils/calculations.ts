@@ -11,8 +11,72 @@ import {
   AnnualPerformanceItem, 
   AccountPerformance,
   TransactionType,
-  HistoricalData
+  HistoricalData,
+  BaseCurrency
 } from '../types';
+
+/** 匯率物件（X→TWD：1 X = N TWD） */
+export interface ExchangeRates {
+  exchangeRateUsdToTwd: number;
+  jpyExchangeRate?: number;
+  eurExchangeRate?: number;
+  gbpExchangeRate?: number;
+  hkdExchangeRate?: number;
+  krwExchangeRate?: number;
+  cadExchangeRate?: number;
+  inrExchangeRate?: number;
+}
+
+/** 將 TWD 換算為基準幣（僅顯示用；內部仍以 TWD 為單位） */
+export function valueInBaseCurrency(
+  valueTWD: number,
+  baseCurrency: BaseCurrency,
+  rates: ExchangeRates
+): number {
+  if (baseCurrency === 'TWD') return valueTWD;
+  if (baseCurrency === 'USD') return valueTWD / rates.exchangeRateUsdToTwd;
+  const jpyRate = rates.jpyExchangeRate && rates.jpyExchangeRate > 0 ? rates.jpyExchangeRate : 0.21;
+  if (baseCurrency === 'JPY') return valueTWD / jpyRate;
+  const eurRate = rates.eurExchangeRate && rates.eurExchangeRate > 0 ? rates.eurExchangeRate : 34;
+  if (baseCurrency === 'EUR') return valueTWD / eurRate;
+  const gbpRate = rates.gbpExchangeRate && rates.gbpExchangeRate > 0 ? rates.gbpExchangeRate : 40;
+  if (baseCurrency === 'GBP') return valueTWD / gbpRate;
+  const hkdRate = rates.hkdExchangeRate && rates.hkdExchangeRate > 0 ? rates.hkdExchangeRate : 4;
+  if (baseCurrency === 'HKD') return valueTWD / hkdRate;
+  const krwRate = rates.krwExchangeRate && rates.krwExchangeRate > 0 ? rates.krwExchangeRate : 0.023;
+  if (baseCurrency === 'KRW') return valueTWD / krwRate;
+  const cadRate = rates.cadExchangeRate && rates.cadExchangeRate > 0 ? rates.cadExchangeRate : 23;
+  if (baseCurrency === 'CAD') return valueTWD / cadRate;
+  const inrRate = rates.inrExchangeRate && rates.inrExchangeRate > 0 ? rates.inrExchangeRate : 0.38;
+  if (baseCurrency === 'INR') return valueTWD / inrRate;
+  return valueTWD;
+}
+
+/** 儀表板僅顯示一個主要匯率：回傳 { label, value }
+ * 基準幣為 X 時顯示 USD/X（1 美元 = N X）；基準幣為 USD 時維持 TWD/USD 不變。 */
+export function getDisplayRateForBaseCurrency(
+  baseCurrency: BaseCurrency,
+  rates: ExchangeRates
+): { label: string; value: number } {
+  const usdToTwd = rates.exchangeRateUsdToTwd;
+  if (baseCurrency === 'TWD') return { label: 'USD/TWD', value: usdToTwd };
+  if (baseCurrency === 'USD') return { label: 'TWD/USD', value: 1 / usdToTwd };
+  const jpy = rates.jpyExchangeRate && rates.jpyExchangeRate > 0 ? rates.jpyExchangeRate : 0.21;
+  if (baseCurrency === 'JPY') return { label: 'USD/JPY', value: usdToTwd / jpy };
+  const eurRate = rates.eurExchangeRate && rates.eurExchangeRate > 0 ? rates.eurExchangeRate : 34;
+  if (baseCurrency === 'EUR') return { label: 'USD/EUR', value: usdToTwd / eurRate };
+  const gbpRate = rates.gbpExchangeRate && rates.gbpExchangeRate > 0 ? rates.gbpExchangeRate : 40;
+  if (baseCurrency === 'GBP') return { label: 'USD/GBP', value: usdToTwd / gbpRate };
+  const hkdRate = rates.hkdExchangeRate && rates.hkdExchangeRate > 0 ? rates.hkdExchangeRate : 4;
+  if (baseCurrency === 'HKD') return { label: 'USD/HKD', value: usdToTwd / hkdRate };
+  const krwRate = rates.krwExchangeRate && rates.krwExchangeRate > 0 ? rates.krwExchangeRate : 0.023;
+  if (baseCurrency === 'KRW') return { label: 'USD/KRW', value: usdToTwd / krwRate };
+  const cadRate = rates.cadExchangeRate && rates.cadExchangeRate > 0 ? rates.cadExchangeRate : 23;
+  if (baseCurrency === 'CAD') return { label: 'USD/CAD', value: usdToTwd / cadRate };
+  const inrRate = rates.inrExchangeRate && rates.inrExchangeRate > 0 ? rates.inrExchangeRate : 0.38;
+  if (baseCurrency === 'INR') return { label: 'USD/INR', value: usdToTwd / inrRate };
+  return { label: 'USD/TWD', value: usdToTwd };
+}
 
 export const calculateHoldings = (
   transactions: Transaction[], 
@@ -300,8 +364,17 @@ export const generateAdvancedChartData = (
   accounts: Account[],
   currentTotalValueTWD: number,
   exchangeRate: number,
-  historicalData?: HistoricalData, // New Parameter
-  jpyExchangeRate?: number // JPY to TWD exchange rate
+  historicalData?: HistoricalData,
+  jpyExchangeRate?: number,
+  eurExchangeRate?: number,
+  cnyExchangeRate?: number,
+  inrExchangeRate?: number,
+  cadExchangeRate?: number,
+  hkdExchangeRate?: number,
+  krwExchangeRate?: number,
+  audExchangeRate?: number,
+  sarExchangeRate?: number,
+  brlExchangeRate?: number
 ): ChartDataPoint[] => {
   const years = new Set<string>();
   const allDates = [...transactions.map(t => t.date), ...cashFlows.map(c => c.date)];
@@ -410,11 +483,31 @@ export const generateAdvancedChartData = (
                   if (market === Market.US || market === Market.UK) {
                       stockValueTWD += qty * price * histRate;
                   } else if (market === Market.JP) {
-                      // 日本市場使用日幣匯率
-                      const rate = histJpyRate || histRate; // 如果沒有日幣匯率，回退到美元匯率
+                      const rate = histJpyRate || histRate;
                       stockValueTWD += qty * price * rate;
+                  } else if (market === Market.CN) {
+                      stockValueTWD += qty * price * (cnyExchangeRate ?? 0);
+                  } else if (market === Market.SZ) {
+                      stockValueTWD += qty * price * (cnyExchangeRate ?? 0);
+                  } else if (market === Market.IN) {
+                      stockValueTWD += qty * price * (inrExchangeRate ?? 0);
+                  } else if (market === Market.CA) {
+                      stockValueTWD += qty * price * (cadExchangeRate ?? 0);
+                  } else if (market === Market.FR) {
+                      stockValueTWD += qty * price * (eurExchangeRate ?? 0);
+                  } else if (market === Market.HK) {
+                      stockValueTWD += qty * price * (hkdExchangeRate ?? 0);
+                  } else if (market === Market.KR) {
+                      stockValueTWD += qty * price * (krwExchangeRate ?? 0);
+                  } else if (market === Market.DE) {
+                      stockValueTWD += qty * price * (eurExchangeRate ?? 0);
+                  } else if (market === Market.AU) {
+                      stockValueTWD += qty * price * (audExchangeRate ?? 0);
+                  } else if (market === Market.SA) {
+                      stockValueTWD += qty * price * (sarExchangeRate ?? 0);
+                  } else if (market === Market.BR) {
+                      stockValueTWD += qty * price * (brlExchangeRate ?? 0);
                   } else {
-                      // TWD: Round the value
                       stockValueTWD += Math.round(qty * price);
                   }
               }
@@ -502,15 +595,15 @@ export const formatCurrency = (val: number, currency: string): string => {
     }
 
     // Hybrid Strategy:
-    // USD: 2 decimals
-    // TWD: 0 decimals
-    const isUSD = currency === 'USD';
+    // USD, EUR, GBP, HKD: 2 decimals
+    // TWD, JPY, KRW: 0 decimals
+    const twoDecimals = ['USD', 'EUR', 'GBP', 'HKD'].includes(currency);
 
     return new Intl.NumberFormat('zh-TW', {
       style: 'currency',
       currency: currency,
-      minimumFractionDigits: isUSD ? 2 : 0,
-      maximumFractionDigits: isUSD ? 2 : 0,
+      minimumFractionDigits: twoDecimals ? 2 : 0,
+      maximumFractionDigits: twoDecimals ? 2 : 0,
     }).format(normalizedVal);
   } catch (error) {
     return normalizedVal.toLocaleString();
@@ -521,19 +614,48 @@ export const calculateAssetAllocation = (
   holdings: Holding[],
   cashBalanceTWD: number,
   exchangeRate: number,
-  jpyExchangeRate?: number
+  jpyExchangeRate?: number,
+  eurExchangeRate?: number,
+  cnyExchangeRate?: number,
+  inrExchangeRate?: number,
+  cadExchangeRate?: number,
+  hkdExchangeRate?: number,
+  krwExchangeRate?: number,
+  audExchangeRate?: number,
+  sarExchangeRate?: number,
+  brlExchangeRate?: number
 ): AssetAllocationItem[] => {
   const tickerMap: Record<string, number> = {};
   let totalValue = cashBalanceTWD;
 
   holdings.forEach(h => {
-    // 根據市場類型使用對應的匯率
     let valTWD: number;
     if (h.market === Market.US || h.market === Market.UK) {
       valTWD = h.currentValue * exchangeRate;
     } else if (h.market === Market.JP) {
-      // 日本市場使用日幣匯率
-      valTWD = jpyExchangeRate ? h.currentValue * jpyExchangeRate : h.currentValue * exchangeRate; // 如果沒有日幣匯率，回退到美元匯率
+      valTWD = jpyExchangeRate ? h.currentValue * jpyExchangeRate : h.currentValue * exchangeRate;
+    } else if (h.market === Market.CN) {
+      valTWD = (cnyExchangeRate ?? 0) * h.currentValue;
+    } else if (h.market === Market.SZ) {
+      valTWD = (cnyExchangeRate ?? 0) * h.currentValue;
+    } else if (h.market === Market.IN) {
+      valTWD = (inrExchangeRate ?? 0) * h.currentValue;
+    } else if (h.market === Market.CA) {
+      valTWD = (cadExchangeRate ?? 0) * h.currentValue;
+    } else if (h.market === Market.FR) {
+      valTWD = (eurExchangeRate ?? 0) * h.currentValue;
+    } else if (h.market === Market.HK) {
+      valTWD = (hkdExchangeRate ?? 0) * h.currentValue;
+    } else if (h.market === Market.KR) {
+      valTWD = (krwExchangeRate ?? 0) * h.currentValue;
+    } else if (h.market === Market.DE) {
+      valTWD = (eurExchangeRate ?? 0) * h.currentValue;
+    } else if (h.market === Market.AU) {
+      valTWD = (audExchangeRate ?? 0) * h.currentValue;
+    } else if (h.market === Market.SA) {
+      valTWD = (sarExchangeRate ?? 0) * h.currentValue;
+    } else if (h.market === Market.BR) {
+      valTWD = (brlExchangeRate ?? 0) * h.currentValue;
     } else {
       valTWD = h.currentValue;
     }
@@ -612,17 +734,41 @@ export const calculateAccountPerformance = (
   cashFlows: CashFlow[],
   transactions: Transaction[],
   exchangeRate: number,
-  jpyExchangeRate?: number
+  jpyExchangeRate?: number,
+  eurExchangeRate?: number,
+  cnyExchangeRate?: number,
+  inrExchangeRate?: number,
+  cadExchangeRate?: number,
+  hkdExchangeRate?: number,
+  krwExchangeRate?: number,
+  audExchangeRate?: number,
+  sarExchangeRate?: number,
+  brlExchangeRate?: number
 ): AccountPerformance[] => {
   return accounts.map(acc => {
     const isUSD = acc.currency === Currency.USD;
     const isJPY = acc.currency === Currency.JPY;
-    const rate = isUSD ? exchangeRate : (isJPY ? (jpyExchangeRate || exchangeRate) : 1); // 如果沒有日幣匯率，回退到美元匯率
+    const rate = isUSD ? exchangeRate : (isJPY ? (jpyExchangeRate || exchangeRate) : 1);
 
     const cashTWD = acc.balance * rate;
     const accountHoldings = holdings.filter(h => h.accountId === acc.id);
+    const stockValueTWD = accountHoldings.reduce((sum, h) => {
+      if (h.market === Market.US || h.market === Market.UK) return sum + h.currentValue * exchangeRate;
+      if (h.market === Market.JP) return sum + h.currentValue * (jpyExchangeRate ?? exchangeRate);
+      if (h.market === Market.CN) return sum + h.currentValue * (cnyExchangeRate ?? 0);
+      if (h.market === Market.SZ) return sum + h.currentValue * (cnyExchangeRate ?? 0);
+      if (h.market === Market.IN) return sum + h.currentValue * (inrExchangeRate ?? 0);
+      if (h.market === Market.CA) return sum + h.currentValue * (cadExchangeRate ?? 0);
+      if (h.market === Market.FR) return sum + h.currentValue * (eurExchangeRate ?? 0);
+      if (h.market === Market.HK) return sum + h.currentValue * (hkdExchangeRate ?? 0);
+      if (h.market === Market.KR) return sum + h.currentValue * (krwExchangeRate ?? 0);
+      if (h.market === Market.DE) return sum + h.currentValue * (eurExchangeRate ?? 0);
+      if (h.market === Market.AU) return sum + h.currentValue * (audExchangeRate ?? 0);
+      if (h.market === Market.SA) return sum + h.currentValue * (sarExchangeRate ?? 0);
+      if (h.market === Market.BR) return sum + h.currentValue * (brlExchangeRate ?? 0);
+      return sum + h.currentValue;
+    }, 0);
     const stockValueNative = accountHoldings.reduce((sum, h) => sum + h.currentValue, 0);
-    const stockValueTWD = isUSD ? stockValueNative * rate : stockValueNative;
     const totalAssetsTWD = cashTWD + stockValueTWD;
 
     let netInvestedTWD = 0;
@@ -673,12 +819,32 @@ export const calculateAccountPerformance = (
           const val = tx.amount !== undefined ? tx.amount : baseVal;
           let valTWD = 0;
           
-          // 根據市場類型使用對應的匯率
           if (tx.market === Market.US || tx.market === Market.UK) {
               valTWD = val * exchangeRate;
           } else if (tx.market === Market.JP) {
-              // 日本市場使用日幣匯率
-              valTWD = jpyExchangeRate ? val * jpyExchangeRate : val * exchangeRate; // 如果沒有日幣匯率，回退到美元匯率
+              valTWD = jpyExchangeRate ? val * jpyExchangeRate : val * exchangeRate;
+          } else if (tx.market === Market.CN) {
+              valTWD = val * (cnyExchangeRate ?? 0);
+          } else if (tx.market === Market.SZ) {
+              valTWD = val * (cnyExchangeRate ?? 0);
+          } else if (tx.market === Market.IN) {
+              valTWD = val * (inrExchangeRate ?? 0);
+          } else if (tx.market === Market.CA) {
+              valTWD = val * (cadExchangeRate ?? 0);
+          } else if (tx.market === Market.FR) {
+              valTWD = val * (eurExchangeRate ?? 0);
+          } else if (tx.market === Market.HK) {
+              valTWD = val * (hkdExchangeRate ?? 0);
+          } else if (tx.market === Market.KR) {
+              valTWD = val * (krwExchangeRate ?? 0);
+          } else if (tx.market === Market.DE) {
+              valTWD = val * (eurExchangeRate ?? 0);
+          } else if (tx.market === Market.AU) {
+              valTWD = val * (audExchangeRate ?? 0);
+          } else if (tx.market === Market.SA) {
+              valTWD = val * (sarExchangeRate ?? 0);
+          } else if (tx.market === Market.BR) {
+              valTWD = val * (brlExchangeRate ?? 0);
           } else {
               valTWD = val;
           }
