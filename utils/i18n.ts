@@ -44,6 +44,7 @@ export interface Translations {
     loading: string;
     search: string;
     logoutConfirm: string;
+    upgrade: string;
   };
   // 導航
   nav: {
@@ -573,6 +574,7 @@ const zhTW: Translations = {
     loading: '載入中...',
     search: '搜尋',
     logoutConfirm: '確定要登出系統嗎？',
+    upgrade: '申請開通',
   },
   nav: {
     dashboard: '儀表板',
@@ -1157,6 +1159,7 @@ const en: Translations = {
     loading: 'Loading...',
     search: 'Search',
     logoutConfirm: 'Are you sure you want to logout?',
+    upgrade: 'Upgrade',
   },
   nav: {
     dashboard: 'Dashboard',
@@ -1742,6 +1745,7 @@ const ja: Translations = {
     loading: '読み込み中...',
     search: '検索',
     logoutConfirm: 'ログアウトしますか？',
+    upgrade: 'アップグレード',
   },
   nav: {
     dashboard: 'ダッシュボード',
@@ -2287,6 +2291,7 @@ const ko: Translations = {
     loading: '로딩 중...',
     search: '검색',
     logoutConfirm: '로그아웃 하시겠습니까?',
+    upgrade: '업그레이드',
   },
   nav: {
     dashboard: '대시보드',
@@ -2813,7 +2818,7 @@ Q: 주가·환율이 "AI 업데이트" 현행가와 다릅니다. A: 웹 현행�
 const zhCN: Translations = JSON.parse(JSON.stringify(zhTW));
 zhCN.baseCurrency = { TWD: '台币', USD: '美元', JPY: '日元', EUR: '欧元', GBP: '英镑', HKD: '港币', KRW: '韩元', CAD: '加元', INR: '印度卢比' };
 zhCN.pages = { dashboard: '投资组合仪表板', history: '历史记录（交易 + 资金流动）', funds: '资金存取与管理', accounts: '证券账户管理', rebalance: '投资组合再平衡', simulator: '资产配置模拟', help: '系统管理与备份' };
-zhCN.common = { confirm: '确认', cancel: '取消', delete: '删除', edit: '编辑', save: '保存', close: '关闭', loading: '加载中...', search: '搜索', logoutConfirm: '确定要登出系统吗？' };
+zhCN.common = { confirm: '确认', cancel: '取消', delete: '删除', edit: '编辑', save: '保存', close: '关闭', loading: '加载中...', search: '搜索', logoutConfirm: '确定要登出系统吗？', upgrade: '升级' };
 zhCN.nav = { dashboard: '仪表板', history: '交易记录', funds: '资金管理', accounts: '证券户', rebalance: '再平衡', simulator: '配置模拟', help: '系统管理', logout: '登出' };
 zhCN.login = { title: 'TradeView 登录', subtitle: '资产管理', email: 'Email', password: 'Password', login: '登录', privacy: '隐私声明', privacyDesc: '数据存储在个人设备，不涉及个人隐私，请定时备份。', riskDisclaimer: '风险声明', riskDisclaimerDesc: '投资有风险，过往绩效不代表未来表现。' };
 zhCN.dashboard = {
@@ -3184,7 +3189,7 @@ A: 股价与汇率因抓取网页现值，故现值会延迟三至五分钟不�
 // 德文翻譯
 const de: Translations = {
   baseCurrency: { TWD: 'TWD', USD: 'USD', JPY: 'JPY', EUR: 'EUR', GBP: 'GBP', HKD: 'HKD', KRW: 'KRW', CAD: 'CAD', INR: 'INR' },
-  common: { confirm: 'Bestätigen', cancel: 'Abbrechen', delete: 'Löschen', edit: 'Bearbeiten', save: 'Speichern', close: 'Schließen', loading: 'Laden...', search: 'Suchen', logoutConfirm: 'Möchten Sie sich abmelden?' },
+  common: { confirm: 'Bestätigen', cancel: 'Abbrechen', delete: 'Löschen', edit: 'Bearbeiten', save: 'Speichern', close: 'Schließen', loading: 'Laden...', search: 'Suchen', logoutConfirm: 'Möchten Sie sich abmelden?', upgrade: 'Upgrade' },
   nav: { dashboard: 'Dashboard', history: 'Transaktionen', funds: 'Fonds', accounts: 'Konten', rebalance: 'Rebalancing', simulator: 'Simulator', help: 'System', logout: 'Abmelden' },
   pages: { dashboard: 'Portfolio-Dashboard', history: 'Verlauf (Transaktionen + Cashflow)', funds: 'Fondsverwaltung', accounts: 'Kontoverwaltung', rebalance: 'Rebalancing', simulator: 'Asset-Allocation-Simulator', help: 'System & Backup' },
   login: { title: 'TradeView Anmeldung', subtitle: 'Taiwan- & US-Aktien Portfolio', email: 'E-Mail', password: 'Passwort', login: 'Anmelden', privacy: 'Datenschutz', privacyDesc: 'Daten werden lokal gespeichert. Keine Erfassung personenbezogener Daten.', riskDisclaimer: 'Risikohinweis', riskDisclaimerDesc: 'Investitionen bergen Risiken. Vergangene Performance garantiert keine zukünftigen Ergebnisse.' },
