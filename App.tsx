@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Transaction, Holding, PortfolioSummary, ChartDataPoint, Market, Account, CashFlow, TransactionType, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlowType, Currency, HistoricalData, CombinedRecord } from './types';
+import { Transaction, Holding, PortfolioSummary, ChartDataPoint, Market, Account, CashFlow, TransactionType, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlowType, Currency, HistoricalData, CombinedRecord, BaseCurrency, BASE_CURRENCIES } from './types';
 import { useLocalStorageDebounced, useLocalStorageDebouncedSimple } from './hooks/useLocalStorageDebounced';
 import { useFilters } from './hooks/useFilters';
 import { useDeleteState } from './hooks/useDeleteState';
 import { useUIState } from './hooks/useUIState';
-import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR } from './utils/calculations';
+import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR, getDisplayRateForBaseCurrency } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import HoldingsTable from './components/HoldingsTable';
 import Dashboard from './components/Dashboard';
@@ -20,7 +20,7 @@ import AssetAllocationSimulator from './components/AssetAllocationSimulator';
 import { fetchCurrentPrices } from './services/yahooFinanceService';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
 import { v4 as uuidv4 } from 'uuid';
-import { Language, getLanguage, setLanguage as saveLanguage, t, translate } from './utils/i18n';
+import { Language, getLanguage, setLanguage as saveLanguage, t, translate, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
 
 type View = 'dashboard' | 'history' | 'funds' | 'accounts' | 'rebalance' | 'simulator' | 'help';
 
@@ -59,6 +59,17 @@ const App: React.FC = () => {
   const [priceDetails, setPriceDetails] = useState<Record<string, { change: number, changePercent: number }>>({});
   const [exchangeRate, setExchangeRate] = useState<number>(31.5);
   const [jpyExchangeRate, setJpyExchangeRate] = useState<number | undefined>(undefined);
+  const [eurExchangeRate, setEurExchangeRate] = useState<number | undefined>(undefined);
+  const [gbpExchangeRate, setGbpExchangeRate] = useState<number | undefined>(undefined);
+  const [hkdExchangeRate, setHkdExchangeRate] = useState<number | undefined>(undefined);
+  const [krwExchangeRate, setKrwExchangeRate] = useState<number | undefined>(undefined);
+  const [cnyExchangeRate, setCnyExchangeRate] = useState<number | undefined>(undefined);
+  const [inrExchangeRate, setInrExchangeRate] = useState<number | undefined>(undefined);
+  const [cadExchangeRate, setCadExchangeRate] = useState<number | undefined>(undefined);
+  const [audExchangeRate, setAudExchangeRate] = useState<number | undefined>(undefined);
+  const [sarExchangeRate, setSarExchangeRate] = useState<number | undefined>(undefined);
+  const [brlExchangeRate, setBrlExchangeRate] = useState<number | undefined>(undefined);
+  const [baseCurrency, setBaseCurrency] = useState<BaseCurrency>('TWD');
   const [rebalanceTargets, setRebalanceTargets] = useState<Record<string, number>>({});
   const [rebalanceEnabledItems, setRebalanceEnabledItems] = useState<string[]>([]);
   const [historicalData, setHistoricalData] = useState<HistoricalData>({}); 
@@ -234,6 +245,40 @@ const App: React.FC = () => {
     
     const jpyRate = localStorage.getItem(getKey('jpyExchangeRate'));
     setJpyExchangeRate(jpyRate ? parseFloat(jpyRate) : undefined);
+
+    const eurRate = localStorage.getItem(getKey('eurExchangeRate'));
+    setEurExchangeRate(eurRate ? parseFloat(eurRate) : undefined);
+    const gbpRate = localStorage.getItem(getKey('gbpExchangeRate'));
+    setGbpExchangeRate(gbpRate ? parseFloat(gbpRate) : undefined);
+    const hkdRate = localStorage.getItem(getKey('hkdExchangeRate'));
+    setHkdExchangeRate(hkdRate ? parseFloat(hkdRate) : undefined);
+    const krwRate = localStorage.getItem(getKey('krwExchangeRate'));
+    setKrwExchangeRate(krwRate ? parseFloat(krwRate) : undefined);
+    const cnyRate = localStorage.getItem(getKey('cnyExchangeRate'));
+    setCnyExchangeRate(cnyRate ? parseFloat(cnyRate) : undefined);
+    const inrRate = localStorage.getItem(getKey('inrExchangeRate'));
+    setInrExchangeRate(inrRate ? parseFloat(inrRate) : undefined);
+    const cadRate = localStorage.getItem(getKey('cadExchangeRate'));
+    setCadExchangeRate(cadRate ? parseFloat(cadRate) : undefined);
+    const audRate = localStorage.getItem(getKey('audExchangeRate'));
+    setAudExchangeRate(audRate ? parseFloat(audRate) : undefined);
+    const sarRate = localStorage.getItem(getKey('sarExchangeRate'));
+    setSarExchangeRate(sarRate ? parseFloat(sarRate) : undefined);
+    const brlRate = localStorage.getItem(getKey('brlExchangeRate'));
+    setBrlExchangeRate(brlRate ? parseFloat(brlRate) : undefined);
+    
+    const savedBase = localStorage.getItem(getKey('baseCurrency'));
+    const validBaseCurrencies: BaseCurrency[] = ['TWD', 'USD', 'JPY', 'EUR', 'GBP', 'HKD', 'KRW', 'CAD', 'INR'];
+    if (savedBase && validBaseCurrencies.includes(savedBase as BaseCurrency)) {
+      setBaseCurrency(savedBase as BaseCurrency);
+    } else {
+      const lang = (typeof navigator !== 'undefined' && (navigator.language || (navigator.languages && navigator.languages[0]))) || '';
+      if (lang.startsWith('ja')) setBaseCurrency('JPY');
+      else if (lang.startsWith('ko')) setBaseCurrency('KRW');
+      else if (lang.startsWith('de')) setBaseCurrency('EUR');
+      else if (lang.startsWith('ar') || lang.startsWith('pt') || lang.startsWith('en') || lang.startsWith('zh')) setBaseCurrency('USD');
+      else setBaseCurrency('TWD');
+    }
     
     setRebalanceTargets(load('rebalanceTargets', {}));
     setRebalanceEnabledItems(load('rebalanceEnabledItems', []));
@@ -252,6 +297,17 @@ const App: React.FC = () => {
   useLocalStorageDebounced('priceDetails', priceDetails, 500, userPrefix);
   useLocalStorageDebouncedSimple('exchangeRate', exchangeRate, 500, userPrefix);
   useLocalStorageDebouncedSimple('jpyExchangeRate', jpyExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('eurExchangeRate', eurExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('gbpExchangeRate', gbpExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('hkdExchangeRate', hkdExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('krwExchangeRate', krwExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('cnyExchangeRate', cnyExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('inrExchangeRate', inrExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('cadExchangeRate', cadExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('audExchangeRate', audExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('sarExchangeRate', sarExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('brlExchangeRate', brlExchangeRate, 500, userPrefix);
+  useLocalStorageDebouncedSimple('baseCurrency', baseCurrency, 500, userPrefix);
   useLocalStorageDebounced('rebalanceTargets', rebalanceTargets, 500, userPrefix);
   useLocalStorageDebounced('rebalanceEnabledItems', rebalanceEnabledItems, 500, userPrefix);
   useLocalStorageDebounced('historicalData', historicalData, 500, userPrefix);
@@ -457,6 +513,18 @@ const App: React.FC = () => {
         currentPrices, 
         priceDetails, 
         exchangeRate, 
+        jpyExchangeRate,
+        eurExchangeRate,
+        gbpExchangeRate,
+        hkdExchangeRate,
+        krwExchangeRate,
+        cnyExchangeRate,
+        inrExchangeRate,
+        cadExchangeRate,
+        audExchangeRate,
+        sarExchangeRate,
+        brlExchangeRate,
+        baseCurrency,
         rebalanceTargets,
         rebalanceEnabledItems,
         historicalData 
@@ -585,6 +653,17 @@ const App: React.FC = () => {
         if (data.currentPrices) setCurrentPrices(data.currentPrices);
         if (data.priceDetails) setPriceDetails(data.priceDetails);
         if (data.exchangeRate) setExchangeRate(data.exchangeRate);
+        if (data.baseCurrency && ['TWD', 'USD', 'JPY', 'EUR', 'GBP', 'HKD', 'KRW', 'CAD', 'INR'].includes(data.baseCurrency)) setBaseCurrency(data.baseCurrency);
+        if (data.eurExchangeRate) setEurExchangeRate(data.eurExchangeRate);
+        if (data.gbpExchangeRate) setGbpExchangeRate(data.gbpExchangeRate);
+        if (data.hkdExchangeRate) setHkdExchangeRate(data.hkdExchangeRate);
+        if (data.krwExchangeRate) setKrwExchangeRate(data.krwExchangeRate);
+        if (data.cnyExchangeRate) setCnyExchangeRate(data.cnyExchangeRate);
+        if (data.inrExchangeRate) setInrExchangeRate(data.inrExchangeRate);
+        if (data.cadExchangeRate) setCadExchangeRate(data.cadExchangeRate);
+        if (data.audExchangeRate) setAudExchangeRate(data.audExchangeRate);
+        if (data.sarExchangeRate) setSarExchangeRate(data.sarExchangeRate);
+        if (data.brlExchangeRate) setBrlExchangeRate(data.brlExchangeRate);
         if (data.rebalanceTargets) setRebalanceTargets(data.rebalanceTargets);
         if (data.rebalanceEnabledItems) setRebalanceEnabledItems(data.rebalanceEnabledItems);
         if (data.historicalData) setHistoricalData(data.historicalData);
@@ -602,7 +681,8 @@ const App: React.FC = () => {
     const holdingKeys = holdingsToUse.map((h: Holding) => ({ market: h.market, ticker: h.ticker, key: `${h.market}-${h.ticker}` }));
     
     // 建立 ticker 到 market 的對應關係，同時建立原始 ticker 到查詢 ticker 的映射
-    const tickerMarketMap = new Map<string, 'US' | 'TW' | 'UK' | 'JP'>();
+    type MarketStr = 'US' | 'TW' | 'UK' | 'JP' | 'CN' | 'SZ' | 'IN' | 'CA' | 'FR' | 'HK' | 'KR' | 'DE' | 'AU' | 'SA' | 'BR';
+    const tickerMarketMap = new Map<string, MarketStr>();
     const tickerToQueryTickerMap = new Map<string, string>(); // 原始 ticker -> 查詢用的 ticker
     
     holdingKeys.forEach((h: { market: Market, ticker: string, key: string }) => {
@@ -613,17 +693,27 @@ const App: React.FC = () => {
       if (h.market === Market.TW && queryTicker.match(/^\d{4}$/)) {
         queryTicker = `TPE:${queryTicker}`;
       }
-      // 將市場類型映射為字符串
-      let marketStr: 'US' | 'TW' | 'UK' | 'JP' = 'US';
+      let marketStr: MarketStr = 'US';
       if (h.market === Market.TW) marketStr = 'TW';
       else if (h.market === Market.UK) marketStr = 'UK';
       else if (h.market === Market.JP) marketStr = 'JP';
+      else if (h.market === Market.CN) marketStr = 'CN';
+      else if (h.market === Market.SZ) marketStr = 'SZ';
+      else if (h.market === Market.IN) marketStr = 'IN';
+      else if (h.market === Market.CA) marketStr = 'CA';
+      else if (h.market === Market.FR) marketStr = 'FR';
+      else if (h.market === Market.HK) marketStr = 'HK';
+      else if (h.market === Market.KR) marketStr = 'KR';
+      else if (h.market === Market.DE) marketStr = 'DE';
+      else if (h.market === Market.AU) marketStr = 'AU';
+      else if (h.market === Market.SA) marketStr = 'SA';
+      else if (h.market === Market.BR) marketStr = 'BR';
       tickerMarketMap.set(queryTicker, marketStr);
-      tickerToQueryTickerMap.set(h.key, queryTicker); // 儲存映射關係
+      tickerToQueryTickerMap.set(h.key, queryTicker);
     });
     
     const queryList: string[] = Array.from(tickerMarketMap.keys());
-    const marketsList: ('US' | 'TW' | 'UK' | 'JP')[] = queryList.map(t => tickerMarketMap.get(t)!);
+    const marketsList: MarketStr[] = queryList.map(t => tickerMarketMap.get(t)!);
     
     if (queryList.length === 0) return;
 
@@ -676,6 +766,17 @@ const App: React.FC = () => {
         setExchangeRate(result.exchangeRate);
         msg += `，並同步更新匯率為 ${result.exchangeRate}`;
       }
+      if (result.jpyExchangeRate && result.jpyExchangeRate > 0) setJpyExchangeRate(result.jpyExchangeRate);
+      if (result.eurExchangeRate && result.eurExchangeRate > 0) setEurExchangeRate(result.eurExchangeRate);
+      if (result.gbpExchangeRate && result.gbpExchangeRate > 0) setGbpExchangeRate(result.gbpExchangeRate);
+      if (result.hkdExchangeRate && result.hkdExchangeRate > 0) setHkdExchangeRate(result.hkdExchangeRate);
+      if (result.krwExchangeRate && result.krwExchangeRate > 0) setKrwExchangeRate(result.krwExchangeRate);
+      if (result.cnyExchangeRate && result.cnyExchangeRate > 0) setCnyExchangeRate(result.cnyExchangeRate);
+      if (result.inrExchangeRate && result.inrExchangeRate > 0) setInrExchangeRate(result.inrExchangeRate);
+      if (result.cadExchangeRate && result.cadExchangeRate > 0) setCadExchangeRate(result.cadExchangeRate);
+      if (result.audExchangeRate && result.audExchangeRate > 0) setAudExchangeRate(result.audExchangeRate);
+      if (result.sarExchangeRate && result.sarExchangeRate > 0) setSarExchangeRate(result.sarExchangeRate);
+      if (result.brlExchangeRate && result.brlExchangeRate > 0) setBrlExchangeRate(result.brlExchangeRate);
 
       // 只有在非靜默模式下才顯示提示
       if (!silent) {
@@ -738,8 +839,19 @@ const App: React.FC = () => {
     });
 
     const stockValueTWD = baseHoldings.reduce((sum: number, h: Holding) => {
-      // UK 和 JP 市場股票也用 USD 匯率（因為是用美金買的）
-      if (h.market === Market.US || h.market === Market.UK || h.market === Market.JP) return sum + h.currentValue * exchangeRate;
+      if (h.market === Market.US || h.market === Market.UK) return sum + h.currentValue * exchangeRate;
+      if (h.market === Market.JP) return sum + h.currentValue * (jpyExchangeRate ?? exchangeRate);
+      if (h.market === Market.CN) return sum + h.currentValue * (cnyExchangeRate ?? 0);
+      if (h.market === Market.SZ) return sum + h.currentValue * (cnyExchangeRate ?? 0);
+      if (h.market === Market.IN) return sum + h.currentValue * (inrExchangeRate ?? 0);
+      if (h.market === Market.CA) return sum + h.currentValue * (cadExchangeRate ?? 0);
+      if (h.market === Market.FR) return sum + h.currentValue * (eurExchangeRate ?? 0);
+      if (h.market === Market.HK) return sum + h.currentValue * (hkdExchangeRate ?? 0);
+      if (h.market === Market.KR) return sum + h.currentValue * (krwExchangeRate ?? 0);
+      if (h.market === Market.DE) return sum + h.currentValue * (eurExchangeRate ?? 0);
+      if (h.market === Market.AU) return sum + h.currentValue * (audExchangeRate ?? 0);
+      if (h.market === Market.SA) return sum + h.currentValue * (sarExchangeRate ?? 0);
+      if (h.market === Market.BR) return sum + h.currentValue * (brlExchangeRate ?? 0);
       return sum + h.currentValue; // TW
     }, 0);
     const cashValueTWD = computedAccounts.reduce((sum: number, a: Account) => sum + (a.currency === Currency.USD ? a.balance * exchangeRate : a.balance), 0);
@@ -751,15 +863,37 @@ const App: React.FC = () => {
     
     const accumulatedCashDividendsTWD = transactions.filter(t => t.type === TransactionType.CASH_DIVIDEND).reduce((sum, t) => {
         const amt = t.amount || (t.price * t.quantity);
-        // UK 和 JP 市場也用 USD 匯率
-        if (t.market === Market.US || t.market === Market.UK || t.market === Market.JP) return sum + amt * exchangeRate;
+        if (t.market === Market.US || t.market === Market.UK) return sum + amt * exchangeRate;
+        if (t.market === Market.JP) return sum + amt * (jpyExchangeRate ?? exchangeRate);
+        if (t.market === Market.CN) return sum + amt * (cnyExchangeRate ?? 0);
+        if (t.market === Market.SZ) return sum + amt * (cnyExchangeRate ?? 0);
+        if (t.market === Market.IN) return sum + amt * (inrExchangeRate ?? 0);
+        if (t.market === Market.CA) return sum + amt * (cadExchangeRate ?? 0);
+        if (t.market === Market.FR) return sum + amt * (eurExchangeRate ?? 0);
+        if (t.market === Market.HK) return sum + amt * (hkdExchangeRate ?? 0);
+        if (t.market === Market.KR) return sum + amt * (krwExchangeRate ?? 0);
+        if (t.market === Market.DE) return sum + amt * (eurExchangeRate ?? 0);
+        if (t.market === Market.AU) return sum + amt * (audExchangeRate ?? 0);
+        if (t.market === Market.SA) return sum + amt * (sarExchangeRate ?? 0);
+        if (t.market === Market.BR) return sum + amt * (brlExchangeRate ?? 0);
         return sum + amt; // TW
     }, 0);
 
     const accumulatedStockDividendsTWD = transactions.filter(t => t.type === TransactionType.DIVIDEND).reduce((sum, t) => {
         const amt = t.amount || (t.price * t.quantity);
-        // UK 和 JP 市場也用 USD 匯率
-        if (t.market === Market.US || t.market === Market.UK || t.market === Market.JP) return sum + amt * exchangeRate;
+        if (t.market === Market.US || t.market === Market.UK) return sum + amt * exchangeRate;
+        if (t.market === Market.JP) return sum + amt * (jpyExchangeRate ?? exchangeRate);
+        if (t.market === Market.CN) return sum + amt * (cnyExchangeRate ?? 0);
+        if (t.market === Market.SZ) return sum + amt * (cnyExchangeRate ?? 0);
+        if (t.market === Market.IN) return sum + amt * (inrExchangeRate ?? 0);
+        if (t.market === Market.CA) return sum + amt * (cadExchangeRate ?? 0);
+        if (t.market === Market.FR) return sum + amt * (eurExchangeRate ?? 0);
+        if (t.market === Market.HK) return sum + amt * (hkdExchangeRate ?? 0);
+        if (t.market === Market.KR) return sum + amt * (krwExchangeRate ?? 0);
+        if (t.market === Market.DE) return sum + amt * (eurExchangeRate ?? 0);
+        if (t.market === Market.AU) return sum + amt * (audExchangeRate ?? 0);
+        if (t.market === Market.SA) return sum + amt * (sarExchangeRate ?? 0);
+        if (t.market === Market.BR) return sum + amt * (brlExchangeRate ?? 0);
         return sum + amt; // TW
     }, 0);
 
@@ -774,24 +908,58 @@ const App: React.FC = () => {
         netInvestedTWD,
         annualizedReturn,
         exchangeRateUsdToTwd: exchangeRate,
+        jpyExchangeRate,
+        eurExchangeRate,
+        gbpExchangeRate,
+        hkdExchangeRate,
+        krwExchangeRate,
+        cnyExchangeRate,
+        inrExchangeRate,
+        cadExchangeRate,
+        audExchangeRate,
+        sarExchangeRate,
+        brlExchangeRate,
         accumulatedCashDividendsTWD,
         accumulatedStockDividendsTWD,
         avgExchangeRate
     };
-  }, [baseHoldings, computedAccounts, cashFlows, exchangeRate, accounts, transactions]);
+  }, [baseHoldings, computedAccounts, cashFlows, exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate, accounts, transactions]);
+
+  const displayRate = useMemo(() => getDisplayRateForBaseCurrency(baseCurrency, {
+    exchangeRateUsdToTwd: exchangeRate,
+    jpyExchangeRate: jpyExchangeRate ?? 0.21,
+    eurExchangeRate,
+    gbpExchangeRate,
+    hkdExchangeRate,
+    krwExchangeRate,
+    cadExchangeRate: cadExchangeRate ?? 23,
+    inrExchangeRate: inrExchangeRate ?? 0.38,
+  }), [baseCurrency, exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cadExchangeRate, inrExchangeRate]);
 
   // Step 4: Final Holdings with Weights
   const holdings = useMemo(() => {
     const totalAssets = summary.totalValueTWD + summary.cashBalanceTWD;
     return baseHoldings.map((h: Holding) => {
-        // UK 和 JP 市場也用 USD 匯率
-        const valTwd = (h.market === Market.US || h.market === Market.UK || h.market === Market.JP) ? h.currentValue * exchangeRate : h.currentValue;
+        let valTwd = h.currentValue;
+        if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
+        else if (h.market === Market.JP) valTwd = h.currentValue * (jpyExchangeRate ?? exchangeRate);
+        else if (h.market === Market.CN) valTwd = h.currentValue * (cnyExchangeRate ?? 0);
+        else if (h.market === Market.SZ) valTwd = h.currentValue * (cnyExchangeRate ?? 0);
+        else if (h.market === Market.IN) valTwd = h.currentValue * (inrExchangeRate ?? 0);
+        else if (h.market === Market.CA) valTwd = h.currentValue * (cadExchangeRate ?? 0);
+        else if (h.market === Market.FR) valTwd = h.currentValue * (eurExchangeRate ?? 0);
+        else if (h.market === Market.HK) valTwd = h.currentValue * (hkdExchangeRate ?? 0);
+        else if (h.market === Market.KR) valTwd = h.currentValue * (krwExchangeRate ?? 0);
+        else if (h.market === Market.DE) valTwd = h.currentValue * (eurExchangeRate ?? 0);
+        else if (h.market === Market.AU) valTwd = h.currentValue * (audExchangeRate ?? 0);
+        else if (h.market === Market.SA) valTwd = h.currentValue * (sarExchangeRate ?? 0);
+        else if (h.market === Market.BR) valTwd = h.currentValue * (brlExchangeRate ?? 0);
         return {
             ...h,
             weight: totalAssets > 0 ? (valTwd / totalAssets) * 100 : 0
         };
     });
-  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate]);
+  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate]);
 
   // --- Auto Update Prices on Load ---
   useEffect(() => {
@@ -807,11 +975,13 @@ const App: React.FC = () => {
   }, [isAuthenticated, baseHoldings.length, hasAutoUpdated]);
 
   // 修復 useMemo 依賴項：只依賴 summary 中實際使用的屬性，而不是整個物件
-  const chartData = useMemo(() => generateAdvancedChartData(transactions, cashFlows, accounts, summary.totalValueTWD + summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate]);
-  // 修復 useMemo 依賴項：只依賴 summary 中實際使用的屬性
-  const assetAllocation = useMemo(() => calculateAssetAllocation(holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate), [holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate]);
+  // eslint-disable-next-line max-params -- 多市場匯率參數
+  const chartData = useMemo(() => generateAdvancedChartData(transactions, cashFlows, accounts, summary.totalValueTWD + summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, exchangeRate, historicalData, jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate]);
+  // eslint-disable-next-line max-params -- 多市場匯率參數
+  const assetAllocation = useMemo(() => calculateAssetAllocation(holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate), [holdings, summary.cashBalanceTWD, exchangeRate, jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate]);
   const annualPerformance = useMemo(() => calculateAnnualPerformance(chartData), [chartData]);
-  const accountPerformance = useMemo(() => calculateAccountPerformance(computedAccounts, holdings, cashFlows, transactions, exchangeRate, jpyExchangeRate), [computedAccounts, holdings, cashFlows, transactions, exchangeRate, jpyExchangeRate]);
+  // eslint-disable-next-line max-params -- 多市場匯率參數
+  const accountPerformance = useMemo(() => calculateAccountPerformance(computedAccounts, holdings, cashFlows, transactions, exchangeRate, jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate), [computedAccounts, holdings, cashFlows, transactions, exchangeRate, jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate]);
 
   // --- Filtering & Balance Calculation Logic (Merged) ---
   const combinedRecords = useMemo(() => {
@@ -1056,7 +1226,7 @@ const App: React.FC = () => {
                   className="mt-1 w-full border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                   placeholder="name@example.com"
                 />
-                <p className="mt-1 text-xs text-slate-500">{language === 'en' ? 'Please enter your E-mail' : '初次使用，請輸入您的 E-mail'}</p>
+                <p className="mt-1 text-xs text-slate-500">{(language === 'en' || language === 'de' || language === 'fr' || language === 'hi' || language === 'ar' || language === 'pt') ? 'Please enter your E-mail' : '初次使用，請輸入您的 E-mail'}</p>
               </div>
 
               {loginEmail === ADMIN_EMAIL && (
@@ -1067,7 +1237,7 @@ const App: React.FC = () => {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     className="mt-1 w-full border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    placeholder={language === 'en' ? 'Enter password' : '請輸入密碼'}
+                    placeholder={(language === 'en' || language === 'de' || language === 'fr' || language === 'hi' || language === 'ar' || language === 'pt') ? 'Enter password' : '請輸入密碼'}
                   />
                 </div>
               )}
@@ -1148,34 +1318,23 @@ const App: React.FC = () => {
                </div>
                <div className="hidden sm:block">
                   <h1 className="font-bold text-lg leading-none bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">TradeView</h1>
-                  <p className="text-[10px] text-slate-400 leading-none mt-0.5">{language === 'en' ? 'Portfolio Management' : '台美股資產管理'}</p>
+                  <p className="text-[10px] text-slate-400 leading-none mt-0.5">{t(language).login.subtitle}</p>
                </div>
             </div>
 
             {/* Right Controls */}
             <div className="flex items-center gap-2 sm:gap-3">
                {/* Language Selector */}
-               <div className="hidden sm:flex items-center bg-slate-800 rounded-md border border-slate-700 overflow-hidden">
-                 <button
-                   onClick={() => handleLanguageChange('zh-TW')}
-                   className={`px-2.5 py-1 text-xs font-medium transition-colors ${
-                     language === 'zh-TW' 
-                       ? 'bg-indigo-600 text-white' 
-                       : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                   }`}
+               <div className="hidden sm:flex items-center">
+                 <select
+                   value={language}
+                   onChange={(e) => handleLanguageChange(e.target.value as Language)}
+                   className="bg-slate-800 border border-slate-700 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
                  >
-                   繁
-                 </button>
-                 <button
-                   onClick={() => handleLanguageChange('en')}
-                   className={`px-2.5 py-1 text-xs font-medium transition-colors border-l border-slate-700 ${
-                     language === 'en' 
-                       ? 'bg-indigo-600 text-white' 
-                       : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                   }`}
-                 >
-                   EN
-                 </button>
+                   {LANGUAGES.map(({ code, label }) => (
+                     <option key={code} value={code}>{label}</option>
+                   ))}
+                 </select>
                </div>
 
                {/* Guest Upgrade Button */}
@@ -1188,20 +1347,33 @@ const App: React.FC = () => {
                      <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                      <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                    </svg>
-                   <span>{language === 'en' ? 'Upgrade' : '申請開通'}</span>
+                   <span>{(language === 'en' || language === 'de' || language === 'fr' || language === 'hi' || language === 'ar' || language === 'pt') ? 'Upgrade' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'zh-CN' ? '升级' : '申請開通'}</span>
                  </button>
                )}
 
-               {/* Exchange Rate Input */}
-               <div className="hidden sm:flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
-                  <span className="text-xs text-slate-400 mr-2">USD</span>
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    value={exchangeRate}
-                    onChange={(e) => setExchangeRate(parseFloat(e.target.value))}
-                    className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
-                  />
+               {/* Base currency + main rate */}
+               <div className="hidden sm:flex items-center gap-2">
+                 <select
+                   value={baseCurrency}
+                   onChange={(e) => setBaseCurrency(e.target.value as BaseCurrency)}
+                   className="bg-slate-800 border border-slate-700 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                 >
+                   {BASE_CURRENCIES.map(c => <option key={c} value={c}>{getBaseCurrencyLabel(c as BaseCurrencyCode, language)}</option>)}
+                 </select>
+                 <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
+                   <span className="text-xs text-slate-400 mr-2">{displayRate.label}</span>
+                   {baseCurrency === 'TWD' ? (
+                     <input
+                       type="number"
+                       step="0.01"
+                       value={exchangeRate}
+                       onChange={(e) => setExchangeRate(parseFloat(e.target.value))}
+                       className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right"
+                     />
+                   ) : (
+                     <span className="w-14 text-sm text-white font-mono text-right">{displayRate.value.toFixed(2)}</span>
+                   )}
+                 </div>
                </div>
                
                {/* User Profile */}
@@ -1247,7 +1419,7 @@ const App: React.FC = () => {
                      onClick={handleContactAdmin}
                      className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow"
                    >
-                     {language === 'en' ? 'Upgrade' : '申請開通'}
+                     {(language === 'en' || language === 'de' || language === 'fr' || language === 'hi' || language === 'ar' || language === 'pt') ? 'Upgrade' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'zh-CN' ? '升级' : '申請開通'}
                    </button>
                 )}
             </h2>
@@ -1265,6 +1437,7 @@ const App: React.FC = () => {
                  accountPerformance={accountPerformance}
                  cashFlows={cashFlows}
                  accounts={computedAccounts}
+                 baseCurrency={baseCurrency}
                  onUpdatePrice={updatePrice}
                  onAutoUpdate={handleAutoUpdatePrices}
                  isGuest={isGuest}
@@ -1339,7 +1512,7 @@ const App: React.FC = () => {
                         type="text"
                         value={filterTicker}
                         onChange={(e) => setFilterTicker(e.target.value)}
-                        placeholder={language === 'en' ? 'e.g., 0050, AAPL' : '例如: 0050, AAPL'}
+                        placeholder={(language === 'en' || language === 'de' || language === 'fr' || language === 'hi' || language === 'ar' || language === 'pt') ? 'e.g., 0050, AAPL' : '例如: 0050, AAPL'}
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       />
                     </div>
@@ -1636,8 +1809,15 @@ const App: React.FC = () => {
                 onBatchAdd={addBatchCashFlows}
                 onDelete={removeCashFlow}
                 onClearAll={handleClearAllCashFlows}
+                baseCurrency={baseCurrency}
                 currentExchangeRate={exchangeRate}
                 currentJpyExchangeRate={jpyExchangeRate}
+                currentEurExchangeRate={eurExchangeRate}
+                currentGbpExchangeRate={gbpExchangeRate}
+                currentHkdExchangeRate={hkdExchangeRate}
+                currentKrwExchangeRate={krwExchangeRate}
+                currentCadExchangeRate={cadExchangeRate}
+                currentInrExchangeRate={inrExchangeRate}
                 language={language}
               />
             )}
@@ -1646,6 +1826,7 @@ const App: React.FC = () => {
                <RebalanceView 
                  summary={summary}
                  holdings={holdings}
+                 baseCurrency={baseCurrency}
                  exchangeRate={exchangeRate}
                  jpyExchangeRate={jpyExchangeRate}
                  targets={rebalanceTargets}
@@ -1663,6 +1844,18 @@ const App: React.FC = () => {
                    market: h.market,
                    annualizedReturn: h.annualizedReturn
                  }))}
+                 baseCurrency={baseCurrency}
+                 exchangeRateUsdToTwd={exchangeRate}
+                 jpyExchangeRate={jpyExchangeRate}
+                 eurExchangeRate={eurExchangeRate}
+                 gbpExchangeRate={gbpExchangeRate}
+                 hkdExchangeRate={hkdExchangeRate}
+                 krwExchangeRate={krwExchangeRate}
+                 cadExchangeRate={cadExchangeRate}
+                 inrExchangeRate={inrExchangeRate}
+                 audExchangeRate={audExchangeRate}
+                 sarExchangeRate={sarExchangeRate}
+                 brlExchangeRate={brlExchangeRate}
                  language={language}
                />
             )}
@@ -1702,17 +1895,31 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            {/* 匯率顯示 */}
+            {/* 基準幣 + 主要匯率 */}
             <div className="p-4 bg-slate-900/50 border-b border-slate-800 space-y-2">
+              <div className="flex justify-between items-center text-xs font-bold gap-2">
+                <span className="text-slate-500">{language === 'zh-TW' ? '基準幣' : language === 'zh-CN' ? '基准币' : 'Base'}</span>
+                <select
+                  value={baseCurrency}
+                  onChange={(e) => setBaseCurrency(e.target.value as BaseCurrency)}
+                  className="flex-1 bg-slate-800 rounded border border-slate-700 text-emerald-400 px-2 py-1"
+                >
+                  {BASE_CURRENCIES.map(c => <option key={c} value={c}>{getBaseCurrencyLabel(c as BaseCurrencyCode, language)}</option>)}
+                </select>
+              </div>
               <div className="flex justify-between items-center text-xs font-bold">
-                <span className="text-slate-500">USD/TWD {language === 'zh-TW' ? '匯率' : 'Rate'}</span>
-                <input 
-                  type="number" 
-                  step="0.01" 
-                  value={exchangeRate} 
-                  onChange={e => setExchangeRate(parseFloat(e.target.value))}
-                  className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
-                />
+                <span className="text-slate-500">{displayRate.label} {language === 'zh-TW' ? '匯率' : language === 'zh-CN' ? '汇率' : language === 'ja' ? '為替' : language === 'ko' ? '환율' : 'Rate'}</span>
+                {baseCurrency === 'TWD' ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={exchangeRate}
+                    onChange={e => setExchangeRate(parseFloat(e.target.value))}
+                    className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
+                  />
+                ) : (
+                  <span className="text-emerald-400 font-mono">{displayRate.value.toFixed(2)}</span>
+                )}
               </div>
             </div>
 
@@ -1746,15 +1953,17 @@ const App: React.FC = () => {
 
             {/* 底部操作 */}
             <div className="p-4 border-t border-slate-800 space-y-2">
-              <button 
-                onClick={() => {
-                  const newLang = language === 'zh-TW' ? 'en' : 'zh-TW';
-                  handleLanguageChange(newLang);
-                }}
-                className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-slate-800 text-slate-300 font-medium hover:bg-slate-700 transition"
-              >
-                🌐 {language === 'zh-TW' ? 'Switch to English' : '切換為繁體中文'}
-              </button>
+              <div className="flex items-center">
+                <select
+                  value={language}
+                  onChange={(e) => { handleLanguageChange(e.target.value as Language); setIsMobileMenuOpen(false); }}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                  {LANGUAGES.map(({ code, label }) => (
+                    <option key={code} value={code}>{label}</option>
+                  ))}
+                </select>
+              </div>
               {isGuest && (
                 <button
                   onClick={() => {
@@ -1767,7 +1976,7 @@ const App: React.FC = () => {
                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                   </svg>
-                  {language === 'en' ? 'Upgrade' : '申請開通'}
+                  {(language === 'en' || language === 'de' || language === 'fr' || language === 'hi' || language === 'ar' || language === 'pt') ? 'Upgrade' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'zh-CN' ? '升级' : '申請開通'}
                 </button>
               )}
               <button 
