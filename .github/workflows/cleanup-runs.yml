@@ -1,11 +1,9 @@
-yaml
 name: Cleanup Old Workflow Runs
 
 on:
   schedule:
-    # 建議改為每天凌晨 2 點執行，清理才及時
-    - cron: '0 2 * * *'
-  workflow_dispatch: # 允許手動觸發
+    - cron: '0 2 * * *' # 每天執行
+  workflow_dispatch:   # 這是最關鍵的：讓你現在能手動點擊執行
 
 permissions:
   contents: read
@@ -20,17 +18,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-          
-          # 1. 針對「成功」的紀錄：保留 6 天
-          # 超過 6 天的成功紀錄會被刪除
-          retain_days: 6
-          
-          # 2. 針對「失敗/取消」等紀錄：立刻刪除
-          # 將此設為 0，避免因為要留數量而刪不掉失敗紀錄
+          # 設為 0 代表「不限天數」，只要符合條件就刪除，這樣才能清掉你那 61 個紀錄
+          retain_days: 0
           keep_minimum_runs: 0
-          
-          # 3. 指定要刪除的狀態清單
-          # 這裡包含了所有非成功的狀態
+          # 刪除所有失敗、取消等非成功狀態
           delete_run_by_conclusion_pattern: "action_required,cancelled,failure,skipped,stale,timed_out"
-
-
