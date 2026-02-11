@@ -302,7 +302,7 @@ const Dashboard: React.FC<Props> = ({
                 <button 
                   onClick={onUpdateHistorical}
                   className="text-xs px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded border border-indigo-200 flex items-center gap-1 transition"
-                  title={language === 'zh-TW' ? '手動編輯或使用 AI 修正歷史股價' : 'Manually edit or use AI to correct historical prices'}
+                  title={translations.dashboard.aiCorrectHistoryTitle}
                 >
                   <span>🤖</span> {translations.dashboard.aiCorrectHistory}
                 </button>
@@ -344,17 +344,16 @@ const Dashboard: React.FC<Props> = ({
                     <Legend 
                       iconSize={0}
                       formatter={(value: string, entry: any) => {
-                        const isChinese = language === 'zh-TW';
                         if (value.includes(translations.dashboard.chartLabels.accumulatedPL)) {
                           return (
                             <span className="inline-flex items-center gap-3">
                               <span className="flex items-center gap-1">
                                 <span style={{ display: 'inline-block', width: '10px', height: '10px', backgroundColor: '#10b981', borderRadius: '2px', marginRight: '4px' }}></span>
-                                <span style={{ color: '#10b981', fontWeight: 600 }}>{isChinese ? '盈利' : 'Profit'}</span>
+                                <span style={{ color: '#10b981', fontWeight: 600 }}>{translations.dashboard.chartLabels.profit}</span>
                               </span>
                               <span className="flex items-center gap-1">
                                 <span style={{ display: 'inline-block', width: '10px', height: '10px', backgroundColor: '#ef4444', borderRadius: '2px', marginRight: '4px' }}></span>
-                                <span style={{ color: '#ef4444', fontWeight: 600 }}>{isChinese ? '虧損' : 'Loss'}</span>
+                                <span style={{ color: '#ef4444', fontWeight: 600 }}>{translations.dashboard.chartLabels.loss}</span>
                               </span>
                             </span>
                           );
@@ -375,9 +374,7 @@ const Dashboard: React.FC<Props> = ({
                       yAxisId="left" 
                       dataKey="profit" 
                       fill="#000" 
-                      name={language === 'zh-TW' 
-                        ? `${translations.dashboard.chartLabels.accumulatedPL}: 綠色=盈利 紅色=虧損`
-                        : `${translations.dashboard.chartLabels.accumulatedPL}: Green=Profit Red=Loss`} 
+                      name={translations.dashboard.chartLabels.barName} 
                       stackId="a" 
                       barSize={30}
                     >
@@ -410,22 +407,23 @@ const Dashboard: React.FC<Props> = ({
         {marketDistribution.length > 0 ? (
           <div className="space-y-3">
             {marketDistribution.map((item) => {
+              const isZh = language === 'zh-TW' || language === 'zh-CN';
               const marketNames: Record<Market, string> = {
-                [Market.TW]: language === 'zh-TW' ? '台股' : 'Taiwan',
-                [Market.US]: language === 'zh-TW' ? '美股' : 'US',
-                [Market.UK]: language === 'zh-TW' ? '英國股' : 'UK',
-                [Market.JP]: language === 'zh-TW' ? '日本股' : 'Japan',
-                [Market.CN]: language === 'zh-TW' ? '中國滬' : 'China',
-                [Market.SZ]: language === 'zh-TW' ? '中國深' : 'Shenzhen',
-                [Market.IN]: language === 'zh-TW' ? '印度' : 'India',
-                [Market.CA]: language === 'zh-TW' ? '加拿大' : 'Canada',
-                [Market.FR]: language === 'zh-TW' ? '法國' : 'France',
-                [Market.HK]: language === 'zh-TW' ? '香港' : 'HK',
-                [Market.KR]: language === 'zh-TW' ? '韓國' : 'Korea',
-                [Market.DE]: language === 'zh-TW' ? '德國' : 'Germany',
-                [Market.AU]: language === 'zh-TW' ? '澳洲' : 'Australia',
-                [Market.SA]: language === 'zh-TW' ? '沙烏地' : 'Saudi',
-                [Market.BR]: language === 'zh-TW' ? '巴西' : 'Brazil',
+                [Market.TW]: isZh ? '台股' : 'Taiwan',
+                [Market.US]: isZh ? '美股' : 'US',
+                [Market.UK]: language === 'zh-TW' ? '英國股' : language === 'zh-CN' ? '英国股' : 'UK',
+                [Market.JP]: isZh ? '日本股' : 'Japan',
+                [Market.CN]: language === 'zh-TW' ? '中國滬' : language === 'zh-CN' ? '中国沪' : 'China',
+                [Market.SZ]: language === 'zh-TW' ? '中國深' : language === 'zh-CN' ? '中国深' : 'Shenzhen',
+                [Market.IN]: isZh ? '印度' : 'India',
+                [Market.CA]: isZh ? '加拿大' : 'Canada',
+                [Market.FR]: language === 'zh-TW' ? '法國' : language === 'zh-CN' ? '法国股' : 'France',
+                [Market.HK]: isZh ? '香港' : 'HK',
+                [Market.KR]: language === 'zh-TW' ? '韓國' : language === 'zh-CN' ? '韩国' : 'Korea',
+                [Market.DE]: language === 'zh-TW' ? '德國' : language === 'zh-CN' ? '德国' : 'Germany',
+                [Market.AU]: isZh ? '澳洲' : 'Australia',
+                [Market.SA]: language === 'zh-TW' ? '沙烏地' : language === 'zh-CN' ? '沙特' : 'Saudi',
+                [Market.BR]: isZh ? '巴西' : 'Brazil',
               };
               const marketColors: Record<Market, string> = {
                 [Market.TW]: 'bg-blue-500',
@@ -570,7 +568,7 @@ const Dashboard: React.FC<Props> = ({
                       <tr key={item.year} className="hover:bg-slate-50">
                         <td className="px-6 py-3 font-bold text-slate-700">
                           {item.year}
-                          {item.isRealData && <span title={language === 'zh-TW' ? '真實歷史數據' : 'Real historical data'} className="ml-2 text-xs cursor-help">✅</span>}
+                          {item.isRealData && <span title={translations.dashboard.realHistoricalData} className="ml-2 text-xs cursor-help">✅</span>}
                         </td>
                         <td className="px-6 py-3 text-right text-slate-500">{formatCurrency(startAssets, displayCurrency)}</td>
                         <td className="px-6 py-3 text-right text-slate-500">{formatCurrency(netInflow, displayCurrency)}</td>
@@ -748,7 +746,7 @@ const Dashboard: React.FC<Props> = ({
             </div>
             
             <div className="p-4 bg-blue-50 border-b border-blue-100 text-sm text-blue-800">
-              <p>ℹ️ <strong>{language === 'zh-TW' ? '計算公式：' : 'Formula: '}</strong> {translations.dashboard.calculationFormula}</p>
+              <p>ℹ️ <strong>{translations.dashboard.formulaLabel}</strong> {translations.dashboard.calculationFormula}</p>
               <p>⚠️ <strong>{translations.dashboard.attention}：</strong> {translations.dashboard.formulaNote}</p>
             </div>
 
