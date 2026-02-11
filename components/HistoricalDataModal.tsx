@@ -118,30 +118,36 @@ const HistoricalDataModal: React.FC<Props> = ({
           // If no tickers are missing but rate needs update, we still need to call API.
           // We'll query one ticker to trigger the prompt logic if list is empty.
           let queryTickers: string[] = [];
-          let queryMarkets: ('US' | 'TW' | 'UK' | 'JP')[] = [];
+          type MarketCode = 'US' | 'TW' | 'UK' | 'JP' | 'CN' | 'SZ' | 'IN' | 'CA' | 'FR' | 'HK' | 'KR' | 'DE' | 'AU' | 'SA' | 'BR';
+          const toMarketCode = (m: Market): MarketCode => {
+            if (m === Market.TW) return 'TW';
+            if (m === Market.UK) return 'UK';
+            if (m === Market.JP) return 'JP';
+            if (m === Market.CN) return 'CN';
+            if (m === Market.SZ) return 'SZ';
+            if (m === Market.IN) return 'IN';
+            if (m === Market.CA) return 'CA';
+            if (m === Market.FR) return 'FR';
+            if (m === Market.HK) return 'HK';
+            if (m === Market.KR) return 'KR';
+            if (m === Market.DE) return 'DE';
+            if (m === Market.AU) return 'AU';
+            if (m === Market.SA) return 'SA';
+            if (m === Market.BR) return 'BR';
+            return 'US';
+          };
+          let queryMarkets: MarketCode[] = [];
           if (missingTickers.length > 0) {
               queryTickers = missingTickers.map(t => {
-                  // 移除 (BAK) 後綴
                   const cleanTicker = t.ticker.replace(/\(BAK\)/gi, '');
                   return t.market === Market.TW && !cleanTicker.includes('TPE:') ? `TPE:${cleanTicker}` : cleanTicker;
               });
-              queryMarkets = missingTickers.map(t => {
-                if (t.market === Market.TW) return 'TW' as const;
-                if (t.market === Market.UK) return 'UK' as const;
-                if (t.market === Market.JP) return 'JP' as const;
-                return 'US' as const;
-              });
+              queryMarkets = missingTickers.map(t => toMarketCode(t.market as Market));
           } else if (activeTickers.length > 0) {
-              // Fetch rate only case: query first ticker
               const t = activeTickers[0];
               const cleanTicker = t.ticker.replace(/\(BAK\)/gi, '');
               queryTickers = [t.market === Market.TW && !cleanTicker.includes('TPE:') ? `TPE:${cleanTicker}` : cleanTicker];
-              queryMarkets = [
-                t.market === Market.TW ? 'TW' as const : 
-                t.market === Market.UK ? 'UK' as const : 
-                t.market === Market.JP ? 'JP' as const : 
-                'US' as const
-              ];
+              queryMarkets = [toMarketCode(t.market as Market)];
           }
           
           const result = await fetchHistoricalYearEndData(selectedYear, queryTickers, queryMarkets);
@@ -303,9 +309,14 @@ const HistoricalDataModal: React.FC<Props> = ({
                                    <tr key={t.ticker} className="hover:bg-slate-50">
                                        <td className="px-4 py-2">
                                            <span className={`px-2 py-0.5 rounded text-xs ${
-                                             t.market === Market.US ? 'bg-blue-100 text-blue-700' : 
-                                             t.market === Market.UK ? 'bg-purple-100 text-purple-700' : 
-                                             t.market === Market.JP ? 'bg-red-100 text-red-700' : 
+                                            t.market === Market.US ? 'bg-blue-100 text-blue-700' : 
+                                            t.market === Market.UK ? 'bg-purple-100 text-purple-700' : 
+                                            t.market === Market.JP ? 'bg-red-100 text-red-700' :
+                                            t.market === Market.CN ? 'bg-amber-100 text-amber-700' :
+                                            t.market === Market.SZ ? 'bg-amber-200 text-amber-800' :
+                                            t.market === Market.IN ? 'bg-teal-100 text-teal-700' :
+                                            t.market === Market.CA ? 'bg-rose-100 text-rose-700' :
+                                            t.market === Market.FR ? 'bg-indigo-100 text-indigo-700' :
                                              'bg-green-100 text-green-700'
                                            }`}>
                                                {t.market}

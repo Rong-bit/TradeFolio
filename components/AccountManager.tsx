@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Account, Currency } from '../types';
+import { Account, Currency, BASE_CURRENCIES } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from '../utils/calculations';
 import { Language, t, translate } from '../utils/i18n';
@@ -154,6 +154,28 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
     }
   };
 
+  const getCurrencyLabel = (c: Currency): string => {
+    const a = translations.accounts;
+    switch (c) {
+      case Currency.TWD: return a.currencyTWD;
+      case Currency.USD: return a.currencyUSD;
+      case Currency.JPY: return a.currencyJPY;
+      case Currency.EUR: return a.currencyEUR;
+      case Currency.GBP: return a.currencyGBP;
+      case Currency.HKD: return a.currencyHKD;
+      case Currency.KRW: return a.currencyKRW;
+      case Currency.CNY: return a.currencyCNY;
+      case Currency.INR: return a.currencyINR;
+      case Currency.CAD: return a.currencyCAD;
+      case Currency.AUD: return a.currencyAUD;
+      case Currency.SAR: return a.currencySAR;
+      case Currency.BRL: return a.currencyBRL;
+      default: return c;
+    }
+  };
+
+  const accountCurrencies: Currency[] = [...BASE_CURRENCIES.map(code => code as Currency), Currency.CNY, Currency.AUD, Currency.SAR, Currency.BRL];
+
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow">
@@ -177,9 +199,9 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
               onChange={(e) => setCurrency(e.target.value as Currency)}
               className="mt-1 block w-full border border-slate-300 rounded-md p-2"
             >
-              <option value={Currency.TWD}>{translations.accounts.currencyTWD}</option>
-              <option value={Currency.USD}>{translations.accounts.currencyUSD}</option>
-              <option value={Currency.JPY}>{translations.accounts.currencyJPY}</option>
+              {accountCurrencies.map(c => (
+                <option key={c} value={c}>{getCurrencyLabel(c)}</option>
+              ))}
             </select>
           </div>
           <div className="flex items-center h-10 pb-2">
@@ -210,6 +232,16 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
                   <span className={`text-xs px-2 py-0.5 rounded border ${
                     acc.currency === Currency.USD ? 'bg-blue-50 text-blue-700 border-blue-100' : 
                     acc.currency === Currency.JPY ? 'bg-orange-50 text-orange-700 border-orange-100' : 
+                    acc.currency === Currency.EUR ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
+                    acc.currency === Currency.GBP ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                    acc.currency === Currency.HKD ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                    acc.currency === Currency.KRW ? 'bg-teal-50 text-teal-700 border-teal-100' :
+                    acc.currency === Currency.CNY ? 'bg-red-50 text-red-700 border-red-100' :
+                    acc.currency === Currency.INR ? 'bg-sky-50 text-sky-700 border-sky-100' :
+                    acc.currency === Currency.CAD ? 'bg-rose-50 text-rose-700 border-rose-100' :
+                    acc.currency === Currency.AUD ? 'bg-lime-50 text-lime-700 border-lime-100' :
+                    acc.currency === Currency.SAR ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                    acc.currency === Currency.BRL ? 'bg-cyan-50 text-cyan-700 border-cyan-100' :
                     'bg-green-50 text-green-700 border-green-100'
                   }`}>
                     {acc.currency}
@@ -286,9 +318,9 @@ const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, 
                     onChange={(e) => setCurrency(e.target.value as Currency)}
                     className="w-full border border-slate-300 rounded-md p-2"
                   >
-                    <option value={Currency.TWD}>{translations.accounts.currencyTWD}</option>
-                    <option value={Currency.USD}>{translations.accounts.currencyUSD}</option>
-                    <option value={Currency.JPY}>{translations.accounts.currencyJPY}</option>
+                    {accountCurrencies.map(c => (
+                      <option key={c} value={c}>{getCurrencyLabel(c)}</option>
+                    ))}
                   </select>
                 </div>
                 <div>

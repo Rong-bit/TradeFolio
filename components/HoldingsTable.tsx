@@ -269,8 +269,7 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
   // 渲染持倉行的輔助函數
   function renderHoldingRow(h: Holding, isDetailedMode: boolean = false) {
     const isProfit = h.unrealizedPL >= 0;
-    // UK 市場也用 USD（因為是用美金買的）
-    const currency = h.market === Market.TW ? 'TWD' : 'USD';
+    const currency = h.market === Market.TW ? 'TWD' : h.market === Market.JP ? 'JPY' : h.market === Market.CN ? 'CNY' : h.market === Market.SZ ? 'CNY' : h.market === Market.IN ? 'INR' : h.market === Market.CA ? 'CAD' : h.market === Market.FR ? 'EUR' : h.market === Market.HK ? 'HKD' : h.market === Market.KR ? 'KRW' : h.market === Market.DE ? 'EUR' : h.market === Market.AU ? 'AUD' : h.market === Market.SA ? 'SAR' : h.market === Market.BR ? 'BRL' : 'USD';
     const plColor = isProfit ? 'text-emerald-600' : 'text-rose-600';
     const roiColor = h.annualizedReturn >= 0 ? 'text-blue-600' : 'text-orange-600';
     // 只有當 dailyChange 不是 undefined/null 時才根據正負值決定顏色，否則保持預設顏色
@@ -286,6 +285,17 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
             h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' : 
             h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' : 
+            h.market === Market.JP ? 'bg-orange-50 text-orange-600 border-orange-100' :
+            h.market === Market.CN ? 'bg-amber-50 text-amber-600 border-amber-100' :
+            h.market === Market.HK ? 'bg-sky-50 text-sky-600 border-sky-100' :
+            h.market === Market.KR ? 'bg-orange-50 text-orange-600 border-orange-100' :
+            h.market === Market.DE ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+            h.market === Market.AU ? 'bg-lime-50 text-lime-600 border-lime-100' :
+            h.market === Market.SA ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+            h.market === Market.BR ? 'bg-cyan-50 text-cyan-600 border-cyan-100' :
+            h.market === Market.IN ? 'bg-teal-50 text-teal-600 border-teal-100' :
+            h.market === Market.CA ? 'bg-rose-50 text-rose-600 border-rose-100' :
+            h.market === Market.FR ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
             'bg-green-50 text-green-600 border-green-100'
           }`}>
             {h.market}
@@ -331,6 +341,12 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
                 className={`h-full rounded-full ${
                   h.market === Market.US ? 'bg-blue-400' : 
                   h.market === Market.UK ? 'bg-purple-400' : 
+                  h.market === Market.JP ? 'bg-orange-400' :
+                  h.market === Market.CN ? 'bg-amber-400' :
+                  h.market === Market.SZ ? 'bg-amber-500' :
+                  h.market === Market.IN ? 'bg-teal-400' :
+                  h.market === Market.CA ? 'bg-rose-400' :
+                  h.market === Market.FR ? 'bg-indigo-400' :
                   'bg-green-400'
                 }`} 
                 style={{ width: `${Math.min(h.weight, 100)}%` }}

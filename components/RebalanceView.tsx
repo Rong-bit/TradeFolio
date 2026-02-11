@@ -1,12 +1,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { PortfolioSummary, Holding, Market } from '../types';
-import { formatCurrency } from '../utils/calculations';
+import { PortfolioSummary, Holding, Market, BaseCurrency } from '../types';
+import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import { Language, t } from '../utils/i18n';
 
 interface Props {
   summary: PortfolioSummary;
   holdings: Holding[];
+  baseCurrency: BaseCurrency;
   exchangeRate: number;
   jpyExchangeRate?: number;
   targets: Record<string, number>;
@@ -16,13 +17,25 @@ interface Props {
   language: Language;
 }
 
-const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyExchangeRate, targets, onUpdateTargets, enabledItems: enabledItemsArray, onUpdateEnabledItems, language }) => {
+const RebalanceView: React.FC<Props> = ({ summary, holdings, baseCurrency, exchangeRate, jpyExchangeRate, targets, onUpdateTargets, enabledItems: enabledItemsArray, onUpdateEnabledItems, language }) => {
   const translations = t(language);
   const totalPortfolioValue = summary.totalValueTWD + summary.cashBalanceTWD;
+  const rates = {
+    exchangeRateUsdToTwd: summary.exchangeRateUsdToTwd,
+    jpyExchangeRate: summary.jpyExchangeRate,
+    eurExchangeRate: summary.eurExchangeRate,
+    gbpExchangeRate: summary.gbpExchangeRate,
+    hkdExchangeRate: summary.hkdExchangeRate,
+    krwExchangeRate: summary.krwExchangeRate,
+    cadExchangeRate: summary.cadExchangeRate,
+    inrExchangeRate: summary.inrExchangeRate,
+    audExchangeRate: summary.audExchangeRate,
+    sarExchangeRate: summary.sarExchangeRate,
+    brlExchangeRate: summary.brlExchangeRate,
+  };
+  const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   
-  // 追蹤哪些項目需要再平衡（包括現金）- 轉換為 Set 以便使用
   const enabledItems = useMemo(() => new Set(enabledItemsArray), [enabledItemsArray]);
-  // 貨幣切換：false=台幣, true=美金
   const [showInUSD, setShowInUSD] = useState(false);
   
   const handleTargetChange = (mergedKey: string, val: string, accountIds: string[], ticker: string) => {
@@ -63,26 +76,39 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
       );
       const totalValTwd = mergedHolding.reduce((sum, h) => {
         let valTwd: number;
-        if (h.market === Market.US || h.market === Market.UK) {
-          valTwd = h.currentValue * exchangeRate;
-        } else if (h.market === Market.JP) {
-          valTwd = jpyExchangeRate ? h.currentValue * jpyExchangeRate : h.currentValue * exchangeRate;
-        } else {
-          valTwd = h.currentValue;
-        }
+        if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
+        else if (h.market === Market.JP) valTwd = (jpyExchangeRate ?? exchangeRate) * h.currentValue;
+        else if (h.market === Market.CN) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.SZ) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.IN) valTwd = (summary.inrExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.CA) valTwd = (summary.cadExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.FR) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.HK) valTwd = (summary.hkdExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.KR) valTwd = (summary.krwExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.DE) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.AU) valTwd = (summary.audExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.SA) valTwd = (summary.sarExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.BR) valTwd = (summary.brlExchangeRate ?? 0) * h.currentValue;
+        else valTwd = h.currentValue;
         return sum + valTwd;
       }, 0);
-      
       if (totalValTwd > 0) {
         mergedHolding.forEach(h => {
           let valTwd: number;
-          if (h.market === Market.US || h.market === Market.UK) {
-            valTwd = h.currentValue * exchangeRate;
-          } else if (h.market === Market.JP) {
-            valTwd = jpyExchangeRate ? h.currentValue * jpyExchangeRate : h.currentValue * exchangeRate;
-          } else {
-            valTwd = h.currentValue;
-          }
+          if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
+          else if (h.market === Market.JP) valTwd = (jpyExchangeRate ?? exchangeRate) * h.currentValue;
+          else if (h.market === Market.CN) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
+          else if (h.market === Market.SZ) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
+          else if (h.market === Market.IN) valTwd = (summary.inrExchangeRate ?? 0) * h.currentValue;
+          else if (h.market === Market.CA) valTwd = (summary.cadExchangeRate ?? 0) * h.currentValue;
+          else if (h.market === Market.FR) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.HK) valTwd = (summary.hkdExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.KR) valTwd = (summary.krwExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.DE) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.AU) valTwd = (summary.audExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.SA) valTwd = (summary.sarExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.BR) valTwd = (summary.brlExchangeRate ?? 0) * h.currentValue;
+          else valTwd = h.currentValue;
           const ratio = valTwd / totalValTwd;
           const oldKey = `${h.accountId}-${h.ticker}`;
           newTargets[oldKey] = parseFloat((num * ratio).toFixed(1));
@@ -102,13 +128,20 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
     holdings.forEach(h => {
       const mergedKey = `${h.market}-${h.ticker}`;
       let valTwd: number;
-      if (h.market === Market.US || h.market === Market.UK) {
-        valTwd = h.currentValue * exchangeRate;
-      } else if (h.market === Market.JP) {
-        valTwd = jpyExchangeRate ? h.currentValue * jpyExchangeRate : h.currentValue * exchangeRate;
-      } else {
-        valTwd = h.currentValue;
-      }
+      if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
+      else if (h.market === Market.JP) valTwd = (jpyExchangeRate ?? exchangeRate) * h.currentValue;
+      else if (h.market === Market.CN) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.SZ) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.IN) valTwd = (summary.inrExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.CA) valTwd = (summary.cadExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.FR) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.HK) valTwd = (summary.hkdExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.KR) valTwd = (summary.krwExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.DE) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.AU) valTwd = (summary.audExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.SA) valTwd = (summary.sarExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.BR) valTwd = (summary.brlExchangeRate ?? 0) * h.currentValue;
+      else valTwd = h.currentValue;
       if (!mergedMap.has(mergedKey)) {
         mergedMap.set(mergedKey, { holdings: [], totalValTwd: 0 });
       }
@@ -137,13 +170,20 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
         // 按現值比例分配給各個帳戶
         merged.holdings.forEach(h => {
           let valTwd: number;
-          if (h.market === Market.US || h.market === Market.UK) {
-            valTwd = h.currentValue * exchangeRate;
-          } else if (h.market === Market.JP) {
-            valTwd = jpyExchangeRate ? h.currentValue * jpyExchangeRate : h.currentValue * exchangeRate;
-          } else {
-            valTwd = h.currentValue;
-          }
+          if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
+          else if (h.market === Market.JP) valTwd = (jpyExchangeRate ?? exchangeRate) * h.currentValue;
+          else if (h.market === Market.CN) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
+          else if (h.market === Market.SZ) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
+          else if (h.market === Market.IN) valTwd = (summary.inrExchangeRate ?? 0) * h.currentValue;
+          else if (h.market === Market.CA) valTwd = (summary.cadExchangeRate ?? 0) * h.currentValue;
+          else if (h.market === Market.FR) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.HK) valTwd = (summary.hkdExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.KR) valTwd = (summary.krwExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.DE) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.AU) valTwd = (summary.audExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.SA) valTwd = (summary.sarExchangeRate ?? 0) * h.currentValue;
+        else if (h.market === Market.BR) valTwd = (summary.brlExchangeRate ?? 0) * h.currentValue;
+          else valTwd = h.currentValue;
           const ratio = merged.totalValTwd > 0 ? valTwd / merged.totalValTwd : 0;
           const oldKey = `${h.accountId}-${h.ticker}`;
           newTargets[oldKey] = parseFloat((pct * ratio).toFixed(1));
@@ -212,13 +252,20 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
     holdings.forEach(h => {
       const mergedKey = `${h.market}-${h.ticker}`;
       let valTwd: number;
-      if (h.market === Market.US || h.market === Market.UK) {
-        valTwd = h.currentValue * exchangeRate;
-      } else if (h.market === Market.JP) {
-        valTwd = jpyExchangeRate ? h.currentValue * jpyExchangeRate : h.currentValue * exchangeRate;
-      } else {
-        valTwd = h.currentValue;
-      }
+      if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
+      else if (h.market === Market.JP) valTwd = (jpyExchangeRate ?? exchangeRate) * h.currentValue;
+      else if (h.market === Market.CN) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.SZ) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.IN) valTwd = (summary.inrExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.CA) valTwd = (summary.cadExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.FR) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.HK) valTwd = (summary.hkdExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.KR) valTwd = (summary.krwExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.DE) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.AU) valTwd = (summary.audExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.SA) valTwd = (summary.sarExchangeRate ?? 0) * h.currentValue;
+      else if (h.market === Market.BR) valTwd = (summary.brlExchangeRate ?? 0) * h.currentValue;
+      else valTwd = h.currentValue;
       
       if (!mergedMap.has(mergedKey)) {
         mergedMap.set(mergedKey, {
@@ -229,7 +276,7 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
           market: h.market,
           ticker: h.ticker,
           currentPrice: h.currentPrice,
-          totalCurrentValue: 0 // 用於計算加權平均價格
+          totalCurrentValue: 0
         });
       }
       
@@ -289,14 +336,21 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
       
       let diffShares = 0;
       if (avgPrice > 0 && isEnabled) {
-        if (merged.market === Market.US || merged.market === Market.UK) {
-           diffShares = diffValTwd / exchangeRate / avgPrice;
-        } else if (merged.market === Market.JP) {
-           const rate = jpyExchangeRate || exchangeRate;
-           diffShares = diffValTwd / rate / avgPrice;
-        } else {
-           diffShares = diffValTwd / avgPrice;
-        }
+        const rate = merged.market === Market.US || merged.market === Market.UK ? exchangeRate
+          : merged.market === Market.JP ? (jpyExchangeRate ?? exchangeRate)
+          : merged.market === Market.CN ? (summary.cnyExchangeRate ?? 0)
+          : merged.market === Market.SZ ? (summary.cnyExchangeRate ?? 0)
+          : merged.market === Market.IN ? (summary.inrExchangeRate ?? 0)
+          : merged.market === Market.CA ? (summary.cadExchangeRate ?? 0)
+          : merged.market === Market.FR ? (summary.eurExchangeRate ?? 0)
+          : merged.market === Market.HK ? (summary.hkdExchangeRate ?? 0)
+          : merged.market === Market.KR ? (summary.krwExchangeRate ?? 0)
+          : merged.market === Market.DE ? (summary.eurExchangeRate ?? 0)
+          : merged.market === Market.AU ? (summary.audExchangeRate ?? 0)
+          : merged.market === Market.SA ? (summary.sarExchangeRate ?? 0)
+          : merged.market === Market.BR ? (summary.brlExchangeRate ?? 0)
+          : 1;
+        diffShares = rate > 0 ? diffValTwd / rate / avgPrice : 0;
       }
 
       return {
@@ -359,7 +413,7 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                    }`}
                  >
-                   {translations.dashboard.ntd}
+                   {baseCurrency}
                  </button>
                  <button
                    onClick={() => setShowInUSD(true)}
@@ -381,7 +435,7 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
                <div>
                  <p className="text-xs text-slate-500 text-right">{translations.rebalance.totalAssets}</p>
                  <p className="text-xl font-bold font-mono text-slate-800">
-                   {formatCurrency(showInUSD ? enabledTotalValue / summary.exchangeRateUsdToTwd : enabledTotalValue, showInUSD ? 'USD' : 'TWD')}
+                   {formatCurrency(showInUSD ? enabledTotalValue / summary.exchangeRateUsdToTwd : toBase(enabledTotalValue), showInUSD ? 'USD' : baseCurrency)}
                  </p>
                </div>
              </div>
@@ -393,14 +447,14 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
             <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
               <tr>
                 <th className="px-3 py-2 w-12">{translations.rebalance.enable}</th>
-                <th className="px-3 py-2">{translations.rebalance.symbol} {language === 'zh-TW' ? '(帳戶)' : '(Account)'}</th>
+                <th className="px-3 py-2">{translations.rebalance.symbol} {translations.rebalance.accountLabel}</th>
                 <th className="px-3 py-2 text-right">{translations.rebalance.currentPrice}</th>
-                <th className="px-3 py-2 text-right">{translations.rebalance.currentValue} ({showInUSD ? translations.dashboard.usd : translations.dashboard.ntd})</th>
+                <th className="px-3 py-2 text-right">{translations.rebalance.currentValue} ({showInUSD ? translations.dashboard.usd : baseCurrency})</th>
                 <th className="px-3 py-2 text-right">{translations.rebalance.currentWeight}</th>
                 <th className="px-3 py-2 text-right w-36">{translations.rebalance.targetWeight} %</th>
                 <th className="px-3 py-2 text-right">{translations.rebalance.targetValue}</th>
                 <th className="px-3 py-2 text-right">{translations.rebalance.adjustAmount}</th>
-                <th className="px-3 py-2 text-right">{translations.rebalance.suggestedAction} {language === 'zh-TW' ? '(股)' : '(Shares)'}</th>
+                <th className="px-3 py-2 text-right">{translations.rebalance.suggestedAction} {translations.rebalance.sharesLabel}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -408,14 +462,14 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
                 const isBuy = row.diffValTwd > 0;
                 const isEnabled = row.isEnabled;
                 const accountInfo = row.accountIds.length > 1 
-                  ? (language === 'zh-TW' ? ` (${row.accountIds.length}個帳戶)` : ` (${row.accountIds.length}${translations.rebalance.accounts})`) 
+                  ? ` (${row.accountIds.length}${translations.rebalance.accountCount})` 
                   : '';
                 
                 // 根據貨幣切換狀態計算顯示的金額
-                const displayCurrency = showInUSD ? 'USD' : 'TWD';
-                const displayVal = showInUSD ? row.valTwd / summary.exchangeRateUsdToTwd : row.valTwd;
-                const displayTargetVal = showInUSD ? row.targetValTwd / summary.exchangeRateUsdToTwd : row.targetValTwd;
-                const displayDiffVal = showInUSD ? row.diffValTwd / summary.exchangeRateUsdToTwd : row.diffValTwd;
+                const displayCurrency = showInUSD ? 'USD' : baseCurrency;
+                const displayVal = showInUSD ? row.valTwd / summary.exchangeRateUsdToTwd : toBase(row.valTwd);
+                const displayTargetVal = showInUSD ? row.targetValTwd / summary.exchangeRateUsdToTwd : toBase(row.targetValTwd);
+                const displayDiffVal = showInUSD ? row.diffValTwd / summary.exchangeRateUsdToTwd : toBase(row.diffValTwd);
                 
                 return (
                   <tr key={row.mergedKey} className={`hover:bg-slate-50 ${!isEnabled ? 'opacity-50' : ''}`}>
@@ -429,7 +483,23 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
                     </td>
                     <td className="px-3 py-2 font-semibold text-slate-700">
                       <div className="flex items-center">
-                        <span className={`text-xs px-1.5 py-0.5 rounded mr-2 ${row.market === Market.US ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                        <span className={`text-xs px-1.5 py-0.5 rounded mr-2 ${
+                          row.market === Market.US ? 'bg-blue-100 text-blue-800' : 
+                          row.market === Market.UK ? 'bg-purple-100 text-purple-800' : 
+                          row.market === Market.JP ? 'bg-orange-100 text-orange-800' :
+                          row.market === Market.CN ? 'bg-amber-100 text-amber-800' :
+                          row.market === Market.SZ ? 'bg-amber-200 text-amber-900' :
+                          row.market === Market.IN ? 'bg-teal-100 text-teal-800' :
+                          row.market === Market.CA ? 'bg-rose-100 text-rose-800' :
+                          row.market === Market.FR ? 'bg-indigo-100 text-indigo-800' :
+                          row.market === Market.HK ? 'bg-sky-100 text-sky-800' :
+                          row.market === Market.KR ? 'bg-orange-100 text-orange-800' :
+                          row.market === Market.DE ? 'bg-yellow-100 text-yellow-800' :
+                          row.market === Market.AU ? 'bg-lime-100 text-lime-800' :
+                          row.market === Market.SA ? 'bg-emerald-100 text-emerald-800' :
+                          row.market === Market.BR ? 'bg-cyan-100 text-cyan-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
                           {row.market}
                         </span>
                         <span>{row.ticker}</span>
@@ -474,7 +544,7 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
                     <td className={`px-3 py-2 text-right font-bold ${isEnabled ? (isBuy ? 'text-red-600' : 'text-green-600') : 'text-slate-300'}`}>
                       {isEnabled ? (
                         <span>
-                          {isBuy ? translations.rebalance.buy : translations.rebalance.sell} {Math.abs(row.diffShares).toFixed(row.market === Market.US ? 2 : 0)}
+                          {isBuy ? translations.rebalance.buy : translations.rebalance.sell} {Math.abs(row.diffShares).toFixed(row.market === Market.US || row.market === Market.UK || row.market === Market.CA || row.market === Market.FR ? 2 : 0)}
                         </span>
                       ) : (
                         <span className="text-slate-300">-</span>
@@ -497,7 +567,7 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
                 <td className="px-3 py-2 text-slate-700">{translations.rebalance.cash}</td>
                 <td className="px-3 py-2 text-right">-</td>
                 <td className="px-3 py-2 text-right font-mono">
-                  {formatCurrency(showInUSD ? summary.cashBalanceTWD / summary.exchangeRateUsdToTwd : summary.cashBalanceTWD, showInUSD ? 'USD' : 'TWD')}
+                  {formatCurrency(showInUSD ? summary.cashBalanceTWD / summary.exchangeRateUsdToTwd : toBase(summary.cashBalanceTWD), showInUSD ? 'USD' : baseCurrency)}
                 </td>
                 <td className="px-3 py-2 text-right">{cashCurrentPctEnabled.toFixed(1)}%</td>
                 <td className="px-3 py-2 text-right">
@@ -519,10 +589,10 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
                   </div>
                 </td>
                 <td className={`px-3 py-2 text-right ${isCashEnabled ? '' : 'text-slate-300'}`}>
-                  {formatCurrency(showInUSD ? targetCashTwd / summary.exchangeRateUsdToTwd : targetCashTwd, showInUSD ? 'USD' : 'TWD')}
+                  {formatCurrency(showInUSD ? targetCashTwd / summary.exchangeRateUsdToTwd : toBase(targetCashTwd), showInUSD ? 'USD' : baseCurrency)}
                 </td>
                 <td className={`px-3 py-2 text-right ${isCashEnabled ? (diffCashTwd > 0 ? 'text-blue-600' : 'text-slate-500') : 'text-slate-300'}`}>
-                  {formatCurrency(showInUSD ? diffCashTwd / summary.exchangeRateUsdToTwd : diffCashTwd, showInUSD ? 'USD' : 'TWD')}
+                  {formatCurrency(showInUSD ? diffCashTwd / summary.exchangeRateUsdToTwd : toBase(diffCashTwd), showInUSD ? 'USD' : baseCurrency)}
                 </td>
                 <td className="px-3 py-2 text-right text-xs text-slate-400">
                   {isCashEnabled ? `(${translations.rebalance.remainingFunds})` : `(${translations.rebalance.notParticipating})`}
@@ -531,7 +601,7 @@ const RebalanceView: React.FC<Props> = ({ summary, holdings, exchangeRate, jpyEx
             </tbody>
             <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
                <tr>
-                 <td colSpan={5} className="px-3 py-2 text-right">{language === 'zh-TW' ? '總計 (' : 'Total ('}{translations.rebalance.totalEnabled}{language === 'zh-TW' ? ')' : ')'}</td>
+                 <td colSpan={5} className="px-3 py-2 text-right">{translations.rebalance.totalLabel}{translations.rebalance.totalEnabled})</td>
                  <td className={`px-3 py-2 text-right ${Math.abs(totalTargetPct + cashTargetPct - 100) > 0.01 ? 'text-red-600' : 'text-slate-800'}`}>
                    {(totalTargetPct + cashTargetPct).toFixed(2)}%
                  </td>

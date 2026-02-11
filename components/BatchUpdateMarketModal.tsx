@@ -72,6 +72,17 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ transactions, onUpdate, onClo
               <option value={Market.TW}>台股 (TW)</option>
               <option value={Market.UK}>英國股 (UK)</option>
               <option value={Market.JP}>日本股 (JP)</option>
+              <option value={Market.CN}>中國滬 (CN)</option>
+              <option value={Market.SZ}>中國深 (SZ)</option>
+              <option value={Market.IN}>印度 (IN)</option>
+              <option value={Market.CA}>加拿大 (CA)</option>
+              <option value={Market.FR}>法國 (FR)</option>
+              <option value={Market.HK}>香港 (HK)</option>
+              <option value={Market.KR}>韓國 (KR)</option>
+              <option value={Market.DE}>德國 (DE)</option>
+              <option value={Market.AU}>澳洲 (AU)</option>
+              <option value={Market.SA}>沙烏地 (SA)</option>
+              <option value={Market.BR}>巴西 (BR)</option>
             </select>
           </div>
 
@@ -88,7 +99,19 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ transactions, onUpdate, onClo
                       newMarket === Market.US ? '美股 (US)' : 
                       newMarket === Market.TW ? '台股 (TW)' : 
                       newMarket === Market.UK ? '英國股 (UK)' : 
-                      '日本股 (JP)'
+                      newMarket === Market.JP ? '日本股 (JP)' :
+                      newMarket === Market.CN ? '中國滬 (CN)' :
+                      newMarket === Market.SZ ? '中國深 (SZ)' :
+                      newMarket === Market.IN ? '印度 (IN)' :
+                      newMarket === Market.CA ? '加拿大 (CA)' :
+                      newMarket === Market.FR ? '法國 (FR)' :
+                      newMarket === Market.HK ? '香港 (HK)' :
+                      newMarket === Market.KR ? '韓國 (KR)' :
+                      newMarket === Market.DE ? '德國 (DE)' :
+                      newMarket === Market.AU ? '澳洲 (AU)' :
+                      newMarket === Market.SA ? '沙烏地 (SA)' :
+                      newMarket === Market.BR ? '巴西 (BR)' :
+                      '美股 (US)'
                     }</strong>
                   </span>
                 )}

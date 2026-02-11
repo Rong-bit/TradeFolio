@@ -195,7 +195,7 @@ const HelpView: React.FC<Props> = ({
                   </p>
                   <div className="flex justify-center gap-4">
                       <button onClick={cancelImport} className="bg-slate-200 text-slate-800 px-4 py-2 rounded hover:bg-slate-300">
-                          {language === 'zh-TW' ? '取消' : 'Cancel'}
+                          {translations.common.cancel}
                       </button>
                       <button onClick={confirmImport} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 shadow">
                           {translations.help.confirmOverride}

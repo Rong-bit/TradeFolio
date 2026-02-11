@@ -736,8 +736,25 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
         // Auto-detect Taiwan Market (TPE: prefix OR 4-digit code)
         if (tickerVal.includes('TPE:') || tickerVal.includes('TW') || /^\d{4}$/.test(tickerVal)) {
             market = Market.TW;
-            // Remove 'TPE:', 'TW', 'US' prefixes to clean ticker
             tickerVal = tickerVal.replace(/^(TPE:|TW|US)/i, '');
+        } else if (/\.SS$/i.test(tickerVal) || /:SS$/i.test(tickerVal)) {
+            market = Market.CN;
+            tickerVal = tickerVal.replace(/\.SS$/i, '').replace(/:SS$/i, '');
+        } else if (/\.SZ$/i.test(tickerVal) || /:SZ$/i.test(tickerVal)) {
+            market = Market.SZ;
+            tickerVal = tickerVal.replace(/\.SZ$/i, '').replace(/:SZ$/i, '');
+        } else if (/\.HK$/i.test(tickerVal) || /:HK$/i.test(tickerVal)) {
+            market = Market.HK;
+            tickerVal = tickerVal.replace(/\.HK$/i, '').replace(/:HK$/i, '');
+        } else if (/\.NS$/i.test(tickerVal) || /\.BO$/i.test(tickerVal) || /:(NS|BO)$/i.test(tickerVal)) {
+            market = Market.IN;
+            tickerVal = tickerVal.replace(/\.(NS|BO)$/i, '').replace(/:(NS|BO)$/i, '');
+        } else if (/\.TO$/i.test(tickerVal) || /:TO$/i.test(tickerVal)) {
+            market = Market.CA;
+            tickerVal = tickerVal.replace(/\.TO$/i, '').replace(/:TO$/i, '');
+        } else if (/\.PA$/i.test(tickerVal) || /:PA$/i.test(tickerVal)) {
+            market = Market.FR;
+            tickerVal = tickerVal.replace(/\.PA$/i, '').replace(/:PA$/i, '');
         }
 
         // 計算金額：優先使用提供的金額欄位
@@ -1041,7 +1058,18 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                              </span>
                           </td>
                           <td className="px-4 py-2">
-                             <span className={`px-2 py-0.5 rounded text-xs font-bold ${row.market === Market.TW ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                             <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                              row.market === Market.TW ? 'bg-green-100 text-green-800' : 
+                              row.market === Market.US ? 'bg-blue-100 text-blue-800' : 
+                              row.market === Market.UK ? 'bg-purple-100 text-purple-800' : 
+                              row.market === Market.JP ? 'bg-orange-100 text-orange-800' :
+                              row.market === Market.CN ? 'bg-amber-100 text-amber-800' :
+                              row.market === Market.SZ ? 'bg-amber-200 text-amber-900' :
+                              row.market === Market.IN ? 'bg-teal-100 text-teal-800' :
+                              row.market === Market.CA ? 'bg-rose-100 text-rose-800' :
+                              row.market === Market.FR ? 'bg-indigo-100 text-indigo-800' :
+                              'bg-slate-100 text-slate-800'
+                            }`}>
                                {row.market}
                              </span>
                           </td>
