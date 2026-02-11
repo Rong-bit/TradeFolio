@@ -162,6 +162,8 @@ export interface Translations {
     startAnalysis: string;
     analyzing: string;
     viewCalculationDetails: string;
+    riskWarning: string;
+    riskWarningDesc: string;
     notInvestmentAdvice: string;
   };
   // 資金管理
@@ -688,6 +690,8 @@ const zhTW: Translations = {
     startAnalysis: '開始分析',
     analyzing: '分析中...',
     viewCalculationDetails: '查看計算明細',
+    riskWarning: '投資風險警告',
+    riskWarningDesc: '投資有風險，過往績效不代表未來表現。',
     notInvestmentAdvice: '本應用程式不提供投資建議，所有分析結果僅供參考。',
   },
   funds: {
@@ -1273,6 +1277,8 @@ const en: Translations = {
     startAnalysis: 'Start Analysis',
     analyzing: 'Analyzing...',
     viewCalculationDetails: 'View Details',
+    riskWarning: 'Investment Risk Warning',
+    riskWarningDesc: 'Investments involve risks. Past performance does not guarantee future results.',
     notInvestmentAdvice: 'This application does not provide investment advice. All analysis results are for reference only.',
   },
   funds: {
@@ -1859,6 +1865,8 @@ const ja: Translations = {
     startAnalysis: '分析開始',
     analyzing: '分析中...',
     viewCalculationDetails: '計算詳細',
+    riskWarning: '投資リスク警告',
+    riskWarningDesc: '投資にはリスクがあります。過去の実績は将来の結果を保証するものではありません。',
     notInvestmentAdvice: '投資アドバイスではありません。結果は参考情報です。',
   },
   funds: {
@@ -2405,6 +2413,8 @@ const ko: Translations = {
     startAnalysis: '분석 시작',
     analyzing: '분석 중...',
     viewCalculationDetails: '계산 상세',
+    riskWarning: '투자 위험 경고',
+    riskWarningDesc: '투자에는 위험이 따릅니다. 과거 실적은 미래 결과를 보장하지 않습니다.',
     notInvestmentAdvice: '투자 조언이 아닙니다. 결과는 참고 정보입니다.',
   },
   funds: {
@@ -2904,6 +2914,8 @@ zhCN.dashboard = {
   startAnalysis: '开始分析',
   analyzing: '分析中...',
   viewCalculationDetails: '查看计算明细',
+  riskWarning: '投资风险警告',
+  riskWarningDesc: '投资有风险，过往绩效不代表未来表现。',
   notInvestmentAdvice: '本应用程式不提供投资建议，所有分析结果仅供参考。',
 };
 zhCN.funds = {
@@ -4142,6 +4154,8 @@ const hi: Translations = {
     startAnalysis: 'विश्लेषण शुरू करें',
     analyzing: 'विश्लेषण हो रहा है...',
     viewCalculationDetails: 'विवरण देखें',
+    riskWarning: 'निवेश जोखिम चेतावनी',
+    riskWarningDesc: 'निवेश में जोखिम होता है। अतीत का प्रदर्शन भविष्य के परिणामों की गारंटी नहीं देता है।',
     notInvestmentAdvice: 'निवेश सलाह नहीं।' 
   },
   funds: { 
@@ -4612,6 +4626,8 @@ const ar: Translations = {
     startAnalysis: 'بدء التحليل',
     analyzing: 'جاري التحليل...',
     viewCalculationDetails: 'عرض التفاصيل',
+    riskWarning: 'تحذير مخاطر الاستثمار',
+    riskWarningDesc: 'الاستثمار ينطوي على مخاطر. الأداء السابق لا يضمن النتائج المستقبلية.',
     notInvestmentAdvice: 'ليس نصيحة استثمارية.' 
   },
   funds: { 
