@@ -719,8 +719,7 @@ export const calculateAnnualPerformance = (
     let yearLabel = current.year;
     const currentYear = new Date().getFullYear().toString();
     if (yearLabel === currentYear) {
-      const currentMonth = new Date().getMonth() + 1;
-      yearLabel = `${yearLabel} (至 ${currentMonth} 月底)`;
+      yearLabel = `${yearLabel} (至今日)`;
     }
 
     items.push({
