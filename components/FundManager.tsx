@@ -288,7 +288,11 @@ const FundManager: React.FC<Props> = ({
       if (twdSrc > 0) return (currentExchangeRate / twdSrc).toFixed(4);
       return undefined;
     }
-    if (twdSrc > 0 && twdTgt > 0) return (twdTgt / twdSrc).toFixed(4);
+    // 兩方皆非 USD：匯率 (target/source) = 1 target = X source，placeholder = source per 1 target
+    if (twdSrc > 0 && twdTgt > 0) {
+      const sourcePerTarget = src === Currency.TWD ? twdTgt : 1 / twdSrc;
+      return sourcePerTarget.toFixed(4);
+    }
     return undefined;
   }, [isCrossCurrencyTransfer, selectedAccount, targetAccount, twdPerCurrency, currentExchangeRate]);
 
