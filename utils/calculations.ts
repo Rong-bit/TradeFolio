@@ -25,6 +25,10 @@ export interface ExchangeRates {
   krwExchangeRate?: number;
   cadExchangeRate?: number;
   inrExchangeRate?: number;
+  cnyExchangeRate?: number;
+  audExchangeRate?: number;
+  sarExchangeRate?: number;
+  brlExchangeRate?: number;
 }
 
 /** 將 TWD 換算為基準幣（僅顯示用；內部仍以 TWD 為單位） */
@@ -49,6 +53,14 @@ export function valueInBaseCurrency(
   if (baseCurrency === 'CAD') return valueTWD / cadRate;
   const inrRate = rates.inrExchangeRate && rates.inrExchangeRate > 0 ? rates.inrExchangeRate : 0.38;
   if (baseCurrency === 'INR') return valueTWD / inrRate;
+  const cnyRate = rates.cnyExchangeRate && rates.cnyExchangeRate > 0 ? rates.cnyExchangeRate : 4.4;
+  if (baseCurrency === 'CNY') return valueTWD / cnyRate;
+  const audRate = rates.audExchangeRate && rates.audExchangeRate > 0 ? rates.audExchangeRate : 20.5;
+  if (baseCurrency === 'AUD') return valueTWD / audRate;
+  const sarRate = rates.sarExchangeRate && rates.sarExchangeRate > 0 ? rates.sarExchangeRate : 8.3;
+  if (baseCurrency === 'SAR') return valueTWD / sarRate;
+  const brlRate = rates.brlExchangeRate && rates.brlExchangeRate > 0 ? rates.brlExchangeRate : 6.2;
+  if (baseCurrency === 'BRL') return valueTWD / brlRate;
   return valueTWD;
 }
 
@@ -75,6 +87,14 @@ export function getDisplayRateForBaseCurrency(
   if (baseCurrency === 'CAD') return { label: 'USD/CAD', value: usdToTwd / cadRate };
   const inrRate = rates.inrExchangeRate && rates.inrExchangeRate > 0 ? rates.inrExchangeRate : 0.38;
   if (baseCurrency === 'INR') return { label: 'USD/INR', value: usdToTwd / inrRate };
+  const cnyRate = rates.cnyExchangeRate && rates.cnyExchangeRate > 0 ? rates.cnyExchangeRate : 4.4;
+  if (baseCurrency === 'CNY') return { label: 'USD/CNY', value: usdToTwd / cnyRate };
+  const audRate = rates.audExchangeRate && rates.audExchangeRate > 0 ? rates.audExchangeRate : 20.5;
+  if (baseCurrency === 'AUD') return { label: 'USD/AUD', value: usdToTwd / audRate };
+  const sarRate = rates.sarExchangeRate && rates.sarExchangeRate > 0 ? rates.sarExchangeRate : 8.3;
+  if (baseCurrency === 'SAR') return { label: 'USD/SAR', value: usdToTwd / sarRate };
+  const brlRate = rates.brlExchangeRate && rates.brlExchangeRate > 0 ? rates.brlExchangeRate : 6.2;
+  if (baseCurrency === 'BRL') return { label: 'USD/BRL', value: usdToTwd / brlRate };
   return { label: 'USD/TWD', value: usdToTwd };
 }
 
