@@ -240,24 +240,24 @@ const FundManager: React.FC<Props> = ({
     // Case 2: Transfer between DIFFERENT currencies
     (isTransfer && targetAccountId !== '' && isCrossCurrencyTransfer);
 
-  // 跨幣別轉帳匯率標籤：依「所有基準幣」彈性顯示 匯率 (quote/base)，與 getTransferTargetAmount 約定一致
+  // 跨幣別轉帳匯率標籤：統一為 匯率 (A/B) = 1 A = 多少 B，故有 USD 時顯示 (USD/他幣)
   const transferRateLabel = useMemo(() => {
     if (!isCrossCurrencyTransfer || !selectedAccount || !targetAccount) return null;
     const src = selectedAccount.currency;
     const tgt = targetAccount.currency;
-    let quote: string;
-    let base: string;
+    let first: string;  // 1 單位幣別（顯示在 / 左邊）
+    let second: string;
     if (src === Currency.USD) {
-      base = Currency.USD;
-      quote = tgt;
+      first = Currency.USD;
+      second = tgt;
     } else if (tgt === Currency.USD) {
-      base = Currency.USD;
-      quote = src;
+      first = Currency.USD;
+      second = src;
     } else {
-      base = src;
-      quote = tgt;
+      first = tgt;
+      second = src;
     }
-    return translate('fundForm.exchangeRatePair', language, { quote, base });
+    return translate('fundForm.exchangeRatePair', language, { quote: first, base: second });
   }, [isCrossCurrencyTransfer, selectedAccount, targetAccount, language]);
 
   // TWD 對各幣別匯率（用於推算任意兩幣別建議匯率）
