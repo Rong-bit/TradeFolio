@@ -201,6 +201,22 @@ export const calculateHoldings = (
     });
 };
 
+/**
+ * 內部轉帳轉入金額換算（彈性支援多幣別）。
+ * 匯率約定：當一方為 USD 時為「1 USD = X 他幣」；兩方皆非 USD 時為「1 來源幣 = X 轉入幣」。
+ */
+export const getTransferTargetAmount = (
+  sourceCurrency: Currency,
+  targetCurrency: Currency,
+  amount: number,
+  exchangeRate: number | undefined
+): number => {
+  if (sourceCurrency === targetCurrency || !exchangeRate || exchangeRate <= 0) return amount;
+  if (sourceCurrency === Currency.USD) return amount * exchangeRate;   // 1 USD = X 轉入幣
+  if (targetCurrency === Currency.USD) return amount / exchangeRate;  // X 來源幣 = 1 USD
+  return amount * exchangeRate;  // 兩方皆非 USD：1 來源幣 = X 轉入幣
+};
+
 export const calculateAccountBalances = (accounts: Account[], cashFlows: CashFlow[], transactions: Transaction[]): Account[] => {
     const balMap: Record<string, number> = {};
     accounts.forEach(a => balMap[a.id] = 0); 
@@ -233,14 +249,7 @@ export const calculateAccountBalances = (accounts: Account[], cashFlows: CashFlo
         if (cf.targetAccountId) {
              const targetAcc = accounts.find(a => a.id === cf.targetAccountId);
              if (sourceAcc && targetAcc) {
-                let inAmount = cf.amount;
-                if (cf.exchangeRate && cf.exchangeRate > 0) {
-                    if (sourceAcc.currency === Currency.USD && targetAcc.currency === Currency.TWD) {
-                        inAmount = cf.amount * cf.exchangeRate;
-                    } else if (sourceAcc.currency === Currency.TWD && targetAcc.currency === Currency.USD) {
-                        inAmount = cf.amount / cf.exchangeRate;
-                    }
-                }
+                const inAmount = getTransferTargetAmount(sourceAcc.currency, targetAcc.currency, cf.amount, cf.exchangeRate);
                 balMap[cf.targetAccountId!] = (balMap[cf.targetAccountId!] || 0) + inAmount;
              }
         }
@@ -310,13 +319,10 @@ export const getPortfolioStateAtDate = (
             }
             cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) - cf.amount - feeAmount;
             if (cf.targetAccountId) {
-                // Simplified transfer logic for historical estimate
-                let inAmount = cf.amount;
-                if (cf.exchangeRate && cf.exchangeRate > 0) {
-                     const targetAcc = accounts.find(a => a.id === cf.targetAccountId);
-                     if (sourceAcc?.currency === Currency.USD && targetAcc?.currency === Currency.TWD) inAmount = cf.amount * cf.exchangeRate;
-                     else if (sourceAcc?.currency === Currency.TWD && targetAcc?.currency === Currency.USD) inAmount = cf.amount / cf.exchangeRate;
-                }
+                const targetAcc = accounts.find(a => a.id === cf.targetAccountId);
+                const inAmount = sourceAcc && targetAcc
+                  ? getTransferTargetAmount(sourceAcc.currency, targetAcc.currency, cf.amount, cf.exchangeRate)
+                  : cf.amount;
                 cashBalances[cf.targetAccountId] = (cashBalances[cf.targetAccountId] || 0) + inAmount;
             }
         }
