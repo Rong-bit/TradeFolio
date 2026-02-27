@@ -268,7 +268,7 @@ const App: React.FC = () => {
     setBrlExchangeRate(brlRate ? parseFloat(brlRate) : undefined);
     
     const savedBase = localStorage.getItem(getKey('baseCurrency'));
-    const validBaseCurrencies: BaseCurrency[] = ['TWD', 'USD', 'JPY', 'EUR', 'GBP', 'HKD', 'KRW', 'CAD', 'INR'];
+    const validBaseCurrencies: BaseCurrency[] = ['TWD', 'USD', 'JPY', 'EUR', 'GBP', 'HKD', 'KRW', 'CAD', 'INR', 'CNY', 'AUD', 'SAR', 'BRL'];
     if (savedBase && validBaseCurrencies.includes(savedBase as BaseCurrency)) {
       setBaseCurrency(savedBase as BaseCurrency);
     } else {
@@ -934,7 +934,11 @@ const App: React.FC = () => {
     krwExchangeRate,
     cadExchangeRate: cadExchangeRate ?? 23,
     inrExchangeRate: inrExchangeRate ?? 0.38,
-  }), [baseCurrency, exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cadExchangeRate, inrExchangeRate]);
+    cnyExchangeRate: cnyExchangeRate ?? 4.4,
+    audExchangeRate: audExchangeRate ?? 20.5,
+    sarExchangeRate: sarExchangeRate ?? 8.3,
+    brlExchangeRate: brlExchangeRate ?? 6.2,
+  }), [baseCurrency, exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cadExchangeRate, inrExchangeRate, cnyExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate]);
 
   // Step 4: Final Holdings with Weights
   const holdings = useMemo(() => {
