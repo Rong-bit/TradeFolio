@@ -240,6 +240,58 @@ const FundManager: React.FC<Props> = ({
     // Case 2: Transfer between DIFFERENT currencies
     (isTransfer && targetAccountId !== '' && isCrossCurrencyTransfer);
 
+  // 跨幣別轉帳匯率標籤：依「所有基準幣」彈性顯示 匯率 (quote/base)，與 getTransferTargetAmount 約定一致
+  const transferRateLabel = useMemo(() => {
+    if (!isCrossCurrencyTransfer || !selectedAccount || !targetAccount) return null;
+    const src = selectedAccount.currency;
+    const tgt = targetAccount.currency;
+    let quote: string;
+    let base: string;
+    if (src === Currency.USD) {
+      base = Currency.USD;
+      quote = tgt;
+    } else if (tgt === Currency.USD) {
+      base = Currency.USD;
+      quote = src;
+    } else {
+      base = src;
+      quote = tgt;
+    }
+    return translate('fundForm.exchangeRatePair', language, { quote, base });
+  }, [isCrossCurrencyTransfer, selectedAccount, targetAccount, language]);
+
+  // TWD 對各幣別匯率（用於推算任意兩幣別建議匯率）
+  const twdPerCurrency = useMemo(() => ({
+    [Currency.TWD]: 1,
+    [Currency.USD]: currentExchangeRate,
+    [Currency.JPY]: currentJpyExchangeRate,
+    [Currency.EUR]: currentEurExchangeRate ?? 0,
+    [Currency.GBP]: currentGbpExchangeRate ?? 0,
+    [Currency.HKD]: currentHkdExchangeRate ?? 0,
+    [Currency.KRW]: currentKrwExchangeRate ?? 0,
+    [Currency.CAD]: currentCadExchangeRate ?? 0,
+    [Currency.INR]: currentInrExchangeRate ?? 0,
+  } as Record<string, number>), [currentExchangeRate, currentJpyExchangeRate, currentEurExchangeRate, currentGbpExchangeRate, currentHkdExchangeRate, currentKrwExchangeRate, currentCadExchangeRate, currentInrExchangeRate]);
+
+  // 跨幣別轉帳時之建議匯率 placeholder（與 transferRateLabel 約定一致）
+  const transferRatePlaceholder = useMemo(() => {
+    if (!isCrossCurrencyTransfer || !selectedAccount || !targetAccount) return undefined;
+    const src = selectedAccount.currency;
+    const tgt = targetAccount.currency;
+    const twdSrc = twdPerCurrency[src];
+    const twdTgt = twdPerCurrency[tgt];
+    if (src === Currency.USD) {
+      if (twdTgt > 0) return (currentExchangeRate / twdTgt).toFixed(4);
+      return undefined;
+    }
+    if (tgt === Currency.USD) {
+      if (twdSrc > 0) return (currentExchangeRate / twdSrc).toFixed(4);
+      return undefined;
+    }
+    if (twdSrc > 0 && twdTgt > 0) return (twdTgt / twdSrc).toFixed(4);
+    return undefined;
+  }, [isCrossCurrencyTransfer, selectedAccount, targetAccount, twdPerCurrency, currentExchangeRate]);
+
   // Filter Logic
   const filteredFlows = useMemo(() => {
     return cashFlows.filter(cf => {
@@ -654,9 +706,7 @@ const FundManager: React.FC<Props> = ({
                      {showExchangeRateInput ? (
                        <div>
                          <label className="block text-sm font-medium text-slate-700">
-                            {selectedAccount?.currency === Currency.USD ? ff.exchangeRateUSD : 
-                             selectedAccount?.currency === Currency.JPY ? ff.exchangeRateJPY : 
-                             ff.exchangeRate}
+                            {transferRateLabel ?? (selectedAccount?.currency === Currency.USD ? ff.exchangeRateUSD : selectedAccount?.currency === Currency.JPY ? ff.exchangeRateJPY : ff.exchangeRate)}
                             {isCrossCurrencyTransfer && <span className="text-xs text-blue-600 ml-1">{ff.crossCurrencyTransfer}</span>}
                             {!isTransfer && selectedAccount?.currency === Currency.USD && <span className="text-xs text-green-600 ml-1">{ff.usdConversion}</span>}
                             {!isTransfer && selectedAccount?.currency === Currency.JPY && <span className="text-xs text-orange-600 ml-1">{ff.jpyConversion}</span>}
@@ -665,9 +715,8 @@ const FundManager: React.FC<Props> = ({
                            type="number" 
                            step="0.0001" 
                            placeholder={
-                             selectedAccount?.currency === Currency.USD ? currentExchangeRate.toString() :
-                             selectedAccount?.currency === Currency.JPY ? currentJpyExchangeRate.toString() :
-                             currentExchangeRate.toString()
+                             transferRatePlaceholder ??
+                             (selectedAccount?.currency === Currency.USD ? currentExchangeRate.toString() : selectedAccount?.currency === Currency.JPY ? currentJpyExchangeRate.toString() : currentExchangeRate.toString())
                            } 
                            value={exchangeRate} 
                            onChange={e => setExchangeRate(e.target.value)} 
