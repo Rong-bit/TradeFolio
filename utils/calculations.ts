@@ -809,8 +809,9 @@ export const calculateAccountPerformance = (
       
       if (cf.targetAccountId === acc.id && cf.type === CashFlowType.TRANSFER) {
         if (cf.exchangeRate) {
-           const incomingVal = cf.amount * cf.exchangeRate; 
-           netInvestedTWD += (isUSD ? incomingVal * exchangeRate : incomingVal);
+           // incomingVal = cf.amount * cf.exchangeRate 已是 TWD（匯率為 USD/TWD 時）
+           const incomingValTWD = cf.amount * cf.exchangeRate;
+           netInvestedTWD += incomingValTWD;
         } else {
            netInvestedTWD += amountFlowTWD;
         }
