@@ -5,7 +5,7 @@ import { useLocalStorageDebounced, useLocalStorageDebouncedSimple } from './hook
 import { useFilters } from './hooks/useFilters';
 import { useDeleteState } from './hooks/useDeleteState';
 import { useUIState } from './hooks/useUIState';
-import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR, getDisplayRateForBaseCurrency } from './utils/calculations';
+import { calculateHoldings, calculateAccountBalances, generateAdvancedChartData, calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance, calculateXIRR, getDisplayRateForBaseCurrency, getTransferTargetAmount } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import HoldingsTable from './components/HoldingsTable';
 import Dashboard from './components/Dashboard';
@@ -1039,7 +1039,11 @@ const App: React.FC = () => {
       });
       
       if (cf.type === 'TRANSFER' && cf.targetAccountId) {
-        const targetAmount = cf.exchangeRate ? cf.amount * cf.exchangeRate : cf.amount;
+        const sourceAcc = accounts.find(a => a.id === cf.accountId);
+        const targetAcc = accounts.find(a => a.id === cf.targetAccountId);
+        const targetAmount = sourceAcc && targetAcc
+          ? getTransferTargetAmount(sourceAcc.currency, targetAcc.currency, cf.amount, cf.exchangeRate)
+          : cf.amount;
         cashFlowRecords.push({
           id: `${cf.id}-target`,
           date: cf.date,
