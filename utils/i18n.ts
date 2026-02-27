@@ -576,6 +576,10 @@ const zhTW: Translations = {
     KRW: '韓元',
     CAD: '加元',
     INR: '印度盧比',
+    CNY: '人民幣',
+    AUD: '澳幣',
+    SAR: '沙烏地里亞爾',
+    BRL: '巴西雷亞爾',
   },
   common: {
     confirm: '確認',
@@ -1170,6 +1174,10 @@ const en: Translations = {
     KRW: 'KRW',
     CAD: 'CAD',
     INR: 'INR',
+    CNY: 'CNY',
+    AUD: 'AUD',
+    SAR: 'SAR',
+    BRL: 'BRL',
   },
   common: {
     confirm: 'Confirm',
@@ -1765,6 +1773,10 @@ const ja: Translations = {
     KRW: '韓国ウォン',
     CAD: 'カナダドル',
     INR: 'インドルピー',
+    CNY: '人民元',
+    AUD: '豪ドル',
+    SAR: 'サウジリヤル',
+    BRL: 'ブラジルレアル',
   },
   common: {
     confirm: '確認',
@@ -2358,6 +2370,10 @@ const ko: Translations = {
     KRW: '대한민국 원',
     CAD: '캐나다 달러',
     INR: '인도 루피',
+    CNY: '중국 위안',
+    AUD: '호주 달러',
+    SAR: '사우디 리얄',
+    BRL: '브라질 헤알',
   },
   common: {
     confirm: '확인',
@@ -2941,7 +2957,7 @@ A: 주가와 환율은 웹페이지의 현행가를 가져오기 때문에 현�
 
 // 簡體中文翻譯（基於繁體轉簡體）
 const zhCN: Translations = JSON.parse(JSON.stringify(zhTW));
-zhCN.baseCurrency = { TWD: '台币', USD: '美元', JPY: '日元', EUR: '欧元', GBP: '英镑', HKD: '港币', KRW: '韩元', CAD: '加元', INR: '印度卢比' };
+zhCN.baseCurrency = { TWD: '台币', USD: '美元', JPY: '日元', EUR: '欧元', GBP: '英镑', HKD: '港币', KRW: '韩元', CAD: '加元', INR: '印度卢比', CNY: '人民币', AUD: '澳元', SAR: '沙特里亚尔', BRL: '巴西雷亚尔' };
 zhCN.pages = { dashboard: '投资组合仪表板', history: '历史记录（交易 + 资金流动）', funds: '资金存取与管理', accounts: '证券账户管理', rebalance: '投资组合再平衡', simulator: '资产配置模拟', help: '系统管理与备份' };
 zhCN.common = { confirm: '确认', cancel: '取消', delete: '删除', edit: '编辑', save: '保存', close: '关闭', loading: '加载中...', search: '搜索', logoutConfirm: '确定要登出系统吗？', upgrade: '升级' };
 zhCN.nav = { dashboard: '仪表板', history: '交易记录', funds: '资金管理', accounts: '证券户', rebalance: '再平衡', simulator: '配置模拟', help: '系统管理', logout: '登出' };
@@ -3319,7 +3335,7 @@ A: 股价与汇率因抓取网页现值，故现值会延迟三至五分钟不�
 
 // 德文翻譯
 const de: Translations = {
-  baseCurrency: { TWD: 'TWD', USD: 'USD', JPY: 'JPY', EUR: 'EUR', GBP: 'GBP', HKD: 'HKD', KRW: 'KRW', CAD: 'CAD', INR: 'INR' },
+  baseCurrency: { TWD: 'TWD', USD: 'USD', JPY: 'JPY', EUR: 'EUR', GBP: 'GBP', HKD: 'HKD', KRW: 'KRW', CAD: 'CAD', INR: 'INR', CNY: 'CNY', AUD: 'AUD', SAR: 'SAR', BRL: 'BRL' },
   common: { confirm: 'Bestätigen', cancel: 'Abbrechen', delete: 'Löschen', edit: 'Bearbeiten', save: 'Speichern', close: 'Schließen', loading: 'Laden...', search: 'Suchen', logoutConfirm: 'Möchten Sie sich abmelden?', upgrade: 'Aktualisieren' },
   nav: { dashboard: 'Dashboard', history: 'Transaktionen', funds: 'Fonds', accounts: 'Konten', rebalance: 'Rebalancing', simulator: 'Simulator', help: 'System', logout: 'Abmelden' },
   pages: { dashboard: 'Portfolio-Dashboard', history: 'Verlauf (Transaktionen + Cashflow)', funds: 'Fondsverwaltung', accounts: 'Kontoverwaltung', rebalance: 'Rebalancing', simulator: 'Asset-Allocation-Simulator', help: 'System & Backup' },
@@ -3788,7 +3804,7 @@ A: Da Aktienkurse und Wechselkurse von Webseiten aktueller Werte abgerufen werde
 // 加拿大法語（以英文為底，覆寫常用法文）
 const fr: Translations = {
   ...en,
-  baseCurrency: { TWD: 'Dollar taïwanais', USD: 'Dollar américain', JPY: 'Yen japonais', EUR: 'Euro', GBP: 'Livre sterling', HKD: 'Dollar HK', KRW: 'Won coréen', CAD: 'Dollar canadien', INR: 'Roupie indienne' },
+  baseCurrency: { TWD: 'Dollar taïwanais', USD: 'Dollar américain', JPY: 'Yen japonais', EUR: 'Euro', GBP: 'Livre sterling', HKD: 'Dollar HK', KRW: 'Won coréen', CAD: 'Dollar canadien', INR: 'Roupie indienne', CNY: 'Yuan chinois', AUD: 'Dollar australien', SAR: 'Riyal saoudien', BRL: 'Réal brésilien' },
   common: { ...en.common, confirm: 'Confirmer', cancel: 'Annuler', delete: 'Supprimer', edit: 'Modifier', save: 'Enregistrer', close: 'Fermer', loading: 'Chargement...', search: 'Rechercher', logoutConfirm: 'Déconnexion ?', upgrade: 'Mettre à niveau' },
   nav: { dashboard: 'Tableau de bord', history: 'Historique', funds: 'Fonds', accounts: 'Comptes', rebalance: 'Rééquilibrage', simulator: 'Simulateur', help: 'Aide', logout: 'Déconnexion' },
   pages: { ...en.pages, dashboard: 'Portefeuille', history: 'Historique (transactions et flux)', funds: 'Gestion des fonds', accounts: 'Comptes', rebalance: 'Rééquilibrage', simulator: 'Simulateur d\'allocation', help: 'Paramètres et sauvegarde' },
@@ -4284,7 +4300,7 @@ R : Comme les prix des actions et les taux de change sont récupérés à partir
 // 印地語（以英文為底，覆寫常用印地語）
 const hi: Translations = {
   ...en,
-  baseCurrency: { TWD: 'ताइवान डॉलर', USD: 'अमेरिकी डॉलर', JPY: 'जापानी येन', EUR: 'यूरो', GBP: 'ब्रिटिश पाउंड', HKD: 'हाँगकाँग डॉलर', KRW: 'कोरियाई वॉन', CAD: 'कैनेडियन डॉलर', INR: 'भारतीय रुपया' },
+  baseCurrency: { TWD: 'ताइवान डॉलर', USD: 'अमेरिकी डॉलर', JPY: 'जापानी येन', EUR: 'यूरो', GBP: 'ब्रिटिश पाउंड', HKD: 'हाँगकाँग डॉलर', KRW: 'कोरियाई वॉन', CAD: 'कैनेडियन डॉलर', INR: 'भारतीय रुपया', CNY: 'चीनी युआन', AUD: 'ऑस्ट्रेलियाई डॉलर', SAR: 'सऊदी रियाल', BRL: 'ब्राज़ीलियाई रियाल' },
   common: { ...en.common, confirm: 'पुष्टि', cancel: 'रद्द', delete: 'हटाएं', edit: 'संपादित', save: 'सहेजें', close: 'बंद', loading: 'लोड हो रहा...', search: 'खोज', logoutConfirm: 'लॉग आउट करें?', upgrade: 'अपग्रेड' },
   nav: { dashboard: 'डैशबोर्ड', history: 'इतिहास', funds: 'निधि', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'सिम्युलेटर', help: 'सहायता', logout: 'लॉग आउट' },
   pages: { ...en.pages, dashboard: 'पोर्टफोलियो', history: 'लेनदेन और नकदी प्रवाह', funds: 'निधि प्रबंधन', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'आवंटन सिम्युलेटर', help: 'सेटिंग और बैकअप' },
@@ -4806,7 +4822,7 @@ TradeView ताइवान और US स्टॉक के लिए एक �
 // 阿拉伯語（以英文為底，沙烏地等中東用戶）
 const ar: Translations = {
   ...en,
-  baseCurrency: { ...en.baseCurrency, TWD: 'دولار تايواني', USD: 'دولار أمريكي', JPY: 'ين ياباني', EUR: 'يورو', GBP: 'جنيه إسترليني', HKD: 'دولار هونغ كونغ', KRW: 'وون كوري', CAD: 'دولار كندي', INR: 'روبية هندية' },
+  baseCurrency: { ...en.baseCurrency, TWD: 'دولار تايواني', USD: 'دولار أمريكي', JPY: 'ين ياباني', EUR: 'يورو', GBP: 'جنيه إسترليني', HKD: 'دولار هونغ كونغ', KRW: 'وون كوري', CAD: 'دولار كندي', INR: 'روبية هندية', CNY: 'يوان صيني', AUD: 'دولار أسترالي', SAR: 'ريال سعودي', BRL: 'ريال برازيلي' },
   common: { ...en.common, confirm: 'تأكيد', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', save: 'حفظ', close: 'إغلاق', loading: 'جاري التحميل...', search: 'بحث', logoutConfirm: 'تسجيل الخروج؟', upgrade: 'ترقية' },
   nav: { dashboard: 'لوحة التحكم', history: 'السجل', funds: 'الأموال', accounts: 'الحسابات', rebalance: 'إعادة التوازن', simulator: 'المحاكي', help: 'النظام', logout: 'تسجيل الخروج' },
   pages: { ...en.pages, dashboard: 'لوحة المحفظة', history: 'السجل (المعاملات والتدفق)', funds: 'إدارة الأموال', accounts: 'إدارة الحسابات', rebalance: 'إعادة التوازن', simulator: 'محاكي التخصيص', help: 'النظام والنسخ' },
@@ -5328,7 +5344,7 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
 // 葡萄牙語（以英文為底，巴西等葡語用戶）
 const pt: Translations = {
   ...en,
-  baseCurrency: { ...en.baseCurrency, TWD: 'Dólar taiwanês', USD: 'Dólar americano', JPY: 'Iene japonês', EUR: 'Euro', GBP: 'Libra esterlina', HKD: 'Dólar de Hong Kong', KRW: 'Won coreano', CAD: 'Dólar canadense', INR: 'Rúpia indiana' },
+  baseCurrency: { ...en.baseCurrency, TWD: 'Dólar taiwanês', USD: 'Dólar americano', JPY: 'Iene japonês', EUR: 'Euro', GBP: 'Libra esterlina', HKD: 'Dólar de Hong Kong', KRW: 'Won coreano', CAD: 'Dólar canadense', INR: 'Rúpia indiana', CNY: 'Yuan chinês', AUD: 'Dólar australiano', SAR: 'Riyal saudita', BRL: 'Real brasileiro' },
   common: { ...en.common, confirm: 'Confirmar', cancel: 'Cancelar', delete: 'Excluir', edit: 'Editar', save: 'Salvar', close: 'Fechar', loading: 'Carregando...', search: 'Buscar', logoutConfirm: 'Sair?', upgrade: 'Atualizar' },
   nav: { dashboard: 'Painel', history: 'Histórico', funds: 'Fundos', accounts: 'Contas', rebalance: 'Rebalanceamento', simulator: 'Simulador', help: 'Sistema', logout: 'Sair' },
   pages: { ...en.pages, dashboard: 'Painel da carteira', history: 'Histórico (transações e fluxo)', funds: 'Gestão de fundos', accounts: 'Gestão de contas', rebalance: 'Rebalanceamento', simulator: 'Simulador de alocação', help: 'Sistema e backup' },
