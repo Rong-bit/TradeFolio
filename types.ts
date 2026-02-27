@@ -201,6 +201,12 @@ export interface AccountPerformance {
   cashBalanceNative?: number;
   profitNative?: number;
   netInvestedNative?: number;
+  unrealizedProfitTWD?: number;
+  realizedProfitTWD?: number;
+  incomeTWD?: number;
+  unrealizedProfitNative?: number;
+  realizedProfitNative?: number;
+  incomeNative?: number;
 }
 
 // New Interface for Historical Data Storage
