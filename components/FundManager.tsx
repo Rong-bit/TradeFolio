@@ -710,7 +710,7 @@ const FundManager: React.FC<Props> = ({
                      {showExchangeRateInput ? (
                        <div>
                          <label className="block text-sm font-medium text-slate-700">
-                            {transferRateLabel ?? (selectedAccount?.currency === Currency.USD ? ff.exchangeRateUSD : selectedAccount?.currency === Currency.JPY ? ff.exchangeRateJPY : ff.exchangeRate)}
+                            {transferRateLabel ?? (selectedAccount?.currency === Currency.USD ? ff.exchangeRateUsdTwd : selectedAccount?.currency === Currency.JPY ? ff.exchangeRateJPY : ff.exchangeRate)}
                             {isCrossCurrencyTransfer && <span className="text-xs text-blue-600 ml-1">{ff.crossCurrencyTransfer}</span>}
                             {!isTransfer && selectedAccount?.currency === Currency.USD && <span className="text-xs text-green-600 ml-1">{ff.usdConversion}</span>}
                             {!isTransfer && selectedAccount?.currency === Currency.JPY && <span className="text-xs text-orange-600 ml-1">{ff.jpyConversion}</span>}
