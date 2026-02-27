@@ -17,7 +17,7 @@ export const LANGUAGES: { code: Language; label: string }[] = [
 ];
 
 // 基準幣別代碼
-export type BaseCurrencyCode = 'TWD' | 'USD' | 'JPY' | 'EUR' | 'GBP' | 'HKD' | 'KRW' | 'CAD' | 'INR';
+export type BaseCurrencyCode = 'TWD' | 'USD' | 'JPY' | 'EUR' | 'GBP' | 'HKD' | 'KRW' | 'CAD' | 'INR' | 'CNY' | 'AUD' | 'SAR' | 'BRL';
 
 // 翻譯鍵值類型
 export interface Translations {
@@ -32,6 +32,10 @@ export interface Translations {
     KRW: string;
     CAD: string;
     INR: string;
+    CNY?: string;
+    AUD?: string;
+    SAR?: string;
+    BRL?: string;
   };
   // 通用
   common: {
