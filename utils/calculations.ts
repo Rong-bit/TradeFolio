@@ -752,14 +752,60 @@ export const calculateAccountPerformance = (
   krwExchangeRate?: number,
   audExchangeRate?: number,
   sarExchangeRate?: number,
-  brlExchangeRate?: number
+  brlExchangeRate?: number,
+  gbpExchangeRate?: number
 ): AccountPerformance[] => {
-  return accounts.map(acc => {
-    const isUSD = acc.currency === Currency.USD;
-    const isJPY = acc.currency === Currency.JPY;
-    const rate = isUSD ? exchangeRate : (isJPY ? (jpyExchangeRate || exchangeRate) : 1);
+  const getRateByCurrency = (currency: Currency): number => {
+    switch (currency) {
+      case Currency.USD:
+        return exchangeRate;
+      case Currency.JPY:
+        return jpyExchangeRate || exchangeRate;
+      case Currency.EUR:
+        return eurExchangeRate || 0;
+      case Currency.CNY:
+        return cnyExchangeRate || 0;
+      case Currency.INR:
+        return inrExchangeRate || 0;
+      case Currency.CAD:
+        return cadExchangeRate || 0;
+      case Currency.HKD:
+        return hkdExchangeRate || 0;
+      case Currency.KRW:
+        return krwExchangeRate || 0;
+      case Currency.AUD:
+        return audExchangeRate || 0;
+      case Currency.SAR:
+        return sarExchangeRate || 0;
+      case Currency.BRL:
+        return brlExchangeRate || 0;
+      case Currency.GBP:
+        return gbpExchangeRate || 0;
+      default:
+        return 1;
+    }
+  };
 
-    const cashTWD = acc.balance * rate;
+  const getCashFlowAmountTWD = (cf: CashFlow): number => {
+    if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
+
+    const sourceAccount = accounts.find(a => a.id === cf.accountId);
+    if (!sourceAccount) return cf.amount;
+
+    if (sourceAccount.currency === Currency.TWD) {
+      return cf.amount;
+    }
+
+    const sourceRate = getRateByCurrency(sourceAccount.currency);
+    const effectiveRate = (cf.exchangeRate && cf.exchangeRate > 0) ? cf.exchangeRate : sourceRate;
+    return cf.amount * effectiveRate;
+  };
+
+  return accounts.map(acc => {
+    const accountRate = getRateByCurrency(acc.currency);
+    const normalizedAccountRate = accountRate > 0 ? accountRate : 1;
+
+    const cashTWD = acc.balance * normalizedAccountRate;
     const accountHoldings = holdings.filter(h => h.accountId === acc.id);
     const stockValueTWD = accountHoldings.reduce((sum, h) => {
       if (h.market === Market.US || h.market === Market.UK) return sum + h.currentValue * exchangeRate;
@@ -784,18 +830,7 @@ export const calculateAccountPerformance = (
     
     // 1. Process Cash Flows (Deposits / Withdrawals)
     cashFlows.forEach(cf => {
-      let amountFlowTWD = 0;
-      if (cf.amountTWD && cf.amountTWD > 0) {
-        amountFlowTWD = cf.amountTWD;
-      } else {
-         let flowRate = 1;
-         if (isUSD) {
-            flowRate = (cf.exchangeRate && cf.exchangeRate > 0) ? cf.exchangeRate : exchangeRate;
-         } else if (isJPY) {
-            flowRate = (cf.exchangeRate && cf.exchangeRate > 0) ? cf.exchangeRate : (jpyExchangeRate || exchangeRate);
-         }
-         amountFlowTWD = cf.amount * flowRate;
-      }
+      const amountFlowTWD = getCashFlowAmountTWD(cf);
 
       if (cf.accountId === acc.id) {
         if (cf.type === CashFlowType.DEPOSIT) {
@@ -808,13 +843,8 @@ export const calculateAccountPerformance = (
       }
       
       if (cf.targetAccountId === acc.id && cf.type === CashFlowType.TRANSFER) {
-        if (cf.exchangeRate) {
-           // incomingVal = cf.amount * cf.exchangeRate 已是 TWD（匯率為 USD/TWD 時）
-           const incomingValTWD = cf.amount * cf.exchangeRate;
-           netInvestedTWD += incomingValTWD;
-        } else {
-           netInvestedTWD += amountFlowTWD;
-        }
+        // Transfer-in carries the same cost basis from source side in TWD.
+        netInvestedTWD += amountFlowTWD;
       }
     });
 
@@ -872,11 +902,11 @@ export const calculateAccountPerformance = (
 
     // 計算原始幣種數值（用於切換顯示）
     // stockValueNative 已經是原始幣種（美金帳戶=美金，台幣帳戶=台幣，日幣帳戶=日幣）
-    const totalAssetsNative = isUSD ? totalAssetsTWD / exchangeRate : (isJPY ? totalAssetsTWD / (jpyExchangeRate || exchangeRate) : totalAssetsTWD);
+    const totalAssetsNative = totalAssetsTWD / normalizedAccountRate;
     const marketValueNative = stockValueNative; // 已經是原始幣種
     const cashBalanceNative = acc.balance; // 已經是原始幣種
-    const profitNative = isUSD ? profitTWD / exchangeRate : (isJPY ? profitTWD / (jpyExchangeRate || exchangeRate) : profitTWD);
-    const netInvestedNative = isUSD ? netInvestedTWD / exchangeRate : (isJPY ? netInvestedTWD / (jpyExchangeRate || exchangeRate) : netInvestedTWD);
+    const profitNative = profitTWD / normalizedAccountRate;
+    const netInvestedNative = netInvestedTWD / normalizedAccountRate;
 
     return {
       id: acc.id,
