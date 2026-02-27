@@ -801,6 +801,28 @@ export const calculateAccountPerformance = (
     return cf.amount * effectiveRate;
   };
 
+  const getMarketRate = (market: Market): number => {
+    if (market === Market.US || market === Market.UK) return exchangeRate;
+    if (market === Market.JP) return jpyExchangeRate ?? exchangeRate;
+    if (market === Market.CN || market === Market.SZ) return cnyExchangeRate ?? 0;
+    if (market === Market.IN) return inrExchangeRate ?? 0;
+    if (market === Market.CA) return cadExchangeRate ?? 0;
+    if (market === Market.FR || market === Market.DE) return eurExchangeRate ?? 0;
+    if (market === Market.HK) return hkdExchangeRate ?? 0;
+    if (market === Market.KR) return krwExchangeRate ?? 0;
+    if (market === Market.AU) return audExchangeRate ?? 0;
+    if (market === Market.SA) return sarExchangeRate ?? 0;
+    if (market === Market.BR) return brlExchangeRate ?? 0;
+    return 1;
+  };
+
+  const getTransactionAmountTWD = (tx: Transaction): number => {
+    let baseVal = tx.price * tx.quantity;
+    if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+    const val = tx.amount !== undefined ? tx.amount : baseVal;
+    return val * getMarketRate(tx.market);
+  };
+
   return accounts.map(acc => {
     const accountRate = getRateByCurrency(acc.currency);
     const normalizedAccountRate = accountRate > 0 ? accountRate : 1;
@@ -808,21 +830,12 @@ export const calculateAccountPerformance = (
     const cashTWD = acc.balance * normalizedAccountRate;
     const accountHoldings = holdings.filter(h => h.accountId === acc.id);
     const stockValueTWD = accountHoldings.reduce((sum, h) => {
-      if (h.market === Market.US || h.market === Market.UK) return sum + h.currentValue * exchangeRate;
-      if (h.market === Market.JP) return sum + h.currentValue * (jpyExchangeRate ?? exchangeRate);
-      if (h.market === Market.CN) return sum + h.currentValue * (cnyExchangeRate ?? 0);
-      if (h.market === Market.SZ) return sum + h.currentValue * (cnyExchangeRate ?? 0);
-      if (h.market === Market.IN) return sum + h.currentValue * (inrExchangeRate ?? 0);
-      if (h.market === Market.CA) return sum + h.currentValue * (cadExchangeRate ?? 0);
-      if (h.market === Market.FR) return sum + h.currentValue * (eurExchangeRate ?? 0);
-      if (h.market === Market.HK) return sum + h.currentValue * (hkdExchangeRate ?? 0);
-      if (h.market === Market.KR) return sum + h.currentValue * (krwExchangeRate ?? 0);
-      if (h.market === Market.DE) return sum + h.currentValue * (eurExchangeRate ?? 0);
-      if (h.market === Market.AU) return sum + h.currentValue * (audExchangeRate ?? 0);
-      if (h.market === Market.SA) return sum + h.currentValue * (sarExchangeRate ?? 0);
-      if (h.market === Market.BR) return sum + h.currentValue * (brlExchangeRate ?? 0);
-      return sum + h.currentValue;
+      return sum + h.currentValue * getMarketRate(h.market);
     }, 0);
+    const holdingsCostTWD = accountHoldings.reduce((sum, h) => {
+      return sum + h.totalCost * getMarketRate(h.market);
+    }, 0);
+    const unrealizedProfitTWD = stockValueTWD - holdingsCostTWD;
     const stockValueNative = accountHoldings.reduce((sum, h) => sum + h.currentValue, 0);
     const totalAssetsTWD = cashTWD + stockValueTWD;
 
@@ -853,41 +866,7 @@ export const calculateAccountPerformance = (
        if (tx.accountId !== acc.id) return;
        
        if (tx.type === TransactionType.TRANSFER_IN || tx.type === TransactionType.TRANSFER_OUT) {
-          let baseVal = tx.price * tx.quantity;
-          if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
-          
-          const val = tx.amount !== undefined ? tx.amount : baseVal;
-          let valTWD = 0;
-          
-          if (tx.market === Market.US || tx.market === Market.UK) {
-              valTWD = val * exchangeRate;
-          } else if (tx.market === Market.JP) {
-              valTWD = jpyExchangeRate ? val * jpyExchangeRate : val * exchangeRate;
-          } else if (tx.market === Market.CN) {
-              valTWD = val * (cnyExchangeRate ?? 0);
-          } else if (tx.market === Market.SZ) {
-              valTWD = val * (cnyExchangeRate ?? 0);
-          } else if (tx.market === Market.IN) {
-              valTWD = val * (inrExchangeRate ?? 0);
-          } else if (tx.market === Market.CA) {
-              valTWD = val * (cadExchangeRate ?? 0);
-          } else if (tx.market === Market.FR) {
-              valTWD = val * (eurExchangeRate ?? 0);
-          } else if (tx.market === Market.HK) {
-              valTWD = val * (hkdExchangeRate ?? 0);
-          } else if (tx.market === Market.KR) {
-              valTWD = val * (krwExchangeRate ?? 0);
-          } else if (tx.market === Market.DE) {
-              valTWD = val * (eurExchangeRate ?? 0);
-          } else if (tx.market === Market.AU) {
-              valTWD = val * (audExchangeRate ?? 0);
-          } else if (tx.market === Market.SA) {
-              valTWD = val * (sarExchangeRate ?? 0);
-          } else if (tx.market === Market.BR) {
-              valTWD = val * (brlExchangeRate ?? 0);
-          } else {
-              valTWD = val;
-          }
+          const valTWD = getTransactionAmountTWD(tx);
 
           if (tx.type === TransactionType.TRANSFER_IN) {
               netInvestedTWD += valTWD;
@@ -897,7 +876,23 @@ export const calculateAccountPerformance = (
        }
     });
 
+    let incomeTWD = 0;
+    transactions.forEach(tx => {
+      if (tx.accountId !== acc.id) return;
+      if (tx.type !== TransactionType.CASH_DIVIDEND) return;
+      let baseVal = tx.price * tx.quantity;
+      if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+      const incomeVal = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
+      incomeTWD += incomeVal * getMarketRate(tx.market);
+    });
+    cashFlows.forEach(cf => {
+      if (cf.accountId !== acc.id) return;
+      if (cf.type !== CashFlowType.INTEREST) return;
+      incomeTWD += getCashFlowAmountTWD(cf);
+    });
+
     const profitTWD = totalAssetsTWD - netInvestedTWD;
+    const realizedProfitTWD = profitTWD - unrealizedProfitTWD - incomeTWD;
     const roi = netInvestedTWD > 0 ? (profitTWD / netInvestedTWD) * 100 : 0;
 
     // 計算原始幣種數值（用於切換顯示）
@@ -907,6 +902,9 @@ export const calculateAccountPerformance = (
     const cashBalanceNative = acc.balance; // 已經是原始幣種
     const profitNative = profitTWD / normalizedAccountRate;
     const netInvestedNative = netInvestedTWD / normalizedAccountRate;
+    const unrealizedProfitNative = unrealizedProfitTWD / normalizedAccountRate;
+    const realizedProfitNative = realizedProfitTWD / normalizedAccountRate;
+    const incomeNative = incomeTWD / normalizedAccountRate;
 
     return {
       id: acc.id,
@@ -921,7 +919,13 @@ export const calculateAccountPerformance = (
       marketValueNative,
       cashBalanceNative,
       profitNative,
-      netInvestedNative
+      netInvestedNative,
+      unrealizedProfitTWD,
+      realizedProfitTWD,
+      incomeTWD,
+      unrealizedProfitNative,
+      realizedProfitNative,
+      incomeNative
     };
   });
 };
