@@ -203,7 +203,10 @@ export const calculateHoldings = (
 
 /**
  * 內部轉帳轉入金額換算（彈性支援多幣別）。
- * 匯率約定：當一方為 USD 時為「1 USD = X 他幣」；兩方皆非 USD 時為「1 來源幣 = X 轉入幣」。
+ * 匯率約定統一為「匯率 (A/B) = 1 A = 多少 B」：
+ * - USD/TWD：1 USD = X TWD → 乘
+ * - TWD→USD：X TWD = 1 USD → 除
+ * - JPY/TWD：1 JPY = X TWD → 來源→目標時用除（目標金額 = 來源金額 / 匯率）
  */
 export const getTransferTargetAmount = (
   sourceCurrency: Currency,
@@ -214,7 +217,7 @@ export const getTransferTargetAmount = (
   if (sourceCurrency === targetCurrency || !exchangeRate || exchangeRate <= 0) return amount;
   if (sourceCurrency === Currency.USD) return amount * exchangeRate;   // 1 USD = X 轉入幣
   if (targetCurrency === Currency.USD) return amount / exchangeRate;  // X 來源幣 = 1 USD
-  return amount * exchangeRate;  // 兩方皆非 USD：1 來源幣 = X 轉入幣
+  return amount / exchangeRate;  // 兩方皆非 USD：匯率 (target/source) = 1 target = X source，故 目標 = 來源 / 匯率
 };
 
 export const calculateAccountBalances = (accounts: Account[], cashFlows: CashFlow[], transactions: Transaction[]): Account[] => {
