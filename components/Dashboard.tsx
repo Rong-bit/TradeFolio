@@ -48,6 +48,7 @@ const Dashboard: React.FC<Props> = ({
   const [showCostDetailModal, setShowCostDetailModal] = useState(false);
   const [showAccountInUSD, setShowAccountInUSD] = useState(false); 
   const [showAnnualInUSD, setShowAnnualInUSD] = useState(false);
+  const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
 
   const rates = {
     exchangeRateUsdToTwd: summary.exchangeRateUsdToTwd,
@@ -184,6 +185,13 @@ const Dashboard: React.FC<Props> = ({
       if (item.type === CashFlowType.WITHDRAW) return acc - item.amountTWD;
       return acc;
   }, 0);
+
+  const toggleAccountRow = (accountId: string) => {
+    setExpandedAccountRows(prev => ({
+      ...prev,
+      [accountId]: !prev[accountId]
+    }));
+  };
 
   return (
     <div className="space-y-6">
@@ -624,7 +632,20 @@ const Dashboard: React.FC<Props> = ({
                 <th className="px-3 py-2 text-right">{translations.dashboard.totalAssetsNT}</th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.marketValueNT}</th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.balanceNT}</th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.profitNT}</th>
+                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.unrealizedPL}</th>
+                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.realizedPL}</th>
+                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.dividendInterest}</th>
+                <th className="px-3 py-2 text-right">
+                  <span className="inline-flex items-center justify-end gap-1">
+                    {translations.dashboard.profitNT}
+                    <span
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] text-slate-500 cursor-help"
+                      title={translations.dashboard.profitFormulaTooltip}
+                    >
+                      i
+                    </span>
+                  </span>
+                </th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.annualizedROI}</th>
               </tr>
             </thead>
@@ -635,6 +656,9 @@ const Dashboard: React.FC<Props> = ({
                   let totalAssets: number;
                   let marketValue: number;
                   let cashBalance: number;
+                  let unrealizedProfit: number;
+                  let realizedProfit: number;
+                  let income: number;
                   let profit: number;
                   
                   if (showAccountInUSD) {
@@ -643,11 +667,17 @@ const Dashboard: React.FC<Props> = ({
                       totalAssets = acc.totalAssetsNative || acc.totalAssetsTWD / summary.exchangeRateUsdToTwd;
                       marketValue = acc.marketValueNative || acc.marketValueTWD / summary.exchangeRateUsdToTwd;
                       cashBalance = acc.cashBalanceNative || acc.cashBalanceTWD / summary.exchangeRateUsdToTwd;
+                      unrealizedProfit = acc.unrealizedProfitNative || (acc.unrealizedProfitTWD || 0) / summary.exchangeRateUsdToTwd;
+                      realizedProfit = acc.realizedProfitNative || (acc.realizedProfitTWD || 0) / summary.exchangeRateUsdToTwd;
+                      income = acc.incomeNative || (acc.incomeTWD || 0) / summary.exchangeRateUsdToTwd;
                       profit = acc.profitNative || acc.profitTWD / summary.exchangeRateUsdToTwd;
                     } else {
                       totalAssets = acc.totalAssetsTWD / summary.exchangeRateUsdToTwd;
                       marketValue = acc.marketValueTWD / summary.exchangeRateUsdToTwd;
                       cashBalance = acc.cashBalanceTWD / summary.exchangeRateUsdToTwd;
+                      unrealizedProfit = (acc.unrealizedProfitTWD || 0) / summary.exchangeRateUsdToTwd;
+                      realizedProfit = (acc.realizedProfitTWD || 0) / summary.exchangeRateUsdToTwd;
+                      income = (acc.incomeTWD || 0) / summary.exchangeRateUsdToTwd;
                       profit = acc.profitTWD / summary.exchangeRateUsdToTwd;
                     }
                   } else {
@@ -655,36 +685,88 @@ const Dashboard: React.FC<Props> = ({
                     totalAssets = toBase(acc.totalAssetsTWD);
                     marketValue = toBase(acc.marketValueTWD);
                     cashBalance = toBase(acc.cashBalanceTWD);
+                    unrealizedProfit = toBase(acc.unrealizedProfitTWD || 0);
+                    realizedProfit = toBase(acc.realizedProfitTWD || 0);
+                    income = toBase(acc.incomeTWD || 0);
                     profit = toBase(acc.profitTWD);
                   }
                   
                   return (
-                    <tr key={acc.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-2 font-semibold text-slate-700">
-                        {acc.name} 
-                        <span className="text-xs font-normal text-slate-400 ml-1">({acc.currency})</span>
-                      </td>
-                      <td className="px-3 py-2 text-right font-bold text-slate-700">
-                        {formatCurrency(totalAssets, displayCurrency)}
-                      </td>
-                      <td className="px-3 py-2 text-right text-slate-600">
-                        {formatCurrency(marketValue, displayCurrency)}
-                      </td>
-                      <td className="px-3 py-2 text-right text-slate-600">
-                        {formatCurrency(cashBalance, displayCurrency)}
-                      </td>
-                      <td className={`px-3 py-2 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
-                        {formatCurrency(profit, displayCurrency)}
-                      </td>
-                      <td className={`px-3 py-2 text-right font-bold ${acc.roi >= 0 ? 'text-success' : 'text-danger'}`}>
-                        {acc.roi.toFixed(2)}%
-                      </td>
-                    </tr>
+                    <React.Fragment key={acc.id}>
+                      <tr className="hover:bg-slate-50">
+                        <td className="px-3 py-2 font-semibold text-slate-700">
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              {acc.name}
+                              <span className="text-xs font-normal text-slate-400 ml-1">({acc.currency})</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => toggleAccountRow(acc.id)}
+                              className="md:hidden text-xs px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-100"
+                              aria-label="toggle account breakdown"
+                            >
+                              {expandedAccountRows[acc.id] ? '▲' : '▼'}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-right font-bold text-slate-700">
+                          {formatCurrency(totalAssets, displayCurrency)}
+                        </td>
+                        <td className="px-3 py-2 text-right text-slate-600">
+                          {formatCurrency(marketValue, displayCurrency)}
+                        </td>
+                        <td className="px-3 py-2 text-right text-slate-600">
+                          {formatCurrency(cashBalance, displayCurrency)}
+                        </td>
+                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
+                          {formatCurrency(unrealizedProfit, displayCurrency)}
+                        </td>
+                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
+                          {formatCurrency(realizedProfit, displayCurrency)}
+                        </td>
+                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${income >= 0 ? 'text-success' : 'text-danger'}`}>
+                          {formatCurrency(income, displayCurrency)}
+                        </td>
+                        <td className={`px-3 py-2 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
+                          {formatCurrency(profit, displayCurrency)}
+                        </td>
+                        <td className={`px-3 py-2 text-right font-bold ${acc.roi >= 0 ? 'text-success' : 'text-danger'}`}>
+                          {acc.roi.toFixed(2)}%
+                        </td>
+                      </tr>
+                      {expandedAccountRows[acc.id] && (
+                        <tr className="md:hidden bg-slate-50">
+                          <td colSpan={9} className="px-3 py-2">
+                            <div className="grid grid-cols-1 gap-1 text-xs">
+                              <div className="flex justify-between">
+                                <span className="text-slate-500">{translations.dashboard.unrealizedPL}</span>
+                                <span className={`font-bold ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
+                                  {formatCurrency(unrealizedProfit, displayCurrency)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-500">{translations.dashboard.realizedPL}</span>
+                                <span className={`font-bold ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
+                                  {formatCurrency(realizedProfit, displayCurrency)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-500">{translations.dashboard.dividendInterest}</span>
+                                <span className={`font-bold ${income >= 0 ? 'text-success' : 'text-danger'}`}>
+                                  {formatCurrency(income, displayCurrency)}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-center text-slate-400">{translations.dashboard.noAccounts}</td>
+                  <td colSpan={9} className="px-3 py-4 text-center text-slate-400">{translations.dashboard.noAccounts}</td>
                 </tr>
               )}
             </tbody>
