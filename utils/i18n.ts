@@ -578,6 +578,7 @@ export interface Translations {
     uploadLabel: string;
     uploadSupported: string;
     noFileSelected: string;
+    selectFile: string;
     previewTitle: string;
     previewSuccess: string;
     previewSelected: string;
@@ -1220,6 +1221,7 @@ A: 股價與匯率因為是抓取網頁現值，故現值會慢三分鐘至五�
     uploadLabel: '支援 CSV 匯出檔：嘉信 (Charles Schwab)、Firstrade',
     uploadSupported: '',
     noFileSelected: '未選擇任何檔案',
+    selectFile: '選擇檔案',
     previewTitle: '預覽匯入資料',
     previewSuccess: '成功',
     previewSelected: '已選',
@@ -1863,6 +1865,7 @@ A: Stock prices and exchange rates are scraped from web current values, so the c
     uploadLabel: 'Supported CSV export files: Charles Schwab, Firstrade',
     uploadSupported: '',
     noFileSelected: 'No file selected',
+    selectFile: 'Choose File',
     previewTitle: 'Preview Import Data',
     previewSuccess: 'Success',
     previewSelected: 'Selected',
@@ -2504,6 +2507,7 @@ A: 株価と為替レートはウェブページの現値を取得している�
     uploadLabel: '対応CSVエクスポートファイル：Charles Schwab、Firstrade',
     uploadSupported: '',
     noFileSelected: 'ファイルが選択されていません',
+    selectFile: 'ファイルを選択',
     previewTitle: '入力データプレビュー',
     previewSuccess: '成功',
     previewSelected: '選択済み',
@@ -3145,6 +3149,7 @@ A: 주가와 환율은 웹페이지의 현행가를 가져오기 때문에 현�
     uploadLabel: '지원 CSV 내보내기 파일: Charles Schwab, Firstrade',
     uploadSupported: '',
     noFileSelected: '선택된 파일 없음',
+    selectFile: '파일 선택',
     previewTitle: '입력 데이터 미리보기',
     previewSuccess: '성공',
     previewSelected: '선택됨',
@@ -3568,6 +3573,7 @@ zhCN.batchImportModal = {
   uploadLabel: '支持 CSV 汇出档：嘉信 (Charles Schwab)、Firstrade',
   uploadSupported: '',
   noFileSelected: '未选择任何文件',
+  selectFile: '选择文件',
   previewTitle: '预览汇入数据',
   previewSuccess: '成功',
   previewSelected: '已选',
@@ -4079,6 +4085,7 @@ A: Da Aktienkurse und Wechselkurse von Webseiten aktueller Werte abgerufen werde
     uploadLabel: 'Unterstützte CSV-Exportdateien: Charles Schwab, Firstrade',
     uploadSupported: '',
     noFileSelected: 'Keine Datei ausgewählt',
+    selectFile: 'Datei auswählen',
     previewTitle: 'Importdaten-Vorschau',
     previewSuccess: 'Erfolg',
     previewSelected: 'Ausgewählt',
@@ -4619,6 +4626,7 @@ R : Comme les prix des actions et les taux de change sont récupérés à partir
     uploadLabel: 'Fichiers CSV d\'exportation pris en charge: Charles Schwab, Firstrade',
     uploadSupported: '',
     noFileSelected: 'Aucun fichier sélectionné',
+    selectFile: 'Choisir un fichier',
     previewTitle: 'Aperçu des données d\'importation',
     previewSuccess: 'Succès',
     previewSelected: 'Sélectionné',
@@ -5177,6 +5185,7 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     parseButton: 'चिपकाए गए सामग्री का विश्लेषण करें',
     confirmImport: 'आयात की पुष्टि करें',
     noFileSelected: 'कोई फ़ाइल चयनित नहीं',
+    selectFile: 'फ़ाइल चुनें',
   },
 };
 
@@ -5707,6 +5716,7 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     parseButton: 'تحليل المحتوى المُلصق',
     confirmImport: 'تأكيد الاستيراد',
     noFileSelected: 'لم يتم اختيار ملف',
+    selectFile: 'اختر ملف',
   },
 };
 
@@ -6211,6 +6221,7 @@ R: Como os preços das ações e as taxas de câmbio são obtidos a partir dos v
     parseButton: 'Analisar conteúdo colado',
     confirmImport: 'Confirmar importação',
     noFileSelected: 'Nenhum arquivo selecionado',
+    selectFile: 'Selecionar arquivo',
   },
 };
 
