@@ -562,6 +562,50 @@ export interface Translations {
     confirmSave: string;
     errorNoAccount: string;
   };
+  // 批次匯入模組
+  batchImportModal: {
+    title: string;
+    selectAccount: string;
+    selectAccountPlaceholder: string;
+    noAccountsWarning: string;
+    noAccountsMessage: string;
+    tabPaste: string;
+    tabUpload: string;
+    pasteLabel: string;
+    pasteFormat: string;
+    pasteTip: string;
+    parseButton: string;
+    uploadLabel: string;
+    uploadSupported: string;
+    previewTitle: string;
+    previewSuccess: string;
+    previewSelected: string;
+    previewFailed: string;
+    previewSelectTransactions: string;
+    selectAll: string;
+    deselectAll: string;
+    allSelected: string;
+    selectedCount: string;
+    tableDate: string;
+    tableAction: string;
+    tableMarket: string;
+    tableSymbol: string;
+    tableQty: string;
+    tablePrice: string;
+    tableFees: string;
+    tableAmount: string;
+    cancel: string;
+    confirmImport: string;
+    confirmImportCount: string;
+    errorNoAccounts: string;
+    errorNoAccountSelected: string;
+    errorNoData: string;
+    errorParseFirst: string;
+    errorNoTransactionsSelected: string;
+    errorParseFailed: string;
+    errorParseFailedCount: string;
+    errorParseError: string;
+  };
 }
 
 // 繁體中文翻譯
@@ -1159,6 +1203,49 @@ A: 股價與匯率因為是抓取網頁現值，故現值會慢三分鐘至五�
     backToEdit: '返回修改',
     confirmSave: '確認儲存',
     errorNoAccount: '請先建立帳戶',
+  },
+  batchImportModal: {
+    title: '批次匯入交易 (Batch Import)',
+    selectAccount: '1. 選擇匯入帳戶',
+    selectAccountPlaceholder: '-- 請選擇帳戶 --',
+    noAccountsWarning: '⚠️ 無法進行批次匯入',
+    noAccountsMessage: '系統中沒有任何帳戶，請先到「證券戶管理」頁面建立帳戶，然後再回來進行批次匯入。',
+    tabPaste: '直接貼上文字 (Paste)',
+    tabUpload: '上傳 CSV 檔案 (Upload)',
+    pasteLabel: '請將 Excel 或表格資料複製貼上於此 (支援格式: 日期 | 買/賣/股息/轉移 | 代號 | 價格 | 數量 | 手續費 | 總金額)',
+    pasteFormat: '💡 「轉移」類別：若數量為負視為轉出，正則視為轉入。',
+    pasteTip: '',
+    parseButton: '解析貼上內容',
+    uploadLabel: '支援 CSV 匯出檔：嘉信 (Charles Schwab)、Firstrade',
+    uploadSupported: '',
+    previewTitle: '預覽匯入資料',
+    previewSuccess: '成功',
+    previewSelected: '已選',
+    previewFailed: '未成功',
+    previewSelectTransactions: '請選擇要匯入的交易',
+    selectAll: '全選',
+    deselectAll: '取消全選',
+    allSelected: '已全選',
+    selectedCount: '已選擇 {selected} / {total} 筆',
+    tableDate: 'Date',
+    tableAction: 'Action',
+    tableMarket: 'Market',
+    tableSymbol: 'Symbol',
+    tableQty: 'Qty',
+    tablePrice: 'Price',
+    tableFees: 'Fees',
+    tableAmount: 'Amount',
+    cancel: '取消',
+    confirmImport: '確認匯入',
+    confirmImportCount: '({count} 筆)',
+    errorNoAccounts: '沒有帳戶，無法匯入',
+    errorNoAccountSelected: '請先選擇帳戶',
+    errorNoData: '無法匯入：沒有資料。請貼上交易文字並解析，或上傳 CSV 檔案。',
+    errorParseFirst: '⚠️ 請先點擊「解析貼上內容」按鈕，確認表格預覽出現資料後，再按下確認匯入。',
+    errorNoTransactionsSelected: '請至少選擇一筆交易進行匯入',
+    errorParseFailed: '無法解析資料。共 {count} 筆資料格式錯誤，請檢查。',
+    errorParseFailedCount: '',
+    errorParseError: '解析發生錯誤：{error}。請檢查資料格式。',
   },
 };
 
@@ -1759,6 +1846,49 @@ A: Stock prices and exchange rates are scraped from web current values, so the c
     confirmSave: 'Confirm Save',
     errorNoAccount: 'Please create an account first',
   },
+  batchImportModal: {
+    title: 'Batch Import Transactions',
+    selectAccount: '1. Select Import Account',
+    selectAccountPlaceholder: '-- Please select account --',
+    noAccountsWarning: '⚠️ Cannot perform batch import',
+    noAccountsMessage: 'There are no accounts in the system. Please go to the "Account Management" page to create an account first, then come back to perform batch import.',
+    tabPaste: 'Paste Text',
+    tabUpload: 'Upload CSV File',
+    pasteLabel: 'Paste Excel or table data here (Supported format: Date | Buy/Sell/Dividend/Transfer | Ticker | Price | Quantity | Fees | Total Amount)',
+    pasteFormat: '💡 "Transfer" category: Negative quantity is treated as transfer out, positive as transfer in.',
+    pasteTip: '',
+    parseButton: 'Parse Pasted Content',
+    uploadLabel: 'Supported CSV export files: Charles Schwab, Firstrade',
+    uploadSupported: '',
+    previewTitle: 'Preview Import Data',
+    previewSuccess: 'Success',
+    previewSelected: 'Selected',
+    previewFailed: 'Failed',
+    previewSelectTransactions: 'Please select transactions to import',
+    selectAll: 'Select All',
+    deselectAll: 'Deselect All',
+    allSelected: 'All Selected',
+    selectedCount: 'Selected {selected} / {total} transactions',
+    tableDate: 'Date',
+    tableAction: 'Action',
+    tableMarket: 'Market',
+    tableSymbol: 'Symbol',
+    tableQty: 'Qty',
+    tablePrice: 'Price',
+    tableFees: 'Fees',
+    tableAmount: 'Amount',
+    cancel: 'Cancel',
+    confirmImport: 'Confirm Import',
+    confirmImportCount: '({count} transactions)',
+    errorNoAccounts: 'No accounts available, cannot import',
+    errorNoAccountSelected: 'Please select an account first',
+    errorNoData: 'Cannot import: No data. Please paste transaction text and parse, or upload a CSV file.',
+    errorParseFirst: '⚠️ Please click the "Parse Pasted Content" button first, confirm that the preview table shows data, then click confirm import.',
+    errorNoTransactionsSelected: 'Please select at least one transaction to import',
+    errorParseFailed: 'Unable to parse data. {count} lines have format errors, please check.',
+    errorParseFailedCount: '',
+    errorParseError: 'Parse error: {error}. Please check data format.',
+  },
 };
 
 // 日文翻譯
@@ -2355,6 +2485,49 @@ A: 株価と為替レートはウェブページの現値を取得している�
     backToEdit: '戻る',
     confirmSave: '保存',
     errorNoAccount: '口座を先に作成してください',
+  },
+  batchImportModal: {
+    title: '一括取引入力',
+    selectAccount: '1. 入力先口座を選択',
+    selectAccountPlaceholder: '-- 口座を選択 --',
+    noAccountsWarning: '⚠️ 一括入力できません',
+    noAccountsMessage: 'システムに口座がありません。「口座管理」ページで口座を作成してから、一括入力を実行してください。',
+    tabPaste: 'テキスト貼り付け',
+    tabUpload: 'CSVファイルアップロード',
+    pasteLabel: 'Excelまたは表データをここに貼り付けてください (対応形式: 日付 | 買/売/配当/転送 | ティッカー | 価格 | 数量 | 手数料 | 合計金額)',
+    pasteFormat: '💡 「転送」カテゴリ：数量が負の場合は転出、正の場合は転入として扱われます。',
+    pasteTip: '',
+    parseButton: '貼り付け内容を解析',
+    uploadLabel: '対応CSVエクスポートファイル：Charles Schwab、Firstrade',
+    uploadSupported: '',
+    previewTitle: '入力データプレビュー',
+    previewSuccess: '成功',
+    previewSelected: '選択済み',
+    previewFailed: '失敗',
+    previewSelectTransactions: '入力する取引を選択してください',
+    selectAll: 'すべて選択',
+    deselectAll: '選択解除',
+    allSelected: 'すべて選択済み',
+    selectedCount: '{selected} / {total} 件選択',
+    tableDate: '日付',
+    tableAction: 'アクション',
+    tableMarket: '市場',
+    tableSymbol: 'シンボル',
+    tableQty: '数量',
+    tablePrice: '価格',
+    tableFees: '手数料',
+    tableAmount: '金額',
+    cancel: 'キャンセル',
+    confirmImport: '入力確認',
+    confirmImportCount: '({count} 件)',
+    errorNoAccounts: '口座がありません。入力できません',
+    errorNoAccountSelected: '先に口座を選択してください',
+    errorNoData: '入力できません：データがありません。取引テキストを貼り付けて解析するか、CSVファイルをアップロードしてください。',
+    errorParseFirst: '⚠️ 先に「貼り付け内容を解析」ボタンをクリックし、プレビューテーブルにデータが表示されることを確認してから、入力確認をクリックしてください。',
+    errorNoTransactionsSelected: '少なくとも1件の取引を選択して入力してください',
+    errorParseFailed: 'データを解析できません。{count} 行にフォーマットエラーがあります。確認してください。',
+    errorParseFailedCount: '',
+    errorParseError: '解析エラー：{error}。データ形式を確認してください。',
   },
 };
 
@@ -2953,6 +3126,49 @@ A: 주가와 환율은 웹페이지의 현행가를 가져오기 때문에 현�
     confirmSave: '저장',
     errorNoAccount: '먼저 계좌를 생성하세요',
   },
+  batchImportModal: {
+    title: '일괄 거래 입력',
+    selectAccount: '1. 입력 계좌 선택',
+    selectAccountPlaceholder: '-- 계좌 선택 --',
+    noAccountsWarning: '⚠️ 일괄 입력 불가',
+    noAccountsMessage: '시스템에 계좌가 없습니다. "계좌 관리" 페이지에서 계좌를 먼저 생성한 후 일괄 입력을 수행하세요.',
+    tabPaste: '텍스트 붙여넣기',
+    tabUpload: 'CSV 파일 업로드',
+    pasteLabel: 'Excel 또는 표 데이터를 여기에 붙여넣으세요 (지원 형식: 날짜 | 매수/매도/배당/이체 | 티커 | 가격 | 수량 | 수수료 | 총액)',
+    pasteFormat: '💡 "이체" 카테고리: 수량이 음수이면 이체 출금, 양수이면 이체 입금으로 처리됩니다.',
+    pasteTip: '',
+    parseButton: '붙여넣은 내용 분석',
+    uploadLabel: '지원 CSV 내보내기 파일: Charles Schwab, Firstrade',
+    uploadSupported: '',
+    previewTitle: '입력 데이터 미리보기',
+    previewSuccess: '성공',
+    previewSelected: '선택됨',
+    previewFailed: '실패',
+    previewSelectTransactions: '입력할 거래를 선택하세요',
+    selectAll: '모두 선택',
+    deselectAll: '선택 해제',
+    allSelected: '모두 선택됨',
+    selectedCount: '{selected} / {total} 건 선택',
+    tableDate: '날짜',
+    tableAction: '액션',
+    tableMarket: '시장',
+    tableSymbol: '심볼',
+    tableQty: '수량',
+    tablePrice: '가격',
+    tableFees: '수수료',
+    tableAmount: '금액',
+    cancel: '취소',
+    confirmImport: '입력 확인',
+    confirmImportCount: '({count} 건)',
+    errorNoAccounts: '계좌가 없습니다. 입력할 수 없습니다',
+    errorNoAccountSelected: '먼저 계좌를 선택하세요',
+    errorNoData: '입력할 수 없습니다: 데이터가 없습니다. 거래 텍스트를 붙여넣고 분석하거나 CSV 파일을 업로드하세요.',
+    errorParseFirst: '⚠️ 먼저 "붙여넣은 내용 분석" 버튼을 클릭하고, 미리보기 테이블에 데이터가 표시되는지 확인한 후 입력 확인을 클릭하세요.',
+    errorNoTransactionsSelected: '최소 1건의 거래를 선택하여 입력하세요',
+    errorParseFailed: '데이터를 분석할 수 없습니다. {count} 줄에 형식 오류가 있습니다. 확인하세요.',
+    errorParseFailedCount: '',
+    errorParseError: '분석 오류: {error}. 데이터 형식을 확인하세요.',
+  },
 };
 
 // 簡體中文翻譯（基於繁體轉簡體）
@@ -3331,6 +3547,49 @@ A: 股价与汇率因抓取网页现值，故现值会延迟三至五分钟不�
   androidPublish: '上架安卓商店指南',
   androidPublishTitle: '如何将此工具上架到 Google Play？',
   androidPublishDesc: '您可透过 TWA 技术将网页转为 Android App：\n1. 注册 Google 开发者账号（$25）。\n2. 使用 Bubblewrap CLI 工具封装您的网站网址。\n3. 在 Play Console 上传 AAB 档并提交审核。',
+};
+zhCN.batchImportModal = {
+  title: '批次汇入交易 (Batch Import)',
+  selectAccount: '1. 选择汇入账户',
+  selectAccountPlaceholder: '-- 请选择账户 --',
+  noAccountsWarning: '⚠️ 无法进行批次汇入',
+  noAccountsMessage: '系统中没有任何账户，请先到「证券户管理」页面建立账户，然后再回来进行批次汇入。',
+  tabPaste: '直接贴上文字 (Paste)',
+  tabUpload: '上传 CSV 文件 (Upload)',
+  pasteLabel: '请将 Excel 或表格数据复制贴于此 (支持格式: 日期 | 买/卖/股息/转移 | 代号 | 价格 | 数量 | 手续费 | 总金额)',
+  pasteFormat: '💡 「转移」类别：若数量为负视为转出，正则视为转入。',
+  pasteTip: '',
+  parseButton: '解析贴上内容',
+  uploadLabel: '支持 CSV 汇出档：嘉信 (Charles Schwab)、Firstrade',
+  uploadSupported: '',
+  previewTitle: '预览汇入数据',
+  previewSuccess: '成功',
+  previewSelected: '已选',
+  previewFailed: '未成功',
+  previewSelectTransactions: '请选择要汇入的交易',
+  selectAll: '全选',
+  deselectAll: '取消全选',
+  allSelected: '已全选',
+  selectedCount: '已选择 {selected} / {total} 笔',
+  tableDate: 'Date',
+  tableAction: 'Action',
+  tableMarket: 'Market',
+  tableSymbol: 'Symbol',
+  tableQty: 'Qty',
+  tablePrice: 'Price',
+  tableFees: 'Fees',
+  tableAmount: 'Amount',
+  cancel: '取消',
+  confirmImport: '确认汇入',
+  confirmImportCount: '({count} 笔)',
+  errorNoAccounts: '没有账户，无法汇入',
+  errorNoAccountSelected: '请先选择账户',
+  errorNoData: '无法汇入：没有数据。请贴上交易文字并解析，或上传 CSV 文件。',
+  errorParseFirst: '⚠️ 请先点击「解析贴上内容」按钮，确认表格预览出现数据后，再按下确认汇入。',
+  errorNoTransactionsSelected: '请至少选择一笔交易进行汇入',
+  errorParseFailed: '无法解析数据。共 {count} 笔数据格式错误，请检查。',
+  errorParseFailedCount: '',
+  errorParseError: '解析发生错误：{error}。请检查数据格式。',
 };
 
 // 德文翻譯
@@ -3798,6 +4057,49 @@ A: Da Aktienkurse und Wechselkurse von Webseiten aktueller Werte abgerufen werde
     backToEdit: 'Zurück',
     confirmSave: 'Bestätigen',
     errorNoAccount: 'Bitte zuerst Konto anlegen.',
+  },
+  batchImportModal: {
+    title: 'Stapelimport von Transaktionen',
+    selectAccount: '1. Import-Konto auswählen',
+    selectAccountPlaceholder: '-- Bitte Konto auswählen --',
+    noAccountsWarning: '⚠️ Stapelimport nicht möglich',
+    noAccountsMessage: 'Es gibt keine Konten im System. Bitte gehen Sie zur Seite "Kontoverwaltung", um zuerst ein Konto zu erstellen, und kehren Sie dann zurück, um den Stapelimport durchzuführen.',
+    tabPaste: 'Text einfügen',
+    tabUpload: 'CSV-Datei hochladen',
+    pasteLabel: 'Excel- oder Tabellendaten hier einfügen (Unterstütztes Format: Datum | Kauf/Verkauf/Dividende/Übertragung | Ticker | Preis | Menge | Gebühren | Gesamtbetrag)',
+    pasteFormat: '💡 "Übertragung"-Kategorie: Negative Menge wird als Ausgang, positive als Eingang behandelt.',
+    pasteTip: '',
+    parseButton: 'Eingefügten Inhalt analysieren',
+    uploadLabel: 'Unterstützte CSV-Exportdateien: Charles Schwab, Firstrade',
+    uploadSupported: '',
+    previewTitle: 'Importdaten-Vorschau',
+    previewSuccess: 'Erfolg',
+    previewSelected: 'Ausgewählt',
+    previewFailed: 'Fehlgeschlagen',
+    previewSelectTransactions: 'Bitte Transaktionen zum Importieren auswählen',
+    selectAll: 'Alle auswählen',
+    deselectAll: 'Auswahl aufheben',
+    allSelected: 'Alle ausgewählt',
+    selectedCount: '{selected} / {total} ausgewählt',
+    tableDate: 'Datum',
+    tableAction: 'Aktion',
+    tableMarket: 'Markt',
+    tableSymbol: 'Symbol',
+    tableQty: 'Menge',
+    tablePrice: 'Preis',
+    tableFees: 'Gebühren',
+    tableAmount: 'Betrag',
+    cancel: 'Abbrechen',
+    confirmImport: 'Import bestätigen',
+    confirmImportCount: '({count} Transaktionen)',
+    errorNoAccounts: 'Keine Konten verfügbar, Import nicht möglich',
+    errorNoAccountSelected: 'Bitte zuerst ein Konto auswählen',
+    errorNoData: 'Import nicht möglich: Keine Daten. Bitte Transaktionstext einfügen und analysieren oder CSV-Datei hochladen.',
+    errorParseFirst: '⚠️ Bitte klicken Sie zuerst auf die Schaltfläche "Eingefügten Inhalt analysieren", bestätigen Sie, dass die Vorschautabelle Daten anzeigt, und klicken Sie dann auf Import bestätigen.',
+    errorNoTransactionsSelected: 'Bitte mindestens eine Transaktion zum Importieren auswählen',
+    errorParseFailed: 'Daten können nicht analysiert werden. {count} Zeilen haben Formatfehler, bitte überprüfen.',
+    errorParseFailedCount: '',
+    errorParseError: 'Analysefehler: {error}. Bitte Datenformat überprüfen.',
   },
 };
 
@@ -4294,6 +4596,49 @@ R : Comme les prix des actions et les taux de change sont récupérés à partir
     backToEdit: 'Retour',
     confirmSave: 'Confirmer',
     errorNoAccount: 'Veuillez d\'abord créer un compte.',
+  },
+  batchImportModal: {
+    title: 'Import groupé de transactions',
+    selectAccount: '1. Sélectionner le compte d\'importation',
+    selectAccountPlaceholder: '-- Veuillez sélectionner un compte --',
+    noAccountsWarning: '⚠️ Import groupé impossible',
+    noAccountsMessage: 'Il n\'y a aucun compte dans le système. Veuillez d\'abord aller à la page "Gestion des comptes" pour créer un compte, puis revenir pour effectuer l\'import groupé.',
+    tabPaste: 'Coller le texte',
+    tabUpload: 'Télécharger le fichier CSV',
+    pasteLabel: 'Collez ici les données Excel ou de tableau (Format supporté: Date | Achat/Vente/Dividende/Transfert | Symbole | Prix | Quantité | Frais | Montant total)',
+    pasteFormat: '💡 Catégorie "Transfert": Une quantité négative est traitée comme un transfert sortant, positive comme un transfert entrant.',
+    pasteTip: '',
+    parseButton: 'Analyser le contenu collé',
+    uploadLabel: 'Fichiers CSV d\'exportation pris en charge: Charles Schwab, Firstrade',
+    uploadSupported: '',
+    previewTitle: 'Aperçu des données d\'importation',
+    previewSuccess: 'Succès',
+    previewSelected: 'Sélectionné',
+    previewFailed: 'Échoué',
+    previewSelectTransactions: 'Veuillez sélectionner les transactions à importer',
+    selectAll: 'Tout sélectionner',
+    deselectAll: 'Tout désélectionner',
+    allSelected: 'Tout sélectionné',
+    selectedCount: '{selected} / {total} sélectionné',
+    tableDate: 'Date',
+    tableAction: 'Action',
+    tableMarket: 'Marché',
+    tableSymbol: 'Symbole',
+    tableQty: 'Qté',
+    tablePrice: 'Prix',
+    tableFees: 'Frais',
+    tableAmount: 'Montant',
+    cancel: 'Annuler',
+    confirmImport: 'Confirmer l\'importation',
+    confirmImportCount: '({count} transactions)',
+    errorNoAccounts: 'Aucun compte disponible, importation impossible',
+    errorNoAccountSelected: 'Veuillez d\'abord sélectionner un compte',
+    errorNoData: 'Importation impossible: Aucune donnée. Veuillez coller le texte de transaction et analyser, ou télécharger un fichier CSV.',
+    errorParseFirst: '⚠️ Veuillez d\'abord cliquer sur le bouton "Analyser le contenu collé", confirmer que le tableau d\'aperçu affiche des données, puis cliquer sur confirmer l\'importation.',
+    errorNoTransactionsSelected: 'Veuillez sélectionner au moins une transaction à importer',
+    errorParseFailed: 'Impossible d\'analyser les données. {count} lignes ont des erreurs de format, veuillez vérifier.',
+    errorParseFailedCount: '',
+    errorParseError: 'Erreur d\'analyse: {error}. Veuillez vérifier le format des données.',
   },
 };
 
@@ -4817,6 +5162,13 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     confirmSave: 'पुष्टि',
     errorNoAccount: 'पहले खाता बनाएं।',
   },
+  batchImportModal: {
+    ...en.batchImportModal,
+    title: 'बैच आयात',
+    selectAccount: '1. आयात खाता चुनें',
+    parseButton: 'चिपकाए गए सामग्री का विश्लेषण करें',
+    confirmImport: 'आयात की पुष्टि करें',
+  },
 };
 
 // 阿拉伯語（以英文為底，沙烏地等中東用戶）
@@ -5339,6 +5691,13 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     confirmSave: 'تأكيد',
     errorNoAccount: 'أنشئ حساباً أولاً.',
   },
+  batchImportModal: {
+    ...en.batchImportModal,
+    title: 'استيراد مجمع',
+    selectAccount: '1. حدد حساب الاستيراد',
+    parseButton: 'تحليل المحتوى المُلصق',
+    confirmImport: 'تأكيد الاستيراد',
+  },
 };
 
 // 葡萄牙語（以英文為底，巴西等葡語用戶）
@@ -5834,6 +6193,13 @@ R: Como os preços das ações e as taxas de câmbio são obtidos a partir dos v
     backToEdit: 'Voltar',
     confirmSave: 'Confirmar',
     errorNoAccount: 'Crie uma conta primeiro.',
+  },
+  batchImportModal: {
+    ...en.batchImportModal,
+    title: 'Importação em lote',
+    selectAccount: '1. Selecione a conta de importação',
+    parseButton: 'Analisar conteúdo colado',
+    confirmImport: 'Confirmar importação',
   },
 };
 
