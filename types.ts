@@ -1,11 +1,25 @@
+
 /** 基準顯示幣別（儀表板總額等用此幣顯示） */
 export type BaseCurrency = 'TWD' | 'USD' | 'JPY' | 'EUR' | 'GBP' | 'HKD' | 'KRW' | 'CAD' | 'INR' | 'CNY' | 'AUD' | 'SAR' | 'BRL';
+
+export const BASE_CURRENCIES: BaseCurrency[] = ['TWD', 'USD', 'JPY', 'EUR', 'GBP', 'HKD', 'KRW', 'CAD', 'INR', 'CNY', 'AUD', 'SAR', 'BRL'];
 
 export enum Market {
   US = 'US',
   TW = 'TW',
   UK = 'UK',
-  JP = 'JP'
+  JP = 'JP',
+  CN = 'CN',
+  SZ = 'SZ',
+  IN = 'IN',
+  CA = 'CA',
+  FR = 'FR',
+  HK = 'HK',
+  KR = 'KR',
+  DE = 'DE',
+  AU = 'AU',
+  SA = 'SA',
+  BR = 'BR'
 }
 
 export enum Currency {
@@ -15,6 +29,7 @@ export enum Currency {
   HKD = 'HKD',
   SGD = 'SGD',
   CNY = 'CNY',
+  INR = 'INR',
   KRW = 'KRW',
   THB = 'THB',
   MYR = 'MYR',
@@ -32,7 +47,8 @@ export enum Currency {
   NZD = 'NZD',
   ZAR = 'ZAR',
   BRL = 'BRL',
-  MXN = 'MXN'
+  MXN = 'MXN',
+  SAR = 'SAR'
 }
 
 export enum TransactionType {
@@ -127,6 +143,16 @@ export interface PortfolioSummary {
   annualizedReturn: number; // CAGR
   exchangeRateUsdToTwd: number;
   jpyExchangeRate?: number; // JPY to TWD exchange rate (optional)
+  eurExchangeRate?: number; // EUR to TWD (1 EUR = N TWD)
+  gbpExchangeRate?: number; // GBP to TWD (1 GBP = N TWD)
+  hkdExchangeRate?: number; // HKD to TWD (1 HKD = N TWD)
+  krwExchangeRate?: number; // KRW to TWD (1 KRW = N TWD)
+  cnyExchangeRate?: number; // CNY to TWD (1 CNY = N TWD)
+  inrExchangeRate?: number; // INR to TWD (1 INR = N TWD)
+  cadExchangeRate?: number; // CAD to TWD (1 CAD = N TWD)
+  audExchangeRate?: number; // AUD to TWD (1 AUD = N TWD)
+  sarExchangeRate?: number; // SAR to TWD (1 SAR = N TWD)
+  brlExchangeRate?: number; // BRL to TWD (1 BRL = N TWD)
   // Detailed fields
   accumulatedCashDividendsTWD: number;
   accumulatedStockDividendsTWD: number;
@@ -175,6 +201,12 @@ export interface AccountPerformance {
   cashBalanceNative?: number;
   profitNative?: number;
   netInvestedNative?: number;
+  unrealizedProfitTWD?: number;
+  realizedProfitTWD?: number;
+  incomeTWD?: number;
+  unrealizedProfitNative?: number;
+  realizedProfitNative?: number;
+  incomeNative?: number;
 }
 
 // New Interface for Historical Data Storage
@@ -183,6 +215,10 @@ export interface HistoricalData {
     prices: Record<string, number>; // Ticker -> Price on Dec 31
     exchangeRate: number; // USD to TWD on Dec 31
     jpyExchangeRate?: number; // JPY to TWD on Dec 31 (optional)
+    eurExchangeRate?: number; // EUR to TWD on Dec 31 (optional)
+    gbpExchangeRate?: number; // GBP to TWD on Dec 31 (optional)
+    hkdExchangeRate?: number; // HKD to TWD on Dec 31 (optional)
+    krwExchangeRate?: number; // KRW to TWD on Dec 31 (optional)
   };
 }
 
