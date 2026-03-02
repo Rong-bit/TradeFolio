@@ -2045,7 +2045,8 @@ const App: React.FC = () => {
         <BatchImportModal 
           accounts={accounts} 
           onImport={addBatchTransactions} 
-          onClose={() => setIsImportOpen(false)} 
+          onClose={() => setIsImportOpen(false)}
+          language={language}
         />
       )}
       {isHistoricalModalOpen && (
