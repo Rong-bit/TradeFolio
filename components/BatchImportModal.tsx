@@ -19,6 +19,7 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose, langua
   const [failCount, setFailCount] = useState(0); // Track failed lines
   const [errorMsg, setErrorMsg] = useState('');
   const [activeTab, setActiveTab] = useState<'file' | 'paste'>('paste'); // Default to paste for ease
+  const [selectedFileName, setSelectedFileName] = useState<string>(''); // Track selected file name
 
   // Helper to parse date MM/DD/YYYY or YYYY/MM/DD to YYYY-MM-DD
   const parseDate = (dateStr: string | undefined) => {
@@ -103,8 +104,12 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose, langua
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      setSelectedFileName('');
+      return;
+    }
 
+    setSelectedFileName(file.name);
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
@@ -969,6 +974,9 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose, langua
                   onChange={handleFileUpload}
                   className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
+                <p className="text-xs text-slate-500 mt-1">
+                  {selectedFileName || tr.noFileSelected}
+                </p>
               </div>
             )}
           </div>
