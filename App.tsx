@@ -1165,7 +1165,8 @@ const App: React.FC = () => {
       const accountId = record.accountId;
       const balanceChange = calculateBalanceChange(record);
       if (!(accountId in accountBalances)) accountBalances[accountId] = 0;
-      accountBalances[accountId] += balanceChange;
+      // 每次累加後四捨五入到小數點後兩位，避免浮點數精度問題
+      accountBalances[accountId] = Math.round((accountBalances[accountId] + balanceChange) * 100) / 100;
       balanceMap.set(record.id, accountBalances[accountId]);
     });
     
