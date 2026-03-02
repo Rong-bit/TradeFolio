@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Account, Market, Transaction, TransactionType } from '../types';
 import { Language, t, translate } from '../utils/i18n';
@@ -20,6 +20,7 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose, langua
   const [errorMsg, setErrorMsg] = useState('');
   const [activeTab, setActiveTab] = useState<'file' | 'paste'>('paste'); // Default to paste for ease
   const [selectedFileName, setSelectedFileName] = useState<string>(''); // Track selected file name
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper to parse date MM/DD/YYYY or YYYY/MM/DD to YYYY-MM-DD
   const parseDate = (dateStr: string | undefined) => {
@@ -969,14 +970,25 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose, langua
                   {tr.uploadLabel}
                 </label>
                 <input 
+                  ref={fileInputRef}
                   type="file" 
                   accept=".csv"
                   onChange={handleFileUpload}
-                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="hidden"
+                  id="csv-file-input"
                 />
-                <p className="text-xs text-slate-500 mt-1">
-                  {selectedFileName || tr.noFileSelected}
-                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 text-sm font-semibold transition"
+                  >
+                    {tr.selectFile}
+                  </button>
+                  <span className="text-sm text-slate-600">
+                    {selectedFileName || tr.noFileSelected}
+                  </span>
+                </div>
               </div>
             )}
           </div>
