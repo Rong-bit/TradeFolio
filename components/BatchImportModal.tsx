@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Account, Market, Transaction, TransactionType } from '../types';
+import { Language, t, translate } from '../utils/i18n';
 
 interface Props {
   accounts: Account[];
   onImport: (transactions: Transaction[]) => void;
   onClose: () => void;
+  language: Language;
 }
 
-const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
+const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose, language }) => {
+  const tr = t(language).batchImportModal;
   const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '');
   const [inputText, setInputText] = useState(''); // New state for text area
   const [previewData, setPreviewData] = useState<Transaction[]>([]);
@@ -792,9 +795,9 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
 
       if (transactions.length === 0) {
         if (currentFailures > 0) {
-            setErrorMsg(`無法解析資料。共 ${currentFailures} 筆資料格式錯誤，請檢查。`);
+            setErrorMsg(translate('batchImportModal.errorParseFailed', language, { count: currentFailures.toString() }));
         } else {
-            setErrorMsg('無法解析資料。請確認是否貼上了正確的內容。');
+            setErrorMsg(translate('batchImportModal.errorParseFailed', language, { count: '0' }));
         }
       } else {
         setPreviewData(transactions);
@@ -805,28 +808,28 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
     } catch (err) {
       console.error('解析錯誤詳情:', err);
       console.error('輸入文字:', text);
-      setErrorMsg(`解析發生錯誤：${err instanceof Error ? err.message : '未知錯誤'}。請檢查資料格式。`);
+      setErrorMsg(translate('batchImportModal.errorParseError', language, { error: err instanceof Error ? err.message : '未知錯誤' }));
     }
   };
 
   const handleConfirm = () => {
     // 嚴格驗證帳戶
     if (accounts.length === 0) {
-      alert("❌ 無法匯入：系統中沒有任何帳戶\n請先到「證券戶管理」頁面建立帳戶，然後再回來進行批次匯入。");
+      alert(`❌ ${tr.errorNoAccounts}\n${tr.noAccountsMessage}`);
       return;
     }
     
     if (!selectedAccountId || selectedAccountId === '') {
-      alert("❌ 無法匯入：請先選擇一個帳戶");
+      alert(`❌ ${tr.errorNoAccountSelected}`);
       return;
     }
     
     // 新增：檢查是否有資料
     if (previewData.length === 0) {
       if (activeTab === 'paste' && inputText.trim().length > 0) {
-         alert("⚠️ 請先點擊「解析貼上內容」按鈕，確認表格預覽出現資料後，再按下確認匯入。");
+         alert(`⚠️ ${tr.errorParseFirst}`);
       } else {
-         alert("❌ 無法匯入：沒有資料。請貼上交易文字並解析，或上傳 CSV 檔案。");
+         alert(`❌ ${tr.errorNoData}`);
       }
       return;
     }
@@ -834,7 +837,7 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
     // 檢查選擇的帳戶是否真的存在
     const selectedAccount = accounts.find(a => a.id === selectedAccountId);
     if (!selectedAccount) {
-      alert("❌ 無法匯入：選擇的帳戶不存在");
+      alert(`❌ ${tr.errorNoAccountSelected}`);
       return;
     }
     
@@ -842,7 +845,7 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
     const selectedTransactions = previewData.filter(t => selectedIds.has(t.id));
     
     if (selectedTransactions.length === 0) {
-      alert("❌ 請至少選擇一筆交易進行匯入");
+      alert(`❌ ${tr.errorNoTransactionsSelected}`);
       return;
     }
     
@@ -880,7 +883,7 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-slate-900 p-4 flex justify-between items-center shrink-0">
-          <h2 className="text-white font-bold text-lg">批次匯入交易 (Batch Import)</h2>
+          <h2 className="text-white font-bold text-lg">{tr.title}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">&times;</button>
         </div>
 
@@ -889,15 +892,15 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
           
           {/* Account Selection */}
           <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-             <label className="block text-sm font-bold text-slate-700 mb-2">1. 選擇匯入帳戶</label>
+             <label className="block text-sm font-bold text-slate-700 mb-2">{tr.selectAccount}</label>
              
              {accounts.length === 0 ? (
                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                  <p className="text-red-800 text-sm font-medium mb-2">
-                   ⚠️ 無法進行批次匯入
+                   {tr.noAccountsWarning}
                  </p>
                  <p className="text-red-700 text-sm">
-                   系統中沒有任何帳戶，請先到「證券戶管理」頁面建立帳戶，然後再回來進行批次匯入。
+                   {tr.noAccountsMessage}
                  </p>
                </div>
              ) : (
@@ -909,7 +912,7 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                   }}
                   className="w-full md:w-1/2 border border-slate-300 rounded p-2"
                >
-                 <option value="">-- 請選擇帳戶 --</option>
+                 <option value="">{tr.selectAccountPlaceholder}</option>
                  {accounts.map(a => (
                    <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
                  ))}
@@ -924,22 +927,22 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                 onClick={() => setActiveTab('paste')}
                 className={`px-4 py-2 text-sm font-medium ${activeTab === 'paste' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                直接貼上文字 (Paste)
+                {tr.tabPaste}
               </button>
               <button 
                 onClick={() => setActiveTab('file')}
                 className={`px-4 py-2 text-sm font-medium ${activeTab === 'file' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                上傳 CSV 檔案 (Upload)
+                {tr.tabUpload}
               </button>
             </div>
 
             {activeTab === 'paste' ? (
               <div className="space-y-3">
                 <label className="block text-sm text-slate-600">
-                  請將 Excel 或表格資料複製貼上於此 (支援格式: 日期 | 買/賣/股息/轉移 | 代號 | 價格 | 數量 | 手續費 | 總金額)
+                  {tr.pasteLabel}
                   <br />
-                  <span className="text-xs text-slate-500">💡 「轉移」類別：若數量為負視為轉出，正則視為轉入。</span>
+                  <span className="text-xs text-slate-500">{tr.pasteFormat}</span>
                 </label>
                 <textarea 
                   className="w-full h-40 border border-slate-300 rounded-lg p-3 font-mono text-xs focus:ring-2 focus:ring-accent outline-none"
@@ -952,13 +955,13 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                   disabled={!inputText.trim()}
                   className="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 disabled:opacity-50 text-sm"
                 >
-                  解析貼上內容
+                  {tr.parseButton}
                 </button>
               </div>
             ) : (
               <div className="space-y-3">
                 <label className="block text-sm text-slate-600">
-                  支援 CSV 匯出檔：嘉信 (Charles Schwab)、Firstrade
+                  {tr.uploadLabel}
                 </label>
                 <input 
                   type="file" 
@@ -981,30 +984,30 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             <div>
               <h3 className="font-bold text-slate-800 mb-3 flex justify-between items-center">
                 <span>
-                    預覽匯入資料
+                    {tr.previewTitle}
                     <span className="ml-2 font-normal text-sm bg-slate-100 px-2 py-0.5 rounded text-slate-600">
-                        成功: <span className="text-green-600 font-bold">{previewData.length}</span>
+                        {tr.previewSuccess}: <span className="text-green-600 font-bold">{previewData.length}</span>
                     </span>
                     <span className="ml-2 font-normal text-sm bg-blue-100 px-2 py-0.5 rounded text-blue-600 border border-blue-200">
-                        已選: <span className="text-blue-700 font-bold">{selectedIds.size}</span> 筆
+                        {tr.previewSelected}: <span className="text-blue-700 font-bold">{selectedIds.size}</span> {language === 'zh-TW' || language === 'zh-CN' ? '筆' : ''}
                     </span>
                     {failCount > 0 && (
                         <span className="ml-2 font-normal text-sm bg-red-50 px-2 py-0.5 rounded text-red-600 border border-red-100">
-                            未成功: <strong>{failCount}</strong> 筆
+                            {tr.previewFailed}: <strong>{failCount}</strong> {language === 'zh-TW' || language === 'zh-CN' ? '筆' : ''}
                         </span>
                     )}
                 </span>
-                <span className="text-xs font-normal text-slate-500">請選擇要匯入的交易</span>
+                <span className="text-xs font-normal text-slate-500">{tr.previewSelectTransactions}</span>
               </h3>
               <div className="mb-2 flex items-center gap-2">
                 <button
                   onClick={toggleSelectAll}
                   className="text-xs px-3 py-1 bg-slate-200 hover:bg-slate-300 rounded text-slate-700 transition"
                 >
-                  {selectedIds.size === previewData.length ? '取消全選' : '全選'}
+                  {selectedIds.size === previewData.length ? tr.deselectAll : tr.selectAll}
                 </button>
                 <span className="text-xs text-slate-500">
-                  {selectedIds.size === previewData.length ? '已全選' : `已選擇 ${selectedIds.size} / ${previewData.length} 筆`}
+                  {selectedIds.size === previewData.length ? tr.allSelected : translate('batchImportModal.selectedCount', language, { selected: selectedIds.size.toString(), total: previewData.length.toString() })}
                 </span>
               </div>
               <div className="border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
@@ -1019,14 +1022,14 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                           className="cursor-pointer"
                         />
                       </th>
-                      <th className="px-4 py-2">Date</th>
-                      <th className="px-4 py-2">Action</th>
-                      <th className="px-4 py-2">Market</th>
-                      <th className="px-4 py-2">Symbol</th>
-                      <th className="px-4 py-2 text-right">Qty</th>
-                      <th className="px-4 py-2 text-right">Price</th>
-                      <th className="px-4 py-2 text-right">Fees</th>
-                      <th className="px-4 py-2 text-right">Amount</th>
+                      <th className="px-4 py-2">{tr.tableDate}</th>
+                      <th className="px-4 py-2">{tr.tableAction}</th>
+                      <th className="px-4 py-2">{tr.tableMarket}</th>
+                      <th className="px-4 py-2">{tr.tableSymbol}</th>
+                      <th className="px-4 py-2 text-right">{tr.tableQty}</th>
+                      <th className="px-4 py-2 text-right">{tr.tablePrice}</th>
+                      <th className="px-4 py-2 text-right">{tr.tableFees}</th>
+                      <th className="px-4 py-2 text-right">{tr.tableAmount}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1097,7 +1100,7 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
             onClick={onClose}
             className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-white transition"
           >
-            取消
+            {tr.cancel}
           </button>
           <button 
             onClick={handleConfirm}
@@ -1108,14 +1111,14 @@ const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
                : 'bg-slate-400'
             }`}
             title={
-              accounts.length === 0 ? "沒有帳戶，無法匯入" :
-              !selectedAccountId ? "請先選擇帳戶" :
-              previewData.length === 0 ? "請先解析資料" : 
-              selectedIds.size === 0 ? "請至少選擇一筆交易" :
-              `匯入 ${selectedIds.size} 筆交易到 ${accounts.find(a => a.id === selectedAccountId)?.name}`
+              accounts.length === 0 ? tr.errorNoAccounts :
+              !selectedAccountId ? tr.errorNoAccountSelected :
+              previewData.length === 0 ? translate('batchImportModal.errorParseFailed', language, { count: '0' }) : 
+              selectedIds.size === 0 ? tr.errorNoTransactionsSelected :
+              `${tr.confirmImport} ${selectedIds.size} ${language === 'zh-TW' || language === 'zh-CN' ? '筆交易到' : 'transactions to'} ${accounts.find(a => a.id === selectedAccountId)?.name}`
             }
           >
-            確認匯入 {selectedIds.size > 0 ? `(${selectedIds.size} 筆)` : previewData.length > 0 ? `(${previewData.length} 筆)` : ''}
+            {tr.confirmImport} {selectedIds.size > 0 ? translate('batchImportModal.confirmImportCount', language, { count: selectedIds.size.toString() }) : previewData.length > 0 ? translate('batchImportModal.confirmImportCount', language, { count: previewData.length.toString() }) : ''}
           </button>
         </div>
 
