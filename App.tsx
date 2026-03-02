@@ -38,6 +38,19 @@ const formatNumber = (num: number): string => {
   return num.toString();
 };
 
+// 格式化金額和餘額，添加千位分隔符
+const formatAmount = (num: number): string => {
+  // 如果是整數，使用千位分隔符但不顯示小數
+  if (num % 1 === 0) {
+    return num.toLocaleString('zh-TW');
+  }
+  // 否則保留兩位小數並添加千位分隔符
+  return num.toLocaleString('zh-TW', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
 const App: React.FC = () => {
   useEffect(() => {
     globalSetDebugLogs = setDebugLogs;
@@ -1728,12 +1741,12 @@ const App: React.FC = () => {
                                {record.type === 'TRANSACTION' && (record as any).fees > 0 ? formatNumber((record as any).fees) : '-'}
                              </td>
                              <td className="px-2 sm:px-3 py-2 text-right font-bold font-mono text-slate-700 text-xs sm:text-sm">
-                               {record.amount % 1 === 0 ? record.amount.toString() : record.amount.toFixed(2)}
+                               {formatAmount(record.amount)}
                                <div className="md:hidden mt-0.5">
                                  <span className={`text-[10px] font-normal ${
                                    normalizedBalance >= 0 ? 'text-green-600' : 'text-red-600'
                                  }`}>
-                                   {normalizedBalance.toFixed(2)}
+                                   {formatAmount(normalizedBalance)}
                                  </span>
                                </div>
                              </td>
@@ -1742,7 +1755,7 @@ const App: React.FC = () => {
                                   <span className={`font-medium text-xs sm:text-sm ${
                                     normalizedBalance >= 0 ? 'text-green-600' : 'text-red-600'
                                   }`}>
-                                    {normalizedBalance.toFixed(2)}
+                                    {formatAmount(normalizedBalance)}
                                   </span>
                                   <span className="text-[10px] text-slate-400">
                                     {accounts.find(a => a.id === record.accountId)?.currency || 'TWD'}
