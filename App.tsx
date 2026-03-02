@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Transaction, Holding, PortfolioSummary, ChartDataPoint, Market, Account, CashFlow, TransactionType, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlowType, Currency, HistoricalData, CombinedRecord } from './types';
+import { Transaction, Holding, PortfolioSummary, ChartDataPoint, Market, Account, CashFlow, TransactionType, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlowType, Currency, HistoricalData, CombinedRecord, BaseCurrency } from './types';
 import { useLocalStorageDebounced, useLocalStorageDebouncedSimple } from './hooks/useLocalStorageDebounced';
 import { useFilters } from './hooks/useFilters';
 import { useDeleteState } from './hooks/useDeleteState';
@@ -59,6 +59,7 @@ const App: React.FC = () => {
   const [priceDetails, setPriceDetails] = useState<Record<string, { change: number, changePercent: number }>>({});
   const [exchangeRate, setExchangeRate] = useState<number>(31.5);
   const [jpyExchangeRate, setJpyExchangeRate] = useState<number | undefined>(undefined);
+  const [baseCurrency, setBaseCurrency] = useState<BaseCurrency>('TWD');
   const [rebalanceTargets, setRebalanceTargets] = useState<Record<string, number>>({});
   const [rebalanceEnabledItems, setRebalanceEnabledItems] = useState<string[]>([]);
   const [historicalData, setHistoricalData] = useState<HistoricalData>({}); 
@@ -1266,6 +1267,7 @@ const App: React.FC = () => {
                  accountPerformance={accountPerformance}
                  cashFlows={cashFlows}
                  accounts={computedAccounts}
+                 baseCurrency={baseCurrency}
                  onUpdatePrice={updatePrice}
                  onAutoUpdate={handleAutoUpdatePrices}
                  isGuest={isGuest}
@@ -1647,6 +1649,7 @@ const App: React.FC = () => {
                <RebalanceView 
                  summary={summary}
                  holdings={holdings}
+                 baseCurrency={baseCurrency}
                  exchangeRate={exchangeRate}
                  jpyExchangeRate={jpyExchangeRate}
                  targets={rebalanceTargets}
