@@ -138,7 +138,7 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
       
       // 使用 AbortController 實現超時（兼容性更好）
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 秒超時，加快切換代理
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 秒超時，失敗時更快切換代理
 
       const response = await fetch(proxyUrl, {
         method: 'GET',
@@ -812,9 +812,9 @@ export const fetchCurrentPrices = async (
       return convertToYahooSymbol(ticker, market);
     });
 
-    // 並行取得股價（每批最多 5 支，縮短總時間；批次間短暫間隔避免觸發速率限制）
-    const CONCURRENCY = 5;
-    const BATCH_DELAY_MS = 200;
+    // 並行取得股價（每批最多 6 支，批次間 100ms 間隔，縮短總時間）
+    const CONCURRENCY = 6;
+    const BATCH_DELAY_MS = 100;
     const prices: (PriceData | null)[] = [];
 
     for (let start = 0; start < yahooSymbols.length; start += CONCURRENCY) {
