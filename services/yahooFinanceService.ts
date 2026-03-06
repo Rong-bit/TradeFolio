@@ -7,6 +7,9 @@ export interface PriceData {
 
 export type YahooMarket = 'US' | 'TW' | 'UK' | 'JP' | 'CN' | 'SZ' | 'IN' | 'CA' | 'FR' | 'HK' | 'KR' | 'DE' | 'AU' | 'SA' | 'BR';
 
+/** 僅在開發模式輸出 [調試] log */
+const DEBUG_QUOTE = typeof import.meta !== 'undefined' && (import.meta as any).env?.DEV === true;
+
 /**
  * 將股票代號轉換為 Yahoo Finance 格式
  * @param ticker 原始股票代號（如 "TPE:2330" 或 "AAPL" 或 "DTLA" 或 "7203"）
@@ -114,10 +117,10 @@ const convertToYahooSymbol = (ticker: string, market?: YahooMarket): string => {
  * 使用 CORS 代理服務取得資料（帶備用方案）
  */
 const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Response | null> => {
-  // 僅保留實測可用的代理，減少失敗重試時間（已移除常速率限制的 codetabs、不穩的 cors-anywhere）
+  // 先試 corsproxy（部署環境較穩），再 allorigins，縮短常見失敗的等待
   const proxies = [
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     url
   ];
 
@@ -138,7 +141,7 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
       
       // 使用 AbortController 實現超時（兼容性更好）
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 秒超時，失敗時更快切換代理
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 秒超時，盡快切換代理
 
       const response = await fetch(proxyUrl, {
         method: 'GET',
@@ -225,10 +228,10 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
  */
 const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, proxyIndex: number = 0): Promise<PriceData | null> => {
   const maxRetries = 2; // 最多重試 2 次，加快失敗切換
-  const retryDelay = 2000; // 重試延遲 2 秒
+  const retryDelay = 1000; // 重試延遲 1 秒
   
   try {
-    console.log(`[調試] 開始取得 ${symbol} 股價 (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
+    if (DEBUG_QUOTE) console.log(`[調試] 開始取得 ${symbol} 股價 (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
     
     // 使用 Yahoo Finance 的公開 API
     // 由於 CORS 限制，使用 CORS 代理服務
@@ -356,7 +359,7 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
  */
 const fetchExchangeRate = async (retryCount: number = 0, proxyIndex: number = 0): Promise<number> => {
   const maxRetries = 2; // 最多重試 2 次
-  const retryDelay = 2000; // 重試延遲 2 秒
+  const retryDelay = 1000; // 重試延遲 1 秒
   
   try {
     console.log(`[調試] 開始取得匯率 USDTWD=X (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
@@ -812,9 +815,9 @@ export const fetchCurrentPrices = async (
       return convertToYahooSymbol(ticker, market);
     });
 
-    // 並行取得股價（每批最多 6 支，批次間 100ms 間隔，縮短總時間）
+    // 並行取得股價（每批最多 6 支，無批次間隔以縮短總時間）
     const CONCURRENCY = 6;
-    const BATCH_DELAY_MS = 100;
+    const BATCH_DELAY_MS = 0;
     const prices: (PriceData | null)[] = [];
 
     for (let start = 0; start < yahooSymbols.length; start += CONCURRENCY) {
