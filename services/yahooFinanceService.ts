@@ -141,7 +141,7 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
       
       // 使用 AbortController 實現超時（兼容性更好）
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 秒超時
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 秒超時，加快切換代理
 
       const response = await fetch(proxyUrl, {
         method: 'GET',
@@ -227,8 +227,8 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
  * 取得單一股票的即時價格資訊（帶重試機制）
  */
 const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, proxyIndex: number = 0): Promise<PriceData | null> => {
-  const maxRetries = 3; // 最多重試 3 次
-  const retryDelay = 5000; // 重試延遲 5 秒（增加延遲時間）
+  const maxRetries = 2; // 最多重試 2 次，加快失敗切換
+  const retryDelay = 2000; // 重試延遲 2 秒
   
   try {
     console.log(`[調試] 開始取得 ${symbol} 股價 (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
@@ -358,8 +358,8 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
  * 取得 USD 對 TWD 的即時匯率（帶重試機制）
  */
 const fetchExchangeRate = async (retryCount: number = 0, proxyIndex: number = 0): Promise<number> => {
-  const maxRetries = 3; // 最多重試 3 次
-  const retryDelay = 5000; // 重試延遲 5 秒（增加延遲時間）
+  const maxRetries = 2; // 最多重試 2 次
+  const retryDelay = 2000; // 重試延遲 2 秒
   
   try {
     console.log(`[調試] 開始取得匯率 USDTWD=X (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
@@ -815,17 +815,17 @@ export const fetchCurrentPrices = async (
       return convertToYahooSymbol(ticker, market);
     });
 
-    // 逐個處理請求，避免速率限制
-    const delayMs = 1500;
+    // 並行取得股價（每批最多 5 支，縮短總時間；批次間短暫間隔避免觸發速率限制）
+    const CONCURRENCY = 5;
+    const BATCH_DELAY_MS = 200;
     const prices: (PriceData | null)[] = [];
-    
-    for (let i = 0; i < yahooSymbols.length; i++) {
-      const symbol = yahooSymbols[i];
-      const price = await fetchSingleStockPrice(symbol);
-      prices.push(price);
-      
-      if (i < yahooSymbols.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+
+    for (let start = 0; start < yahooSymbols.length; start += CONCURRENCY) {
+      const batch = yahooSymbols.slice(start, start + CONCURRENCY);
+      const batchResults = await Promise.all(batch.map(symbol => fetchSingleStockPrice(symbol)));
+      prices.push(...batchResults);
+      if (start + CONCURRENCY < yahooSymbols.length) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
       }
     }
 
