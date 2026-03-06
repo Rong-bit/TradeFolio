@@ -7,9 +7,6 @@ export interface PriceData {
 
 export type YahooMarket = 'US' | 'TW' | 'UK' | 'JP' | 'CN' | 'SZ' | 'IN' | 'CA' | 'FR' | 'HK' | 'KR' | 'DE' | 'AU' | 'SA' | 'BR';
 
-/** 僅在開發模式輸出 [調試] log */
-const DEBUG_QUOTE = typeof import.meta !== 'undefined' && (import.meta as any).env?.DEV === true;
-
 /**
  * 將股票代號轉換為 Yahoo Finance 格式
  * @param ticker 原始股票代號（如 "TPE:2330" 或 "AAPL" 或 "DTLA" 或 "7203"）
@@ -117,7 +114,7 @@ const convertToYahooSymbol = (ticker: string, market?: YahooMarket): string => {
  * 使用 CORS 代理服務取得資料（帶備用方案）
  */
 const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Response | null> => {
-  // 先試 corsproxy（部署環境較穩），再 allorigins，縮短常見失敗的等待
+  // 優先使用較少 429 的 corsproxy，減少 CORS/429 錯誤與重試時間（allorigins 易觸發速率限制）
   const proxies = [
     `https://corsproxy.io/?${encodeURIComponent(url)}`,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -141,7 +138,7 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
       
       // 使用 AbortController 實現超時（兼容性更好）
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 秒超時，盡快切換代理
+      const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5 秒超時，失敗時更快切換代理
 
       const response = await fetch(proxyUrl, {
         method: 'GET',
@@ -228,10 +225,10 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
  */
 const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, proxyIndex: number = 0): Promise<PriceData | null> => {
   const maxRetries = 2; // 最多重試 2 次，加快失敗切換
-  const retryDelay = 1000; // 重試延遲 1 秒
+  const retryDelay = 2000; // 重試延遲 2 秒
   
   try {
-    if (DEBUG_QUOTE) console.log(`[調試] 開始取得 ${symbol} 股價 (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
+    console.log(`[調試] 開始取得 ${symbol} 股價 (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
     
     // 使用 Yahoo Finance 的公開 API
     // 由於 CORS 限制，使用 CORS 代理服務
@@ -359,7 +356,7 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
  */
 const fetchExchangeRate = async (retryCount: number = 0, proxyIndex: number = 0): Promise<number> => {
   const maxRetries = 2; // 最多重試 2 次
-  const retryDelay = 1000; // 重試延遲 1 秒
+  const retryDelay = 2000; // 重試延遲 2 秒
   
   try {
     console.log(`[調試] 開始取得匯率 USDTWD=X (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
@@ -815,34 +812,6 @@ export const fetchCurrentPrices = async (
       return convertToYahooSymbol(ticker, market);
     });
 
-    // 並行取得股價（每批最多 6 支，無批次間隔以縮短總時間）
-    const CONCURRENCY = 6;
-    const BATCH_DELAY_MS = 0;
-    const prices: (PriceData | null)[] = [];
-
-    for (let start = 0; start < yahooSymbols.length; start += CONCURRENCY) {
-      const batch = yahooSymbols.slice(start, start + CONCURRENCY);
-      const batchResults = await Promise.all(batch.map(symbol => fetchSingleStockPrice(symbol)));
-      prices.push(...batchResults);
-      if (start + CONCURRENCY < yahooSymbols.length) {
-        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
-      }
-    }
-
-    const result: Record<string, PriceData> = {};
-    const successTickers: string[] = [];
-    const failedTickers: string[] = [];
-    
-    tickers.forEach((originalTicker, index) => {
-      const priceData = prices[index];
-      if (priceData) {
-        result[originalTicker] = priceData;
-        successTickers.push(originalTicker);
-      } else {
-        failedTickers.push(originalTicker);
-      }
-    });
-
     const hasJP = markets?.some(m => m === 'JP') || false;
     const hasCN = markets?.some(m => m === 'CN' || m === 'SZ') || false;
     const hasIN = markets?.some(m => m === 'IN') || false;
@@ -854,35 +823,56 @@ export const fetchCurrentPrices = async (
     const hasAU = markets?.some(m => m === 'AU') || false;
     const hasSA = markets?.some(m => m === 'SA') || false;
     const hasBR = markets?.some(m => m === 'BR') || false;
-    
-    console.log(`[調試] 開始取得匯率資訊...`);
-    const [
-      exchangeRate,
-      jpyExchangeRate,
-      eurExchangeRate,
-      gbpExchangeRate,
-      hkdExchangeRate,
-      krwExchangeRate,
-      cnyExchangeRate,
-      inrExchangeRate,
-      cadExchangeRate,
-      audExchangeRate,
-      sarExchangeRate,
-      brlExchangeRate,
-    ] = await Promise.all([
-      fetchExchangeRate(),
-      hasJP ? fetchJPYExchangeRate() : Promise.resolve(undefined),
-      fetchEURExchangeRate(),
-      fetchGBPExchangeRate(),
-      fetchHKDExchangeRate(),
-      fetchKRWExchangeRate(),
-      hasCN ? fetchCNYExchangeRate() : Promise.resolve(undefined),
-      hasIN ? fetchINRExchangeRate() : Promise.resolve(undefined),
-      hasCA ? fetchCADExchangeRate() : Promise.resolve(undefined),
-      hasAU ? fetchAUDExchangeRate() : Promise.resolve(undefined),
-      hasSA ? fetchSARExchangeRate() : Promise.resolve(undefined),
-      hasBR ? fetchBRLExchangeRate() : Promise.resolve(undefined),
+
+    // 股價與匯率並行取得，總時間 ≈ max(股價時間, 匯率時間)，縮短報價等待
+    const CONCURRENCY = 6;
+    const BATCH_DELAY_MS = 100;
+
+    const [prices, [exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate]] = await Promise.all([
+      (async (): Promise<(PriceData | null)[]> => {
+        const out: (PriceData | null)[] = [];
+        for (let start = 0; start < yahooSymbols.length; start += CONCURRENCY) {
+          const batch = yahooSymbols.slice(start, start + CONCURRENCY);
+          const batchResults = await Promise.all(batch.map(symbol => fetchSingleStockPrice(symbol)));
+          out.push(...batchResults);
+          if (start + CONCURRENCY < yahooSymbols.length) {
+            await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+          }
+        }
+        return out;
+      })(),
+      (async () => {
+        console.log(`[調試] 開始取得匯率資訊...`);
+        return Promise.all([
+          fetchExchangeRate(),
+          hasJP ? fetchJPYExchangeRate() : Promise.resolve(undefined),
+          fetchEURExchangeRate(),
+          fetchGBPExchangeRate(),
+          fetchHKDExchangeRate(),
+          fetchKRWExchangeRate(),
+          hasCN ? fetchCNYExchangeRate() : Promise.resolve(undefined),
+          hasIN ? fetchINRExchangeRate() : Promise.resolve(undefined),
+          hasCA ? fetchCADExchangeRate() : Promise.resolve(undefined),
+          hasAU ? fetchAUDExchangeRate() : Promise.resolve(undefined),
+          hasSA ? fetchSARExchangeRate() : Promise.resolve(undefined),
+          hasBR ? fetchBRLExchangeRate() : Promise.resolve(undefined),
+        ]);
+      })(),
     ]);
+
+    const result: Record<string, PriceData> = {};
+    const successTickers: string[] = [];
+    const failedTickers: string[] = [];
+
+    tickers.forEach((originalTicker, index) => {
+      const priceData = prices[index];
+      if (priceData) {
+        result[originalTicker] = priceData;
+        successTickers.push(originalTicker);
+      } else {
+        failedTickers.push(originalTicker);
+      }
+    });
 
     const successCount = Object.keys(result).length;
     const totalCount = tickers.length;
