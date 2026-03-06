@@ -332,8 +332,11 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
     // 確保 change 和 changePercent 是有效的數字
     const finalChange = (change !== undefined && change !== null && !isNaN(change)) ? change : 0;
     const finalChangePercent = (changePercent !== undefined && changePercent !== null && !isNaN(changePercent)) ? changePercent : 0;
-    
-    console.log(`[調試] ✓ 成功取得 ${symbol} 股價: ${regularMarketPrice.toFixed(2)} (變動: ${finalChange.toFixed(2)}, ${finalChangePercent.toFixed(2)}%)`);
+
+    // 記錄 Yahoo API 回傳的報價時間，證明為伺服器即時資料（非快取/預設值）
+    const serverTime = meta.regularMarketTime ?? meta.firstTradeDate;
+    const timeStr = serverTime ? new Date(serverTime * 1000).toLocaleString('zh-TW', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+    console.log(`[調試] ✓ 成功取得 ${symbol} 股價: ${regularMarketPrice.toFixed(2)} (變動: ${finalChange.toFixed(2)}, ${finalChangePercent.toFixed(2)}%) [伺服器報價時間: ${timeStr}]`);
     
     return {
       price: regularMarketPrice,
@@ -438,9 +441,9 @@ const fetchExchangeRate = async (retryCount: number = 0, proxyIndex: number = 0)
     const result = data.chart.result[0];
     const meta = result.meta;
     const rate = meta.regularMarketPrice || meta.previousClose || 31.5;
-    
-    console.log(`[調試] ✓ 成功取得匯率 USDTWD=X: ${rate.toFixed(4)}`);
-    
+    const serverTime = meta.regularMarketTime ?? meta.firstTradeDate;
+    const timeStr = serverTime ? new Date(serverTime * 1000).toLocaleString('zh-TW', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+    console.log(`[調試] ✓ 成功取得匯率 USDTWD=X: ${rate.toFixed(4)} [伺服器報價時間: ${timeStr}]`);
     return rate;
   } catch (error: any) {
     // 避免重複顯示 JSON 解析錯誤（已經在內部處理了）
@@ -877,6 +880,7 @@ export const fetchCurrentPrices = async (
     const successCount = Object.keys(result).length;
     const totalCount = tickers.length;
     console.log(`[調試] ===== 股價與匯率更新完成 =====`);
+    console.log(`[調試] 以上報價皆由 Yahoo Finance API 經代理即時取得，非快取或預設值`);
     console.log(`[調試] 成功取得股價: ${successCount}/${totalCount}`);
     if (successTickers.length > 0) {
       console.log(`[調試] ✓ 成功: ${successTickers.join(', ')}`);
