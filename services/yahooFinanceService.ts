@@ -222,28 +222,29 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
 
 /**
  * 取得單一股票的即時價格資訊（帶重試機制）
+ * 優先使用 1 分鐘 K 線以取得較即時報價；若該標的無 1m 資料則改為日線。
  */
-const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, proxyIndex: number = 0): Promise<PriceData | null> => {
+const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, proxyIndex: number = 0, use1mInterval: boolean = true): Promise<PriceData | null> => {
   const maxRetries = 2; // 最多重試 2 次，加快失敗切換
   const retryDelay = 2000; // 重試延遲 2 秒
-  
+  const interval = use1mInterval ? '1m' : '1d';
+  const range = use1mInterval ? '1d' : '1d';
+
   try {
-    console.log(`[調試] 開始取得 ${symbol} 股價 (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
+    console.log(`[調試] 開始取得 ${symbol} 股價 (嘗試 ${retryCount + 1}/${maxRetries + 1})${use1mInterval ? ' [1m 即時]' : ' [1d]'}`);
     
-    // 使用 Yahoo Finance 的公開 API
-    // 由於 CORS 限制，使用 CORS 代理服務
-    const baseUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
+    // 使用 Yahoo Finance 的公開 API（1m 為較即時報價，部分標的僅支援日線）
+    const baseUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`;
     
-    // 重試時切換代理服務
     const response = await fetchWithProxy(baseUrl, proxyIndex);
 
     if (!response || !response.ok) {
       // 如果是速率限制錯誤（429）或超時（408），且還有重試機會，則重試
       if ((response?.status === 429 || response?.status === 408) && retryCount < maxRetries) {
-        const nextProxyIndex = (proxyIndex + 1) % 3; // 切換到下一個代理（數量需與 fetchWithProxy 內 proxies 一致）
-        console.warn(`[調試] 取得 ${symbol} 股價時遇到速率限制 (HTTP ${response?.status})，等待 ${retryDelay / 1000} 秒後重試 (${retryCount + 1}/${maxRetries})，切換代理服務...`);
+        const nextProxyIndex = (proxyIndex + 1) % 3;
+        console.warn(`[調試] 取得 ${symbol} 股價時遇到速率限制 (HTTP ${response?.status})，等待 ${retryDelay / 1000} 秒後重試，切換代理服務...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
-        return fetchSingleStockPrice(symbol, retryCount + 1, nextProxyIndex);
+        return fetchSingleStockPrice(symbol, retryCount + 1, nextProxyIndex, use1mInterval);
       }
       console.error(`[調試] ✗ 取得 ${symbol} 股價失敗: ${response?.status || '無法連接'}`);
       return null;
@@ -271,10 +272,10 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
         // 如果是速率限制錯誤且還有重試機會，則重試
         if (retryCount < maxRetries) {
           const errorPreview = text.substring(0, 200);
-          const nextProxyIndex = (proxyIndex + 1) % 3; // 切換到下一個代理（數量需與 fetchWithProxy 內 proxies 一致）
-          console.warn(`[調試] 取得 ${symbol} 股價時遇到速率限制: ${errorPreview}，等待 ${retryDelay / 1000} 秒後重試 (${retryCount + 1}/${maxRetries})，切換代理服務...`);
+          const nextProxyIndex = (proxyIndex + 1) % 3;
+          console.warn(`[調試] 取得 ${symbol} 股價時遇到速率限制: ${errorPreview}，等待 ${retryDelay / 1000} 秒後重試，切換代理服務...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
-          return fetchSingleStockPrice(symbol, retryCount + 1, nextProxyIndex);
+          return fetchSingleStockPrice(symbol, retryCount + 1, nextProxyIndex, use1mInterval);
         }
         const errorPreview = text.substring(0, 200);
         console.error(`[調試] ✗ 取得 ${symbol} 股價失敗: 收到速率限制錯誤（已重試 ${maxRetries} 次）。內容: ${errorPreview}`);
@@ -303,12 +304,21 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
     }
     
     if (!data.chart || !data.chart.result || data.chart.result.length === 0) {
+      if (use1mInterval) {
+        console.log(`[調試] ${symbol} 無 1m 資料，改用日線取得報價`);
+        return fetchSingleStockPrice(symbol, retryCount, proxyIndex, false);
+      }
       console.error(`無法取得 ${symbol} 的資料`);
       return null;
     }
 
     const result = data.chart.result[0];
     const meta = result.meta;
+    const priceFromMeta = meta.regularMarketPrice ?? meta.previousClose ?? 0;
+    if (!priceFromMeta && use1mInterval) {
+      console.log(`[調試] ${symbol} 的 1m 報價為空，改用日線取得報價`);
+      return fetchSingleStockPrice(symbol, retryCount, proxyIndex, false);
+    }
     
     // 取得當前價格（優先使用 regularMarketPrice，如果沒有則使用 previousClose）
     const regularMarketPrice = meta.regularMarketPrice ?? meta.previousClose ?? 0;
@@ -364,8 +374,8 @@ const fetchExchangeRate = async (retryCount: number = 0, proxyIndex: number = 0)
   try {
     console.log(`[調試] 開始取得匯率 USDTWD=X (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
     
-    // 使用 USDTWD=X 作為查詢符號
-    const baseUrl = `https://query1.finance.yahoo.com/v8/finance/chart/USDTWD=X?interval=1d&range=1d`;
+    // 使用 1m 取得較即時匯率
+    const baseUrl = `https://query1.finance.yahoo.com/v8/finance/chart/USDTWD=X?interval=1m&range=1d`;
     
     // 重試時切換代理服務
     const response = await fetchWithProxy(baseUrl, proxyIndex);
@@ -526,10 +536,10 @@ const fetchJPYExchangeRate = async (): Promise<number> => {
   }
 };
 
-/** 通用：取得 X/TWD 即時匯率（1 X = N TWD） */
+/** 通用：取得 X/TWD 即時匯率（1 X = N TWD），使用 1m 以取得較即時報價 */
 const fetchXTWDExchangeRate = async (symbol: string, defaultRate: number): Promise<number> => {
   try {
-    const baseUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+    const baseUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1m&range=1d`;
     const response = await fetchWithProxy(baseUrl);
     if (!response || !response.ok) return defaultRate;
     const text = await response.text();
