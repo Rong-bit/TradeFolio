@@ -131,6 +131,7 @@ const App: React.FC = () => {
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [view, setView] = useState<View>('dashboard');
   const [hasAutoUpdated, setHasAutoUpdated] = useState(false);
+  const [updateHint, setUpdateHint] = useState('');
   const [language, setLanguage] = useState<Language>(getLanguage());
   // isMobileMenuOpen 已經從 useUIState hook 中取得
   
@@ -801,6 +802,7 @@ const App: React.FC = () => {
 
       // 自動更新匯率邏輯
       let msg = `成功更新 ${Object.keys(newPrices).length} 筆股價`;
+      let nextHint = '';
       if (staleSkippedCount > 0) {
         msg += `，略過 ${staleSkippedCount} 筆過舊報價`;
       }
@@ -814,9 +816,16 @@ const App: React.FC = () => {
       if (waitCandidates.length > 0) {
         const suggestedWait = Math.min(...waitCandidates);
         msg += `，建議約 ${suggestedWait} 秒後再更新`;
+        nextHint = language === 'zh-TW'
+          ? `建議約 ${suggestedWait} 秒後再更新`
+          : `Please refresh again in about ${suggestedWait} seconds`;
       } else if (Object.keys(newPrices).length > 0) {
         msg += `，目前多數標的非盤中即時，建議 5-10 分鐘後再更新`;
+        nextHint = language === 'zh-TW'
+          ? '建議 5-10 分鐘後再更新'
+          : 'Please refresh again in 5-10 minutes';
       }
+      setUpdateHint(nextHint);
       if (result.exchangeRate && result.exchangeRate > 0) {
         setExchangeRate(result.exchangeRate);
         msg += `，並同步更新匯率為 ${result.exchangeRate}`;
@@ -1504,6 +1513,7 @@ const App: React.FC = () => {
                  baseCurrency={baseCurrency}
                  onUpdatePrice={updatePrice}
                  onAutoUpdate={handleAutoUpdatePrices}
+                 updateHint={updateHint}
                  isGuest={isGuest}
                  onUpdateHistorical={handleOpenHistoricalModal}
                  language={language}
