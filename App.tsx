@@ -69,7 +69,16 @@ const App: React.FC = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cashFlows, setCashFlows] = useState<CashFlow[]>([]);
   const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
-  const [priceDetails, setPriceDetails] = useState<Record<string, { change: number, changePercent: number }>>({});
+  const [priceDetails, setPriceDetails] = useState<Record<string, {
+    change: number,
+    changePercent: number,
+    quoteTime?: number,
+    isStale?: boolean,
+    source?: string,
+    ageSeconds?: number,
+    nextUpdateInSeconds?: number,
+    marketState?: string
+  }>>({});
   const [exchangeRate, setExchangeRate] = useState<number>(31.5);
   const [jpyExchangeRate, setJpyExchangeRate] = useState<number | undefined>(undefined);
   const [eurExchangeRate, setEurExchangeRate] = useState<number | undefined>(undefined);
@@ -734,7 +743,17 @@ const App: React.FC = () => {
       const result = await fetchCurrentPrices(queryList, marketsList);
       
       const newPrices: Record<string, number> = {};
-      const newDetails: Record<string, { change: number, changePercent: number }> = {};
+      const newDetails: Record<string, {
+        change: number,
+        changePercent: number,
+        quoteTime?: number,
+        isStale?: boolean,
+        source?: string,
+        ageSeconds?: number,
+        nextUpdateInSeconds?: number,
+        marketState?: string
+      }> = {};
+      let staleSkippedCount = 0;
       
       // 使用映射關係來匹配價格資料
       holdingKeys.forEach((h: { market: Market, ticker: string, key: string }) => {
@@ -765,8 +784,24 @@ const App: React.FC = () => {
             // 確保即使 change 為 0 也保存（可能是平盤）
             const change = match.change !== undefined ? match.change : 0;
             const changePercent = match.changePercent !== undefined ? match.changePercent : 0;
+            const hasExistingPrice = currentPrices[h.key] !== undefined && currentPrices[h.key] > 0;
+            const isStale = match.isStale === true;
+            // 已有價格時，不用過舊報價覆蓋，避免看起來「更新後反而不即時」
+            if (isStale && hasExistingPrice) {
+              staleSkippedCount += 1;
+              return;
+            }
             newPrices[h.key] = price;
-            newDetails[h.key] = { change, changePercent };
+            newDetails[h.key] = {
+              change,
+              changePercent,
+              quoteTime: match.quoteTime,
+              isStale,
+              source: match.source,
+              ageSeconds: match.ageSeconds,
+              nextUpdateInSeconds: match.nextUpdateInSeconds,
+              marketState: match.marketState
+            };
           }
       });
       
@@ -775,6 +810,16 @@ const App: React.FC = () => {
 
       // 自動更新匯率邏輯
       let msg = `成功更新 ${Object.keys(newPrices).length} 筆股價`;
+      const nextUpdateCandidates = Object.values(newDetails)
+        .map(d => d.nextUpdateInSeconds)
+        .filter((v): v is number => typeof v === 'number' && v > 0);
+      if (nextUpdateCandidates.length > 0) {
+        const minSeconds = Math.min(...nextUpdateCandidates);
+        msg += `，預估約 ${minSeconds} 秒後可再更新`;
+      }
+      if (staleSkippedCount > 0) {
+        msg += `，略過 ${staleSkippedCount} 筆過舊報價`;
+      }
       if (result.exchangeRate && result.exchangeRate > 0) {
         setExchangeRate(result.exchangeRate);
         msg += `，並同步更新匯率為 ${result.exchangeRate}`;
