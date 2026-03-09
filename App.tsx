@@ -804,6 +804,19 @@ const App: React.FC = () => {
       if (staleSkippedCount > 0) {
         msg += `，略過 ${staleSkippedCount} 筆過舊報價`;
       }
+      const nowSec = Math.floor(Date.now() / 1000);
+      const waitCandidates = Object.values(newDetails)
+        .filter(d => d.quoteTime !== undefined && d.isStale !== true)
+        .map(d => {
+          const age = Math.max(0, nowSec - (d.quoteTime || nowSec));
+          return Math.max(1, 60 - (age % 60));
+        });
+      if (waitCandidates.length > 0) {
+        const suggestedWait = Math.min(...waitCandidates);
+        msg += `，建議約 ${suggestedWait} 秒後再更新`;
+      } else if (Object.keys(newPrices).length > 0) {
+        msg += `，目前多數標的非盤中即時，建議 5-10 分鐘後再更新`;
+      }
       if (result.exchangeRate && result.exchangeRate > 0) {
         setExchangeRate(result.exchangeRate);
         msg += `，並同步更新匯率為 ${result.exchangeRate}`;
