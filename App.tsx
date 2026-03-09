@@ -824,6 +824,14 @@ const App: React.FC = () => {
         nextHint = language === 'zh-TW'
           ? '建議 5-10 分鐘後再更新'
           : 'Please refresh again in 5-10 minutes';
+      } else if (staleSkippedCount > 0) {
+        nextHint = language === 'zh-TW'
+          ? '目前多數為過舊/休市報價，建議 30-60 分鐘後再更新'
+          : 'Most quotes are stale/market-closed. Please refresh again in 30-60 minutes';
+      } else {
+        nextHint = language === 'zh-TW'
+          ? '建議 1-5 分鐘後再更新'
+          : 'Please refresh again in 1-5 minutes';
       }
       setUpdateHint(nextHint);
       if (result.exchangeRate && result.exchangeRate > 0) {
