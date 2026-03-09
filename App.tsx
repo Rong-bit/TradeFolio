@@ -69,13 +69,7 @@ const App: React.FC = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cashFlows, setCashFlows] = useState<CashFlow[]>([]);
   const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
-  const [priceDetails, setPriceDetails] = useState<Record<string, {
-    change: number,
-    changePercent: number,
-    quoteTime?: number,
-    isStale?: boolean,
-    source?: string
-  }>>({});
+  const [priceDetails, setPriceDetails] = useState<Record<string, { change: number, changePercent: number }>>({});
   const [exchangeRate, setExchangeRate] = useState<number>(31.5);
   const [jpyExchangeRate, setJpyExchangeRate] = useState<number | undefined>(undefined);
   const [eurExchangeRate, setEurExchangeRate] = useState<number | undefined>(undefined);
@@ -131,7 +125,6 @@ const App: React.FC = () => {
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [view, setView] = useState<View>('dashboard');
   const [hasAutoUpdated, setHasAutoUpdated] = useState(false);
-  const [updateHint, setUpdateHint] = useState('');
   const [language, setLanguage] = useState<Language>(getLanguage());
   // isMobileMenuOpen 已經從 useUIState hook 中取得
   
@@ -741,14 +734,7 @@ const App: React.FC = () => {
       const result = await fetchCurrentPrices(queryList, marketsList);
       
       const newPrices: Record<string, number> = {};
-      const newDetails: Record<string, {
-        change: number,
-        changePercent: number,
-        quoteTime?: number,
-        isStale?: boolean,
-        source?: string
-      }> = {};
-      let staleSkippedCount = 0;
+      const newDetails: Record<string, { change: number, changePercent: number }> = {};
       
       // 使用映射關係來匹配價格資料
       holdingKeys.forEach((h: { market: Market, ticker: string, key: string }) => {
@@ -779,21 +765,8 @@ const App: React.FC = () => {
             // 確保即使 change 為 0 也保存（可能是平盤）
             const change = match.change !== undefined ? match.change : 0;
             const changePercent = match.changePercent !== undefined ? match.changePercent : 0;
-            const hasExistingPrice = currentPrices[h.key] !== undefined && currentPrices[h.key] > 0;
-            const isStale = match.isStale === true;
-            // 已有價格時，不用過舊報價覆蓋，避免看起來「更新後反而不即時」
-            if (isStale && hasExistingPrice) {
-              staleSkippedCount += 1;
-              return;
-            }
             newPrices[h.key] = price;
-            newDetails[h.key] = {
-              change,
-              changePercent,
-              quoteTime: match.quoteTime,
-              isStale,
-              source: match.source
-            };
+            newDetails[h.key] = { change, changePercent };
           }
       });
       
@@ -802,38 +775,6 @@ const App: React.FC = () => {
 
       // 自動更新匯率邏輯
       let msg = `成功更新 ${Object.keys(newPrices).length} 筆股價`;
-      let nextHint = '';
-      if (staleSkippedCount > 0) {
-        msg += `，略過 ${staleSkippedCount} 筆過舊報價`;
-      }
-      const nowSec = Math.floor(Date.now() / 1000);
-      const waitCandidates = Object.values(newDetails)
-        .filter(d => d.quoteTime !== undefined && d.isStale !== true)
-        .map(d => {
-          const age = Math.max(0, nowSec - (d.quoteTime || nowSec));
-          return Math.max(1, 60 - (age % 60));
-        });
-      if (waitCandidates.length > 0) {
-        const suggestedWait = Math.min(...waitCandidates);
-        msg += `，建議約 ${suggestedWait} 秒後再更新`;
-        nextHint = language === 'zh-TW'
-          ? `建議約 ${suggestedWait} 秒後再更新`
-          : `Please refresh again in about ${suggestedWait} seconds`;
-      } else if (Object.keys(newPrices).length > 0) {
-        msg += `建議 5-10 分鐘後再更新`;
-        nextHint = language === 'zh-TW'
-          ? '建議 5-10 分鐘後再更新'
-          : 'Please refresh again in 5-10 minutes';
-      } else if (staleSkippedCount > 0) {
-        nextHint = language === 'zh-TW'
-          ? '建議 30-60 分鐘後再更新'
-          : 'Most quotes are stale/market-closed. Please refresh again in 30-60 minutes';
-      } else {
-        nextHint = language === 'zh-TW'
-          ? '建議 1-5 分鐘後再更新'
-          : 'Please refresh again in 1-5 minutes';
-      }
-      setUpdateHint(nextHint);
       if (result.exchangeRate && result.exchangeRate > 0) {
         setExchangeRate(result.exchangeRate);
         msg += `，並同步更新匯率為 ${result.exchangeRate}`;
@@ -1521,7 +1462,6 @@ const App: React.FC = () => {
                  baseCurrency={baseCurrency}
                  onUpdatePrice={updatePrice}
                  onAutoUpdate={handleAutoUpdatePrices}
-                 updateHint={updateHint}
                  isGuest={isGuest}
                  onUpdateHistorical={handleOpenHistoricalModal}
                  language={language}
