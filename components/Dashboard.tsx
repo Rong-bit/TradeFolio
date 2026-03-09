@@ -3,7 +3,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ChartDataPoint, PortfolioSummary, Holding, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlow, Account, CashFlowType, Currency, Market, BaseCurrency } from '../types';
 import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency } from '../utils/calculations';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
-import { analyzePortfolio } from '../services/geminiService';
 import HoldingsTable from './HoldingsTable';
 import { Language, t, translate } from '../utils/i18n';
 
@@ -19,6 +18,7 @@ interface Props {
   baseCurrency: BaseCurrency;
   onUpdatePrice: (key: string, price: number) => void;
   onAutoUpdate: () => Promise<void>;
+  updateHint?: string;
   isGuest?: boolean;
   onUpdateHistorical?: () => void;
   language: Language;
@@ -36,13 +36,12 @@ const Dashboard: React.FC<Props> = ({
   baseCurrency,
   onUpdatePrice,
   onAutoUpdate,
+  updateHint,
   isGuest = false,
   onUpdateHistorical,
   language
 }) => {
   const translations = t(language);
-  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
-  const [loadingAi, setLoadingAi] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [showCostDetailModal, setShowCostDetailModal] = useState(false);
@@ -70,13 +69,6 @@ const Dashboard: React.FC<Props> = ({
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  const handleAskAi = async () => {
-    setLoadingAi(true);
-    const result = await analyzePortfolio(holdings, summary);
-    setAiAnalysis(result);
-    setLoadingAi(false);
-  };
 
   // 計算市場分布比例
   const marketDistribution = useMemo(() => {
@@ -779,43 +771,9 @@ const Dashboard: React.FC<Props> = ({
         accounts={accounts}
         onUpdatePrice={onUpdatePrice}
         onAutoUpdate={onAutoUpdate}
+        updateHint={updateHint}
         language={language}
       />
-
-      {!isGuest && (
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 shadow-xl text-white">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                {translations.dashboard.aiAdvisor}
-              </h3>
-              <p className="text-slate-300 text-sm mt-1">{translations.dashboard.aiAdvisorDesc}</p>
-            </div>
-            <button 
-              onClick={handleAskAi} 
-              disabled={loadingAi}
-              className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-slate-900 font-bold rounded-lg transition disabled:opacity-50 text-sm shadow-lg shadow-yellow-500/20"
-            >
-              {loadingAi ? translations.dashboard.analyzing : translations.dashboard.startAnalysis}
-            </button>
-          </div>
-
-          <div className="mb-4 p-3 bg-yellow-900/30 border border-yellow-500/50 rounded-lg">
-            <p className="text-xs text-yellow-200 leading-relaxed">
-              <strong className="text-yellow-300">⚠️ {translations.dashboard.notInvestmentAdvice}</strong>
-            </p>
-          </div>
-
-          {aiAnalysis && (
-            <div className="bg-white/10 p-5 rounded-lg text-slate-100 text-sm leading-relaxed whitespace-pre-wrap border border-white/10 animate-fade-in">
-              {aiAnalysis}
-            </div>
-          )}
-        </div>
-      )}
 
       {showCostDetailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
