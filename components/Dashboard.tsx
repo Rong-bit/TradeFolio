@@ -19,6 +19,7 @@ interface Props {
   baseCurrency: BaseCurrency;
   onUpdatePrice: (key: string, price: number) => void;
   onAutoUpdate: () => Promise<void>;
+  updateHint?: string;
   isGuest?: boolean;
   onUpdateHistorical?: () => void;
   language: Language;
@@ -36,6 +37,7 @@ const Dashboard: React.FC<Props> = ({
   baseCurrency,
   onUpdatePrice,
   onAutoUpdate,
+  updateHint,
   isGuest = false,
   onUpdateHistorical,
   language
@@ -779,6 +781,7 @@ const Dashboard: React.FC<Props> = ({
         accounts={accounts}
         onUpdatePrice={onUpdatePrice}
         onAutoUpdate={onAutoUpdate}
+        updateHint={updateHint}
         language={language}
       />
 
