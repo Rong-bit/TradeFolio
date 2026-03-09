@@ -820,13 +820,13 @@ const App: React.FC = () => {
           ? `建議約 ${suggestedWait} 秒後再更新`
           : `Please refresh again in about ${suggestedWait} seconds`;
       } else if (Object.keys(newPrices).length > 0) {
-        msg += `，目前多數標的非盤中即時，建議 5-10 分鐘後再更新`;
+        msg += `建議 5-10 分鐘後再更新`;
         nextHint = language === 'zh-TW'
           ? '建議 5-10 分鐘後再更新'
           : 'Please refresh again in 5-10 minutes';
       } else if (staleSkippedCount > 0) {
         nextHint = language === 'zh-TW'
-          ? '目前多數為過舊/休市報價，建議 30-60 分鐘後再更新'
+          ? '建議 30-60 分鐘後再更新'
           : 'Most quotes are stale/market-closed. Please refresh again in 30-60 minutes';
       } else {
         nextHint = language === 'zh-TW'
