@@ -6,7 +6,22 @@ export interface PriceData {
   quoteTime?: number;
   isStale?: boolean;
   source?: 'regularMarketPrice' | 'latestClose' | 'previousClose';
+  ageSeconds?: number;
+  nextUpdateInSeconds?: number;
+  marketState?: string;
 }
+
+const formatDuration = (seconds: number): string => {
+  const sec = Math.max(0, Math.floor(seconds));
+  const days = Math.floor(sec / 86400);
+  const hours = Math.floor((sec % 86400) / 3600);
+  const minutes = Math.floor((sec % 3600) / 60);
+  const remainSeconds = sec % 60;
+  if (days > 0) return `${days}天${hours}小時${minutes}分`;
+  if (hours > 0) return `${hours}小時${minutes}分`;
+  if (minutes > 0) return `${minutes}分${remainSeconds}秒`;
+  return `${remainSeconds}秒`;
+};
 
 export type YahooMarket = 'US' | 'TW' | 'UK' | 'JP' | 'CN' | 'SZ' | 'IN' | 'CA' | 'FR' | 'HK' | 'KR' | 'DE' | 'AU' | 'SA' | 'BR';
 
@@ -357,8 +372,18 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
     const latestValidTimestamp = [...timestamps].reverse().find((v): v is number => v !== null && v !== undefined && !isNaN(v));
     const serverTime = meta.regularMarketTime ?? latestValidTimestamp ?? meta.firstTradeDate;
     const isStale = serverTime ? ((Date.now() / 1000) - serverTime > STALE_THRESHOLD_SECONDS) : true;
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const ageSeconds = serverTime ? Math.max(0, nowSeconds - serverTime) : undefined;
+    const marketState = typeof meta.marketState === 'string' ? meta.marketState : undefined;
+    // 盤中且報價不過舊時，Yahoo 1m 資料通常約每分鐘可看到新值
+    const canEstimateNextUpdate = !isStale && ageSeconds !== undefined && marketState === 'REGULAR' && interval === '1m';
+    const nextUpdateInSeconds = canEstimateNextUpdate ? Math.max(1, 60 - (ageSeconds % 60)) : undefined;
     const timeStr = serverTime ? new Date(serverTime * 1000).toLocaleString('zh-TW', { dateStyle: 'short', timeStyle: 'short' }) : '—';
-    console.log(`[調試] ✓ 成功取得 ${symbol} 股價: ${regularMarketPrice.toFixed(2)} (變動: ${finalChange.toFixed(2)}, ${finalChangePercent.toFixed(2)}%) [來源: ${source}] [伺服器報價時間: ${timeStr}]${isStale ? ' [過舊]' : ''}`);
+    const ageText = ageSeconds !== undefined ? ` [距今: ${formatDuration(ageSeconds)}]` : '';
+    const nextText = nextUpdateInSeconds !== undefined
+      ? ` [預估下次更新約: ${nextUpdateInSeconds} 秒後]`
+      : (isStale ? ' [目前可能為休市/延遲資料]' : '');
+    console.log(`[調試] ✓ 成功取得 ${symbol} 股價: ${regularMarketPrice.toFixed(2)} (變動: ${finalChange.toFixed(2)}, ${finalChangePercent.toFixed(2)}%) [來源: ${source}] [伺服器報價時間: ${timeStr}]${ageText}${nextText}${isStale ? ' [過舊]' : ''}`);
     
     return {
       price: regularMarketPrice,
@@ -367,6 +392,9 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
       quoteTime: serverTime,
       isStale,
       source,
+      ageSeconds,
+      nextUpdateInSeconds,
+      marketState,
     };
   } catch (error: any) {
     // 避免重複顯示 JSON 解析錯誤（已經在內部處理了）
