@@ -1370,6 +1370,3 @@ export const fetchAnnualizedReturn = async (
     return null;
   }
 };
-
-
-
