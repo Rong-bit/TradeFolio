@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Transaction, Holding, PortfolioSummary, ChartDataPoint, Market, Account, CashFlow, TransactionType, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlowType, Currency, HistoricalData, CombinedRecord, BaseCurrency, BASE_CURRENCIES } from './types';
 import { useLocalStorageDebounced, useLocalStorageDebouncedSimple } from './hooks/useLocalStorageDebounced';
@@ -74,7 +75,10 @@ const App: React.FC = () => {
     changePercent: number,
     quoteTime?: number,
     isStale?: boolean,
-    source?: string
+    source?: string,
+    ageSeconds?: number,
+    nextUpdateInSeconds?: number,
+    marketState?: string
   }>>({});
   const [exchangeRate, setExchangeRate] = useState<number>(31.5);
   const [jpyExchangeRate, setJpyExchangeRate] = useState<number | undefined>(undefined);
@@ -745,7 +749,10 @@ const App: React.FC = () => {
         changePercent: number,
         quoteTime?: number,
         isStale?: boolean,
-        source?: string
+        source?: string,
+        ageSeconds?: number,
+        nextUpdateInSeconds?: number,
+        marketState?: string
       }> = {};
       let staleSkippedCount = 0;
       
@@ -791,7 +798,10 @@ const App: React.FC = () => {
               changePercent,
               quoteTime: match.quoteTime,
               isStale,
-              source: match.source
+              source: match.source,
+              ageSeconds: match.ageSeconds,
+              nextUpdateInSeconds: match.nextUpdateInSeconds,
+              marketState: match.marketState
             };
           }
       });
@@ -801,6 +811,13 @@ const App: React.FC = () => {
 
       // 自動更新匯率邏輯
       let msg = `成功更新 ${Object.keys(newPrices).length} 筆股價`;
+      const nextUpdateCandidates = Object.values(newDetails)
+        .map(d => d.nextUpdateInSeconds)
+        .filter((v): v is number => typeof v === 'number' && v > 0);
+      if (nextUpdateCandidates.length > 0) {
+        const minSeconds = Math.min(...nextUpdateCandidates);
+        msg += `，預估約 ${minSeconds} 秒後可再更新`;
+      }
       if (staleSkippedCount > 0) {
         msg += `，略過 ${staleSkippedCount} 筆過舊報價`;
       }
