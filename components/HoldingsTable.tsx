@@ -9,12 +9,13 @@ interface Props {
   accounts: Account[];
   onUpdatePrice: (key: string, price: number) => void;
   onAutoUpdate: () => Promise<void>;
+  updateHint?: string | undefined;
   language: Language;
 }
 
 type DisplayMode = 'merged' | 'detailed';
 
-const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onAutoUpdate, language }) => {
+const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onAutoUpdate, updateHint, language }) => {
   const translations = t(language);
   const [isUpdating, setIsUpdating] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('merged');
@@ -175,6 +176,11 @@ const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onA
               </>
             )}
           </button>
+          {!isUpdating && updateHint && (
+            <span className="text-xs text-slate-500 whitespace-nowrap">
+              {updateHint}
+            </span>
+          )}
         </div>
       </div>
       <div className="overflow-x-auto">
