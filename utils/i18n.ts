@@ -1052,6 +1052,8 @@ TradeView 是一個支援台股與美股的資產管理工具，協助投資人�
 * **Buy/Sell**: 一般買賣。
 * **Dividend**: 股票股息 (股數增加)。
 * **Cash Dividend**: 現金股息 (餘額增加)。
+* **Transfer Out (轉出)**: 股票從證券戶轉出（如轉移到其他證券戶）。
+* **Transfer In (轉入)**: 股票轉入證券戶（如從其他證券戶轉入）。
 
 ## 4. 常見問題 (FAQ)
 Q: 如何計算年化報酬率？
@@ -1077,6 +1079,37 @@ A: 具勾勾部份是顯示該年度年底的績效表現，無勾勾部份是�
 
 Q: 股價與匯率為何與按「AI聯網更新股價&匯率」得到現價為何不同？
 A: 股價與匯率因為是抓取網頁現值，故現值會慢三分鐘至五分鐘不等，所以勿拿來當買賣的參考值，建議買賣的參考仍以証券公司為主，此軟體僅適用作統計資產功能，例如有緊急預備金、旅遊基金、退休金、定存、股債券等統計參考，並無証券交易買賣功能；另外投資有賺有賠，記得預留緊急預備金，感謝您的使用。
+
+Q: 如何登打股票轉移（從甲證券轉到乙證券）？
+A: 股票轉移需要建立兩筆交易記錄：
+   1. **轉出交易（TRANSFER_OUT）**：
+      - 日期：轉移日期
+      - 帳戶：選擇「甲證券」
+      - 市場：該股票的市場（如 TW、US）
+      - 代號：股票代號
+      - 類別：選擇「轉出 (Transfer Out)」
+      - 價格：系統會自動填入該股票的**平均成本**（可在持倉表中查看「平均成本」欄位），您也可以手動修改
+      - 數量：轉移的股數
+      - 手續費：轉移手續費（如有）
+      - 備註：可註記「轉移至乙證券」
+   
+   2. **轉入交易（TRANSFER_IN）**：
+      - 日期：與轉出交易相同的日期
+      - 帳戶：選擇「乙證券」
+      - 市場：與轉出交易相同
+      - 代號：與轉出交易相同
+      - 類別：選擇「轉入 (Transfer In)」
+      - 價格：與轉出交易相同的**平均成本**（系統會自動填入，您也可以手動修改）
+      - 數量：與轉出交易相同的股數
+      - 手續費：轉入手續費（如有）
+      - 備註：可註記「從甲證券轉入」
+   
+   **重要提醒**：
+   - 價格欄位請輸入「平均成本」，而非市價，這樣才能正確計算成本基礎
+   - 系統會在您選擇轉入/轉出類型並輸入股票代號時，自動填入該股票的平均成本
+   - 兩筆交易的價格、數量必須相同
+   - 手續費會從對應帳戶的現金餘額扣除
+   - 轉移後，股票會從甲證券的持倉中移除，並加入乙證券的持倉
 
 ## 5. 重要免責聲明
 
@@ -1696,6 +1729,8 @@ TradeView is an asset management tool that supports Taiwan and US stocks, helpin
 * **Buy/Sell**: General buy/sell transactions.
 * **Dividend**: Stock dividend (number of shares increases).
 * **Cash Dividend**: Cash dividend (balance increases).
+* **Transfer Out**: Stock transfer out from a brokerage account (e.g., transferring to another brokerage account).
+* **Transfer In**: Stock transfer into a brokerage account (e.g., transferring from another brokerage account).
 
 ## 4. Frequently Asked Questions (FAQ)
 Q: How is the annualized return rate calculated?
@@ -1721,6 +1756,37 @@ A: The parts with checkmarks show the performance at the end of that year. The p
 
 Q: Why are stock prices and exchange rates different from the current prices obtained by clicking "AI Update Prices & Exchange Rates"?
 A: Stock prices and exchange rates are scraped from web current values, so the current values may lag by three to five minutes. Therefore, do not use them as references for buying and selling. It is recommended to use securities companies as the main reference for buying and selling. This software is only suitable for statistical asset functions, such as emergency funds, travel funds, retirement funds, fixed deposits, stocks and bonds, etc. It does not have securities trading functions. Additionally, investments have profits and losses. Remember to reserve emergency funds. Thank you for using.
+
+Q: How to record stock transfers (from Brokerage A to Brokerage B)?
+A: Stock transfers require creating two transaction records:
+   1. **Transfer Out Transaction (TRANSFER_OUT)**:
+      - Date: Transfer date
+      - Account: Select "Brokerage A"
+      - Market: The stock's market (e.g., TW, US)
+      - Ticker: Stock ticker
+      - Type: Select "Transfer Out"
+      - Price: The system will automatically fill in the stock's **average cost** (you can view it in the "Avg Cost" column in the holdings table), or you can manually modify it
+      - Quantity: Number of shares to transfer
+      - Fees: Transfer fees (if any)
+      - Note: You can note "Transferring to Brokerage B"
+   
+   2. **Transfer In Transaction (TRANSFER_IN)**:
+      - Date: Same date as the transfer out transaction
+      - Account: Select "Brokerage B"
+      - Market: Same as transfer out transaction
+      - Ticker: Same as transfer out transaction
+      - Type: Select "Transfer In"
+      - Price: Same **average cost** as transfer out transaction (system will automatically fill it in, or you can manually modify it)
+      - Quantity: Same as transfer out transaction
+      - Fees: Transfer-in fees (if any)
+      - Note: You can note "Transferred from Brokerage A"
+   
+   **Important Notes**:
+   - Please enter the "average cost" in the price field, not the market price, to ensure correct cost basis calculation
+   - The system will automatically fill in the average cost when you select Transfer In/Out type and enter the stock ticker
+   - The price and quantity of both transactions must be the same
+   - Fees will be deducted from the corresponding account's cash balance
+   - After the transfer, the stock will be removed from Brokerage A's holdings and added to Brokerage B's holdings
 
 ## 5. Important Disclaimers
 
@@ -2338,6 +2404,8 @@ TradeViewは台湾・米国株に対応した資産管理ツールです。資�
 * **Buy/Sell**: 一般的な売買。
 * **Dividend**: 株式配当（株数が増加）。
 * **Cash Dividend**: 現金配当（残高が増加）。
+* **Transfer Out (転出)**: 証券口座から株式を転出（他の証券口座への転送など）。
+* **Transfer In (転入)**: 証券口座へ株式を転入（他の証券口座からの転送など）。
 
 ## 4. よくある質問(FAQ)
 Q: 年率リターンはどう計算されますか？
@@ -2363,6 +2431,37 @@ A: チェックマークがある部分はその年度末のパフォーマン�
 
 Q: 株価と為替レートが「AI連網更新株価&為替レート」で取得した現値と異なるのはなぜですか？
 A: 株価と為替レートはウェブページの現値を取得しているため、現値は3〜5分遅れる場合があります。売買の参考値として使用しないでください。売買の参考は証券会社を主としてください。本ソフトウェアは資産統計機能にのみ適しており、緊急予備金、旅行基金、退職金、定期預金、株式債券などの統計参考に使用できますが、証券取引売買機能はありません。また、投資には利益と損失があります。緊急予備金を確保することを忘れないでください。ご利用ありがとうございます。
+
+Q: 株式の転送（証券会社Aから証券会社Bへ）はどのように記録しますか？
+A: 株式転送には2つの取引記録を作成する必要があります：
+   1. **転出取引（TRANSFER_OUT）**：
+      - 日付：転送日
+      - 口座：「証券会社A」を選択
+      - 市場：その株式の市場（例：TW、US）
+      - 銘柄：株式コード
+      - 種別：「転出 (Transfer Out)」を選択
+      - 単価：システムが自動的にその株式の**平均コスト**を入力します（保有表の「平均コスト」欄で確認できます）。手動で変更することもできます
+      - 数量：転送する株数
+      - 手数料：転送手数料（ある場合）
+      - 備考：「証券会社Bへ転送」と記録できます
+   
+   2. **転入取引（TRANSFER_IN）**：
+      - 日付：転出取引と同じ日付
+      - 口座：「証券会社B」を選択
+      - 市場：転出取引と同じ
+      - 銘柄：転出取引と同じ
+      - 種別：「転入 (Transfer In)」を選択
+      - 単価：転出取引と同じ**平均コスト**（システムが自動入力しますが、手動で変更することもできます）
+      - 数量：転出取引と同じ
+      - 手数料：転入手数料（ある場合）
+      - 備考：「証券会社Aから転入」と記録できます
+   
+   **重要な注意事項**：
+   - 単価欄には「平均コスト」を入力してください。市場価格ではなく、これにより正しいコストベースを計算できます
+   - 転入/転出種別を選択し、株式コードを入力すると、システムが自動的に平均コストを入力します
+   - 両方の取引の単価と数量は同じである必要があります
+   - 手数料は対応する口座の現金残高から差し引かれます
+   - 転送後、株式は証券会社Aの保有から削除され、証券会社Bの保有に追加されます
 
 ## 5. 重要な免責事項
 
@@ -2980,6 +3079,8 @@ TradeView는 대만·미국 주식 자산 관리 도구로, 자산 추이·수�
 * **Buy/Sell**: 일반 매매.
 * **Dividend**: 주식 배당 (주식 수 증가).
 * **Cash Dividend**: 현금 배당 (잔액 증가).
+* **Transfer Out (전출)**: 증권 계좌에서 주식 전출 (다른 증권 계좌로 이전 등).
+* **Transfer In (전입)**: 증권 계좌로 주식 전입 (다른 증권 계좌에서 이전 등).
 
 ## 4. 자주 묻는 질문(FAQ)
 Q: 연평균 수익률은 어떻게 계산되나요?
@@ -3005,6 +3106,37 @@ A: 체크 표시가 있는 부분은 해당 연도 말의 성과를 보여주며
 
 Q: 주가와 환율이 "AI 연동 업데이트 주가&환율"로 얻은 현행가와 다른 이유는 무엇인가요?
 A: 주가와 환율은 웹페이지의 현행가를 가져오기 때문에 현행가는 3~5분 지연될 수 있습니다. 매매의 참고값으로 사용하지 마세요. 매매의 참고는 증권사를 기준으로 하세요. 본 소프트웨어는 자산 통계 기능에만 적합하며, 비상 예비금, 여행 기금, 퇴직금, 정기 예금, 주식 채권 등의 통계 참고에 사용할 수 있지만 증권 거래 매매 기능은 없습니다. 또한 투자에는 수익과 손실이 있습니다. 비상 예비금을 확보하는 것을 잊지 마세요. 이용해 주셔서 감사합니다.
+
+Q: 주식 이전(증권사 A에서 증권사 B로)은 어떻게 기록하나요?
+A: 주식 이전에는 두 개의 거래 기록을 생성해야 합니다:
+   1. **전출 거래(TRANSFER_OUT)**:
+      - 날짜: 이전 날짜
+      - 계좌: "증권사 A" 선택
+      - 시장: 해당 주식의 시장(예: TW, US)
+      - 종목: 주식 코드
+      - 유형: "전출 (Transfer Out)" 선택
+      - 단가: 시스템이 자동으로 해당 주식의**평균 원가**를 입력합니다(보유표의 "평균 원가" 열에서 확인 가능). 수동으로 수정할 수도 있습니다
+      - 수량: 이전할 주식 수
+      - 수수료: 이전 수수료(있는 경우)
+      - 비고: "증권사 B로 이전"으로 기록할 수 있습니다
+   
+   2. **전입 거래(TRANSFER_IN)**:
+      - 날짜: 전출 거래와 동일한 날짜
+      - 계좌: "증권사 B" 선택
+      - 시장: 전출 거래와 동일
+      - 종목: 전출 거래와 동일
+      - 유형: "전입 (Transfer In)" 선택
+      - 단가: 전출 거래와 동일한**평균 원가**(시스템이 자동 입력하지만 수동으로 수정할 수도 있습니다)
+      - 수량: 전출 거래와 동일
+      - 수수료: 전입 수수료(있는 경우)
+      - 비고: "증권사 A에서 전입"으로 기록할 수 있습니다
+   
+   **중요 사항**:
+   - 단가 필드에는 "평균 원가"를 입력하세요. 시장 가격이 아니라 이를 통해 올바른 원가 기준을 계산할 수 있습니다
+   - 전입/전출 유형을 선택하고 주식 코드를 입력하면 시스템이 자동으로 평균 원가를 입력합니다
+   - 두 거래의 단가와 수량은 동일해야 합니다
+   - 수수료는 해당 계좌의 현금 잔액에서 공제됩니다
+   - 이전 후 주식은 증권사 A의 보유에서 제거되고 증권사 B의 보유에 추가됩니다
 
 ## 5. 중요한 면책 조항
 
@@ -3510,6 +3642,8 @@ TradeView 是一个支持台股与美股的资产管理工具，协助投资人�
 * **Buy/Sell**：一般买卖。
 * **Dividend**：股票股息（股数增加）。
 * **Cash Dividend**：现金股息（余额增加）。
+* **Transfer Out (转出)**：股票从证券户转出（如转移到其他证券户）。
+* **Transfer In (转入)**：股票转入证券户（如从其他证券户转入）。
 
 ## 4. 常见问题 (FAQ)
 Q: 如何计算年化报酬率？
@@ -3535,6 +3669,37 @@ A: 具勾勾部分是显示该年度年底的绩效表现，无勾勾部分是�
 
 Q: 股价与汇率为何与按「AI 联网更新股价与汇率」得到的现价不同？
 A: 股价与汇率因抓取网页现值，故现值会延迟三至五分钟不等，请勿作为买卖参考，建议买卖仍以证券公司为主。本软件仅适合作统计资产功能，如紧急预备金、旅游基金、退休金、定存、股债券等统计参考，并无证券交易买卖功能；另外投资有赚有赔，请预留紧急预备金，感谢您的使用。
+
+Q: 如何登打股票转移（从甲证券转到乙证券）？
+A: 股票转移需要建立两笔交易记录：
+   1. **转出交易（TRANSFER_OUT）**：
+      - 日期：转移日期
+      - 账户：选择「甲证券」
+      - 市场：该股票的市场（如 TW、US）
+      - 代号：股票代号
+      - 类别：选择「转出 (Transfer Out)」
+      - 价格：系统会自动填入该股票的**平均成本**（可在持仓表中查看「平均成本」栏位），您也可以手动修改
+      - 数量：转移的股数
+      - 手续费：转移手续费（如有）
+      - 备注：可注记「转移至乙证券」
+   
+   2. **转入交易（TRANSFER_IN）**：
+      - 日期：与转出交易相同的日期
+      - 账户：选择「乙证券」
+      - 市场：与转出交易相同
+      - 代号：与转出交易相同
+      - 类别：选择「转入 (Transfer In)」
+      - 价格：与转出交易相同的**平均成本**（系统会自动填入，您也可以手动修改）
+      - 数量：与转出交易相同的股数
+      - 手续费：转入手续费（如有）
+      - 备注：可注记「从甲证券转入」
+   
+   **重要提醒**：
+   - 价格栏位请输入「平均成本」，而非市价，这样才能正确计算成本基础
+   - 系统会在您选择转入/转出类型并输入股票代号时，自动填入该股票的平均成本
+   - 两笔交易的价格、数量必须相同
+   - 手续费会从对应账户的现金余额扣除
+   - 转移后，股票会从甲证券的持仓中移除，并加入乙证券的持仓
 
 ## 5. 重要免责声明
 
@@ -3914,6 +4079,8 @@ TradeView ist ein Vermögensverwaltungstool für Taiwan- und US-Aktien, das Anle
 * **Buy/Sell**: Allgemeine Käufe/Verkäufe.
 * **Dividend**: Aktiendividende (Anzahl der Aktien erhöht sich).
 * **Cash Dividend**: Bardividende (Guthaben erhöht sich).
+* **Transfer Out (Ausbuchung)**: Aktienübertragung aus einem Depotkonto (z.B. Übertragung zu einem anderen Depotkonto).
+* **Transfer In (Einbuchung)**: Aktienübertragung in ein Depotkonto (z.B. Übertragung von einem anderen Depotkonto).
 
 ## 4. Häufig gestellte Fragen (FAQ)
 Q: Wie wird die annualisierte Rendite berechnet?
@@ -3939,6 +4106,37 @@ A: Die Teile mit Häkchen zeigen die Leistung am Ende dieses Jahres. Die Teile o
 
 Q: Warum unterscheiden sich Aktienkurse und Wechselkurse von den aktuellen Preisen, die durch Klicken auf „KI aktualisiert Kurse & Wechselkurse" erhalten werden?
 A: Da Aktienkurse und Wechselkurse von Webseiten aktueller Werte abgerufen werden, können die aktuellen Werte um drei bis fünf Minuten verzögert sein. Verwenden Sie sie daher nicht als Referenzwerte für Kauf und Verkauf. Es wird empfohlen, sich bei Kauf und Verkauf hauptsächlich auf Wertpapierfirmen zu beziehen. Diese Software eignet sich nur für statistische Vermögensfunktionen wie Notfallreserven, Reisefonds, Rentenfonds, Festgeld, Aktien und Anleihen usw. Sie hat keine Wertpapierhandelsfunktionen. Außerdem haben Investitionen Gewinne und Verluste. Denken Sie daran, Notfallreserven bereitzustellen. Vielen Dank für Ihre Nutzung.
+
+Q: Wie zeichnet man Aktienübertragungen (von Depot A zu Depot B) auf?
+A: Aktienübertragungen erfordern die Erstellung von zwei Transaktionsaufzeichnungen:
+   1. **Ausbuchungstransaktion (TRANSFER_OUT)**:
+      - Datum: Übertragungsdatum
+      - Konto: Wählen Sie "Depot A"
+      - Markt: Der Markt der Aktie (z.B. TW, US)
+      - Symbol: Aktiensymbol
+      - Typ: Wählen Sie "Ausbuchung (Transfer Out)"
+      - Preis: Das System füllt automatisch die**durchschnittlichen Kosten**der Aktie aus (Sie können sie in der Spalte "Durchschnittskosten" in der Bestandstabelle anzeigen). Sie können sie auch manuell ändern
+      - Menge: Anzahl der zu übertragenden Aktien
+      - Gebühren: Übertragungsgebühren (falls vorhanden)
+      - Notiz: Sie können "Übertragung zu Depot B" notieren
+   
+   2. **Einbuchungstransaktion (TRANSFER_IN)**:
+      - Datum: Gleiches Datum wie die Ausbuchungstransaktion
+      - Konto: Wählen Sie "Depot B"
+      - Markt: Gleich wie Ausbuchungstransaktion
+      - Symbol: Gleich wie Ausbuchungstransaktion
+      - Typ: Wählen Sie "Einbuchung (Transfer In)"
+      - Preis: Gleiche**durchschnittliche Kosten**wie Ausbuchungstransaktion (System füllt automatisch aus, Sie können auch manuell ändern)
+      - Menge: Gleich wie Ausbuchungstransaktion
+      - Gebühren: Einbuchungsgebühren (falls vorhanden)
+      - Notiz: Sie können "Von Depot A übertragen" notieren
+   
+   **Wichtige Hinweise**:
+   - Bitte geben Sie die "durchschnittlichen Kosten" im Preis Feld ein, nicht den Marktpreis, um die korrekte Kostenbasis zu berechnen
+   - Das System füllt automatisch die durchschnittlichen Kosten aus, wenn Sie den Typ Einbuchung/Ausbuchung auswählen und das Aktiensymbol eingeben
+   - Preis und Menge beider Transaktionen müssen gleich sein
+   - Gebühren werden vom entsprechenden Kontoguthaben abgezogen
+   - Nach der Übertragung wird die Aktie aus den Beständen von Depot A entfernt und zu den Beständen von Depot B hinzugefügt
 
 ## 5. Wichtige Haftungsausschlüsse
 
@@ -4455,6 +4653,8 @@ TradeView est un outil de gestion d'actifs pour actions Taiwan et US qui aide le
 * **Buy/Sell** : Achat/vente général.
 * **Dividend** : Dividende en actions (le nombre d'actions augmente).
 * **Cash Dividend** : Dividende en espèces (le solde augmente).
+* **Transfer Out (Sortie)** : Transfert d'actions hors d'un compte de courtage (par exemple, transfert vers un autre compte de courtage).
+* **Transfer In (Entrée)** : Transfert d'actions dans un compte de courtage (par exemple, transfert depuis un autre compte de courtage).
 
 ## 4. Questions fréquemment posées (FAQ)
 Q : Comment le taux de rendement annualisé est-il calculé ?
@@ -4480,6 +4680,37 @@ R : Les parties avec coches montrent la performance à la fin de cette année. L
 
 Q : Pourquoi les prix des actions et les taux de change diffèrent-ils des prix actuels obtenus en cliquant sur « IA met à jour les prix et les taux de change » ?
 R : Comme les prix des actions et les taux de change sont récupérés à partir des valeurs actuelles des pages Web, les valeurs actuelles peuvent être retardées de trois à cinq minutes. Ne les utilisez donc pas comme valeurs de référence pour l'achat et la vente. Il est recommandé de se référer principalement aux sociétés de valeurs mobilières pour l'achat et la vente. Ce logiciel convient uniquement aux fonctions statistiques d'actifs telles que les réserves d'urgence, les fonds de voyage, les fonds de retraite, les dépôts à terme, les actions et obligations, etc. Il n'a pas de fonctions de trading de valeurs mobilières. De plus, les investissements ont des gains et des pertes. N'oubliez pas de prévoir des réserves d'urgence. Merci de votre utilisation.
+
+Q : Comment enregistrer les transferts d'actions (du courtier A au courtier B) ?
+R : Les transferts d'actions nécessitent la création de deux enregistrements de transaction :
+   1. **Transaction de sortie (TRANSFER_OUT)** :
+      - Date : Date du transfert
+      - Compte : Sélectionnez "Courtier A"
+      - Marché : Le marché de l'action (par exemple, TW, US)
+      - Symbole : Symbole de l'action
+      - Type : Sélectionnez "Sortie (Transfer Out)"
+      - Prix : Le système remplira automatiquement le**coût moyen**de l'action (vous pouvez le voir dans la colonne "Coût moyen" du tableau des positions). Vous pouvez également le modifier manuellement
+      - Quantité : Nombre d'actions à transférer
+      - Frais : Frais de transfert (le cas échéant)
+      - Note : Vous pouvez noter "Transfert vers le courtier B"
+   
+   2. **Transaction d'entrée (TRANSFER_IN)** :
+      - Date : Même date que la transaction de sortie
+      - Compte : Sélectionnez "Courtier B"
+      - Marché : Identique à la transaction de sortie
+      - Symbole : Identique à la transaction de sortie
+      - Type : Sélectionnez "Entrée (Transfer In)"
+      - Prix : Même**coût moyen**que la transaction de sortie (le système remplira automatiquement, vous pouvez également modifier manuellement)
+      - Quantité : Identique à la transaction de sortie
+      - Frais : Frais d'entrée (le cas échéant)
+      - Note : Vous pouvez noter "Transféré depuis le courtier A"
+   
+   **Notes importantes** :
+   - Veuillez entrer le "coût moyen" dans le champ prix, pas le prix du marché, pour garantir un calcul correct de la base de coût
+   - Le système remplira automatiquement le coût moyen lorsque vous sélectionnez le type Entrée/Sortie et entrez le symbole de l'action
+   - Le prix et la quantité des deux transactions doivent être identiques
+   - Les frais seront déduits du solde de trésorerie du compte correspondant
+   - Après le transfert, l'action sera retirée des positions du courtier A et ajoutée aux positions du courtier B
 
 ## 5. Avertissements importants
 
@@ -5022,6 +5253,8 @@ TradeView ताइवान और US स्टॉक के लिए एक �
 * **Buy/Sell**: सामान्य खरीद/बिक्री।
 * **Dividend**: स्टॉक लाभांश (शेयरों की संख्या बढ़ती है)।
 * **Cash Dividend**: नकद लाभांश (शेष बढ़ता है)।
+* **Transfer Out (स्थानांतरण बाहर)**: ब्रोकरेज खाते से स्टॉक स्थानांतरण (उदाहरण के लिए, दूसरे ब्रोकरेज खाते में स्थानांतरण)।
+* **Transfer In (स्थानांतरण अंदर)**: ब्रोकरेज खाते में स्टॉक स्थानांतरण (उदाहरण के लिए, दूसरे ब्रोकरेज खाते से स्थानांतरण)।
 
 ## 4. अक्सर पूछे जाने वाले प्रश्न (FAQ)
 प्र: वार्षिक रिटर्न दर की गणना कैसे की जाती है?
@@ -5047,6 +5280,37 @@ TradeView ताइवान और US स्टॉक के लिए एक �
 
 प्र: स्टॉक कीमतें और विनिमय दरें "AI नेटवर्क अपडेट स्टॉक कीमतें और विनिमय दरें" पर क्लिक करके प्राप्त वर्तमान मूल्यों से अलग क्यों हैं?
 उ: चूंकि स्टॉक कीमतें और विनिमय दरें वेब पेज के वर्तमान मूल्यों से प्राप्त की जाती हैं, वर्तमान मूल्य तीन से पांच मिनट तक देरी से हो सकते हैं। इसलिए उन्हें खरीद और बिक्री के संदर्भ मूल्यों के रूप में उपयोग न करें, खरीद और बिक्री के संदर्भ के लिए प्रतिभूति कंपनियों को मुख्य रूप से सुझाव दिया जाता है। यह सॉफ़्टवेयर केवल सांख्यिकीय संपत्ति कार्यों के लिए उपयुक्त है, जैसे आपातकालीन आरक्षित निधि, यात्रा निधि, सेवानिवृत्ति निधि, सावधि जमा, स्टॉक और बॉन्ड आदि के सांख्यिकीय संदर्भ, इसमें प्रतिभूति व्यापार खरीद/बिक्री कार्य नहीं हैं; इसके अलावा, निवेश में लाभ और हानि होती है, कृपया आपातकालीन आरक्षित निधि आरक्षित करें, आपके उपयोग के लिए धन्यवाद।
+
+प्र: स्टॉक स्थानांतरण (ब्रोकर A से ब्रोकर B तक) कैसे दर्ज करें?
+उ: स्टॉक स्थानांतरण के लिए दो लेनदेन रिकॉर्ड बनाने की आवश्यकता होती है:
+   1. **स्थानांतरण बाहर लेनदेन (TRANSFER_OUT)**:
+      - तारीख: स्थानांतरण तारीख
+      - खाता: "ब्रोकर A" चुनें
+      - बाजार: स्टॉक का बाजार (उदाहरण के लिए, TW, US)
+      - टिकर: स्टॉक टिकर
+      - प्रकार: "स्थानांतरण बाहर (Transfer Out)" चुनें
+      - मूल्य: सिस्टम स्वचालित रूप से स्टॉक का**औसत लागत**भर देगा (आप इसे होल्डिंग्स तालिका में "औसत लागत" कॉलम में देख सकते हैं)। आप इसे मैन्युअल रूप से भी संशोधित कर सकते हैं
+      - मात्रा: स्थानांतरित करने के लिए शेयरों की संख्या
+      - शुल्क: स्थानांतरण शुल्क (यदि कोई हो)
+      - नोट: आप "ब्रोकर B को स्थानांतरण" नोट कर सकते हैं
+   
+   2. **स्थानांतरण अंदर लेनदेन (TRANSFER_IN)**:
+      - तारीख: स्थानांतरण बाहर लेनदेन के समान तारीख
+      - खाता: "ब्रोकर B" चुनें
+      - बाजार: स्थानांतरण बाहर लेनदेन के समान
+      - टिकर: स्थानांतरण बाहर लेनदेन के समान
+      - प्रकार: "स्थानांतरण अंदर (Transfer In)" चुनें
+      - मूल्य: स्थानांतरण बाहर लेनदेन के समान**औसत लागत**(सिस्टम स्वचालित रूप से भर देगा, आप इसे मैन्युअल रूप से भी संशोधित कर सकते हैं)
+      - मात्रा: स्थानांतरण बाहर लेनदेन के समान
+      - शुल्क: स्थानांतरण अंदर शुल्क (यदि कोई हो)
+      - नोट: आप "ब्रोकर A से स्थानांतरण" नोट कर सकते हैं
+   
+   **महत्वपूर्ण नोट**:
+   - कृपया मूल्य फ़ील्ड में "औसत लागत" दर्ज करें, बाज़ार मूल्य नहीं, ताकि सही लागत आधार की गणना की जा सके
+   - जब आप स्थानांतरण अंदर/बाहर प्रकार चुनते हैं और स्टॉक टिकर दर्ज करते हैं, तो सिस्टम स्वचालित रूप से औसत लागत भर देगा
+   - दोनों लेनदेन का मूल्य और मात्रा समान होनी चाहिए
+   - शुल्क संबंधित खाते के नकद शेष से काटे जाएंगे
+   - स्थानांतरण के बाद, स्टॉक ब्रोकर A की होल्डिंग्स से हटा दिया जाएगा और ब्रोकर B की होल्डिंग्स में जोड़ दिया जाएगा
 
 ## 5. महत्वपूर्ण अस्वीकरण
 
@@ -5553,6 +5817,8 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
 * **Buy/Sell**: شراء/بيع عام.
 * **Dividend**: توزيعات الأسهم (يزيد عدد الأسهم).
 * **Cash Dividend**: توزيعات نقدية (يزيد الرصيد).
+* **Transfer Out (تحويل خارج)**: نقل الأسهم من حساب وساطة (مثل التحويل إلى حساب وساطة آخر).
+* **Transfer In (تحويل داخل)**: نقل الأسهم إلى حساب وساطة (مثل التحويل من حساب وساطة آخر).
 
 ## 4. الأسئلة الشائعة (FAQ)
 س: كيف يتم حساب معدل العائد السنوي؟
@@ -5578,6 +5844,37 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
 
 س: لماذا تختلف أسعار الأسهم وأسعار الصرف عن الأسعار الحالية التي تم الحصول عليها بالنقر على "AI تحديث أسعار الأسهم وأسعار الصرف"؟
 ج: نظراً لأن أسعار الأسهم وأسعار الصرف يتم جلبها من القيم الحالية لصفحات الويب، قد تتأخر القيم الحالية من ثلاث إلى خمس دقائق. لذلك لا تستخدمها كقيم مرجعية للشراء والبيع، يُنصح بالرجوع إلى شركات الأوراق المالية بشكل أساسي للشراء والبيع. هذا البرنامج مناسب فقط لوظائف الأصول الإحصائية مثل احتياطيات الطوارئ وصناديق السفر وصناديق التقاعد والودائع الثابتة والأسهم والسندات وما إلى ذلك، وليس لديه وظائف تداول الأوراق المالية للشراء/البيع؛ بالإضافة إلى ذلك، الاستثمارات لها مكاسب وخسائر، يرجى تخصيص احتياطيات الطوارئ، شكراً لاستخدامك.
+
+س: كيف يتم تسجيل تحويلات الأسهم (من وسيط A إلى وسيط B)؟
+ج: تتطلب تحويلات الأسهم إنشاء سجلين للمعاملات:
+   1. **معاملة التحويل الخارج (TRANSFER_OUT)**:
+      - التاريخ: تاريخ التحويل
+      - الحساب: اختر "وسيط A"
+      - السوق: سوق السهم (مثل TW، US)
+      - الرمز: رمز السهم
+      - النوع: اختر "تحويل خارج (Transfer Out)"
+      - السعر: سيقوم النظام تلقائياً بملء**متوسط التكلفة**للسهم (يمكنك عرضه في عمود "متوسط التكلفة" في جدول المراكز). يمكنك أيضاً تعديله يدوياً
+      - الكمية: عدد الأسهم المراد تحويلها
+      - الرسوم: رسوم التحويل (إن وجدت)
+      - الملاحظة: يمكنك ملاحظة "التحويل إلى وسيط B"
+   
+   2. **معاملة التحويل الداخل (TRANSFER_IN)**:
+      - التاريخ: نفس تاريخ معاملة التحويل الخارج
+      - الحساب: اختر "وسيط B"
+      - السوق: نفس معاملة التحويل الخارج
+      - الرمز: نفس معاملة التحويل الخارج
+      - النوع: اختر "تحويل داخل (Transfer In)"
+      - السعر: نفس**متوسط التكلفة**كمعاملة التحويل الخارج (سيملأ النظام تلقائياً، يمكنك أيضاً تعديله يدوياً)
+      - الكمية: نفس معاملة التحويل الخارج
+      - الرسوم: رسوم التحويل الداخل (إن وجدت)
+      - الملاحظة: يمكنك ملاحظة "تم التحويل من وسيط A"
+   
+   **ملاحظات مهمة**:
+   - يرجى إدخال "متوسط التكلفة" في حقل السعر، وليس سعر السوق، لضمان حساب أساس التكلفة بشكل صحيح
+   - سيقوم النظام تلقائياً بملء متوسط التكلفة عند اختيار نوع التحويل الداخل/الخارج وإدخال رمز السهم
+   - يجب أن يكون سعر وكمية المعاملتين متطابقين
+   - سيتم خصم الرسوم من رصيد النقد للحساب المقابل
+   - بعد التحويل، سيتم إزالة السهم من مراكز وسيط A وإضافته إلى مراكز وسيط B
 
 ## 5. إخلاء المسؤولية المهم
 
@@ -6058,6 +6355,8 @@ TradeView é uma ferramenta de gestão de ativos para ações de Taiwan e EUA qu
 * **Buy/Sell**: Compra/venda geral.
 * **Dividend**: Dividendo em ações (o número de ações aumenta).
 * **Cash Dividend**: Dividendo em dinheiro (o saldo aumenta).
+* **Transfer Out (Saída)**: Transferência de ações de uma conta de corretagem (por exemplo, transferência para outra conta de corretagem).
+* **Transfer In (Entrada)**: Transferência de ações para uma conta de corretagem (por exemplo, transferência de outra conta de corretagem).
 
 ## 4. Perguntas frequentes (FAQ)
 P: Como é calculada a taxa de retorno anualizada?
@@ -6083,6 +6382,37 @@ R: As partes com marcas de verificação mostram o desempenho no final desse ano
 
 P: Por que os preços das ações e as taxas de câmbio diferem dos preços atuais obtidos ao clicar em "IA atualiza preços e taxas de câmbio"?
 R: Como os preços das ações e as taxas de câmbio são obtidos a partir dos valores atuais das páginas web, os valores atuais podem estar atrasados de três a cinco minutos. Portanto, não os use como valores de referência para compra e venda. É recomendado referir-se principalmente a empresas de valores mobiliários para compra e venda. Este software é adequado apenas para funções estatísticas de ativos, como reservas de emergência, fundos de viagem, fundos de reforma, depósitos a prazo, ações e obrigações, etc. Não tem funções de negociação de valores mobiliários. Além disso, os investimentos têm ganhos e perdas. Lembre-se de reservar reservas de emergência. Obrigado pelo seu uso.
+
+P: Como registar transferências de ações (da Corretora A para a Corretora B)?
+R: As transferências de ações requerem a criação de dois registos de transação:
+   1. **Transação de Saída (TRANSFER_OUT)**:
+      - Data: Data da transferência
+      - Conta: Selecione "Corretora A"
+      - Mercado: O mercado da ação (por exemplo, TW, US)
+      - Símbolo: Símbolo da ação
+      - Tipo: Selecione "Saída (Transfer Out)"
+      - Preço: O sistema preencherá automaticamente o**custo médio**da ação (pode visualizá-lo na coluna "Custo médio" na tabela de posições). Também pode modificá-lo manualmente
+      - Quantidade: Número de ações a transferir
+      - Taxas: Taxas de transferência (se houver)
+      - Nota: Pode anotar "Transferência para Corretora B"
+   
+   2. **Transação de Entrada (TRANSFER_IN)**:
+      - Data: Mesma data da transação de saída
+      - Conta: Selecione "Corretora B"
+      - Mercado: Igual à transação de saída
+      - Símbolo: Igual à transação de saída
+      - Tipo: Selecione "Entrada (Transfer In)"
+      - Preço: Mesmo**custo médio**que a transação de saída (o sistema preencherá automaticamente, também pode modificar manualmente)
+      - Quantidade: Igual à transação de saída
+      - Taxas: Taxas de entrada (se houver)
+      - Nota: Pode anotar "Transferido da Corretora A"
+   
+   **Notas importantes**:
+   - Por favor, introduza o "custo médio" no campo de preço, não o preço de mercado, para garantir o cálculo correto da base de custo
+   - O sistema preencherá automaticamente o custo médio quando selecionar o tipo Entrada/Saída e introduzir o símbolo da ação
+   - O preço e a quantidade de ambas as transações devem ser iguais
+   - As taxas serão deduzidas do saldo de dinheiro da conta correspondente
+   - Após a transferência, a ação será removida das posições da Corretora A e adicionada às posições da Corretora B
 
 ## 5. Avisos legais importantes
 
