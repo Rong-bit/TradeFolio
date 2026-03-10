@@ -71,6 +71,29 @@ const TransactionForm: React.FC<Props> = ({ accounts, holdings = [], onAdd, onUp
     }
   }, [formData.type, editingTransaction]);
 
+  // 當選擇轉入/轉出且輸入代號時，自動填入平均成本
+  useEffect(() => {
+    if (
+      (formData.type === TransactionType.TRANSFER_IN || 
+       formData.type === TransactionType.TRANSFER_OUT) &&
+      formData.ticker &&
+      formData.accountId &&
+      formData.market &&
+      !editingTransaction && // 編輯模式不自動填入
+      !formData.price // 如果已經有價格，不覆蓋
+    ) {
+      const avgCost = findAvgCostFromHoldings(
+        formData.accountId,
+        formData.ticker,
+        formData.market
+      );
+      
+      if (avgCost !== null) {
+        setFormData(prev => ({ ...prev, price: avgCost.toFixed(2) }));
+      }
+    }
+  }, [formData.type, formData.ticker, formData.accountId, formData.market, editingTransaction, holdings]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.accountId) return alert(tf.errorNoAccount);
@@ -198,6 +221,24 @@ const TransactionForm: React.FC<Props> = ({ accounts, holdings = [], onAdd, onUp
     return matchedHolding ? matchedHolding.market : null;
   };
 
+  // 根據帳戶、代號、市場查找平均成本
+  const findAvgCostFromHoldings = (
+    accountId: string, 
+    ticker: string, 
+    market: Market
+  ): number | null => {
+    if (!accountId || !ticker || !holdings || holdings.length === 0) return null;
+    
+    const upperTicker = ticker.toUpperCase().trim();
+    const matchedHolding = holdings.find((h: Holding) => {
+      return h.accountId === accountId && 
+             h.market === market &&
+             h.ticker.toUpperCase().trim() === upperTicker;
+    });
+    
+    return matchedHolding && matchedHolding.avgCost > 0 ? matchedHolding.avgCost : null;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const newFormData = { ...formData, [e.target.name]: e.target.value };
     
@@ -211,6 +252,34 @@ const TransactionForm: React.FC<Props> = ({ accounts, holdings = [], onAdd, onUp
       const detectedMarket = findMarketFromHoldings(e.target.value);
       if (detectedMarket) {
         newFormData.market = detectedMarket;
+      }
+    }
+    
+    // 當選擇轉入/轉出類型，或變更帳戶/代號/市場時，嘗試自動填入平均成本
+    if (
+      (e.target.name === 'type' && 
+       (e.target.value === TransactionType.TRANSFER_IN || 
+        e.target.value === TransactionType.TRANSFER_OUT)) ||
+      (e.target.name === 'accountId' && 
+       (newFormData.type === TransactionType.TRANSFER_IN || 
+        newFormData.type === TransactionType.TRANSFER_OUT)) ||
+      (e.target.name === 'ticker' && 
+       (newFormData.type === TransactionType.TRANSFER_IN || 
+        newFormData.type === TransactionType.TRANSFER_OUT)) ||
+      (e.target.name === 'market' && 
+       (newFormData.type === TransactionType.TRANSFER_IN || 
+        newFormData.type === TransactionType.TRANSFER_OUT))
+    ) {
+      if (newFormData.ticker && newFormData.accountId && newFormData.market && !editingTransaction) {
+        const avgCost = findAvgCostFromHoldings(
+          newFormData.accountId,
+          newFormData.ticker,
+          newFormData.market
+        );
+        
+        if (avgCost !== null && !newFormData.price) {
+          newFormData.price = avgCost.toFixed(2);
+        }
       }
     }
     
