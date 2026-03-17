@@ -24,7 +24,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const target = (req.query.target || req.query.url) as string | string[] | undefined;
+    // 使用 any 讀取 query，避免 Vercel 型別中 req.query 可為 undefined 的編譯警告
+    const query = ((req as any).query || {}) as Record<string, unknown>;
+    const target = (query['target'] || query['url']) as string | string[] | undefined;
     const targetUrl = Array.isArray(target) ? target[0] : target;
 
     if (!targetUrl) {
