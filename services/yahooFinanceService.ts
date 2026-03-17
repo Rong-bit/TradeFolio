@@ -1,4 +1,3 @@
-
 export interface PriceData {
   price: number;
   change: number;
@@ -235,7 +234,6 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
     
     // 使用 Yahoo Finance 的公開 API（1m 為較即時報價，部分標的僅支援日線）
     const baseUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${range}`;
-    
     const response = await fetchWithProxy(baseUrl, proxyIndex);
 
     if (!response || !response.ok) {
@@ -282,7 +280,6 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
         return null;
       }
       
-      // 檢查是否為 HTML 錯誤頁面
       if (text.includes('<!DOCTYPE') || text.includes('<html')) {
         const errorPreview = text.substring(0, 200);
         console.error(`取得 ${symbol} 股價時發生錯誤: 收到 HTML 錯誤頁面。內容: ${errorPreview}`);
@@ -299,7 +296,6 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
       // 如果不是有效的 JSON，可能是錯誤訊息（如 "Edge: Too many requests"）
       const errorPreview = text.substring(0, 200);
       console.error(`取得 ${symbol} 股價時發生錯誤: 響應不是有效的 JSON。內容: ${errorPreview}`);
-      // 不拋出錯誤，直接返回 null
       return null;
     }
     
@@ -366,6 +362,7 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
 
 /**
  * 取得 USD 對 TWD 的即時匯率（帶重試機制）
+ * 使用 1m 取得較即時匯率
  */
 const fetchExchangeRate = async (retryCount: number = 0, proxyIndex: number = 0): Promise<number> => {
   const maxRetries = 2; // 最多重試 2 次
@@ -458,7 +455,6 @@ const fetchExchangeRate = async (retryCount: number = 0, proxyIndex: number = 0)
   } catch (error: any) {
     // 避免重複顯示 JSON 解析錯誤（已經在內部處理了）
     if (error instanceof SyntaxError && error.message?.includes('JSON')) {
-      // JSON 解析錯誤已經在內部處理，這裡不需要再次記錄
       return 31.5;
     }
     console.error('取得匯率時發生錯誤:', error?.message || error);
@@ -633,7 +629,7 @@ const fetchHistoricalJPYExchangeRate = async (year: number): Promise<number> => 
     const targetTimestamp = Math.floor(endDateUTC / 1000);
     
     // 找到最接近年底的有效匯率
-    let closestRate = null;
+    let closestRate: number | null = null;
     let closestDiff = Infinity;
     
     for (let i = 0; i < timestamps.length; i++) {
@@ -744,7 +740,7 @@ const fetchHistoricalExchangeRate = async (year: number): Promise<number> => {
     const targetTimestamp = Math.floor(endDateUTC / 1000);
     
     // 找到最接近年底的有效匯率
-    let closestRate = null;
+    let closestRate: number | null = null;
     let closestDiff = Infinity;
     
     for (let i = 0; i < timestamps.length; i++) {
@@ -902,6 +898,7 @@ export const fetchCurrentPrices = async (
     if (hasJP) {
       console.log(`[調試] 成功取得日幣匯率: ${jpyExchangeRate && jpyExchangeRate > 0 ? '是' : '否'} (${jpyExchangeRate?.toFixed(4) || 'N/A'})`);
     }
+    console.log(`[調試] =================================`);
     console.log(`[調試] =================================`);
 
     return {
