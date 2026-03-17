@@ -115,16 +115,23 @@ const convertToYahooSymbol = (ticker: string, market?: YahooMarket): string => {
  */
 const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Response | null> => {
   // 優先使用自己後端的 yahoo-proxy
-  // - 若有設定 VITE_YAHOO_PROXY_URL（例如 https://your-app.vercel.app/api/yahoo-proxy）
-  //   則優先使用該 URL
-  // - 否則在 Vercel / 本地開發時可使用相對路徑 /api/yahoo-proxy
-  const yahooProxyBase =
-    (import.meta as any).env?.VITE_YAHOO_PROXY_URL ||
-    (typeof window !== 'undefined' &&
-      (window.location.hostname.endsWith('vercel.app') ||
-       window.location.hostname === 'localhost'))
-      ? '/api/yahoo-proxy'
-      : null;
+  // 1) 若有設定 VITE_YAHOO_PROXY_URL（例如 https://trade-folio.vercel.app/api/yahoo-proxy），一律使用該網址
+  // 2) 否則在 Vercel / 本地開發 (localhost) 使用相對路徑 /api/yahoo-proxy
+  // 3) 在 GitHub Pages（rong-bit.github.io）時，不會使用 /api/yahoo-proxy，避免 404
+  let yahooProxyBase: string | null = null;
+  const envProxy = (import.meta as any).env?.VITE_YAHOO_PROXY_URL as string | undefined;
+
+  if (envProxy) {
+    // 明確指定完整 proxy URL（包含 /api/yahoo-proxy）
+    yahooProxyBase = envProxy;
+  } else if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname.endsWith('vercel.app') ||
+      window.location.hostname === 'localhost')
+  ) {
+    // 在 Vercel / 本機開發時可用相對路徑
+    yahooProxyBase = '/api/yahoo-proxy';
+  }
 
   const vercelProxyUrl = yahooProxyBase
     ? `${yahooProxyBase}?target=${encodeURIComponent(url)}`
