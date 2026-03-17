@@ -114,9 +114,21 @@ const convertToYahooSymbol = (ticker: string, market?: YahooMarket): string => {
  * 使用 CORS 代理服務取得資料（帶備用方案）
  */
 const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Response | null> => {
-  // 優先使用自己後端的 yahoo-proxy（部署在 Vercel / 同網域），再退而求其次使用公開 CORS 代理
-  // 這樣可以大幅降低免費代理掛掉或被濫用時的影響
-  const vercelProxyUrl = `/api/yahoo-proxy?target=${encodeURIComponent(url)}`;
+  // 優先使用自己後端的 yahoo-proxy
+  // - 若有設定 VITE_YAHOO_PROXY_URL（例如 https://your-app.vercel.app/api/yahoo-proxy）
+  //   則優先使用該 URL
+  // - 否則在 Vercel / 本地開發時可使用相對路徑 /api/yahoo-proxy
+  const yahooProxyBase =
+    (import.meta as any).env?.VITE_YAHOO_PROXY_URL ||
+    (typeof window !== 'undefined' &&
+      (window.location.hostname.endsWith('vercel.app') ||
+       window.location.hostname === 'localhost'))
+      ? '/api/yahoo-proxy'
+      : null;
+
+  const vercelProxyUrl = yahooProxyBase
+    ? `${yahooProxyBase}?target=${encodeURIComponent(url)}`
+    : null;
 
   // 優先順序：
   // 1) 自家 yahoo-proxy（安全且較穩定）
@@ -124,7 +136,7 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
   // 3) allorigins
   // 4) 直接連線（最後備援，可能遇到 CORS）
   const proxies = [
-    vercelProxyUrl,
+    ...(vercelProxyUrl ? [vercelProxyUrl] : []),
     `https://corsproxy.io/?${encodeURIComponent(url)}`,
     `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     url
