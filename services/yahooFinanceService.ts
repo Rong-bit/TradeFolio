@@ -111,35 +111,24 @@ const convertToYahooSymbol = (ticker: string, market?: YahooMarket): string => {
 };
 
 /**
- * 使用代理服務取得資料（帶備用方案）
- * - Web（GitHub Pages / 瀏覽器）環境：優先使用部署在 Vercel 的自家代理 API，避開 CORS
- * - 其他環境（如 React Native / Node）：可以直接請求 Yahoo API
+ * 使用 CORS 代理服務取得資料（帶備用方案）
  */
 const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Response | null> => {
-  const isBrowser = typeof window !== 'undefined';
+  // 優先使用自己後端的 yahoo-proxy（部署在 Vercel / 同網域），再退而求其次使用公開 CORS 代理
+  // 這樣可以大幅降低免費代理掛掉或被濫用時的影響
+  const vercelProxyUrl = `/api/yahoo-proxy?target=${encodeURIComponent(url)}`;
 
-  // Vercel API 基底位址，可透過環境變數覆蓋
-  // 例如：VITE_VERCEL_API_BASE=https://trade-folio.vercel.app
-  const vercelApiBase =
-    (typeof import.meta !== 'undefined' &&
-      (import.meta as any).env &&
-      (import.meta as any).env.VITE_VERCEL_API_BASE) ||
-    'https://trade-folio.vercel.app';
-
-  // 在瀏覽器中：優先使用 Vercel 自家代理，其次才是公開 CORS 代理（作為備援）
-  // 在非瀏覽器環境：可以直接打 Yahoo API，不需要 CORS 代理
-  const proxies = isBrowser
-    ? [
-        `${vercelApiBase}/api/yahoo-proxy?target=${encodeURIComponent(url)}`,
-        `https://corsproxy.io/?${encodeURIComponent(url)}`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-        url,
-      ]
-    : [
-        url,
-        `https://corsproxy.io/?${encodeURIComponent(url)}`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-      ];
+  // 優先順序：
+  // 1) 自家 yahoo-proxy（安全且較穩定）
+  // 2) corsproxy.io
+  // 3) allorigins
+  // 4) 直接連線（最後備援，可能遇到 CORS）
+  const proxies = [
+    vercelProxyUrl,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url
+  ];
 
   // 從指定的代理索引開始嘗試（用於重試時切換代理）
   const startIndex = Math.min(proxyIndex, proxies.length - 1);
@@ -147,11 +136,13 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
 
   for (let i = startIndex; i < proxies.length; i++) {
     const proxyUrl = proxies[i];
-    const proxyName = i === proxies.length - 1 ? '直接連接' : 
-                     proxyUrl.includes('allorigins') ? 'allorigins' :
-                     proxyUrl.includes('codetabs') ? 'codetabs' :
-                     proxyUrl.includes('corsproxy') ? 'corsproxy' :
-                     proxyUrl.includes('cors-anywhere') ? 'cors-anywhere' : '未知';
+    const proxyName = proxyUrl.startsWith('/api/yahoo-proxy')
+                     ? 'yahoo-proxy (自家後端)'
+                     : i === proxies.length - 1 ? '直接連接' : 
+                       proxyUrl.includes('allorigins') ? 'allorigins' :
+                       proxyUrl.includes('codetabs') ? 'codetabs' :
+                       proxyUrl.includes('corsproxy') ? 'corsproxy' :
+                       proxyUrl.includes('cors-anywhere') ? 'cors-anywhere' : '未知';
     
     try {
       console.log(`[調試] 嘗試代理服務 ${i + 1}/${proxies.length}: ${proxyName}`);
@@ -195,21 +186,8 @@ const fetchWithProxy = async (url: string, proxyIndex: number = 0): Promise<Resp
           // 500 錯誤是代理服務器問題，會自動切換代理，不需要顯示警告
           console.debug(`[調試] 代理服務 ${proxyName} 返回 ${response.status} 錯誤（代理服務器問題，會自動切換代理）`);
         } else {
-          // 對於常見的 403 / 429 等錯誤，如果發生在「公開代理」上，視為正常情況，只以 debug 顯示
-          const isPublicProxy = proxyName !== '直接連接' && proxyName !== '未知';
-          const isExpectedRateOrForbidden =
-            response.status === 403 || response.status === 429;
-          
-          if (isPublicProxy && isExpectedRateOrForbidden) {
-            console.debug(
-              `[調試] 代理服務 ${proxyName} 返回預期錯誤 ${response.status}（可能為封鎖或限流），會自動嘗試下一個代理`
-            );
-          } else {
-            // 其他 HTTP 錯誤需要記錄為警告
-            console.warn(
-              `[調試] 代理服務 ${proxyName} 返回錯誤 ${response.status}，嘗試下一個...`
-            );
-          }
+          // 其他 HTTP 錯誤（如 429, 403 等）需要記錄
+          console.warn(`[調試] 代理服務 ${proxyName} 返回錯誤 ${response.status}，嘗試下一個...`);
         }
         // 繼續嘗試下一個代理
         continue;
@@ -274,12 +252,8 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
     if (!response || !response.ok) {
       // 如果是速率限制錯誤（429）或超時（408），且還有重試機會，則重試
       if ((response?.status === 429 || response?.status === 408) && retryCount < maxRetries) {
-        const nextProxyIndex = proxyIndex + 1;
-        console.warn(
-          `[調試] 取得 ${symbol} 股價時遇到速率限制 (HTTP ${response?.status})，等待 ${
-            retryDelay / 1000
-          } 秒後重試，切換代理服務...`
-        );
+        const nextProxyIndex = (proxyIndex + 1) % 3;
+        console.warn(`[調試] 取得 ${symbol} 股價時遇到速率限制 (HTTP ${response?.status})，等待 ${retryDelay / 1000} 秒後重試，切換代理服務...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
         return fetchSingleStockPrice(symbol, retryCount + 1, nextProxyIndex, use1mInterval);
       }
@@ -309,12 +283,8 @@ const fetchSingleStockPrice = async (symbol: string, retryCount: number = 0, pro
         // 如果是速率限制錯誤且還有重試機會，則重試
         if (retryCount < maxRetries) {
           const errorPreview = text.substring(0, 200);
-          const nextProxyIndex = proxyIndex + 1;
-          console.warn(
-            `[調試] 取得 ${symbol} 股價時遇到速率限制: ${errorPreview}，等待 ${
-              retryDelay / 1000
-            } 秒後重試，切換代理服務...`
-          );
+          const nextProxyIndex = (proxyIndex + 1) % 3;
+          console.warn(`[調試] 取得 ${symbol} 股價時遇到速率限制: ${errorPreview}，等待 ${retryDelay / 1000} 秒後重試，切換代理服務...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
           return fetchSingleStockPrice(symbol, retryCount + 1, nextProxyIndex, use1mInterval);
         }
@@ -424,12 +394,8 @@ const fetchExchangeRate = async (retryCount: number = 0, proxyIndex: number = 0)
     if (!response || !response.ok) {
       // 如果是速率限制錯誤（429）或超時（408），且還有重試機會，則重試
       if ((response?.status === 429 || response?.status === 408) && retryCount < maxRetries) {
-        const nextProxyIndex = proxyIndex + 1;
-        console.warn(
-          `[調試] 取得匯率時遇到速率限制 (HTTP ${response?.status})，等待 ${
-            retryDelay / 1000
-          } 秒後重試 (${retryCount + 1}/${maxRetries})，切換代理服務...`
-        );
+        const nextProxyIndex = (proxyIndex + 1) % 3; // 切換到下一個代理（數量需與 fetchWithProxy 內 proxies 一致）
+        console.warn(`[調試] 取得匯率時遇到速率限制 (HTTP ${response?.status})，等待 ${retryDelay / 1000} 秒後重試 (${retryCount + 1}/${maxRetries})，切換代理服務...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
         return fetchExchangeRate(retryCount + 1, nextProxyIndex);
       }
@@ -459,12 +425,8 @@ const fetchExchangeRate = async (retryCount: number = 0, proxyIndex: number = 0)
         // 如果是速率限制錯誤且還有重試機會，則重試
         if (retryCount < maxRetries) {
           const errorPreview = text.substring(0, 200);
-          const nextProxyIndex = proxyIndex + 1;
-          console.warn(
-            `[調試] 取得匯率時遇到速率限制: ${errorPreview}，等待 ${
-              retryDelay / 1000
-            } 秒後重試 (${retryCount + 1}/${maxRetries})，切換代理服務...`
-          );
+          const nextProxyIndex = (proxyIndex + 1) % 3; // 切換到下一個代理（數量需與 fetchWithProxy 內 proxies 一致）
+          console.warn(`[調試] 取得匯率時遇到速率限制: ${errorPreview}，等待 ${retryDelay / 1000} 秒後重試 (${retryCount + 1}/${maxRetries})，切換代理服務...`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
           return fetchExchangeRate(retryCount + 1, nextProxyIndex);
         }
@@ -887,8 +849,9 @@ export const fetchCurrentPrices = async (
     const hasBR = markets?.some(m => m === 'BR') || false;
 
     // 股價與匯率並行取得，總時間 ≈ max(股價時間, 匯率時間)，縮短報價等待
-    const CONCURRENCY = 6;
-    const BATCH_DELAY_MS = 100;
+  // 降低併發數與批次間隔，減少被 Yahoo / 代理判定為過多請求 (429) 的機率
+  const CONCURRENCY = 3;
+  const BATCH_DELAY_MS = 300;
 
     const [prices, [exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate]] = await Promise.all([
       (async (): Promise<(PriceData | null)[]> => {
