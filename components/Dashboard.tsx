@@ -2,27 +2,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChartDataPoint, PortfolioSummary, Holding, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlow, Account, CashFlowType, Currency, Market, BaseCurrency } from '../types';
 import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency } from '../utils/calculations';
+import { usePortfolio } from '../contexts/PortfolioContext';
+import { useMarket } from '../contexts/MarketContext';
+import { useUI } from '../contexts/UIContext';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import HoldingsTable from './HoldingsTable';
 import { Language, t, translate } from '../utils/i18n';
 
 interface Props {
-  summary: PortfolioSummary;
-  holdings: Holding[];
-  chartData: ChartDataPoint[];
-  assetAllocation: AssetAllocationItem[];
-  annualPerformance: AnnualPerformanceItem[];
-  accountPerformance: AccountPerformance[];
-  cashFlows: CashFlow[];
-  accounts: Account[];
-  baseCurrency: BaseCurrency;
-  onUpdatePrice: (key: string, price: number) => void;
-  onAutoUpdate: () => Promise<void>;
-  refreshIntervalMs?: number;
-  updateHint?: string;
-  isGuest?: boolean;
   onUpdateHistorical?: () => void;
-  language: Language;
 }
 
 const Dashboard: React.FC<Props> = ({ 

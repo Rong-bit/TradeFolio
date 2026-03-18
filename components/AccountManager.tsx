@@ -4,16 +4,15 @@ import { Account, Currency, BASE_CURRENCIES } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from '../utils/calculations';
 import { Language, t, translate } from '../utils/i18n';
+import { usePortfolio } from '../contexts/PortfolioContext';
+import { useUI } from '../contexts/UIContext';
 
-interface Props {
-  accounts: Account[];
-  onAdd: (acc: Account) => void;
-  onUpdate?: (acc: Account) => void;
-  onDelete: (id: string) => void;
-  language: Language;
-}
+interface Props {}
 
-const AccountManager: React.FC<Props> = ({ accounts, onAdd, onUpdate, onDelete, language }) => {
+const AccountManager: React.FC<Props> = () => {
+  const { computedAccounts: accounts, addAccount, updateAccount: onUpdate, removeAccount: onDelete } = usePortfolio();
+  const { language } = useUI();
+  const onAdd = addAccount;
   const translations = t(language);
   const [name, setName] = useState('');
   const [currency, setCurrency] = useState<Currency>(Currency.TWD);

@@ -3,21 +3,19 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { PortfolioSummary, Holding, Market, BaseCurrency } from '../types';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import { Language, t } from '../utils/i18n';
+import { usePortfolio } from '../contexts/PortfolioContext';
+import { useMarket } from '../contexts/MarketContext';
+import { useUI } from '../contexts/UIContext';
 
-interface Props {
-  summary: PortfolioSummary;
-  holdings: Holding[];
-  baseCurrency: BaseCurrency;
-  exchangeRate: number;
-  jpyExchangeRate?: number;
-  targets: Record<string, number>;
-  onUpdateTargets: (targets: Record<string, number>) => void;
-  enabledItems: string[];
-  onUpdateEnabledItems: (items: string[]) => void;
-  language: Language;
-}
+interface Props {}
 
-const RebalanceView: React.FC<Props> = ({ summary, holdings, baseCurrency, exchangeRate, jpyExchangeRate, targets, onUpdateTargets, enabledItems: enabledItemsArray, onUpdateEnabledItems, language }) => {
+const RebalanceView: React.FC<Props> = () => {
+  const { summary, holdings, rebalanceTargets: targets,
+    updateRebalanceTargets: onUpdateTargets,
+    rebalanceEnabledItems: enabledItems,
+    setRebalanceEnabledItems: onUpdateEnabledItems } = usePortfolio();
+  const { baseCurrency, exchangeRate, jpyExchangeRate } = useMarket();
+  const { language } = useUI();
   const translations = t(language);
   const totalPortfolioValue = summary.totalValueTWD + summary.cashBalanceTWD;
   const rates = {

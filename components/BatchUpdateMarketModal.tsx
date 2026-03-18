@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from 'react';
+import { usePortfolio } from '../contexts/PortfolioContext';
 import { Transaction, Market } from '../types';
 
 interface Props {
-  transactions: Transaction[];
   onUpdate: (updates: { id: string; market: Market }[]) => void;
+  onClose: () => void;
+}[]) => void;
   onClose: () => void;
 }
 
-const BatchUpdateMarketModal: React.FC<Props> = ({ transactions, onUpdate, onClose }) => {
+const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
+  const { transactions } = usePortfolio();
   const [ticker, setTicker] = useState('');
   const [newMarket, setNewMarket] = useState<Market>(Market.US);
 

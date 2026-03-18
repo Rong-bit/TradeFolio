@@ -1,26 +1,17 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { usePortfolio } from '../contexts/PortfolioContext';
 import { Transaction, CashFlow, Account, HistoricalData, Market } from '../types';
 import { getPortfolioStateAtDate } from '../utils/calculations';
 import { fetchHistoricalYearEndData } from '../services/yahooFinanceService';
 
 interface Props {
-  transactions: Transaction[];
-  cashFlows: CashFlow[];
-  accounts: Account[];
-  historicalData: HistoricalData;
   onSave: (data: HistoricalData) => void;
   onClose: () => void;
 }
 
-const HistoricalDataModal: React.FC<Props> = ({ 
-  transactions, 
-  cashFlows, 
-  accounts, 
-  historicalData, 
-  onSave, 
-  onClose 
-}) => {
+const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
+  const { transactions, cashFlows, accounts, historicalData } = usePortfolio();
   // Identify available years from data
   const years = useMemo(() => {
     const allYears = new Set([

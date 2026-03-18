@@ -4,20 +4,17 @@ import RefreshCountdown from './RefreshCountdown';
 import { Holding, Market, Account, Currency } from '../types';
 import { formatCurrency } from '../utils/calculations';
 import { Language, t } from '../utils/i18n';
+import { usePortfolio } from '../contexts/PortfolioContext';
+import { useUI } from '../contexts/UIContext';
 
-interface Props {
-  holdings: Holding[];
-  accounts: Account[];
-  onUpdatePrice: (key: string, price: number) => void;
-  onAutoUpdate: () => Promise<void>;
-  refreshIntervalMs?: number;
-  updateHint?: string | undefined;
-  language: Language;
-}
+interface Props {}
 
 type DisplayMode = 'merged' | 'detailed';
 
-const HoldingsTable: React.FC<Props> = ({ holdings, accounts, onUpdatePrice, onAutoUpdate, refreshIntervalMs = 3 * 60 * 1000, updateHint, language }) => {
+const HoldingsTable: React.FC<Props> = () => {
+  const { holdings, accounts, updatePrice: onUpdatePrice,
+    handleAutoUpdatePrices: onAutoUpdate, refreshIntervalMs } = usePortfolio();
+  const { language } = useUI();
   const translations = t(language);
   const [isUpdating, setIsUpdating] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('merged');

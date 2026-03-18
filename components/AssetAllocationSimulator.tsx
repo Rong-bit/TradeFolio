@@ -5,9 +5,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { fetchAnnualizedReturn } from '../services/yahooFinanceService';
 import { Language, t, translate } from '../utils/i18n';
+import { usePortfolio } from '../contexts/PortfolioContext';
+import { useMarket } from '../contexts/MarketContext';
+import { useUI } from '../contexts/UIContext';
 
-interface Props {
-  holdings?: Array<{ ticker: string; market: Market; annualizedReturn: number }>;
+interface Props {}>;
   baseCurrency?: BaseCurrency;
   exchangeRateUsdToTwd?: number;
   jpyExchangeRate?: number;
@@ -23,7 +25,14 @@ interface Props {
   language: Language;
 }
 
-const AssetAllocationSimulator: React.FC<Props> = ({ holdings = [], baseCurrency = 'TWD', exchangeRateUsdToTwd = 31.5, jpyExchangeRate = 0.21, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cadExchangeRate, inrExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate, language }) => {
+const AssetAllocationSimulator: React.FC<Props> = () => {
+  const { holdings: rawHoldings } = usePortfolio();
+  const { baseCurrency, rates, exchangeRate: exchangeRateUsdToTwd,
+    jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate,
+    krwExchangeRate, cadExchangeRate, inrExchangeRate, audExchangeRate,
+    sarExchangeRate, brlExchangeRate } = useMarket();
+  const { language } = useUI();
+  const holdings = rawHoldings.map(h => ({ ticker: h.ticker, market: h.market, annualizedReturn: h.annualizedReturn }));
   const rates = {
     exchangeRateUsdToTwd,
     jpyExchangeRate,

@@ -3,18 +3,19 @@ import React, { useState, useEffect } from 'react';
 import { Market, Transaction, TransactionType, Account, Holding } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { Language, t } from '../utils/i18n';
+import { usePortfolio } from '../contexts/PortfolioContext';
+import { useUI } from '../contexts/UIContext';
 
 interface Props {
-  accounts: Account[];
-  holdings?: Holding[]; // 資產配置明細，用於自動判斷市場
   onAdd: (tx: Transaction) => void;
   onUpdate: (tx: Transaction) => void;
   onClose: () => void;
   editingTransaction: Transaction | null;
-  language: Language;
 }
 
-const TransactionForm: React.FC<Props> = ({ accounts, holdings = [], onAdd, onUpdate, onClose, editingTransaction, language }) => {
+const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTransaction }) => {
+  const { accounts, holdings } = usePortfolio();
+  const { language } = useUI();
   const isEditing = !!editingTransaction;
   const translations = t(language);
   const tf = translations.transactionForm;

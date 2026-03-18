@@ -2,15 +2,17 @@ import React, { useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Account, Market, Transaction, TransactionType } from '../types';
 import { Language, t, translate } from '../utils/i18n';
+import { usePortfolio } from '../contexts/PortfolioContext';
+import { useUI } from '../contexts/UIContext';
 
 interface Props {
-  accounts: Account[];
   onImport: (transactions: Transaction[]) => void;
   onClose: () => void;
-  language: Language;
 }
 
-const BatchImportModal: React.FC<Props> = ({ accounts, onImport, onClose, language }) => {
+const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
+  const { accounts } = usePortfolio();
+  const { language } = useUI();
   const tr = t(language).batchImportModal;
   const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '');
   const [inputText, setInputText] = useState(''); // New state for text area

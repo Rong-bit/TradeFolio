@@ -5,46 +5,31 @@ import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import BatchCashFlowModal from './BatchCashFlowModal';
 import { Language, t, translate } from '../utils/i18n';
+import { usePortfolio } from '../contexts/PortfolioContext';
+import { useMarket } from '../contexts/MarketContext';
+import { useUI } from '../contexts/UIContext';
 
-interface Props {
-  accounts: Account[];
-  cashFlows: CashFlow[];
-  onAdd: (cf: CashFlow) => void;
-  onUpdate?: (cf: CashFlow) => void;
-  onBatchAdd: (cfs: CashFlow[]) => void;
-  onDelete: (id: string) => void;
-  onClearAll: () => void;
-  baseCurrency?: BaseCurrency;
-  currentExchangeRate?: number;
-  currentJpyExchangeRate?: number;
-  currentEurExchangeRate?: number;
-  currentGbpExchangeRate?: number;
-  currentHkdExchangeRate?: number;
-  currentKrwExchangeRate?: number;
-  currentCadExchangeRate?: number;
-  currentInrExchangeRate?: number;
-  language: Language;
-}
+interface Props {}
 
-const FundManager: React.FC<Props> = ({ 
-  accounts, 
-  cashFlows, 
-  onAdd, 
-  onUpdate,
-  onBatchAdd, 
-  onDelete, 
-  onClearAll, 
-  baseCurrency = 'TWD',
-  currentExchangeRate = 32,
-  currentJpyExchangeRate = 0.21,
-  currentEurExchangeRate,
-  currentGbpExchangeRate,
-  currentHkdExchangeRate,
-  currentKrwExchangeRate,
-  currentCadExchangeRate,
-  currentInrExchangeRate,
-  language
-}) => {
+const FundManager: React.FC<Props> = () => {
+  const { accounts, cashFlows, addCashFlow, updateCashFlow: onUpdate,
+    addBatchCashFlows, removeCashFlow, clearCashFlows } = usePortfolio();
+  const { baseCurrency, exchangeRate, jpyExchangeRate, eurExchangeRate,
+    gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cadExchangeRate,
+    inrExchangeRate } = useMarket();
+  const { language } = useUI();
+  const onAdd = addCashFlow;
+  const onBatchAdd = addBatchCashFlows;
+  const onDelete = removeCashFlow;
+  const onClearAll = clearCashFlows;
+  const currentExchangeRate = exchangeRate;
+  const currentJpyExchangeRate = jpyExchangeRate;
+  const currentEurExchangeRate = eurExchangeRate;
+  const currentGbpExchangeRate = gbpExchangeRate;
+  const currentHkdExchangeRate = hkdExchangeRate;
+  const currentKrwExchangeRate = krwExchangeRate;
+  const currentCadExchangeRate = cadExchangeRate;
+  const currentInrExchangeRate = inrExchangeRate;
   const rates = {
     exchangeRateUsdToTwd: currentExchangeRate,
     jpyExchangeRate: currentJpyExchangeRate,

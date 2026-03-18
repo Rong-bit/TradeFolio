@@ -4,18 +4,11 @@ import { Language, t, translate } from '../utils/i18n';
 interface Props {
   onExport: () => void;
   onImport: (file: File) => void;
-  authorizedUsers: string[]; 
-  currentUser: string;
-  language: Language;
 }
 
-const HelpView: React.FC<Props> = ({ 
-  onExport, 
-  onImport, 
-  authorizedUsers,
-  currentUser,
-  language
-}) => {
+const HelpView: React.FC<Props> = ({ onExport, onImport }) => {
+  const { language, currentUser, isGuest } = useUI();
+  const authorizedUsers: string[] = [];
   const translations = t(language);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
