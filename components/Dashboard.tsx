@@ -690,7 +690,12 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       >
                         <td
                           className="px-6 py-3 font-bold"
-                          style={{ color: (!isDarkMode && hoveredAnnualYear === item.year) ? "#ffffff" : "#334155" }}
+                          style={{
+                            color:
+                              (!isDarkMode && hoveredAnnualYear === item.year)
+                                ? "#ffffff"
+                                : (isDarkMode ? "#94a3b8" : "#64748b"),
+                          }}
                         >
                           {item.year}
                           {item.isRealData && <span title={translations.dashboard.realHistoricalData} className="ml-2 text-xs cursor-help">✅</span>}
