@@ -54,7 +54,7 @@ export function marketValueToTWD(
 }
 
 /** 將幣別對應到 TWD 匯率 */
-export function currencyToTWDRate(currency: Currency, rates: ExchangeRates): number {
+function currencyToTWDRate(currency: Currency, rates: ExchangeRates): number {
   switch (currency) {
     case Currency.USD: return rates.exchangeRateUsdToTwd;
     case Currency.JPY: return rates.jpyExchangeRate ?? rates.exchangeRateUsdToTwd;
