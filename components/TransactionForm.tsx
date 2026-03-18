@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Market, Transaction, TransactionType, Account, Holding } from '../types';
+import { Market, Transaction, TransactionType, Holding } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';

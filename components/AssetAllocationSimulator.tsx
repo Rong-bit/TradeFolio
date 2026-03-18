@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { AssetSimulationItem, SimulationResult, Market, YearlyProjection, BaseCurrency } from '../types';
+import { AssetSimulationItem, SimulationResult, Market, YearlyProjection } from '../types';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import { v4 as uuidv4 } from 'uuid';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';

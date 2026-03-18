@@ -1103,7 +1103,7 @@ const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
                           <td className="px-4 py-2 text-right font-mono">{row.price.toFixed(2)}</td>
                            <td className="px-4 py-2 text-right text-slate-400">{row.fees}</td>
                            <td className="px-4 py-2 text-right font-mono font-semibold text-slate-800">
-                             {(row as any).amount ? ((row as any).amount % 1 === 0 ? Math.abs((row as any).amount).toString() : Math.abs((row as any).amount).toFixed(2)) : '-'}
+                             {row.amount != null ? (row.amount % 1 === 0 ? Math.abs(row.amount).toString() : Math.abs(row.amount).toFixed(2)) : '-'}
                            </td>
                          </tr>
                        );

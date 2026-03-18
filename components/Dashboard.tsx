@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChartDataPoint, Holding, CashFlow, Account, CashFlowType, Currency, Market, BaseCurrency } from '../types';
+import { ChartDataPoint, Account, CashFlowType, Currency, Market } from '../types';
 import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
@@ -265,15 +265,13 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <div className="flex justify-between items-center mb-2">
               <h3 className="font-bold text-blue-600 text-xl">{translations.dashboard.assetVsCostTrend}</h3>
-              {onUpdateHistorical && (
-                <button 
+                              <button 
                   onClick={onUpdateHistorical}
                   className="text-xs px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded border border-indigo-200 flex items-center gap-1 transition"
                   title={translations.dashboard.aiCorrectHistoryTitle}
                 >
                   <span>🤖</span> {translations.dashboard.aiCorrectHistory}
                 </button>
-              )}
           </div>
           
           <div className="w-full">
@@ -466,7 +464,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                  <ResponsiveContainer width="100%" height="100%">
                    <PieChart>
                       <Pie
-                        data={assetAllocation as any[]}
+                        data={assetAllocation}
                         cx="50%"
                         cy="50%"
                         innerRadius={70}

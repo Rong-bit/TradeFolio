@@ -1,6 +1,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Holding, Market, BaseCurrency } from '../types';
+import { Holding, Market } from '../types';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';

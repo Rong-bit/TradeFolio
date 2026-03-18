@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Account, CashFlow, CashFlowType, Currency, BaseCurrency } from '../types';
+import { Account, CashFlow, CashFlowType, Currency } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import BatchCashFlowModal from './BatchCashFlowModal';
