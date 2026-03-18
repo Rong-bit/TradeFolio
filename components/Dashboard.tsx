@@ -141,7 +141,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
         {/* Net Cost Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-purple-500 relative group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider flex justify-between items-center">
+          <h4 className="text-xs font-bold uppercase tracking-wider flex justify-between items-center" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
             {translations.dashboard.netCost}
             <button
               onClick={() => setShowCostDetailModal(true)}
@@ -149,7 +149,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               title={translations.dashboard.viewCalculationDetails}
             >🔍 {translations.dashboard.detail}</button>
           </h4>
-          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2 tabular-nums">
+          <p className="text-xl sm:text-2xl font-bold mt-2 tabular-nums" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>
             {formatCurrency(toBase(summary.netInvestedTWD), baseCurrency)}
           </p>
           {/* Sparkline: historical cost trend */}
@@ -172,13 +172,13 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
         {/* Total Assets Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-green-500 relative overflow-hidden group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.totalAssets}</h4>
           <div className="flex items-center gap-2 mt-2">
-            <p className="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums">
+            <p className="text-xl sm:text-2xl font-bold tabular-nums" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>
               {formatCurrency(toBase(summary.totalValueTWD + summary.cashBalanceTWD), baseCurrency)}
             </p>
           </div>
-          <p className="text-[10px] text-slate-400 mt-0.5">{translations.dashboard.includeCash}: {formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</p>
+          <p className="text-[10px] mt-0.5" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>{translations.dashboard.includeCash}: {formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</p>
           {isMounted && chartData.length > 1 && (
             <div className="mt-2 h-8">
               <ResponsiveContainer width="100%" height="100%">
@@ -198,7 +198,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
         {/* Total P/L Card */}
         <div className={`bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-emerald-500' : 'border-rose-500'} group hover:shadow-md transition-shadow`}>
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.totalPL}</h4>
           <div className="flex items-center gap-2 mt-2">
             {/* ① Trend arrow */}
             <span className={`text-lg leading-none ${summary.totalPLTWD >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
@@ -209,7 +209,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             </p>
           </div>
           <div className="flex items-center gap-1 mt-1">
-            <span className={`inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded ${summary.totalPLTWD >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+            <span style={{ backgroundColor: summary.totalPLTWD >= 0 ? (isDarkMode?"#064e3b":"#ecfdf5") : (isDarkMode?"#4c0519":"#fff1f2"), color: summary.totalPLTWD >= 0 ? "#10b981" : "#ef4444", display:"inline-flex", alignItems:"center", gap:"2px", fontSize:"12px", fontWeight:700, padding:"1px 6px", borderRadius:"4px" }}>
               {summary.totalPLPercent.toFixed(2)}%
             </span>
           </div>
@@ -232,19 +232,19 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
         {/* Annualized Return Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-blue-500 group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.annualizedReturn}</h4>
           <div className="flex items-center gap-2 mt-2">
             <span className={`text-lg leading-none ${summary.annualizedReturn >= 0 ? 'text-blue-500' : 'text-orange-500'}`}>
               {summary.annualizedReturn >= 0 ? '↑' : '↓'}
             </span>
-            <p className="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums">
+            <p className="text-xl sm:text-2xl font-bold tabular-nums" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>
               {summary.annualizedReturn.toFixed(1)}%
             </p>
           </div>
           {/* ① Progress bar showing return vs 8% target */}
           <div className="mt-2">
-            <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
-              <span>0%</span><span className="text-slate-500">目標 8%</span><span>20%+</span>
+            <div className="flex justify-between text-[10px] mb-0.5" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>
+              <span>0%</span><span style={{ color: isDarkMode ? "#64748b" : "#64748b" }}>目標 8%</span><span>20%+</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 relative">
               <div
@@ -254,7 +254,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               <div className="absolute top-0 h-full w-px bg-slate-400" style={{ left: '40%' }} title="目標 8%" />
             </div>
           </div>
-          <p className="text-[10px] text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(toBase(summary.netInvestedTWD * 1.08), baseCurrency)}</p>
+          <p className="text-[10px] mt-1" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>{translations.dashboard.estimatedGrowth8}: {formatCurrency(toBase(summary.netInvestedTWD * 1.08), baseCurrency)}</p>
         </div>
 
       </div>
@@ -278,39 +278,39 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         {showDetails && (
           <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4 animate-fade-in border-t border-slate-100">
             <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.totalCost}</p>
-              <p className="text-xl font-bold text-slate-800">{formatCurrency(toBase(summary.netInvestedTWD), baseCurrency)}</p>
+              <p className="text-sm mb-1" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.totalCost}</p>
+              <p className="text-xl font-bold" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>{formatCurrency(toBase(summary.netInvestedTWD), baseCurrency)}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.totalPLAmount}</p>
+              <p className="text-sm mb-1" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.totalPLAmount}</p>
               <p className={`text-xl font-bold ${summary.totalPLTWD >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(toBase(summary.totalPLTWD), baseCurrency)}
               </p>
             </div>
             <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.accumulatedCashDividends}</p>
+              <p className="text-sm mb-1" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.accumulatedCashDividends}</p>
               <p className="text-xl font-bold text-yellow-600">{formatCurrency(toBase(summary.accumulatedCashDividendsTWD), baseCurrency)}</p>
             </div>
              <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.accumulatedStockDividends}</p>
+              <p className="text-sm mb-1" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.accumulatedStockDividends}</p>
               <p className="text-xl font-bold text-yellow-600">{formatCurrency(toBase(summary.accumulatedStockDividendsTWD), baseCurrency)}</p>
             </div>
              <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.annualizedReturnRate}</p>
+              <p className="text-sm mb-1" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.annualizedReturnRate}</p>
               <p className={`text-xl font-bold ${summary.annualizedReturn >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
                 {summary.annualizedReturn.toFixed(2)}%
               </p>
             </div>
             <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.avgExchangeRate}</p>
-              <p className="text-xl font-bold text-slate-700">{summary.avgExchangeRate > 0 ? summary.avgExchangeRate.toFixed(2) : '-'}</p>
+              <p className="text-sm mb-1" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.avgExchangeRate}</p>
+              <p className="text-xl font-bold" style={{ color: isDarkMode ? "#cbd5e1" : "#334155" }}>{summary.avgExchangeRate > 0 ? summary.avgExchangeRate.toFixed(2) : '-'}</p>
             </div>
              <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.currentExchangeRate} ({displayRate.label})</p>
-              <p className="text-xl font-bold text-slate-700">{displayRate.value.toFixed(2)}</p>
+              <p className="text-sm mb-1" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.currentExchangeRate} ({displayRate.label})</p>
+              <p className="text-xl font-bold" style={{ color: isDarkMode ? "#cbd5e1" : "#334155" }}>{displayRate.value.toFixed(2)}</p>
             </div>
              <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.totalReturnRate}</p>
+              <p className="text-sm mb-1" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.totalReturnRate}</p>
               <p className={`text-xl font-bold ${summary.totalPLPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {summary.totalPLPercent.toFixed(2)}%
               </p>
@@ -323,7 +323,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <div className="flex justify-between items-center mb-2">
-              <h3 className="font-bold text-blue-600 text-xl">{translations.dashboard.assetVsCostTrend}</h3>
+              <h3 className="font-bold text-xl" style={{ color: isDarkMode ? "#60a5fa" : "#2563eb" }}>{translations.dashboard.assetVsCostTrend}</h3>
                               <button 
                   onClick={onUpdateHistorical}
                   className="text-xs px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded border border-indigo-200 flex items-center gap-1 transition"
@@ -404,7 +404,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                         return (
                           <span className="inline-flex items-center gap-1">
                             <span style={{ display: 'inline-block', width: '10px', height: '10px', backgroundColor: entry.color, borderRadius: '2px', marginRight: '4px' }}></span>
-                            <span className="text-slate-700 font-medium">{value}</span>
+                            <span className="font-medium" style={{ color: isDarkMode ? "#cbd5e1" : "#334155" }}>{value}</span>
                           </span>
                         );
                       }}
@@ -446,7 +446,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                   </ComposedChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center text-slate-400">
+                <div className="h-full flex items-center justify-center" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>
                     {!isMounted ? translations.dashboard.chartLoading : chartData.length === 0 ? translations.dashboard.noChartData : translations.dashboard.chartLoading}
                 </div>
               )}
@@ -457,7 +457,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
       {/* Market Distribution */}
       <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-        <h3 className="font-bold text-slate-800 text-xl mb-4">{translations.dashboard.marketDistribution}</h3>
+        <h3 className="font-bold text-xl mb-4" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>{translations.dashboard.marketDistribution}</h3>
         {marketDistribution.length > 0 ? (
           <div className="space-y-3">
             {marketDistribution.map((item) => {
@@ -507,7 +507,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               };
               return (
                 <div key={item.market} className="flex items-center gap-3 group">
-                  <div className="w-24 flex items-center gap-1.5 text-sm font-medium text-slate-700 shrink-0">
+                  <div className="w-24 flex items-center gap-1.5 text-sm font-medium shrink-0" style={{ color: isDarkMode ? "#cbd5e1" : "#334155" }}>
                     <span className="text-base leading-none">{marketFlags[item.market]}</span>
                     <span>{marketNames[item.market]}</span>
                   </div>
@@ -525,7 +525,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       {item.ratio.toFixed(1)}%
                     </span>
                   </div>
-                  <div className="w-28 text-right text-xs font-mono text-slate-500 group-hover:text-slate-800 transition-colors">
+                  <div className="w-28 text-right text-xs font-mono transition-colors" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
                     {formatCurrency(toBase(item.value), baseCurrency)}
                   </div>
                 </div>
@@ -533,7 +533,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             })}
           </div>
         ) : (
-          <div className="text-center text-slate-400 py-8">
+          <div className="text-center py-8" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>
             {language === 'zh-TW' ? '尚無持倉資料' : 'No holdings data'}
           </div>
         )}
@@ -542,7 +542,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       {/* ② Allocation Pie Chart — interactive with active sector */}
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-          <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
+          <h3 className="font-bold text-xl mb-1" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>{translations.dashboard.allocation}</h3>
           {activePieIndex !== undefined && assetAllocation[activePieIndex] && (
             <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3" style={{ backgroundColor: isDarkMode ? "#1e293b" : "#f8fafc", border: isDarkMode ? "1px solid #334155" : "1px solid #e2e8f0" }}>
               <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: assetAllocation[activePieIndex].color }} />
@@ -595,7 +595,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex items-center justify-center text-slate-400">
+                <div className="h-full flex items-center justify-center" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>
                   {!isMounted ? translations.dashboard.chartLoading : translations.dashboard.noHoldings}
                 </div>
               )}
@@ -623,7 +623,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       {!isGuest && annualPerformance.length > 0 && (
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.annualPerformance}</h3>
+              <h3 className="font-bold text-xl" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>{translations.dashboard.annualPerformance}</h3>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
                 <button
@@ -656,7 +656,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm text-left">
-                <thead style={{ backgroundColor: '#f8fafc', color: '#64748b' }} className="uppercase font-medium">
+                <thead style={{ backgroundColor: isDarkMode ? '#1e293b' : '#f8fafc', color: isDarkMode ? '#94a3b8' : '#64748b' }} className="uppercase font-medium">
                   <tr>
                     <th className="px-6 py-3">{translations.dashboard.year}</th>
                     <th className="px-6 py-3 text-right">{translations.dashboard.startAssets}</th>
@@ -680,13 +680,13 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                         onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
                         style={{ transition: "background-color 0.15s" }}
                       >
-                        <td className="px-6 py-3 font-bold" style={{ color: "#334155" }}>
+                        <td className="px-6 py-3 font-bold" style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}>
                           {item.year}
                           {item.isRealData && <span title={translations.dashboard.realHistoricalData} className="ml-2 text-xs cursor-help">✅</span>}
                         </td>
-                        <td className="px-6 py-3 text-right" style={{ color: "#64748b" }}>{formatCurrency(startAssets, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right" style={{ color: "#64748b" }}>{formatCurrency(netInflow, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right font-medium" style={{ color: "#1e293b" }}>{formatCurrency(endAssets, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{formatCurrency(startAssets, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{formatCurrency(netInflow, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right font-medium" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>{formatCurrency(endAssets, displayCurrency)}</td>
                         <td className="px-6 py-3 text-right font-bold" style={{ color: profit >= 0 ? "#10b981" : "#ef4444" }}>
                           {formatCurrency(profit, displayCurrency)}
                         </td>
@@ -705,9 +705,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       {/* Account List Card */}
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-          <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.brokerageAccounts}</h3>
+          <h3 className="font-bold text-xl" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>{translations.dashboard.brokerageAccounts}</h3>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
+            <span className="text-sm" style={{ color: isDarkMode ? "#94a3b8" : "#475569" }}>{translations.dashboard.displayCurrency}:</span>
             <button
               onClick={() => setShowAccountInUSD(false)}
               className={`px-3 py-1.5 text-sm rounded transition ${
@@ -738,7 +738,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm sm:text-base text-left">
-            <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
+            <thead className="uppercase font-medium" style={{ backgroundColor: isDarkMode ? "#1e293b" : "#f8fafc", color: isDarkMode ? "#94a3b8" : "#64748b" }}>
               <tr>
                 <th className="px-3 py-2">{translations.dashboard.accountName}</th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.totalAssetsNT}</th>
@@ -814,7 +814,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                           <div className="flex items-center justify-between gap-2">
                             <div>
                               {acc.name}
-                              <span className="text-xs font-normal text-slate-400 ml-1">({acc.currency})</span>
+                              <span className="text-xs font-normal ml-1" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>({acc.currency})</span>
                             </div>
                             <button
                               type="button"
@@ -826,7 +826,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                             </button>
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right font-bold" style={{ color: "#334155" }}>
+                        <td className="px-3 py-2 text-right font-bold" style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}>
                           {formatCurrency(totalAssets, displayCurrency)}
                         </td>
                         <td className="px-3 py-2 text-right" style={{ color: "#475569" }}>
@@ -856,19 +856,19 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                           <td colSpan={9} className="px-3 py-2">
                             <div className="grid grid-cols-1 gap-1 text-xs">
                               <div className="flex justify-between">
-                                <span className="text-slate-500">{translations.dashboard.unrealizedPL}</span>
+                                <span style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.unrealizedPL}</span>
                                 <span className={`font-bold ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
                                   {formatCurrency(unrealizedProfit, displayCurrency)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-slate-500">{translations.dashboard.realizedPL}</span>
+                                <span style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.realizedPL}</span>
                                 <span className={`font-bold ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
                                   {formatCurrency(realizedProfit, displayCurrency)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-slate-500">{translations.dashboard.dividendInterest}</span>
+                                <span style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{translations.dashboard.dividendInterest}</span>
                                 <span className={`font-bold ${income >= 0 ? 'text-success' : 'text-danger'}`}>
                                   {formatCurrency(income, displayCurrency)}
                                 </span>
@@ -882,7 +882,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 })
               ) : (
                 <tr>
-                  <td colSpan={9} className="px-3 py-4 text-center text-slate-400">{translations.dashboard.noAccounts}</td>
+                  <td colSpan={9} className="px-3 py-4 text-center" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>{translations.dashboard.noAccounts}</td>
                 </tr>
               )}
             </tbody>
@@ -909,7 +909,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
             <div className="flex-1 overflow-y-auto p-0">
               <table className="min-w-full text-sm sm:text-base text-left">
-                <thead className="bg-slate-100 sticky top-0 text-slate-600 font-bold border-b border-slate-200">
+                <thead className="sticky top-0 font-bold" style={{ backgroundColor: isDarkMode ? "#1e293b" : "#f1f5f9", color: isDarkMode ? "#94a3b8" : "#475569", borderBottom: "1px solid " + (isDarkMode ? "#334155" : "#e2e8f0") }}>
                   <tr>
                     <th className="px-3 py-2">{translations.dashboard.date}</th>
                     <th className="px-3 py-2">{translations.dashboard.category}</th>
@@ -929,7 +929,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                         </span>
                       </td>
                       <td className="px-3 py-2">
-                        {item.accountName} <span className="text-xs text-slate-400">({item.currency})</span>
+                        <span style={{ color: isDarkMode ? "#cbd5e1" : "#334155" }}>{item.accountName}</span> <span className="text-xs" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>({item.currency})</span>
                       </td>
                       <td className="px-3 py-2 text-right font-mono">
                         {item.currency === Currency.USD ? '$' : 'NT$'}{item.amount.toLocaleString()}
@@ -937,16 +937,16 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       <td className="px-3 py-2 text-right">
                         <div className="flex flex-col items-end">
                           <span>{item.rate.toFixed(2)}</span>
-                          <span className="text-[10px] text-slate-400">{item.rateSource}</span>
+                          <span className="text-[10px]" style={{ color: isDarkMode ? "#64748b" : "#94a3b8" }}>{item.rateSource}</span>
                         </div>
                       </td>
-                      <td className={`px-3 py-2 text-right font-bold font-mono ${item.type === CashFlowType.DEPOSIT ? 'text-slate-800' : 'text-red-500'}`}>
+                      <td style={{ color: item.type === CashFlowType.DEPOSIT ? (isDarkMode ? "#e2e8f0" : "#1e293b") : "#ef4444" }} className="px-3 py-2 text-right font-bold font-mono">
                         {item.type === CashFlowType.WITHDRAW ? '-' : ''}{formatCurrency(toBase(item.amountTWD), baseCurrency)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-slate-50 sticky bottom-0 border-t-2 border-slate-300 font-bold text-slate-800">
+                <tfoot className="sticky bottom-0 font-bold" style={{ backgroundColor: isDarkMode ? "#1e293b" : "#f8fafc", color: isDarkMode ? "#e2e8f0" : "#1e293b", borderTop: "2px solid " + (isDarkMode ? "#475569" : "#cbd5e1") }}>
                   <tr>
                     <td colSpan={5} className="px-3 py-2 text-right">{translations.dashboard.totalNetInvested}</td>
                     <td className="px-3 py-2 text-right text-lg">{formatCurrency(toBase(verifyTotal), baseCurrency)}</td>
