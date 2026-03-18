@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from 'react';
+import { useReducer } from 'react';
 
 /**
  * UI 狀態介面
@@ -107,23 +107,23 @@ export function useUIState() {
   const [state, dispatch] = useReducer(uiReducer, initialState);
 
   // Modal 操作函數
-  const openForm = useCallback(() => dispatch({ type: 'OPEN_FORM' }), []);
-  const closeForm = useCallback(() => dispatch({ type: 'CLOSE_FORM' }), []);
-  const openImport = useCallback(() => dispatch({ type: 'OPEN_IMPORT' }), []);
-  const closeImport = useCallback(() => dispatch({ type: 'CLOSE_IMPORT' }), []);
-  const openDeleteConfirm = useCallback(() => dispatch({ type: 'OPEN_DELETE_CONFIRM' }), []);
-  const closeDeleteConfirm = useCallback(() => dispatch({ type: 'CLOSE_DELETE_CONFIRM' }), []);
-  const openTransactionDeleteConfirm = useCallback(() => dispatch({ type: 'OPEN_TRANSACTION_DELETE_CONFIRM' }), []);
-  const closeTransactionDeleteConfirm = useCallback(() => dispatch({ type: 'CLOSE_TRANSACTION_DELETE_CONFIRM' }), []);
-  const openCashFlowDeleteConfirm = useCallback(() => dispatch({ type: 'OPEN_CASHFLOW_DELETE_CONFIRM' }), []);
-  const closeCashFlowDeleteConfirm = useCallback(() => dispatch({ type: 'CLOSE_CASHFLOW_DELETE_CONFIRM' }), []);
-  const openHistorical = useCallback(() => dispatch({ type: 'OPEN_HISTORICAL' }), []);
-  const closeHistorical = useCallback(() => dispatch({ type: 'CLOSE_HISTORICAL' }), []);
-  const openBatchUpdateMarket = useCallback(() => dispatch({ type: 'OPEN_BATCH_UPDATE_MARKET' }), []);
-  const closeBatchUpdateMarket = useCallback(() => dispatch({ type: 'CLOSE_BATCH_UPDATE_MARKET' }), []);
-  const openMobileMenu = useCallback(() => dispatch({ type: 'OPEN_MOBILE_MENU' }), []);
-  const closeMobileMenu = useCallback(() => dispatch({ type: 'CLOSE_MOBILE_MENU' }), []);
-  const toggleMobileMenu = useCallback(() => dispatch({ type: 'TOGGLE_MOBILE_MENU' }), []);
+  const openForm = () => dispatch({ type: 'OPEN_FORM' });
+  const closeForm = () => dispatch({ type: 'CLOSE_FORM' });
+  const openImport = () => dispatch({ type: 'OPEN_IMPORT' });
+  const closeImport = () => dispatch({ type: 'CLOSE_IMPORT' });
+  const openDeleteConfirm = () => dispatch({ type: 'OPEN_DELETE_CONFIRM' });
+  const closeDeleteConfirm = () => dispatch({ type: 'CLOSE_DELETE_CONFIRM' });
+  const openTransactionDeleteConfirm = () => dispatch({ type: 'OPEN_TRANSACTION_DELETE_CONFIRM' });
+  const closeTransactionDeleteConfirm = () => dispatch({ type: 'CLOSE_TRANSACTION_DELETE_CONFIRM' });
+  const openCashFlowDeleteConfirm = () => dispatch({ type: 'OPEN_CASHFLOW_DELETE_CONFIRM' });
+  const closeCashFlowDeleteConfirm = () => dispatch({ type: 'CLOSE_CASHFLOW_DELETE_CONFIRM' });
+  const openHistorical = () => dispatch({ type: 'OPEN_HISTORICAL' });
+  const closeHistorical = () => dispatch({ type: 'CLOSE_HISTORICAL' });
+  const openBatchUpdateMarket = () => dispatch({ type: 'OPEN_BATCH_UPDATE_MARKET' });
+  const closeBatchUpdateMarket = () => dispatch({ type: 'CLOSE_BATCH_UPDATE_MARKET' });
+  const openMobileMenu = () => dispatch({ type: 'OPEN_MOBILE_MENU' });
+  const closeMobileMenu = () => dispatch({ type: 'CLOSE_MOBILE_MENU' });
+  const toggleMobileMenu = () => dispatch({ type: 'TOGGLE_MOBILE_MENU' });
 
   return {
     // 狀態值（保持向後兼容的命名）
