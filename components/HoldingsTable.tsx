@@ -318,12 +318,10 @@ const HoldingsTable: React.FC<Props> = () => {
         key={uniqueKey}
         className={`transition-colors group ${isDetailedMode ? 'bg-slate-50/30' : ''}`}
         onMouseEnter={(e) => {
-          if (isDetailedMode) return; // 明細顯示時不要反白
           e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#f8fafc';
         }}
         onMouseLeave={(e) => {
-          if (isDetailedMode) return; // 明細顯示時不要反白
-          // 清掉 inline style，讓 className 回到原本的底色
+          // 清掉 inline style，讓 className 回到原本的底色（例如 isDetailedMode 的 bg-slate-50/30）
           e.currentTarget.style.backgroundColor = '';
         }}
       >
@@ -371,7 +369,9 @@ const HoldingsTable: React.FC<Props> = () => {
         
         {/* 4. Current Price */}
         <td className="px-3 py-2 text-right">
-           <div className="flex items-center justify-end gap-0.5 group-hover:bg-white bg-slate-50/50 rounded px-1 transition-colors">
+           <div
+             className={`flex items-center justify-end gap-0.5 ${isDetailedMode ? '' : 'group-hover:bg-white'} bg-slate-50/50 rounded px-1 transition-colors`}
+           >
              <span className="text-slate-400 text-xs">$</span>
              <input 
               type="number"
