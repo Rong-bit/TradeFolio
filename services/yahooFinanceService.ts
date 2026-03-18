@@ -278,7 +278,7 @@ export const fetchCurrentPrices = async (
   async function batchPrices(): Promise<(PriceData | null)[]> {
     const out: (PriceData | null)[] = [];
     for (let s = 0; s < symbols.length; s += CONCURRENCY) {
-      const batch = await Promise.all(symbols.slice(s, s + CONCURRENCY).map(fetchSinglePrice));
+      const batch = await Promise.all(symbols.slice(s, s + CONCURRENCY).map(sym => fetchSinglePrice(sym)));
       out.push(...batch);
       if (s + CONCURRENCY < symbols.length)
         await new Promise(r => setTimeout(r, BATCH_DELAY));
