@@ -318,10 +318,12 @@ const HoldingsTable: React.FC<Props> = () => {
         key={uniqueKey}
         className={`transition-colors group ${isDetailedMode ? 'bg-slate-50/30' : ''}`}
         onMouseEnter={(e) => {
+          if (isDetailedMode) return; // 明細顯示時不要反白
           e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#f8fafc';
         }}
         onMouseLeave={(e) => {
-          // 清掉 inline style，讓 className 回到原本的底色（例如 isDetailedMode 的 bg-slate-50/30）
+          if (isDetailedMode) return; // 明細顯示時不要反白
+          // 清掉 inline style，讓 className 回到原本的底色
           e.currentTarget.style.backgroundColor = '';
         }}
       >
