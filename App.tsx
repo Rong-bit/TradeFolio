@@ -23,6 +23,7 @@ import AccountManager from './components/AccountManager';
 import FundManager from './components/FundManager';
 import RebalanceView from './components/RebalanceView';
 import HelpView from './components/HelpView';
+import HistoryView from './components/HistoryView';
 import BatchImportModal from './components/BatchImportModal';
 import HistoricalDataModal from './components/HistoricalDataModal';
 import BatchUpdateMarketModal from './components/BatchUpdateMarketModal';
@@ -247,7 +248,19 @@ const App: React.FC = () => {
     const cashValueTWD = computedAccounts.reduce((s: number, a: Account) => s + (a.currency === Currency.USD ? a.balance * exchangeRate : a.balance), 0);
     const totalValueTWD = stockValueTWD, totalAssets = totalValueTWD + cashValueTWD, totalPLTWD = totalAssets - netInvestedTWD;
     const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => s + marketValueToTWD(t.amount ?? t.price*t.quantity, t.market, rates), 0);
-    return { totalCostTWD:0, totalValueTWD, totalPLTWD, totalPLPercent: netInvestedTWD>0 ? (totalPLTWD/netInvestedTWD)*100 : 0, cashBalanceTWD:cashValueTWD, netInvestedTWD, annualizedReturn:calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate), exchangeRateUsdToTwd:exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate, accumulatedCashDividendsTWD:sumDiv(TransactionType.CASH_DIVIDEND), accumulatedStockDividendsTWD:sumDiv(TransactionType.DIVIDEND), avgExchangeRate: totalUsdInflow>0 ? totalTwdCostForUsd/totalUsdInflow : 0 };
+    return {
+      totalCostTWD: 0, totalValueTWD, totalPLTWD,
+      totalPLPercent: netInvestedTWD > 0 ? (totalPLTWD / netInvestedTWD) * 100 : 0,
+      cashBalanceTWD: cashValueTWD, netInvestedTWD,
+      annualizedReturn: calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate),
+      exchangeRateUsdToTwd: exchangeRate,
+      jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate,
+      krwExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate,
+      audExchangeRate, sarExchangeRate, brlExchangeRate,
+      accumulatedCashDividendsTWD: sumDiv(TransactionType.CASH_DIVIDEND),
+      accumulatedStockDividendsTWD: sumDiv(TransactionType.DIVIDEND),
+      avgExchangeRate: totalUsdInflow > 0 ? totalTwdCostForUsd / totalUsdInflow : 0,
+    };
   }, [baseHoldings, computedAccounts, cashFlows, rates, accounts, transactions]);
 
   const displayRate = useMemo(() => getDisplayRateForBaseCurrency(baseCurrency, rates), [baseCurrency, rates]);
@@ -285,8 +298,20 @@ const App: React.FC = () => {
   const combinedRecords = useMemo(() => {
     const txR: CombinedRecord[] = transactions.map((tx: Transaction) => {
       let amt = tx.amount ?? 0;
-      if (!tx.amount) { if (tx.type===TransactionType.BUY||tx.type===TransactionType.TRANSFER_OUT) amt=tx.price*tx.quantity+(tx.fees||0); else if (tx.type===TransactionType.SELL) amt=tx.price*tx.quantity-(tx.fees||0); else amt=tx.price*tx.quantity; }
-      return { id:tx.id, date:tx.date, accountId:tx.accountId, type:'TRANSACTION' as const, subType:tx.type, ticker:tx.ticker, market:tx.market, price:tx.price, quantity:tx.quantity, amount:amt, fees:tx.fees||0, description:`${tx.market}-${tx.ticker}`, originalRecord:tx };
+      if (!tx.amount) {
+        if (tx.type===TransactionType.BUY||tx.type===TransactionType.TRANSFER_OUT) amt=tx.price*tx.quantity+(tx.fees||0);
+        else if (tx.type===TransactionType.SELL) amt=tx.price*tx.quantity-(tx.fees||0);
+        else amt=tx.price*tx.quantity;
+      }
+      return {
+        id: tx.id, date: tx.date, accountId: tx.accountId,
+        type: 'TRANSACTION' as const, subType: tx.type,
+        ticker: tx.ticker, market: tx.market,
+        price: tx.price, quantity: tx.quantity, amount: amt,
+        fees: tx.fees || 0,
+        description: `${tx.market}-${tx.ticker}`,
+        originalRecord: tx,
+      };
     });
     const cfR: CombinedRecord[] = [];
     cashFlows.forEach((cf: CashFlow) => {
@@ -417,7 +442,19 @@ const App: React.FC = () => {
             </div>
           </div>
         </div>
-        {alertDialog.isOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center"><h3 className={`text-lg font-bold mb-2 ${alertDialog.type==='error'?'text-red-600':alertDialog.type==='success'?'text-green-600':'text-slate-800'}`}>{alertDialog.title}</h3><p className="text-slate-600 mb-6 whitespace-pre-line">{alertDialog.message}</p><button onClick={closeAlert} className="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">{t(language).common.confirm}</button></div></div>)}
+        {alertDialog.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+            <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
+              <h3 className={`text-lg font-bold mb-2 ${alertDialog.type==='error'?'text-red-600':alertDialog.type==='success'?'text-green-600':'text-slate-800'}`}>
+                {alertDialog.title}
+              </h3>
+              <p className="text-slate-600 mb-6 whitespace-pre-line">{alertDialog.message}</p>
+              <button onClick={closeAlert} className="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">
+                {t(language).common.confirm}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -466,68 +503,29 @@ const App: React.FC = () => {
         <div className="animate-fade-in">
           {view==='dashboard'&&<Dashboard onUpdateHistorical={()=>setIsHistoricalModalOpen(true)} />}
           {view==='history'&&(
-            <div className="space-y-6">
-              <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                  <h3 className="text-base sm:text-lg font-bold text-slate-700">{t(language).history.operations}</h3>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={()=>setIsBatchUpdateMarketOpen(true)} className="bg-purple-600 text-white px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-purple-700 shadow-lg shadow-purple-600/20 whitespace-nowrap">{t(language).history.batchUpdateMarket}</button>
-                    <button onClick={handleClearAllTransactions} className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-red-100 border border-red-200 whitespace-nowrap">{t(language).history.clearAll}</button>
-                    <button onClick={()=>setIsImportOpen(true)} className="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-indigo-100 border border-indigo-200 whitespace-nowrap">{t(language).history.batchImport}</button>
-                    <button onClick={()=>{setTransactionToEdit(null);setIsFormOpen(true);}} className="bg-slate-900 text-white px-4 py-2 rounded text-xs sm:text-sm hover:bg-slate-800 shadow-lg shadow-slate-900/20 whitespace-nowrap">{t(language).history.addRecord}</button>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-lg shadow p-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-slate-800">{t(language).history.filter}</h3>
-                  <button onClick={clearFilters} className="text-sm text-slate-500 hover:text-slate-700 underline">{t(language).history.clearFilters}</button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div><label className="block text-sm font-medium text-slate-700 mb-2">{t(language).history.accountFilter}</label><select value={filterAccount} onChange={e=>setFilterAccount(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"><option value="">{t(language).funds.allAccounts}</option>{accounts.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div>
-                  <div><label className="block text-sm font-medium text-slate-700 mb-2">{t(language).history.tickerFilter}</label><input type="text" value={filterTicker} onChange={e=>setFilterTicker(e.target.value)} placeholder="例如: 0050, AAPL" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" /></div>
-                  <div><label className="block text-sm font-medium text-slate-700 mb-2">{t(language).history.dateFrom}</label><input type="date" value={filterDateFrom} onChange={e=>setFilterDateFrom(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" /></div>
-                  <div><label className="block text-sm font-medium text-slate-700 mb-2">{t(language).history.dateTo}</label><input type="date" value={filterDateTo} onChange={e=>setFilterDateTo(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" /></div>
-                </div>
-                <div className="pt-4 border-t border-slate-200"><label className="flex items-center cursor-pointer gap-2"><input type="checkbox" checked={includeCashFlow} onChange={e=>setIncludeCashFlow(e.target.checked)} className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2" /><span className="text-sm font-medium text-slate-700">{t(language).history.includeCashFlow}</span><span className="text-xs text-slate-500">{t(language).history.includeCashFlowDesc}</span></label></div>
-                <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-                  <div className="text-sm text-slate-600">{translate('history.showingRecords',language,{count:filteredRecords.filter(r=>!(r.type==='CASHFLOW'&&r.isTargetRecord)).length})}{!includeCashFlow&&cashFlows.length>0&&<span className="text-amber-600 ml-2">（{translate('history.hiddenCashFlowRecords',language,{count:cashFlows.length})}）</span>}</div>
-                  <div className="flex gap-2">
-                    <button onClick={()=>{const d=new Date();d.setDate(d.getDate()-30);setFilterDateFrom(d.toISOString().split('T')[0]);setFilterDateTo(new Date().toISOString().split('T')[0]);}} className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition">{t(language).history.last30Days}</button>
-                    <button onClick={()=>{const y=new Date().getFullYear();setFilterDateFrom(`${y}-01-01`);setFilterDateTo(`${y}-12-31`);}} className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition">{t(language).history.thisYear}</button>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-lg shadow overflow-x-auto">
-                <table className="min-w-full text-xs sm:text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-500 uppercase font-medium"><tr><th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.date}</th><th className="px-2 sm:px-3 py-2 whitespace-nowrap hidden sm:table-cell">{t(language).labels.account}</th><th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.description}</th><th className="px-2 sm:px-3 py-2 whitespace-nowrap hidden md:table-cell">{t(language).labels.category}</th><th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.price}</th><th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.quantity}</th><th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.fee}</th><th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.amount}</th><th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap hidden md:table-cell">{t(language).labels.balance}</th><th className="px-2 sm:px-3 py-2 text-center whitespace-nowrap">{t(language).labels.action}</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredRecords.map(record=>{
-                      const accName=accounts.find(a=>a.id===record.accountId)?.name;
-                      const balance=record.balance??0, nBal=Math.abs(balance)<0.0001?0:balance;
-                      let bc='bg-gray-100 text-gray-700', dt: string=record.subType as string;
-                      if(record.type==='TRANSACTION'){if(record.subType===TransactionType.BUY)bc='bg-red-100 text-red-700';else if(record.subType===TransactionType.SELL)bc='bg-green-100 text-green-700';else if(record.subType===TransactionType.DIVIDEND||record.subType===TransactionType.CASH_DIVIDEND)bc='bg-yellow-100 text-yellow-700';else if(record.subType===TransactionType.TRANSFER_IN)bc='bg-blue-100 text-blue-700';else if(record.subType===TransactionType.TRANSFER_OUT)bc='bg-orange-100 text-orange-700';}
-                      else if(record.type==='CASHFLOW'){if(record.subType==='DEPOSIT'){bc='bg-emerald-100 text-emerald-700';dt=t(language).history.cashFlowDeposit;}else if(record.subType==='WITHDRAW'){bc='bg-red-100 text-red-700';dt=t(language).history.cashFlowWithdraw;}else if(record.subType==='TRANSFER'){bc='bg-purple-100 text-purple-700';dt=t(language).history.cashFlowTransfer;}else if(record.subType==='TRANSFER_IN'){bc='bg-blue-100 text-blue-700';dt=t(language).history.cashFlowTransferIn;}}
-                      let tAN: string|null=null;
-                      if(record.type==='CASHFLOW'){if(record.subType==='TRANSFER'&&record.targetAccountId)tAN=accounts.find(a=>a.id===record.targetAccountId)?.name??null;else if(record.subType==='TRANSFER_IN'&&record.sourceAccountId)tAN=accounts.find(a=>a.id===record.sourceAccountId)?.name??null;}
-                      return (<tr key={`${record.type}-${record.id}`} className="hover:bg-slate-50">
-                        <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-slate-600 text-xs sm:text-sm">{record.date}</td>
-                        <td className="px-2 sm:px-3 py-2 text-slate-500 text-[10px] sm:text-xs hidden sm:table-cell">{accName}</td>
-                        <td className="px-2 sm:px-3 py-2 font-semibold text-slate-700 text-xs sm:text-sm">{record.type==='TRANSACTION'?(<div className="flex flex-col"><span><span className="text-[10px] sm:text-xs text-slate-400 mr-1">{record.market}</span>{record.ticker}</span><span className="text-[10px] text-slate-400 sm:hidden">{accName}</span></div>):(<div className="flex flex-col"><span className="text-slate-600">{record.description}</span>{tAN&&record.subType==='TRANSFER'&&<span className="text-[10px] text-slate-400">→ {tAN}</span>}{tAN&&record.subType==='TRANSFER_IN'&&<span className="text-[10px] text-slate-400">← {tAN}</span>}</div>)}</td>
-                        <td className="px-2 sm:px-3 py-2 hidden md:table-cell"><span className={`px-2 py-0.5 rounded text-[10px] font-bold ${bc}`}>{dt}</span></td>
-                        <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">{record.type==='TRANSACTION'?formatNumber(record.price):record.type==='CASHFLOW'&&record.exchangeRate?record.exchangeRate:'-'}</td>
-                        <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">{record.type==='TRANSACTION'?formatNumber(record.quantity):'-'}</td>
-                        <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">{record.type==='TRANSACTION'&&record.fees>0?formatNumber(record.fees):'-'}</td>
-                        <td className="px-2 sm:px-3 py-2 text-right font-bold font-mono text-slate-700 text-xs sm:text-sm">{formatAmount(record.amount)}<div className="md:hidden mt-0.5"><span className={`text-[10px] font-normal ${nBal>=0?'text-green-600':'text-red-600'}`}>{formatAmount(nBal)}</span></div></td>
-                        <td className="px-2 sm:px-3 py-2 text-right hidden md:table-cell"><div className="flex flex-col items-end"><span className={`font-medium text-xs sm:text-sm ${nBal>=0?'text-green-600':'text-red-600'}`}>{formatAmount(nBal)}</span><span className="text-[10px] text-slate-400">{accounts.find(a=>a.id===record.accountId)?.currency||'TWD'}</span></div></td>
-                        <td className="px-2 sm:px-3 py-2 text-right">{!(record.type==='CASHFLOW'&&record.isTargetRecord)&&(<div className="flex flex-col sm:flex-row gap-1 sm:gap-2 justify-end items-end sm:items-center">{record.type==='TRANSACTION'&&<button onClick={()=>{const tx=transactions.find(t=>t.id===record.id);if(tx){setTransactionToEdit(tx);setIsFormOpen(true);}}} className="text-blue-400 hover:text-blue-600 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 border border-blue-100 rounded hover:bg-blue-50 whitespace-nowrap">{t(language).history.edit}</button>}<button onClick={()=>{if(record.type==='TRANSACTION')handleRemoveTransaction(record.id);else handleRemoveCashFlow(record.id.replace('-target',''));}} className="text-red-400 hover:text-red-600 text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 border border-red-100 rounded hover:bg-red-50 whitespace-nowrap">{t(language).history.delete}</button></div>)}</td>
-                      </tr>);
-                    })}
-                  </tbody>
-                </table>
-                {filteredRecords.length===0&&<div className="p-8 text-center text-slate-400"><p className="text-lg font-medium text-slate-500 mb-2">{transactions.length===0?t(language).history.noTransactions:t(language).history.noMatchingTransactions}</p></div>}
-              </div>
-            </div>
+            <HistoryView
+              onAddTransaction={() => { setTransactionToEdit(null); setIsFormOpen(true); }}
+              onEditTransaction={(id) => { const tx = transactions.find(t => t.id === id); if (tx) { setTransactionToEdit(tx); setIsFormOpen(true); } }}
+              onRemoveTransaction={handleRemoveTransaction}
+              onRemoveCashFlow={handleRemoveCashFlow}
+              onClearAllTransactions={handleClearAllTransactions}
+              onOpenBatchUpdateMarket={() => setIsBatchUpdateMarketOpen(true)}
+              onOpenImport={() => setIsImportOpen(true)}
+              filteredRecords={filteredRecords}
+              filterAccount={filterAccount}
+              setFilterAccount={setFilterAccount}
+              filterTicker={filterTicker}
+              setFilterTicker={setFilterTicker}
+              filterDateFrom={filterDateFrom}
+              setFilterDateFrom={setFilterDateFrom}
+              filterDateTo={filterDateTo}
+              setFilterDateTo={setFilterDateTo}
+              includeCashFlow={includeCashFlow}
+              setIncludeCashFlow={setIncludeCashFlow}
+              clearFilters={clearFilters}
+              formatNumber={formatNumber}
+              formatAmount={formatAmount}
+            />
           )}
           {view==='accounts'&&<AccountManager />}
           {view==='funds'&&<FundManager />}
@@ -574,7 +572,17 @@ const App: React.FC = () => {
         return (<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-md"><h3 className="text-lg font-bold text-red-600 mb-2">確認刪除資金紀錄</h3><div className="mb-4"><p className="text-slate-700 mb-2"><span className="font-semibold">帳戶：</span>{acc?.name??'未知帳戶'}</p><p className="text-slate-700 mb-2"><span className="font-semibold">日期：</span>{cf.date}</p><p className="text-slate-700 mb-2"><span className="font-semibold">類型：</span>{gTN(cf.type)}</p><p className="text-slate-700"><span className="font-semibold">金額：</span>{acc?.currency===Currency.USD?`$${cf.amount.toLocaleString()}`:`NT$${cf.amount.toLocaleString()}`}</p></div>{rTx>0&&<div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4"><p className="text-sm text-amber-800 font-semibold mb-1">⚠️ 注意</p><p className="text-sm text-amber-700">此帳戶有 <span className="font-bold">{rTx}</span> 筆相關交易記錄。刪除此資金紀錄可能會影響帳戶餘額計算的準確性。</p></div>}<p className="text-slate-600 mb-6">確定要刪除這筆資金紀錄嗎？此操作無法復原。</p><div className="flex justify-end gap-3"><button onClick={cancelRemoveCashFlow} className="px-4 py-2 rounded border hover:bg-slate-50">取消</button><button onClick={confirmRemoveCashFlow} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">確認刪除</button></div></div></div>);
       })()}
 
-      {alertDialog.isOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center"><h3 className={`text-lg font-bold mb-2 ${alertDialog.type==='error'?'text-red-600':alertDialog.type==='success'?'text-green-600':'text-slate-800'}`}>{alertDialog.title}</h3><p className="text-slate-600 mb-6 whitespace-pre-line">{alertDialog.message}</p><button onClick={closeAlert} className="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">確定</button></div></div>}
+      {alertDialog.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
+            <h3 className={`text-lg font-bold mb-2 ${alertDialog.type==='error'?'text-red-600':alertDialog.type==='success'?'text-green-600':'text-slate-800'}`}>
+              {alertDialog.title}
+            </h3>
+            <p className="text-slate-600 mb-6 whitespace-pre-line">{alertDialog.message}</p>
+            <button onClick={closeAlert} className="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">確定</button>
+          </div>
+        </div>
+      )}
     </div>
     </UIContext.Provider>
     </MarketContext.Provider>
