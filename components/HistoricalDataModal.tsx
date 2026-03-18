@@ -213,7 +213,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden">
+      <div className="rounded-xl shadow-2xl w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden" style={{ backgroundColor: "#ffffff", color: "#1e293b" }}>
         <div className="bg-slate-900 p-4 flex justify-between items-center shrink-0">
           <h2 className="text-white font-bold text-lg flex items-center gap-2">
             <span>🕰️</span> 歷史股價校正 (Time Machine)
@@ -228,7 +228,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                    <select 
                      value={selectedYear} 
                      onChange={(e) => setSelectedYear(Number(e.target.value))}
-                     className="border border-slate-300 rounded p-2 text-sm font-bold min-w-[100px]"
+                     className="border border-slate-300 rounded p-2 text-sm font-bold min-w-[100px] text-slate-800 bg-white"
                    >
                        {years.map(y => <option key={y} value={y}>{y} 年</option>)}
                        {years.length === 0 && <option disabled>無歷史資料</option>}
@@ -247,23 +247,23 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                </div>
            </div>
 
-           <div className="bg-white border rounded-lg overflow-hidden">
-               <div className="p-4 bg-slate-100 border-b flex justify-between items-center">
-                   <h3 className="font-bold text-slate-700">{selectedYear} 年底數據</h3>
+           <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: "#ffffff" }}>
+               <div className="p-4 border-b flex justify-between items-center" style={{ backgroundColor: "#f1f5f9" }}>
+                   <h3 className="font-bold" style={{ color: "#334155" }}>{selectedYear} 年底數據</h3>
                    <div className="flex items-center gap-2">
-                       <label className="text-sm text-slate-600">匯率 (USD/TWD):</label>
+                       <label className="text-sm" style={{ color: "#475569" }}>匯率 (USD/TWD):</label>
                        <input 
                          type="number" 
                          step="0.1"
                          value={currentYearData.exchangeRate}
                          onChange={(e) => handleRateChange(e.target.value)}
-                         className="w-20 border rounded p-1 text-right font-mono"
+                         className="w-20 border rounded p-1 text-right font-mono text-slate-800 bg-white"
                        />
                    </div>
                </div>
                
                <table className="min-w-full text-sm text-left">
-                   <thead className="bg-slate-50 text-slate-500">
+                   <thead style={{ backgroundColor: "#f8fafc", color: "#64748b" }}>
                        <tr>
                            <th className="px-4 py-2">市場</th>
                            <th className="px-4 py-2">代號</th>
@@ -289,7 +289,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                                const hasData = val > 0;
                                
                                return (
-                                   <tr key={t.ticker} className="hover:bg-slate-50">
+                                   <tr key={t.ticker} style={{ borderBottom: "1px solid #f1f5f9" }} onMouseEnter={e=>(e.currentTarget.style.backgroundColor="#f8fafc")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")}>
                                        <td className="px-4 py-2">
                                            <span className={`px-2 py-0.5 rounded text-xs ${
                                             t.market === Market.US ? 'bg-blue-100 text-blue-700' : 
@@ -305,7 +305,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                                                {t.market}
                                            </span>
                                        </td>
-                                       <td className="px-4 py-2 font-bold text-slate-700">
+                                       <td className="px-4 py-2 font-bold" style={{ color: "#334155" }}>
                                            {t.ticker.replace(/\(BAK\)/gi, '')}
                                            {hasData && <span className="text-green-500 ml-1 text-xs">✓</span>}
                                        </td>
@@ -315,7 +315,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                                              step="0.01"
                                              value={val}
                                              onChange={(e) => handlePriceChange(priceKey, e.target.value)}
-                                             className={`w-32 border rounded p-1 text-right focus:ring-2 focus:ring-accent ${hasData ? 'border-green-200 bg-green-50' : 'border-slate-300'}`}
+                                             className={`w-32 border rounded p-1 text-right focus:ring-2 focus:ring-accent text-slate-800 ${hasData ? 'border-green-200 bg-green-50' : 'border-slate-300 bg-white'}`}
                                              placeholder="輸入股價"
                                            />
                                        </td>
@@ -327,17 +327,17 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                </table>
            </div>
            
-           <div className="text-xs text-slate-500 bg-yellow-50 p-3 rounded border border-yellow-100">
+           <div className="text-xs p-3 rounded" style={{ backgroundColor: "#fefce8", color: "#78716c", border: "1px solid #fef08a" }}>
                💡 說明：
                <ul className="list-disc pl-5 mt-1 space-y-1">
-                   <li>AI 僅會自動補齊<strong className="text-slate-800">數值為 0</strong> 的缺漏資料，已存在的數據不會被覆蓋。</li>
+                   <li>AI 僅會自動補齊<strong style={{ color: "#1e293b" }}>數值為 0</strong> 的缺漏資料，已存在的數據不會被覆蓋。</li>
                    <li>若匯率為預設值 (30)，AI 會嘗試更新；若您已手動設定其他匯率，則不會被覆蓋。</li>
                </ul>
            </div>
         </div>
 
-        <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
-          <button onClick={onClose} className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-white transition">取消</button>
+        <div className="p-4 flex justify-end gap-3 shrink-0" style={{ borderTop: "1px solid #e2e8f0", backgroundColor: "#f8fafc" }}>
+          <button onClick={onClose} className="px-6 py-2 border rounded-lg transition" style={{ borderColor: "#cbd5e1", color: "#334155", backgroundColor: "#ffffff" }}>取消</button>
           <button onClick={handleSave} className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-lg">儲存並更新圖表</button>
         </div>
       </div>
