@@ -13,24 +13,14 @@ interface Props {
   onUpdateHistorical?: () => void;
 }
 
-const Dashboard: React.FC<Props> = ({ 
-  summary, 
-  chartData, 
-  holdings, 
-  assetAllocation, 
-  annualPerformance, 
-  accountPerformance, 
-  cashFlows, 
-  accounts,
-  baseCurrency,
-  onUpdatePrice,
-  onAutoUpdate,
-  refreshIntervalMs = 3 * 60 * 1000,
-  updateHint,
-  isGuest = false,
-  onUpdateHistorical,
-  language
-}) => {
+const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
+  const { summary, holdings, chartData, assetAllocation, annualPerformance,
+    accountPerformance, cashFlows, accounts: computedAccounts,
+    updatePrice: onUpdatePrice, handleAutoUpdatePrices: onAutoUpdate,
+    refreshIntervalMs } = usePortfolio();
+  const { baseCurrency, rates } = useMarket();
+  const { language, isGuest } = useUI();
+  const accounts = computedAccounts;
   const translations = t(language);
   const [showDetails, setShowDetails] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -39,19 +29,6 @@ const Dashboard: React.FC<Props> = ({
   const [showAnnualInUSD, setShowAnnualInUSD] = useState(false);
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
 
-  const rates = {
-    exchangeRateUsdToTwd: summary.exchangeRateUsdToTwd,
-    jpyExchangeRate: summary.jpyExchangeRate,
-    eurExchangeRate: summary.eurExchangeRate,
-    gbpExchangeRate: summary.gbpExchangeRate,
-    hkdExchangeRate: summary.hkdExchangeRate,
-    krwExchangeRate: summary.krwExchangeRate,
-    cadExchangeRate: summary.cadExchangeRate,
-    inrExchangeRate: summary.inrExchangeRate,
-    audExchangeRate: summary.audExchangeRate,
-    sarExchangeRate: summary.sarExchangeRate,
-    brlExchangeRate: summary.brlExchangeRate,
-  };
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const displayRate = getDisplayRateForBaseCurrency(baseCurrency, rates); 
 

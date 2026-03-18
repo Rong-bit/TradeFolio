@@ -16,7 +16,7 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
   const matchingTransactions = useMemo(() => {
     if (!ticker.trim()) return [];
     const upperTicker = ticker.trim().toUpperCase();
-    return transactions.filter(tx => tx.ticker.toUpperCase() === upperTicker);
+    return transactions.filter((tx: Transaction) => tx.ticker.toUpperCase() === upperTicker);
   }, [ticker, transactions]);
 
   const handleConfirm = () => {
@@ -25,7 +25,7 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
       return;
     }
 
-    const updates = matchingTransactions.map(tx => ({
+    const updates = matchingTransactions.map((tx: Transaction) => ({
       id: tx.id,
       market: newMarket
     }));

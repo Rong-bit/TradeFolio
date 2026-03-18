@@ -203,8 +203,7 @@ const AccountManager: React.FC<Props> = () => {
 
               {/* Action Buttons */}
               <div className="flex gap-1 shrink-0">
-                {onUpdate && (
-                  <button 
+                <button 
                     type="button"
                     onClick={(e) => handleEditClick(e, acc)}
                     className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors relative z-20 cursor-pointer border border-transparent"
