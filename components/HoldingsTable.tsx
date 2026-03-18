@@ -305,8 +305,8 @@ const HoldingsTable: React.FC<Props> = () => {
     const currency = h.market === Market.TW ? 'TWD' : h.market === Market.JP ? 'JPY' : h.market === Market.CN ? 'CNY' : h.market === Market.SZ ? 'CNY' : h.market === Market.IN ? 'INR' : h.market === Market.CA ? 'CAD' : h.market === Market.FR ? 'EUR' : h.market === Market.HK ? 'HKD' : h.market === Market.KR ? 'KRW' : h.market === Market.DE ? 'EUR' : h.market === Market.AU ? 'AUD' : h.market === Market.SA ? 'SAR' : h.market === Market.BR ? 'BRL' : 'USD';
     // 未實現損益色要與「證券戶列表」的 text-success/text-danger 完全一致
     const plColor = isProfit ? 'text-success' : 'text-danger';
-    // 年化正值改成紫色
-    const roiColor = h.annualizedReturn >= 0 ? 'text-purple-700' : 'text-danger';
+    // 年化：對齊儀表板的藍/橘風格顏色
+    const roiColor = h.annualizedReturn >= 0 ? 'text-blue-600' : 'text-orange-600';
     // 只有當 dailyChange 不是 undefined/null 時才根據正負值決定顏色，否則保持預設顏色
     const dailyChangeColor = h.dailyChange !== undefined && h.dailyChange !== null 
       ? (h.dailyChange >= 0 ? 'text-success' : 'text-danger')
