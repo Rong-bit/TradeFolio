@@ -353,7 +353,11 @@ const HoldingsTable: React.FC<Props> = () => {
         {/* 3. Quantity */}
         <td
           className={`px-3 py-2 text-right font-mono transition-colors ${
-            isDarkMode ? 'text-[#94a3b8]' : 'text-[#64748b] group-hover:text-white'
+            isDarkMode
+              ? 'text-[#94a3b8]'
+              : isDetailedMode
+                ? 'text-[#64748b]'
+                : 'text-[#64748b] group-hover:text-white'
           }`}
         >
           {(() => {
@@ -370,7 +374,9 @@ const HoldingsTable: React.FC<Props> = () => {
         {/* 4. Current Price */}
         <td className="px-3 py-2 text-right">
            <div
-             className={`flex items-center justify-end gap-0.5 ${isDetailedMode ? '' : 'group-hover:bg-white'} bg-slate-50/50 rounded px-1 transition-colors`}
+             className={`flex items-center justify-end gap-0.5 ${
+               isDetailedMode ? '' : 'group-hover:bg-white'
+             } bg-slate-50/50 rounded px-1 transition-colors`}
            >
              <span className="text-slate-400 text-xs">$</span>
              <input 
@@ -388,7 +394,11 @@ const HoldingsTable: React.FC<Props> = () => {
           <div className="flex flex-col gap-1">
             <span
               className={`text-xs font-medium text-right ${
-                isDarkMode ? 'text-[#94a3b8]' : 'text-[#64748b] group-hover:text-white'
+                isDarkMode
+                  ? 'text-[#94a3b8]'
+                  : isDetailedMode
+                    ? 'text-[#64748b]'
+                    : 'text-[#64748b] group-hover:text-white'
               }`}
             >
               {h.weight.toFixed(1)}%
