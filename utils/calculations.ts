@@ -31,6 +31,47 @@ export interface ExchangeRates {
   brlExchangeRate?: number;
 }
 
+
+/** 將市場別的持倉原幣價值換算為 TWD */
+export function marketValueToTWD(
+  valueNative: number,
+  market: Market | string,
+  rates: ExchangeRates
+): number {
+  const r = rates;
+  if (market === Market.US || market === Market.UK) return valueNative * r.exchangeRateUsdToTwd;
+  if (market === Market.JP) return valueNative * (r.jpyExchangeRate ?? r.exchangeRateUsdToTwd);
+  if (market === Market.CN || market === Market.SZ) return valueNative * (r.cnyExchangeRate ?? 0);
+  if (market === Market.IN)  return valueNative * (r.inrExchangeRate ?? 0);
+  if (market === Market.CA)  return valueNative * (r.cadExchangeRate ?? 0);
+  if (market === Market.FR || market === Market.DE) return valueNative * (r.eurExchangeRate ?? 0);
+  if (market === Market.HK)  return valueNative * (r.hkdExchangeRate ?? 0);
+  if (market === Market.KR)  return valueNative * (r.krwExchangeRate ?? 0);
+  if (market === Market.AU)  return valueNative * (r.audExchangeRate ?? 0);
+  if (market === Market.SA)  return valueNative * (r.sarExchangeRate ?? 0);
+  if (market === Market.BR)  return valueNative * (r.brlExchangeRate ?? 0);
+  return valueNative; // TW（已是 TWD）
+}
+
+/** 將幣別對應到 TWD 匯率 */
+export function currencyToTWDRate(currency: Currency, rates: ExchangeRates): number {
+  switch (currency) {
+    case Currency.USD: return rates.exchangeRateUsdToTwd;
+    case Currency.JPY: return rates.jpyExchangeRate ?? rates.exchangeRateUsdToTwd;
+    case Currency.EUR: return rates.eurExchangeRate ?? 0;
+    case Currency.GBP: return rates.gbpExchangeRate ?? 0;
+    case Currency.HKD: return rates.hkdExchangeRate ?? 0;
+    case Currency.KRW: return rates.krwExchangeRate ?? 0;
+    case Currency.CNY: return rates.cnyExchangeRate ?? 0;
+    case Currency.INR: return rates.inrExchangeRate ?? 0;
+    case Currency.CAD: return rates.cadExchangeRate ?? 0;
+    case Currency.AUD: return rates.audExchangeRate ?? 0;
+    case Currency.SAR: return rates.sarExchangeRate ?? 0;
+    case Currency.BRL: return rates.brlExchangeRate ?? 0;
+    default:           return 1; // TWD
+  }
+}
+
 /** 將 TWD 換算為基準幣（僅顯示用；內部仍以 TWD 為單位） */
 export function valueInBaseCurrency(
   valueTWD: number,
@@ -392,19 +433,12 @@ export const generateAdvancedChartData = (
   cashFlows: CashFlow[],
   accounts: Account[],
   currentTotalValueTWD: number,
-  exchangeRate: number,
-  historicalData?: HistoricalData,
-  jpyExchangeRate?: number,
-  eurExchangeRate?: number,
-  cnyExchangeRate?: number,
-  inrExchangeRate?: number,
-  cadExchangeRate?: number,
-  hkdExchangeRate?: number,
-  krwExchangeRate?: number,
-  audExchangeRate?: number,
-  sarExchangeRate?: number,
-  brlExchangeRate?: number
+  rates: ExchangeRates,
+  historicalData?: HistoricalData
 ): ChartDataPoint[] => {
+  const { exchangeRateUsdToTwd: exchangeRate, jpyExchangeRate, eurExchangeRate,
+    cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate,
+    krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate } = rates;
   const years = new Set<string>();
   const allDates = [...transactions.map(t => t.date), ...cashFlows.map(c => c.date)];
   if (allDates.length === 0) return [];
@@ -642,52 +676,13 @@ export const formatCurrency = (val: number, currency: string): string => {
 export const calculateAssetAllocation = (
   holdings: Holding[],
   cashBalanceTWD: number,
-  exchangeRate: number,
-  jpyExchangeRate?: number,
-  eurExchangeRate?: number,
-  cnyExchangeRate?: number,
-  inrExchangeRate?: number,
-  cadExchangeRate?: number,
-  hkdExchangeRate?: number,
-  krwExchangeRate?: number,
-  audExchangeRate?: number,
-  sarExchangeRate?: number,
-  brlExchangeRate?: number
+  rates: ExchangeRates
 ): AssetAllocationItem[] => {
   const tickerMap: Record<string, number> = {};
   let totalValue = cashBalanceTWD;
 
   holdings.forEach(h => {
-    let valTWD: number;
-    if (h.market === Market.US || h.market === Market.UK) {
-      valTWD = h.currentValue * exchangeRate;
-    } else if (h.market === Market.JP) {
-      valTWD = jpyExchangeRate ? h.currentValue * jpyExchangeRate : h.currentValue * exchangeRate;
-    } else if (h.market === Market.CN) {
-      valTWD = (cnyExchangeRate ?? 0) * h.currentValue;
-    } else if (h.market === Market.SZ) {
-      valTWD = (cnyExchangeRate ?? 0) * h.currentValue;
-    } else if (h.market === Market.IN) {
-      valTWD = (inrExchangeRate ?? 0) * h.currentValue;
-    } else if (h.market === Market.CA) {
-      valTWD = (cadExchangeRate ?? 0) * h.currentValue;
-    } else if (h.market === Market.FR) {
-      valTWD = (eurExchangeRate ?? 0) * h.currentValue;
-    } else if (h.market === Market.HK) {
-      valTWD = (hkdExchangeRate ?? 0) * h.currentValue;
-    } else if (h.market === Market.KR) {
-      valTWD = (krwExchangeRate ?? 0) * h.currentValue;
-    } else if (h.market === Market.DE) {
-      valTWD = (eurExchangeRate ?? 0) * h.currentValue;
-    } else if (h.market === Market.AU) {
-      valTWD = (audExchangeRate ?? 0) * h.currentValue;
-    } else if (h.market === Market.SA) {
-      valTWD = (sarExchangeRate ?? 0) * h.currentValue;
-    } else if (h.market === Market.BR) {
-      valTWD = (brlExchangeRate ?? 0) * h.currentValue;
-    } else {
-      valTWD = h.currentValue;
-    }
+    const valTWD = marketValueToTWD(h.currentValue, h.market, rates);
     if (!tickerMap[h.ticker]) tickerMap[h.ticker] = 0;
     tickerMap[h.ticker] += valTWD;
     totalValue += valTWD;
@@ -761,49 +756,11 @@ export const calculateAccountPerformance = (
   holdings: Holding[],
   cashFlows: CashFlow[],
   transactions: Transaction[],
-  exchangeRate: number,
-  jpyExchangeRate?: number,
-  eurExchangeRate?: number,
-  cnyExchangeRate?: number,
-  inrExchangeRate?: number,
-  cadExchangeRate?: number,
-  hkdExchangeRate?: number,
-  krwExchangeRate?: number,
-  audExchangeRate?: number,
-  sarExchangeRate?: number,
-  brlExchangeRate?: number,
-  gbpExchangeRate?: number
+  rates: ExchangeRates
 ): AccountPerformance[] => {
-  const getRateByCurrency = (currency: Currency): number => {
-    switch (currency) {
-      case Currency.USD:
-        return exchangeRate;
-      case Currency.JPY:
-        return jpyExchangeRate || exchangeRate;
-      case Currency.EUR:
-        return eurExchangeRate || 0;
-      case Currency.CNY:
-        return cnyExchangeRate || 0;
-      case Currency.INR:
-        return inrExchangeRate || 0;
-      case Currency.CAD:
-        return cadExchangeRate || 0;
-      case Currency.HKD:
-        return hkdExchangeRate || 0;
-      case Currency.KRW:
-        return krwExchangeRate || 0;
-      case Currency.AUD:
-        return audExchangeRate || 0;
-      case Currency.SAR:
-        return sarExchangeRate || 0;
-      case Currency.BRL:
-        return brlExchangeRate || 0;
-      case Currency.GBP:
-        return gbpExchangeRate || 0;
-      default:
-        return 1;
-    }
-  };
+  const { exchangeRateUsdToTwd: exchangeRate } = rates;
+  const getRateByCurrency = (currency: Currency): number =>
+    currencyToTWDRate(currency, rates);
 
   const getCashFlowAmountTWD = (cf: CashFlow): number => {
     if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
@@ -820,20 +777,8 @@ export const calculateAccountPerformance = (
     return cf.amount * effectiveRate;
   };
 
-  const getMarketRate = (market: Market): number => {
-    if (market === Market.US || market === Market.UK) return exchangeRate;
-    if (market === Market.JP) return jpyExchangeRate ?? exchangeRate;
-    if (market === Market.CN || market === Market.SZ) return cnyExchangeRate ?? 0;
-    if (market === Market.IN) return inrExchangeRate ?? 0;
-    if (market === Market.CA) return cadExchangeRate ?? 0;
-    if (market === Market.FR || market === Market.DE) return eurExchangeRate ?? 0;
-    if (market === Market.HK) return hkdExchangeRate ?? 0;
-    if (market === Market.KR) return krwExchangeRate ?? 0;
-    if (market === Market.AU) return audExchangeRate ?? 0;
-    if (market === Market.SA) return sarExchangeRate ?? 0;
-    if (market === Market.BR) return brlExchangeRate ?? 0;
-    return 1;
-  };
+  const getMarketRate = (market: Market): number =>
+    marketValueToTWD(1, market, rates);
 
   const getTransactionAmountTWD = (tx: Transaction): number => {
     let baseVal = tx.price * tx.quantity;
