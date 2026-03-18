@@ -163,7 +163,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <Area type="monotone" dataKey="v" stroke="#7c3aed" strokeWidth={1.5} fill="url(#sg-purple)" dot={false} isAnimationActive={true}/>
+                  <Area type="monotone" dataKey="v" stroke="#7c3aed" strokeWidth={1.5} fill="url(#sg-purple)" dot={false} activeDot={false} isAnimationActive={true}/>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -189,7 +189,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <Area type="monotone" dataKey="v" stroke="#22c55e" strokeWidth={1.5} fill="url(#sg-green)" dot={false} isAnimationActive={true}/>
+                  <Area type="monotone" dataKey="v" stroke="#22c55e" strokeWidth={1.5} fill="url(#sg-green)" dot={false} activeDot={false} isAnimationActive={true}/>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -223,7 +223,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       <stop offset="95%" stopColor={summary.totalPLTWD >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <Area type="monotone" dataKey="v" stroke={summary.totalPLTWD >= 0 ? "#10b981" : "#ef4444"} strokeWidth={1.5} fill="url(#sg-pl)" dot={false} isAnimationActive={true}/>
+                  <Area type="monotone" dataKey="v" stroke={summary.totalPLTWD >= 0 ? "#10b981" : "#ef4444"} strokeWidth={1.5} fill="url(#sg-pl)" dot={false} activeDot={false} isAnimationActive={true}/>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -263,7 +263,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <button 
           onClick={() => setShowDetails(!showDetails)}
-          className="w-full flex justify-between items-center p-4 bg-slate-50 hover:bg-slate-100 transition text-slate-700 font-medium text-sm"
+          className="w-full flex justify-between items-center p-4 transition font-medium text-sm" style={{ backgroundColor: isDarkMode ? "#1e293b" : "#f8fafc", color: isDarkMode ? "#cbd5e1" : "#334155" }} onMouseEnter={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#334155":"#f1f5f9")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#1e293b":"#f8fafc")}
         >
           <span>{translations.dashboard.detailedStatistics}</span>
           <svg 
@@ -544,11 +544,11 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
           {activePieIndex !== undefined && assetAllocation[activePieIndex] && (
-            <div className="mb-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-3 animate-pulse-once">
+            <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3" style={{ backgroundColor: isDarkMode ? "#1e293b" : "#f8fafc", border: isDarkMode ? "1px solid #334155" : "1px solid #e2e8f0" }}>
               <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: assetAllocation[activePieIndex].color }} />
-              <span className="font-semibold text-slate-800">{assetAllocation[activePieIndex].name}</span>
-              <span className="text-slate-500 text-sm ml-auto">{assetAllocation[activePieIndex].ratio.toFixed(1)}%</span>
-              <span className="font-mono font-bold text-slate-700">{formatCurrency(toBase(assetAllocation[activePieIndex].value), baseCurrency)}</span>
+              <span className="font-semibold" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>{assetAllocation[activePieIndex].name}</span>
+              <span className="text-sm ml-auto" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{assetAllocation[activePieIndex].ratio.toFixed(1)}%</span>
+              <span className="font-mono font-bold" style={{ color: isDarkMode ? "#cbd5e1" : "#334155" }}>{formatCurrency(toBase(assetAllocation[activePieIndex].value), baseCurrency)}</span>
             </div>
           )}
           <div className="w-full flex flex-col md:flex-row items-center gap-4">
@@ -590,7 +590,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     </Pie>
                     <Tooltip
                       formatter={(value: number, name: string) => [formatCurrency(toBase(value), baseCurrency), name]}
-                      contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                      contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px", backgroundColor: "#ffffff", color: "#1e293b" }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -605,13 +605,13 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               {assetAllocation.map((item, index) => (
                 <div
                   key={item.name}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${activePieIndex === index ? 'bg-slate-50 shadow-sm' : 'hover:bg-slate-50/60'}`}
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all" style={{ backgroundColor: activePieIndex === index ? (isDarkMode ? "#334155" : "#f8fafc") : "transparent", boxShadow: activePieIndex === index ? "0 1px 2px rgba(0,0,0,0.05)" : "none" }}
                   onMouseEnter={() => setActivePieIndex(index)}
                   onMouseLeave={() => setActivePieIndex(undefined)}
                 >
                   <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" style={{ backgroundColor: item.color, transform: activePieIndex === index ? 'scale(1.4)' : 'scale(1)' }} />
-                  <span className="text-xs text-slate-700 flex-1">{item.name}</span>
-                  <span className="text-xs font-bold text-slate-500">{item.ratio.toFixed(1)}%</span>
+                  <span className="text-xs flex-1" style={{ color: isDarkMode ? "#cbd5e1" : "#334155" }}>{item.name}</span>
+                  <span className="text-xs font-bold" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{item.ratio.toFixed(1)}%</span>
                 </div>
               ))}
             </div>
@@ -631,8 +631,11 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                   className={`px-3 py-1.5 text-sm rounded transition ${
                     !showAnnualInUSD 
                       ? 'bg-indigo-600 text-white font-medium' 
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : ''
                   }`}
+                  style={!showAnnualInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
+                  onMouseEnter={e=>{ if(!showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
+                  onMouseLeave={e=>{ if(!showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
                 >
                   {baseCurrency}
                 </button>
@@ -641,8 +644,11 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                   className={`px-3 py-1.5 text-sm rounded transition ${
                     showAnnualInUSD 
                       ? 'bg-indigo-600 text-white font-medium' 
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      : ''
                   }`}
+                  style={showAnnualInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
+                  onMouseEnter={e=>{ if(showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
+                  onMouseLeave={e=>{ if(showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
                 >
                   {translations.dashboard.usd}
                 </button>
@@ -650,7 +656,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm text-left">
-                <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
+                <thead style={{ backgroundColor: '#f8fafc', color: '#64748b' }} className="uppercase font-medium">
                   <tr>
                     <th className="px-6 py-3">{translations.dashboard.year}</th>
                     <th className="px-6 py-3 text-right">{translations.dashboard.startAssets}</th>
@@ -669,18 +675,22 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     const profit = showAnnualInUSD ? item.profit / summary.exchangeRateUsdToTwd : toBase(item.profit);
                     
                     return (
-                      <tr key={item.year} className="hover:bg-slate-50">
-                        <td className="px-6 py-3 font-bold text-slate-700">
+                      <tr key={item.year}
+                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#f8fafc")}
+                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+                        style={{ transition: "background-color 0.15s" }}
+                      >
+                        <td className="px-6 py-3 font-bold" style={{ color: "#334155" }}>
                           {item.year}
                           {item.isRealData && <span title={translations.dashboard.realHistoricalData} className="ml-2 text-xs cursor-help">✅</span>}
                         </td>
-                        <td className="px-6 py-3 text-right text-slate-500">{formatCurrency(startAssets, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right text-slate-500">{formatCurrency(netInflow, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right font-medium">{formatCurrency(endAssets, displayCurrency)}</td>
-                        <td className={`px-6 py-3 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td className="px-6 py-3 text-right" style={{ color: "#64748b" }}>{formatCurrency(startAssets, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right" style={{ color: "#64748b" }}>{formatCurrency(netInflow, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right font-medium" style={{ color: "#1e293b" }}>{formatCurrency(endAssets, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right font-bold" style={{ color: profit >= 0 ? "#10b981" : "#ef4444" }}>
                           {formatCurrency(profit, displayCurrency)}
                         </td>
-                        <td className={`px-6 py-3 text-right font-bold ${item.roi >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td className="px-6 py-3 text-right font-bold" style={{ color: item.roi >= 0 ? "#10b981" : "#ef4444" }}>
                           {item.roi.toFixed(2)}%
                         </td>
                       </tr>
@@ -703,8 +713,11 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               className={`px-3 py-1.5 text-sm rounded transition ${
                 !showAccountInUSD 
                   ? 'bg-indigo-600 text-white font-medium' 
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : ''
               }`}
+              style={!showAccountInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
+              onMouseEnter={e=>{ if(!showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
+              onMouseLeave={e=>{ if(!showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
             >
               {baseCurrency}
             </button>
@@ -713,8 +726,11 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               className={`px-3 py-1.5 text-sm rounded transition ${
                 showAccountInUSD 
                   ? 'bg-indigo-600 text-white font-medium' 
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : ''
               }`}
+              style={showAccountInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
+              onMouseEnter={e=>{ if(showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
+              onMouseLeave={e=>{ if(showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
             >
               {translations.dashboard.usd}
             </button>
@@ -789,8 +805,12 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                   
                   return (
                     <React.Fragment key={acc.id}>
-                      <tr className="hover:bg-slate-50">
-                        <td className="px-3 py-2 font-semibold text-slate-700">
+                      <tr
+                        onMouseEnter={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#334155":"#f8fafc")}
+                        onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")}
+                        style={{ transition: "background-color 0.15s" }}
+                      >
+                        <td className="px-3 py-2 font-semibold" style={{ color: "#334155" }}>
                           <div className="flex items-center justify-between gap-2">
                             <div>
                               {acc.name}
@@ -806,13 +826,13 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                             </button>
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right font-bold text-slate-700">
+                        <td className="px-3 py-2 text-right font-bold" style={{ color: "#334155" }}>
                           {formatCurrency(totalAssets, displayCurrency)}
                         </td>
-                        <td className="px-3 py-2 text-right text-slate-600">
+                        <td className="px-3 py-2 text-right" style={{ color: "#475569" }}>
                           {formatCurrency(marketValue, displayCurrency)}
                         </td>
-                        <td className="px-3 py-2 text-right text-slate-600">
+                        <td className="px-3 py-2 text-right" style={{ color: "#475569" }}>
                           {formatCurrency(cashBalance, displayCurrency)}
                         </td>
                         <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -901,7 +921,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {costDetails.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-slate-50">
+                    <tr key={item.id} onMouseEnter={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#334155":"#f8fafc")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")} style={{ transition: "background-color 0.15s" }}>
                       <td className="px-3 py-2 whitespace-nowrap">{item.date}</td>
                       <td className="px-3 py-2">
                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${item.type === CashFlowType.DEPOSIT ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
