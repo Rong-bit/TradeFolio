@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { TransactionType } from '../types';
 import { t, translate } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
+import StockTimeline from './StockTimeline';
 import { useUI } from '../contexts/UIContext';
 import { useFilters } from '../hooks/useFilters';
 
@@ -52,12 +53,37 @@ const HistoryView: React.FC<Props> = ({
   formatNumber,
   formatAmount,
 }) => {
+  const [activeTab, setActiveTab] = useState<'list' | 'timeline'>('list');
   const { transactions, accounts, cashFlows } = usePortfolio();
   const { language } = useUI();
   const tr = t(language);
 
   return (
     <div className="space-y-6">
+      {/* Tab 切換 */}
+      <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit">
+        <button
+          onClick={() => setActiveTab('list')}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${
+            activeTab === 'list' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          📋 交易紀錄
+        </button>
+        <button
+          onClick={() => setActiveTab('timeline')}
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition ${
+            activeTab === 'timeline' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          📈 持有時間軸
+        </button>
+      </div>
+
+      {activeTab === 'timeline' ? (
+        <StockTimeline />
+      ) : (<>
+
       {/* 操作列 */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -354,6 +380,7 @@ const HistoryView: React.FC<Props> = ({
         )}
       </div>
     </div>
+    </>)}
   );
 };
 
