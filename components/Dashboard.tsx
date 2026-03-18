@@ -141,9 +141,6 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
         {/* Net Cost Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-purple-500 relative group hover:shadow-md transition-shadow">
-          <div className="absolute top-0 right-0 w-16 h-16 opacity-5 group-hover:opacity-10 transition-opacity">
-            <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="28" fill="#7c3aed"/></svg>
-          </div>
           <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider flex justify-between items-center">
             {translations.dashboard.netCost}
             <button
