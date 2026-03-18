@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChartDataPoint, Account, CashFlowType, Currency, Market } from '../types';
+import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market } from '../types';
 import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
@@ -66,7 +66,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       [Market.BR]: 0,
     };
 
-    holdings.forEach(h => {
+    holdings.forEach((h: Holding) => {
       const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
       marketValues[h.market] = (marketValues[h.market] || 0) + valTwd;
     });
@@ -82,8 +82,8 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
   const costDetails = useMemo(() => {
     return cashFlows
-      .filter(cf => cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.WITHDRAW)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .filter((cf: CashFlow) => cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.WITHDRAW)
+      .sort((a: CashFlow, b: CashFlow) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map(cf => {
           const account = accounts.find(a => a.id === cf.accountId);
           if (!account) return null;
@@ -140,7 +140,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
 
         {/* Net Cost Card */}
-        <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-purple-500 relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-purple-500 relative group hover:shadow-md transition-shadow">
           <div className="absolute top-0 right-0 w-16 h-16 opacity-5 group-hover:opacity-10 transition-opacity">
             <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="28" fill="#7c3aed"/></svg>
           </div>
@@ -148,7 +148,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             {translations.dashboard.netCost}
             <button
               onClick={() => setShowCostDetailModal(true)}
-              className="text-indigo-600 hover:text-indigo-800 text-[10px] bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100"
+              className="relative z-10 text-indigo-600 hover:text-indigo-800 text-[10px] bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100"
               title={translations.dashboard.viewCalculationDetails}
             >🔍 {translations.dashboard.detail}</button>
           </h4>
@@ -442,7 +442,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       stroke="#94a3b8"
                       fill="#f1f5f9"
                       travellerWidth={8}
-                      startIndex={Math.max(0, chartData.length - 8)}
+                      startIndex={0}
                       style={{ fontSize: '10px' }}
                       tickFormatter={(v) => String(v)}
                     />
