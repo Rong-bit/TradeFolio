@@ -309,7 +309,7 @@ const HoldingsTable: React.FC<Props> = () => {
     const roiColor = h.annualizedReturn >= 0 ? 'text-blue-700' : 'text-danger';
     // 只有當 dailyChange 不是 undefined/null 時才根據正負值決定顏色，否則保持預設顏色
     const dailyChangeColor = h.dailyChange !== undefined && h.dailyChange !== null 
-      ? (h.dailyChange >= 0 ? 'text-emerald-600' : 'text-rose-600')
+      ? (h.dailyChange >= 0 ? 'text-success' : 'text-danger')
       : 'text-slate-500';
     const uniqueKey = `${h.accountId}-${h.market}-${h.ticker}`;
     
