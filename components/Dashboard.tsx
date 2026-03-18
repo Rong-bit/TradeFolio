@@ -445,8 +445,6 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       startIndex={Math.max(0, chartData.length - 8)}
                       style={{ fontSize: '10px' }}
                       tickFormatter={(v) => String(v)}
-                      // Brush 內部年份文字顏色
-                      stroke="#94a3b8"
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
