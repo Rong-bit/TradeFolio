@@ -407,7 +407,10 @@ const HoldingsTable: React.FC<Props> = () => {
         </td>
 
         {/* 7. Market Value */}
-        <td className="px-3 py-2 text-right font-medium text-slate-800">
+        <td
+          className="px-3 py-2 text-right font-medium"
+          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
+        >
           {formatCurrency(h.currentValue, currency)}
         </td>
 
