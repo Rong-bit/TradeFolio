@@ -162,8 +162,18 @@ const App: React.FC = () => {
       updatePricesAndDetails(np, nd);
       const ru: Partial<ExchangeRateState> = {};
       if (result.exchangeRate > 0) ru.exchangeRateUsdToTwd = result.exchangeRate;
-      const rk: Array<keyof ExchangeRateState> = ['jpyExchangeRate','eurExchangeRate','gbpExchangeRate','hkdExchangeRate','krwExchangeRate','cnyExchangeRate','inrExchangeRate','cadExchangeRate','audExchangeRate','sarExchangeRate','brlExchangeRate'];
-      rk.forEach(k => { const v = result[k]; if (v !== undefined && v > 0) ru[k] = v; });
+      // 逐一存取各匯率（型別安全）
+      if (result.jpyExchangeRate  && result.jpyExchangeRate  > 0) ru.jpyExchangeRate  = result.jpyExchangeRate;
+      if (result.eurExchangeRate  && result.eurExchangeRate  > 0) ru.eurExchangeRate  = result.eurExchangeRate;
+      if (result.gbpExchangeRate  && result.gbpExchangeRate  > 0) ru.gbpExchangeRate  = result.gbpExchangeRate;
+      if (result.hkdExchangeRate  && result.hkdExchangeRate  > 0) ru.hkdExchangeRate  = result.hkdExchangeRate;
+      if (result.krwExchangeRate  && result.krwExchangeRate  > 0) ru.krwExchangeRate  = result.krwExchangeRate;
+      if (result.cnyExchangeRate  && result.cnyExchangeRate  > 0) ru.cnyExchangeRate  = result.cnyExchangeRate;
+      if (result.inrExchangeRate  && result.inrExchangeRate  > 0) ru.inrExchangeRate  = result.inrExchangeRate;
+      if (result.cadExchangeRate  && result.cadExchangeRate  > 0) ru.cadExchangeRate  = result.cadExchangeRate;
+      if (result.audExchangeRate  && result.audExchangeRate  > 0) ru.audExchangeRate  = result.audExchangeRate;
+      if (result.sarExchangeRate  && result.sarExchangeRate  > 0) ru.sarExchangeRate  = result.sarExchangeRate;
+      if (result.brlExchangeRate  && result.brlExchangeRate  > 0) ru.brlExchangeRate  = result.brlExchangeRate;
       if (Object.keys(ru).length) updateRates(ru);
       if (!silent) showAlert(`成功更新 ${Object.keys(np).length} 筆股價${result.exchangeRate > 0 ? `，並同步更新匯率為 ${result.exchangeRate}` : ''}`, '更新完成', 'success');
     } catch { if (!silent) showAlert('自動更新失敗', '錯誤', 'error'); }
@@ -198,7 +208,17 @@ const App: React.FC = () => {
         importData({ transactions:data.transactions??[], accounts:data.accounts??[], cashFlows:data.cashFlows??[], currentPrices:data.currentPrices??{}, priceDetails:data.priceDetails??{}, rebalanceTargets:data.rebalanceTargets??{}, rebalanceEnabledItems:data.rebalanceEnabledItems??[], historicalData:data.historicalData??{} });
         const ru: Partial<ExchangeRateState> = {};
         const usd = data.exchangeRate ?? data.exchangeRateUsdToTwd; if (usd) ru.exchangeRateUsdToTwd = usd;
-        ['jpy','eur','gbp','hkd','krw','cny','inr','cad','aud','sar','brl'].forEach(c => { const k = `${c}ExchangeRate` as keyof ExchangeRateState; if (data[k]) ru[k] = data[k]; });
+        if (data.jpyExchangeRate) ru.jpyExchangeRate = data.jpyExchangeRate;
+        if (data.eurExchangeRate) ru.eurExchangeRate = data.eurExchangeRate;
+        if (data.gbpExchangeRate) ru.gbpExchangeRate = data.gbpExchangeRate;
+        if (data.hkdExchangeRate) ru.hkdExchangeRate = data.hkdExchangeRate;
+        if (data.krwExchangeRate) ru.krwExchangeRate = data.krwExchangeRate;
+        if (data.cnyExchangeRate) ru.cnyExchangeRate = data.cnyExchangeRate;
+        if (data.inrExchangeRate) ru.inrExchangeRate = data.inrExchangeRate;
+        if (data.cadExchangeRate) ru.cadExchangeRate = data.cadExchangeRate;
+        if (data.audExchangeRate) ru.audExchangeRate = data.audExchangeRate;
+        if (data.sarExchangeRate) ru.sarExchangeRate = data.sarExchangeRate;
+        if (data.brlExchangeRate) ru.brlExchangeRate = data.brlExchangeRate;
         if (Object.keys(ru).length) updateRates(ru);
         const valid: BaseCurrency[] = ['TWD','USD','JPY','EUR','GBP','HKD','KRW','CAD','INR','CNY','AUD','SAR','BRL'];
         if (data.baseCurrency && valid.includes(data.baseCurrency)) setBaseCurrency(data.baseCurrency);
