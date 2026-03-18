@@ -30,8 +30,9 @@ import AssetAllocationSimulator from './components/AssetAllocationSimulator';
 import { fetchCurrentPrices } from './services/yahooFinanceService';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
 import { Language, getLanguage, setLanguage as saveLanguage, t, translate, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
-
-type View = 'dashboard' | 'history' | 'funds' | 'accounts' | 'rebalance' | 'simulator' | 'help';
+import { PortfolioContext } from './contexts/PortfolioContext';
+import { MarketContext } from './contexts/MarketContext';
+import { UIContext } from './contexts/UIContext';
 
 // ─── 工具函式 ───────────────────────────────────────────────────
 
@@ -311,9 +312,48 @@ const App: React.FC = () => {
   const handleClearAllCashFlows = () => { clearCashFlows(); showAlert('✅ 成功清空所有資金紀錄！','刪除成功','success'); };
   const handleSaveHistoricalData = (nd: HistoricalData) => { saveHistoricalData(nd); showAlert('歷史資產數據更新完成！報表已根據真實股價修正。','更新成功','success'); };
 
-  const availableViews: View[] = isGuest
-    ? ['dashboard','history','funds','accounts','simulator','help']
-    : ['dashboard','history','funds','accounts','rebalance','simulator','help'];
+  const availableViews = isGuest
+    ? ['dashboard','history','funds','accounts','simulator','help'] as const
+    : ['dashboard','history','funds','accounts','rebalance','simulator','help'] as const;
+
+  // ─── Context Values ────────────────────────────────────────────
+  const portfolioValue = {
+    transactions, accounts, cashFlows, currentPrices, priceDetails,
+    historicalData, rebalanceTargets, rebalanceEnabledItems,
+    holdings, computedAccounts, summary, chartData,
+    assetAllocation, annualPerformance, accountPerformance,
+    addTransaction, updateTransaction, removeTransaction,
+    addBatchTransactions, clearTransactions, batchUpdateMarket,
+    addAccount, updateAccount: handleUpdateAccount, removeAccount: handleRemoveAccount,
+    addCashFlow, updateCashFlow: handleUpdateCashFlow,
+    removeCashFlow: handleRemoveCashFlow,
+    addBatchCashFlows, clearCashFlows: handleClearAllCashFlows,
+    updatePrice, updatePricesAndDetails,
+    saveHistoricalData: handleSaveHistoricalData,
+    updateRebalanceTargets, setRebalanceEnabledItems,
+    handleAutoUpdatePrices,
+    refreshIntervalMs: REFRESH_INTERVAL_MS,
+  };
+
+  const marketValue = {
+    rates,
+    exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate,
+    hkdExchangeRate, krwExchangeRate, cadExchangeRate, inrExchangeRate,
+    cnyExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate,
+    baseCurrency, setBaseCurrency,
+    displayRate,
+    setUsdRate, updateRates,
+  };
+
+  const uiValue = {
+    language, setLanguage: handleLanguageChange,
+    view, setView,
+    availableViews,
+    isAuthenticated, isGuest, currentUser,
+    alertDialog, showAlert, closeAlert,
+  };
+
+
 
   // ─── 登入頁 ──────────────────────────────────────────────────
 
@@ -364,6 +404,9 @@ const App: React.FC = () => {
   // ─── 主頁 ────────────────────────────────────────────────────
 
   return (
+    <PortfolioContext.Provider value={portfolioValue}>
+    <MarketContext.Provider value={marketValue}>
+    <UIContext.Provider value={uiValue}>
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4">
@@ -400,7 +443,7 @@ const App: React.FC = () => {
           </h2>
         </div>
         <div className="animate-fade-in">
-          {view==='dashboard'&&<Dashboard summary={summary} holdings={holdings} chartData={chartData} assetAllocation={assetAllocation} annualPerformance={annualPerformance} accountPerformance={accountPerformance} cashFlows={cashFlows} accounts={computedAccounts} baseCurrency={baseCurrency} onUpdatePrice={updatePrice} onAutoUpdate={handleAutoUpdatePrices} refreshIntervalMs={REFRESH_INTERVAL_MS} isGuest={isGuest} onUpdateHistorical={()=>setIsHistoricalModalOpen(true)} language={language} />}
+          {view==='dashboard'&&<Dashboard onUpdateHistorical={()=>setIsHistoricalModalOpen(true)} />}
           {view==='history'&&(
             <div className="space-y-6">
               <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
@@ -465,11 +508,11 @@ const App: React.FC = () => {
               </div>
             </div>
           )}
-          {view==='accounts'&&<AccountManager accounts={computedAccounts} onAdd={addAccount} onUpdate={handleUpdateAccount} onDelete={handleRemoveAccount} language={language} />}
-          {view==='funds'&&<FundManager accounts={accounts} cashFlows={cashFlows} onAdd={addCashFlow} onUpdate={handleUpdateCashFlow} onBatchAdd={addBatchCashFlows} onDelete={handleRemoveCashFlow} onClearAll={handleClearAllCashFlows} baseCurrency={baseCurrency} currentExchangeRate={exchangeRate} currentJpyExchangeRate={jpyExchangeRate} currentEurExchangeRate={eurExchangeRate} currentGbpExchangeRate={gbpExchangeRate} currentHkdExchangeRate={hkdExchangeRate} currentKrwExchangeRate={krwExchangeRate} currentCadExchangeRate={cadExchangeRate} currentInrExchangeRate={inrExchangeRate} language={language} />}
-          {view==='rebalance'&&!isGuest&&<RebalanceView summary={summary} holdings={holdings} baseCurrency={baseCurrency} exchangeRate={exchangeRate} jpyExchangeRate={jpyExchangeRate} targets={rebalanceTargets} onUpdateTargets={updateRebalanceTargets} enabledItems={rebalanceEnabledItems} onUpdateEnabledItems={setRebalanceEnabledItems} language={language} />}
-          {view==='simulator'&&<AssetAllocationSimulator holdings={holdings.map(h=>({ticker:h.ticker,market:h.market,annualizedReturn:h.annualizedReturn}))} baseCurrency={baseCurrency} exchangeRateUsdToTwd={exchangeRate} jpyExchangeRate={jpyExchangeRate} eurExchangeRate={eurExchangeRate} gbpExchangeRate={gbpExchangeRate} hkdExchangeRate={hkdExchangeRate} krwExchangeRate={krwExchangeRate} cadExchangeRate={cadExchangeRate} inrExchangeRate={inrExchangeRate} audExchangeRate={audExchangeRate} sarExchangeRate={sarExchangeRate} brlExchangeRate={brlExchangeRate} language={language} />}
-          {view==='help'&&<HelpView onExport={handleExportData} onImport={handleImportData} authorizedUsers={GLOBAL_AUTHORIZED_USERS} currentUser={currentUser} language={language} />}
+          {view==='accounts'&&<AccountManager />}
+          {view==='funds'&&<FundManager />}
+          {view==='rebalance'&&!isGuest&&<RebalanceView />}
+          {view==='simulator'&&<AssetAllocationSimulator />}
+          {view==='help'&&<HelpView onExport={handleExportData} onImport={handleImportData} />}
         </div>
       </main>
 
@@ -495,10 +538,10 @@ const App: React.FC = () => {
 
       <footer className="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800"><div className="max-w-7xl mx-auto px-4 text-center"><p className="text-sm">© 2025 TradeView. Designed & Developed by <span className="text-indigo-400 font-bold">Jun-rong, Huang</span></p><p className="text-[10px] mt-2 text-slate-500">此應用程式所有交易數據皆儲存於本地端，保障您的隱私安全。</p></div></footer>
 
-      {isFormOpen&&<TransactionForm accounts={accounts} holdings={holdings} onAdd={addTransaction} onUpdate={handleUpdateTransaction} editingTransaction={transactionToEdit} onClose={()=>{setIsFormOpen(false);setTransactionToEdit(null);}} language={language} />}
-      {isImportOpen&&<BatchImportModal accounts={accounts} onImport={addBatchTransactions} onClose={()=>setIsImportOpen(false)} language={language} />}
-      {isHistoricalModalOpen&&<HistoricalDataModal transactions={transactions} cashFlows={cashFlows} accounts={accounts} historicalData={historicalData} onSave={handleSaveHistoricalData} onClose={()=>setIsHistoricalModalOpen(false)} />}
-      {isBatchUpdateMarketOpen&&<BatchUpdateMarketModal transactions={transactions} onUpdate={handleBatchUpdateMarket} onClose={()=>setIsBatchUpdateMarketOpen(false)} />}
+      {isFormOpen&&<TransactionForm onAdd={addTransaction} onUpdate={handleUpdateTransaction} editingTransaction={transactionToEdit} onClose={()=>{setIsFormOpen(false);setTransactionToEdit(null);}} />}
+      {isImportOpen&&<BatchImportModal onImport={addBatchTransactions} onClose={()=>setIsImportOpen(false)} />}
+      {isHistoricalModalOpen&&<HistoricalDataModal onSave={handleSaveHistoricalData} onClose={()=>setIsHistoricalModalOpen(false)} />}
+      {isBatchUpdateMarketOpen&&<BatchUpdateMarketModal onUpdate={handleBatchUpdateMarket} onClose={()=>setIsBatchUpdateMarketOpen(false)} />}
 
       {isDeleteConfirmOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-sm"><h3 className="text-lg font-bold text-red-600 mb-2">確認清空所有交易？</h3><p className="text-slate-600 mb-6">此操作無法復原，請確認您已備份資料。</p><div className="flex justify-end gap-3"><button onClick={()=>setIsDeleteConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50">取消</button><button onClick={confirmDeleteAllTransactions} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">確認清空</button></div></div></div>}
       {isTransactionDeleteConfirmOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-sm"><h3 className="text-lg font-bold text-slate-800 mb-2">刪除交易</h3><p className="text-slate-600 mb-6">確定要刪除這筆交易紀錄嗎？</p><div className="flex justify-end gap-3"><button onClick={()=>setIsTransactionDeleteConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50">取消</button><button onClick={confirmRemoveTransaction} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">刪除</button></div></div></div>}
@@ -512,6 +555,9 @@ const App: React.FC = () => {
 
       {alertDialog.isOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center"><h3 className={`text-lg font-bold mb-2 ${alertDialog.type==='error'?'text-red-600':alertDialog.type==='success'?'text-green-600':'text-slate-800'}`}>{alertDialog.title}</h3><p className="text-slate-600 mb-6 whitespace-pre-line">{alertDialog.message}</p><button onClick={closeAlert} className="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">確定</button></div></div>}
     </div>
+    </UIContext.Provider>
+    </MarketContext.Provider>
+    </PortfolioContext.Provider>
   );
 };
 
