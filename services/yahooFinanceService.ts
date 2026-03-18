@@ -64,7 +64,7 @@ function setCache<T>(key: string, value: T, ttl = CACHE_TTL): void {
 function proxyUrls(target: string): string[] {
   const enc = encodeURIComponent(target);
   const urls: string[] = [];
-  const envProxy = (import.meta as any).env?.VITE_YAHOO_PROXY_URL as string | undefined;
+  const envProxy = import.meta.env.VITE_YAHOO_PROXY_URL;
 
   if (envProxy) {
     urls.push(`${envProxy}?target=${enc}`);
