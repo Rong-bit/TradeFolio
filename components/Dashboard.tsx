@@ -315,7 +315,16 @@ const Dashboard: React.FC<Props> = ({
             <div className="w-full h-[300px] md:h-[450px]">
               {isMounted && chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
+                  <ComposedChart
+                    data={chartData.map(d => ({
+                      ...d,
+                      cost: toBase(d.cost),
+                      profit: toBase(d.profit),
+                      totalAssets: toBase(d.totalAssets),
+                      estTotalAssets: toBase(d.estTotalAssets),
+                    }))}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 40 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis 
                       dataKey="year" 
@@ -327,7 +336,17 @@ const Dashboard: React.FC<Props> = ({
                       textAnchor="end"
                       height={60}
                     />
-                    <YAxis yAxisId="left" stroke="#64748b" fontSize={10} className="text-xs" tickFormatter={(val) => `${val / 1000}k`} />
+                    <YAxis
+                      yAxisId="left"
+                      stroke="#64748b"
+                      fontSize={10}
+                      className="text-xs"
+                      tickFormatter={(val: number) => {
+                        if (Math.abs(val) >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+                        if (Math.abs(val) >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
+                        return val.toFixed(0);
+                      }}
+                    />
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                       formatter={(value: number, name: string, props: any) => {
@@ -337,10 +356,10 @@ const Dashboard: React.FC<Props> = ({
                          else if (name === translations.dashboard.chartLabels.totalAssets) suffix = translations.dashboard.chartLabels.estimated;
 
                          if (name.includes(translations.dashboard.chartLabels.accumulatedPL)) {
-                           return [formatCurrency(toBase(value), baseCurrency), translations.dashboard.chartLabels.accumulatedPL];
+                           return [formatCurrency(value, baseCurrency), translations.dashboard.chartLabels.accumulatedPL];
                          }
 
-                         return [formatCurrency(toBase(value), baseCurrency), name + suffix];
+                         return [formatCurrency(value, baseCurrency), name + suffix];
                       }}
                     />
                     <Legend 
