@@ -315,7 +315,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                                              step="0.01"
                                              value={val}
                                              onChange={(e) => handlePriceChange(priceKey, e.target.value)}
-                                             className={`w-32 border rounded p-1 text-right focus:ring-2 focus:ring-accent text-slate-800 ${hasData ? 'border-green-200 bg-green-50' : 'border-slate-300 bg-white'}`}
+                                             className="w-32 border rounded p-1 text-right focus:ring-2 focus:ring-accent" style={{ color: "#1e293b", backgroundColor: hasData ? "#f0fdf4" : "#ffffff", borderColor: hasData ? "#bbf7d0" : "#cbd5e1" }}
                                              placeholder="輸入股價"
                                            />
                                        </td>
