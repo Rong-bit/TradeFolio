@@ -123,7 +123,7 @@ const App: React.FC = () => {
     setIsAuthenticated(false); setIsGuest(false); setCurrentUser('');
     setLoginEmail(''); setLoginPassword('');
     localStorage.removeItem('tf_is_auth'); localStorage.removeItem('tf_last_user'); localStorage.removeItem('tf_is_guest');
-    resetData(); resetRates(); setHasAutoUpdated(false);
+    resetData(); resetRates();
   };
 
   const handleContactAdmin = () => {
@@ -229,18 +229,18 @@ const App: React.FC = () => {
 
   const summary = useMemo<PortfolioSummary>(() => {
     let netInvestedTWD = 0, totalUsdInflow = 0, totalTwdCostForUsd = 0;
-    cashFlows.forEach(cf => {
-      const account = accounts.find(a => a.id === cf.accountId);
+    cashFlows.forEach((cf: CashFlow) => {
+      const account = accounts.find((a: Account) => a.id === cf.accountId);
       const rate = cf.exchangeRate ?? (account?.currency === Currency.USD ? exchangeRate : 1);
       if (cf.type === CashFlowType.DEPOSIT) netInvestedTWD += cf.amountTWD ?? cf.amount * rate;
       else if (cf.type === CashFlowType.WITHDRAW) netInvestedTWD -= cf.amountTWD ?? cf.amount * rate;
       if (cf.type === CashFlowType.DEPOSIT && account?.currency === Currency.USD) { totalUsdInflow += cf.amount; totalTwdCostForUsd += cf.amountTWD ?? cf.amount * (cf.exchangeRate ?? exchangeRate); }
-      if (cf.type === CashFlowType.TRANSFER && cf.targetAccountId) { const ta = accounts.find(a => a.id === cf.targetAccountId); if (account?.currency === Currency.TWD && ta?.currency === Currency.USD) { totalUsdInflow += cf.exchangeRate ? cf.amount/cf.exchangeRate : cf.amount/exchangeRate; totalTwdCostForUsd += cf.amount; } }
+      if (cf.type === CashFlowType.TRANSFER && cf.targetAccountId) { const ta = accounts.find((a: Account) => a.id === cf.targetAccountId); if (account?.currency === Currency.TWD && ta?.currency === Currency.USD) { totalUsdInflow += cf.exchangeRate ? cf.amount/cf.exchangeRate : cf.amount/exchangeRate; totalTwdCostForUsd += cf.amount; } }
     });
     const stockValueTWD = baseHoldings.reduce((s: number, h: Holding) => s + h.currentValue * getMarketRate(h.market, rates), 0);
     const cashValueTWD = computedAccounts.reduce((s: number, a: Account) => s + (a.currency === Currency.USD ? a.balance * exchangeRate : a.balance), 0);
     const totalValueTWD = stockValueTWD, totalAssets = totalValueTWD + cashValueTWD, totalPLTWD = totalAssets - netInvestedTWD;
-    const sumDiv = (type: TransactionType) => transactions.filter(t => t.type === type).reduce((s, t) => s + (t.amount ?? t.price*t.quantity) * getMarketRate(t.market, rates), 0);
+    const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => s + (t.amount ?? t.price*t.quantity) * getMarketRate(t.market, rates), 0);
     return { totalCostTWD:0, totalValueTWD, totalPLTWD, totalPLPercent: netInvestedTWD>0 ? (totalPLTWD/netInvestedTWD)*100 : 0, cashBalanceTWD:cashValueTWD, netInvestedTWD, annualizedReturn:calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate), exchangeRateUsdToTwd:exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate, accumulatedCashDividendsTWD:sumDiv(TransactionType.CASH_DIVIDEND), accumulatedStockDividendsTWD:sumDiv(TransactionType.DIVIDEND), avgExchangeRate: totalUsdInflow>0 ? totalTwdCostForUsd/totalUsdInflow : 0 };
   }, [baseHoldings, computedAccounts, cashFlows, rates, accounts, transactions]);
 
@@ -267,13 +267,13 @@ const App: React.FC = () => {
   // ─── Combined Records & Filters ─────────────────────────────
 
   const combinedRecords = useMemo(() => {
-    const txR: CombinedRecord[] = transactions.map(tx => {
+    const txR: CombinedRecord[] = transactions.map((tx: Transaction) => {
       let amt = tx.amount ?? 0;
       if (!tx.amount) { if (tx.type===TransactionType.BUY||tx.type===TransactionType.TRANSFER_OUT) amt=tx.price*tx.quantity+(tx.fees||0); else if (tx.type===TransactionType.SELL) amt=tx.price*tx.quantity-(tx.fees||0); else amt=tx.price*tx.quantity; }
       return { id:tx.id, date:tx.date, accountId:tx.accountId, type:'TRANSACTION' as const, subType:tx.type, ticker:tx.ticker, market:tx.market, price:tx.price, quantity:tx.quantity, amount:amt, fees:tx.fees||0, description:`${tx.market}-${tx.ticker}`, originalRecord:tx };
     });
     const cfR: CombinedRecord[] = [];
-    cashFlows.forEach(cf => {
+    cashFlows.forEach((cf: CashFlow) => {
       cfR.push({ id:cf.id, date:cf.date, accountId:cf.accountId, type:'CASHFLOW' as const, subType:cf.type, ticker:'', market:'', price:0, quantity:0, amount:cf.amount, fees:0, description:cf.note||cf.type, originalRecord:cf, targetAccountId:cf.targetAccountId, exchangeRate:cf.exchangeRate, isSourceRecord:true });
       if (cf.type==='TRANSFER' && cf.targetAccountId) {
         const sA = accounts.find(a=>a.id===cf.accountId), tA = accounts.find(a=>a.id===cf.targetAccountId);
