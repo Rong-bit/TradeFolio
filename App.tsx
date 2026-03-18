@@ -30,7 +30,7 @@ import BatchUpdateMarketModal from './components/BatchUpdateMarketModal';
 import AssetAllocationSimulator from './components/AssetAllocationSimulator';
 import { fetchCurrentPrices } from './services/yahooFinanceService';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
-import { Language, getLanguage, setLanguage as saveLanguage, t, translate, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
+import { Language, getLanguage, setLanguage as saveLanguage, t, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
 import { PortfolioContext } from './contexts/PortfolioContext';
 import type { View } from './contexts/UIContext';
 import { MarketContext } from './contexts/MarketContext';
