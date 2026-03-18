@@ -303,8 +303,10 @@ const HoldingsTable: React.FC<Props> = () => {
   function renderHoldingRow(h: Holding, isDetailedMode: boolean = false) {
     const isProfit = h.unrealizedPL >= 0;
     const currency = h.market === Market.TW ? 'TWD' : h.market === Market.JP ? 'JPY' : h.market === Market.CN ? 'CNY' : h.market === Market.SZ ? 'CNY' : h.market === Market.IN ? 'INR' : h.market === Market.CA ? 'CAD' : h.market === Market.FR ? 'EUR' : h.market === Market.HK ? 'HKD' : h.market === Market.KR ? 'KRW' : h.market === Market.DE ? 'EUR' : h.market === Market.AU ? 'AUD' : h.market === Market.SA ? 'SAR' : h.market === Market.BR ? 'BRL' : 'USD';
-    const plColor = isProfit ? 'text-emerald-600' : 'text-rose-600';
-    const roiColor = h.annualizedReturn >= 0 ? 'text-blue-600' : 'text-orange-600';
+    // 未實現損益色要與「證券戶列表」的 text-success/text-danger 完全一致
+    const plColor = isProfit ? 'text-success' : 'text-danger';
+    // 年化正值用更深一點的藍色（更「藍」）
+    const roiColor = h.annualizedReturn >= 0 ? 'text-blue-700' : 'text-danger';
     // 只有當 dailyChange 不是 undefined/null 時才根據正負值決定顏色，否則保持預設顏色
     const dailyChangeColor = h.dailyChange !== undefined && h.dailyChange !== null 
       ? (h.dailyChange >= 0 ? 'text-emerald-600' : 'text-rose-600')
