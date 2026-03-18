@@ -42,8 +42,6 @@ const formatAmount = (num: number): string =>
     ? num.toLocaleString('zh-TW')
     : num.toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-}
-
 // ─── App ────────────────────────────────────────────────────────
 
 const App: React.FC = () => {
