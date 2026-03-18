@@ -1,4 +1,5 @@
 import type { Translations } from './types';
+import { en } from './en';
 
 export const de: Translations = {
   baseCurrency: { TWD: 'TWD', USD: 'USD', JPY: 'JPY', EUR: 'EUR', GBP: 'GBP', HKD: 'HKD', KRW: 'KRW', CAD: 'CAD', INR: 'INR', CNY: 'CNY', AUD: 'AUD', SAR: 'SAR', BRL: 'BRL' },
