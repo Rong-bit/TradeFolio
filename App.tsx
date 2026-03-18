@@ -314,8 +314,8 @@ const App: React.FC = () => {
   const handleSaveHistoricalData = (nd: HistoricalData) => { saveHistoricalData(nd); showAlert('歷史資產數據更新完成！報表已根據真實股價修正。','更新成功','success'); };
 
   const availableViews = isGuest
-    ? ['dashboard','history','funds','accounts','simulator','help'] as const
-    : ['dashboard','history','funds','accounts','rebalance','simulator','help'] as const;
+    ? (['dashboard','history','funds','accounts','simulator','help'] as View[])
+    : (['dashboard','history','funds','accounts','rebalance','simulator','help'] as View[]);
 
   // ─── Context Values ────────────────────────────────────────────
   const portfolioValue = {
