@@ -14,7 +14,8 @@ import { useAutoRefresh } from './hooks/useAutoRefresh';
 import {
   calculateHoldings, calculateAccountBalances, generateAdvancedChartData,
   calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance,
-  calculateXIRR, getDisplayRateForBaseCurrency, getTransferTargetAmount, ExchangeRates
+  calculateXIRR, getDisplayRateForBaseCurrency, getTransferTargetAmount, ExchangeRates,
+  marketValueToTWD
 } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import Dashboard from './components/Dashboard';
@@ -41,21 +42,6 @@ const formatAmount = (num: number): string =>
     ? num.toLocaleString('zh-TW')
     : num.toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function getMarketRate(market: Market, rates: ExchangeRates): number {
-  switch (market) {
-    case Market.US: case Market.UK: return rates.exchangeRateUsdToTwd;
-    case Market.JP: return rates.jpyExchangeRate ?? rates.exchangeRateUsdToTwd;
-    case Market.CN: case Market.SZ: return rates.cnyExchangeRate ?? 0;
-    case Market.IN: return rates.inrExchangeRate ?? 0;
-    case Market.CA: return rates.cadExchangeRate ?? 0;
-    case Market.FR: case Market.DE: return rates.eurExchangeRate ?? 0;
-    case Market.HK: return rates.hkdExchangeRate ?? 0;
-    case Market.KR: return rates.krwExchangeRate ?? 0;
-    case Market.AU: return rates.audExchangeRate ?? 0;
-    case Market.SA: return rates.sarExchangeRate ?? 0;
-    case Market.BR: return rates.brlExchangeRate ?? 0;
-    default: return 1;
-  }
 }
 
 // ─── App ────────────────────────────────────────────────────────
@@ -237,10 +223,10 @@ const App: React.FC = () => {
       if (cf.type === CashFlowType.DEPOSIT && account?.currency === Currency.USD) { totalUsdInflow += cf.amount; totalTwdCostForUsd += cf.amountTWD ?? cf.amount * (cf.exchangeRate ?? exchangeRate); }
       if (cf.type === CashFlowType.TRANSFER && cf.targetAccountId) { const ta = accounts.find((a: Account) => a.id === cf.targetAccountId); if (account?.currency === Currency.TWD && ta?.currency === Currency.USD) { totalUsdInflow += cf.exchangeRate ? cf.amount/cf.exchangeRate : cf.amount/exchangeRate; totalTwdCostForUsd += cf.amount; } }
     });
-    const stockValueTWD = baseHoldings.reduce((s: number, h: Holding) => s + h.currentValue * getMarketRate(h.market, rates), 0);
+    const stockValueTWD = baseHoldings.reduce((s: number, h: Holding) => s + marketValueToTWD(h.currentValue, h.market, rates), 0);
     const cashValueTWD = computedAccounts.reduce((s: number, a: Account) => s + (a.currency === Currency.USD ? a.balance * exchangeRate : a.balance), 0);
     const totalValueTWD = stockValueTWD, totalAssets = totalValueTWD + cashValueTWD, totalPLTWD = totalAssets - netInvestedTWD;
-    const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => s + (t.amount ?? t.price*t.quantity) * getMarketRate(t.market, rates), 0);
+    const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => s + marketValueToTWD(t.amount ?? t.price*t.quantity, t.market, rates), 0);
     return { totalCostTWD:0, totalValueTWD, totalPLTWD, totalPLPercent: netInvestedTWD>0 ? (totalPLTWD/netInvestedTWD)*100 : 0, cashBalanceTWD:cashValueTWD, netInvestedTWD, annualizedReturn:calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate), exchangeRateUsdToTwd:exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate, accumulatedCashDividendsTWD:sumDiv(TransactionType.CASH_DIVIDEND), accumulatedStockDividendsTWD:sumDiv(TransactionType.DIVIDEND), avgExchangeRate: totalUsdInflow>0 ? totalTwdCostForUsd/totalUsdInflow : 0 };
   }, [baseHoldings, computedAccounts, cashFlows, rates, accounts, transactions]);
 
@@ -248,7 +234,7 @@ const App: React.FC = () => {
 
   const holdings = useMemo(() => {
     const total = summary.totalValueTWD + summary.cashBalanceTWD;
-    return baseHoldings.map((h: Holding) => ({ ...h, weight: total>0 ? (h.currentValue*getMarketRate(h.market,rates)/total)*100 : 0 }));
+    return baseHoldings.map((h: Holding) => ({ ...h, weight: total>0 ? (marketValueToTWD(h.currentValue, h.market, rates)/total)*100 : 0 }));
   }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, rates]);
 
   // useAutoRefresh：登入且有持倉時自動每 3 分鐘刷新，切回前台立即補刷
@@ -258,30 +244,20 @@ const App: React.FC = () => {
     refreshOnVisible: true,
   });
 
-  // 匯率參數列表（依各函式簽名順序）
-  const ratesArgs = [exchangeRate, jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate] as const;
-
-  // generateAdvancedChartData 簽名：exchangeRate, historicalData, jpy, eur, cny, inr, cad, hkd, krw, aud, sar, brl
   const chartData = useMemo(() => generateAdvancedChartData(
     transactions, cashFlows, accounts,
     summary.totalValueTWD + summary.cashBalanceTWD,
-    exchangeRate, historicalData,
-    jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate,
-    cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate,
-    sarExchangeRate, brlExchangeRate
+    rates, historicalData
   ), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, rates, historicalData]);
 
-  // calculateAssetAllocation 簽名：exchangeRate, jpy, eur, cny, inr, cad, hkd, krw, aud, sar, brl
   const assetAllocation = useMemo(() => calculateAssetAllocation(
-    holdings, summary.cashBalanceTWD, ...ratesArgs
+    holdings, summary.cashBalanceTWD, rates
   ), [holdings, summary.cashBalanceTWD, rates]);
 
   const annualPerformance = useMemo(() => calculateAnnualPerformance(chartData), [chartData]);
 
-  // calculateAccountPerformance 簽名：exchangeRate, jpy, eur, cny, inr, cad, hkd, krw, aud, sar, brl, gbp
   const accountPerformance = useMemo(() => calculateAccountPerformance(
-    computedAccounts, holdings, cashFlows, transactions,
-    ...ratesArgs, gbpExchangeRate
+    computedAccounts, holdings, cashFlows, transactions, rates
   ), [computedAccounts, holdings, cashFlows, transactions, rates]);
 
   // ─── Combined Records & Filters ─────────────────────────────
