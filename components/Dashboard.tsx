@@ -550,7 +550,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: assetAllocation[activePieIndex].color }} />
               <span className="font-semibold" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>{assetAllocation[activePieIndex].name}</span>
               <span className="text-sm ml-auto" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{assetAllocation[activePieIndex].ratio.toFixed(1)}%</span>
-              <span className="font-mono font-bold" style={{ color: isDarkMode ? "#cbd5e1" : "#334155" }}>{formatCurrency(toBase(assetAllocation[activePieIndex].value), baseCurrency)}</span>
+              <span className="font-mono font-bold" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
+                {formatCurrency(toBase(assetAllocation[activePieIndex].value), baseCurrency)}
+              </span>
             </div>
           )}
           <div className="w-full flex flex-col md:flex-row items-center gap-4">
