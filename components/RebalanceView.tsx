@@ -12,7 +12,7 @@ interface Props {}
 const RebalanceView: React.FC<Props> = () => {
   const { summary, holdings, rebalanceTargets: targets,
     updateRebalanceTargets: onUpdateTargets,
-    rebalanceEnabledItems: enabledItems,
+    rebalanceEnabledItems: enabledItemsArray,
     setRebalanceEnabledItems: onUpdateEnabledItems } = usePortfolio();
   const { baseCurrency, exchangeRate, jpyExchangeRate } = useMarket();
   const { language } = useUI();
