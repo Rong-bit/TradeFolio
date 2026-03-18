@@ -349,7 +349,10 @@ const HoldingsTable: React.FC<Props> = () => {
         <td className="px-3 py-2 sticky left-14 bg-white z-10 font-bold text-slate-700">{h.ticker}</td>
         
         {/* 3. Quantity */}
-        <td className="px-3 py-2 text-right font-mono text-slate-600">
+        <td
+          className={`px-3 py-2 text-right font-mono transition-colors ${!isDarkMode ? 'group-hover:text-white' : ''}`}
+          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
+        >
           {(() => {
             const num = h.quantity;
             if (num % 1 === 0) {
