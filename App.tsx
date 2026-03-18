@@ -31,6 +31,7 @@ import { fetchCurrentPrices } from './services/yahooFinanceService';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
 import { Language, getLanguage, setLanguage as saveLanguage, t, translate, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
 import { PortfolioContext } from './contexts/PortfolioContext';
+import type { View } from './contexts/UIContext';
 import { MarketContext } from './contexts/MarketContext';
 import { UIContext } from './contexts/UIContext';
 
@@ -347,7 +348,7 @@ const App: React.FC = () => {
 
   const uiValue = {
     language, setLanguage: handleLanguageChange,
-    view, setView,
+    view, setView: (v: View) => setView(v),
     availableViews,
     isAuthenticated, isGuest, currentUser,
     alertDialog, showAlert, closeAlert,
