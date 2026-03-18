@@ -1,5 +1,5 @@
 import React from 'react';
-import { TransactionType, CashFlowType } from '../types';
+import { TransactionType } from '../types';
 import { t, translate } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';

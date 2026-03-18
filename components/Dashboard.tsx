@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChartDataPoint, Account, CashFlowType, Currency, Market } from '../types';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency } from '../utils/calculations';
+import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -58,34 +58,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     };
 
     holdings.forEach(h => {
-      let valTwd = h.currentValue;
-      if (h.market === Market.US || h.market === Market.UK) {
-        valTwd = h.currentValue * summary.exchangeRateUsdToTwd;
-      } else if (h.market === Market.JP) {
-        valTwd = h.currentValue * (summary.jpyExchangeRate || summary.exchangeRateUsdToTwd);
-      } else if (h.market === Market.CN) {
-        valTwd = h.currentValue * (summary.cnyExchangeRate ?? 0);
-      } else if (h.market === Market.SZ) {
-        valTwd = h.currentValue * (summary.cnyExchangeRate ?? 0);
-      } else if (h.market === Market.IN) {
-        valTwd = h.currentValue * (summary.inrExchangeRate ?? 0);
-      } else if (h.market === Market.CA) {
-        valTwd = h.currentValue * (summary.cadExchangeRate ?? 0);
-      } else if (h.market === Market.FR) {
-        valTwd = h.currentValue * (summary.eurExchangeRate ?? 0);
-      } else if (h.market === Market.HK) {
-        valTwd = h.currentValue * (summary.hkdExchangeRate ?? 0);
-      } else if (h.market === Market.KR) {
-        valTwd = h.currentValue * (summary.krwExchangeRate ?? 0);
-      } else if (h.market === Market.DE) {
-        valTwd = h.currentValue * (summary.eurExchangeRate ?? 0);
-      } else if (h.market === Market.AU) {
-        valTwd = h.currentValue * (summary.audExchangeRate ?? 0);
-      } else if (h.market === Market.SA) {
-        valTwd = h.currentValue * (summary.sarExchangeRate ?? 0);
-      } else if (h.market === Market.BR) {
-        valTwd = h.currentValue * (summary.brlExchangeRate ?? 0);
-      }
+      const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
       marketValues[h.market] = (marketValues[h.market] || 0) + valTwd;
     });
 
@@ -96,7 +69,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       value,
       ratio: totalMarketValue > 0 ? (value / totalMarketValue) * 100 : 0,
     })).filter(item => item.value > 0);
-  }, [holdings, summary.exchangeRateUsdToTwd, summary.jpyExchangeRate, summary.eurExchangeRate, summary.cnyExchangeRate, summary.inrExchangeRate, summary.cadExchangeRate, summary.hkdExchangeRate, summary.krwExchangeRate, summary.audExchangeRate, summary.sarExchangeRate, summary.brlExchangeRate]);
+    }, [holdings, rates]);
 
   const costDetails = useMemo(() => {
     return cashFlows
