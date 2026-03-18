@@ -752,15 +752,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         </div>
       </div>
 
-      <HoldingsTable 
-        holdings={holdings}
-        accounts={accounts}
-        onUpdatePrice={onUpdatePrice}
-        onAutoUpdate={onAutoUpdate}
-        refreshIntervalMs={refreshIntervalMs}
-        updateHint={updateHint}
-        language={language}
-      />
+      <HoldingsTable />
 
       {showCostDetailModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">

@@ -23,13 +23,6 @@ const FundManager: React.FC<Props> = () => {
   const onDelete = removeCashFlow;
   const onClearAll = clearCashFlows;
   const currentExchangeRate = exchangeRate;
-  const currentJpyExchangeRate = jpyExchangeRate;
-  const currentEurExchangeRate = eurExchangeRate;
-  const currentGbpExchangeRate = gbpExchangeRate;
-  const currentHkdExchangeRate = hkdExchangeRate;
-  const currentKrwExchangeRate = krwExchangeRate;
-  const currentCadExchangeRate = cadExchangeRate;
-  const currentInrExchangeRate = inrExchangeRate;
   const rates = {
     exchangeRateUsdToTwd: currentExchangeRate,
     jpyExchangeRate: currentJpyExchangeRate,
@@ -477,7 +470,7 @@ const FundManager: React.FC<Props> = () => {
                        displayTotalTWD = cf.amountTWD;
                    } else {
                        const rate = cf.exchangeRate || (isUSD ? currentExchangeRate : (isJPY ? currentJpyExchangeRate : 1));
-                       const baseAmt = (isUSD || isJPY) ? cf.amount * rate : cf.amount;
+                       const baseAmt = (isUSD || isJPY) ? cf.amount * (rate ?? 1) : cf.amount;
                        const feeVal = cf.fee || 0;
                        if (cf.type === CashFlowType.DEPOSIT) {
                            displayTotalTWD = baseAmt + feeVal;
@@ -530,7 +523,6 @@ const FundManager: React.FC<Props> = () => {
 
                        <td className="px-2 sm:px-3 py-2 text-right">
                          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 justify-end items-end sm:items-center">
-                           {onUpdate && (
                              <button 
                                onClick={() => {
                                  setEditingCashFlow(cf);
@@ -540,7 +532,6 @@ const FundManager: React.FC<Props> = () => {
                              >
                                {translations.common.edit}
                              </button>
-                           )}
                            <button onClick={() => onDelete(cf.id)} className="text-red-400 hover:text-red-600 text-[10px] sm:text-xs border border-red-200 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded hover:bg-red-50 whitespace-nowrap">{translations.common.delete}</button>
                          </div>
                        </td>
@@ -705,7 +696,7 @@ const FundManager: React.FC<Props> = () => {
                            step="0.0001" 
                            placeholder={
                              transferRatePlaceholder ??
-                             (selectedAccount?.currency === Currency.USD ? currentExchangeRate.toString() : selectedAccount?.currency === Currency.JPY ? currentJpyExchangeRate.toString() : currentExchangeRate.toString())
+                             (selectedAccount?.currency === Currency.USD ? currentExchangeRate.toString() : selectedAccount?.currency === Currency.JPY ? (currentJpyExchangeRate ?? currentExchangeRate).toString() : currentExchangeRate.toString())
                            } 
                            value={exchangeRate} 
                            onChange={e => setExchangeRate(e.target.value)} 
