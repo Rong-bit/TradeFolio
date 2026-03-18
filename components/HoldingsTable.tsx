@@ -18,6 +18,21 @@ const HoldingsTable: React.FC<Props> = () => {
   const translations = t(language);
   const [isUpdating, setIsUpdating] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('merged');
+  // ⑤ Sortable columns
+  type SortKey = 'weight' | 'unrealizedPL' | 'unrealizedPLPercent' | 'annualizedReturn' | 'dailyChangePercent' | 'currentValue';
+  const [sortKey, setSortKey] = useState<SortKey>('weight');
+  const [sortAsc, setSortAsc] = useState(false);
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortAsc(a => !a);
+    else { setSortKey(key); setSortAsc(false); }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => (
+    <span className={`ml-0.5 text-[10px] ${sortKey === col ? 'text-indigo-500' : 'text-slate-300'}`}>
+      {sortKey === col ? (sortAsc ? '↑' : '↓') : '↕'}
+    </span>
+  );
 
   // 合併相同標的 (Ticker + Market) 的持倉
   const mergedHoldings = useMemo(() => {
@@ -73,6 +88,15 @@ const HoldingsTable: React.FC<Props> = () => {
     // Sort by Weight Descending
     return Array.from(map.values()).sort((a, b) => b.weight - a.weight);
   }, [holdings]);
+
+  // ⑤ Apply sort to mergedHoldings
+  const sortedMergedHoldings = useMemo(() => {
+    return [...mergedHoldings].sort((a, b) => {
+      const av = (a as any)[sortKey] ?? 0;
+      const bv = (b as any)[sortKey] ?? 0;
+      return sortAsc ? av - bv : bv - av;
+    });
+  }, [mergedHoldings, sortKey, sortAsc]);
 
   // 明細顯示：依帳戶分組
   const groupedByAccount = useMemo(() => {
@@ -162,32 +186,48 @@ const HoldingsTable: React.FC<Props> = () => {
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm text-left">
+          {/* ⑤ Sortable headers */}
           <thead className="bg-white text-slate-500 text-xs uppercase font-bold tracking-wider border-b border-slate-100">
             <tr>
-              <th className="px-3 py-2">{translations.holdings.market}</th>
-              <th className="px-3 py-2">{translations.holdings.ticker}</th>
+              <th className="px-3 py-2 sticky left-0 bg-white z-10">{translations.holdings.market}</th>
+              <th className="px-3 py-2 sticky left-14 bg-white z-10">{translations.holdings.ticker}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.currentPrice}</th>
-              <th className="px-3 py-2 w-32 text-left">{translations.holdings.weight}</th>
+              <th
+                className="px-3 py-2 w-32 text-left cursor-pointer hover:text-indigo-600 select-none"
+                onClick={() => handleSort('weight')}
+              >{translations.holdings.weight}<SortIcon col="weight" /></th>
               <th className="px-3 py-2 text-right">{translations.holdings.cost}</th>
-              <th className="px-3 py-2 text-right">{translations.holdings.marketValue}</th>
-              <th className="px-3 py-2 text-right">{translations.holdings.profitLoss}</th>
-              <th className="px-3 py-2 text-right">{translations.holdings.annualizedROI}</th>
-              <th className="px-3 py-2 text-right">{translations.holdings.dailyChange}</th>
+              <th
+                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
+                onClick={() => handleSort('currentValue')}
+              >{translations.holdings.marketValue}<SortIcon col="currentValue" /></th>
+              <th
+                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
+                onClick={() => handleSort('unrealizedPL')}
+              >{translations.holdings.profitLoss}<SortIcon col="unrealizedPL" /></th>
+              <th
+                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
+                onClick={() => handleSort('annualizedReturn')}
+              >{translations.holdings.annualizedROI}<SortIcon col="annualizedReturn" /></th>
+              <th
+                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
+                onClick={() => handleSort('dailyChangePercent')}
+              >{translations.holdings.dailyChange}<SortIcon col="dailyChangePercent" /></th>
               <th className="px-3 py-2 text-right">{translations.holdings.avgPrice}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 bg-white">
             {displayMode === 'merged' ? (
               // 合併顯示模式
-              mergedHoldings.length === 0 ? (
+              sortedMergedHoldings.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-3 py-6 text-center text-slate-400">
                     {translations.holdings.noHoldings}
                   </td>
                 </tr>
               ) : (
-                mergedHoldings.map((h) => {
+                sortedMergedHoldings.map((h) => {
                   return renderHoldingRow(h);
                 })
               )
@@ -264,7 +304,7 @@ const HoldingsTable: React.FC<Props> = () => {
     return (
       <tr key={uniqueKey} className={`hover:bg-slate-50 transition-colors group ${isDetailedMode ? 'bg-slate-50/30' : ''}`}>
         {/* 1. Market */}
-        <td className="px-3 py-2">
+        <td className="px-3 py-2 sticky left-0 bg-white z-10">
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
             h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' : 
             h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' : 
@@ -286,7 +326,7 @@ const HoldingsTable: React.FC<Props> = () => {
         </td>
         
         {/* 2. Ticker */}
-        <td className="px-3 py-2 font-bold text-slate-700">{h.ticker}</td>
+        <td className="px-3 py-2 sticky left-14 bg-white z-10 font-bold text-slate-700">{h.ticker}</td>
         
         {/* 3. Quantity */}
         <td className="px-3 py-2 text-right font-mono text-slate-600">

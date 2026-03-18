@@ -5,7 +5,7 @@ import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, mar
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
+import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, Brush, ReferenceLine, AreaChart, Area, Sector } from 'recharts';
 import HoldingsTable from './HoldingsTable';
 import { t, translate } from '../utils/i18n';
 
@@ -28,6 +28,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const [showAccountInUSD, setShowAccountInUSD] = useState(false); 
   const [showAnnualInUSD, setShowAnnualInUSD] = useState(false);
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
+  const [activePieIndex, setActivePieIndex] = useState<number | undefined>(undefined);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [marketBarAnimated, setMarketBarAnimated] = useState(false);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const displayRate = getDisplayRateForBaseCurrency(baseCurrency, rates); 
@@ -35,6 +38,12 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
   useEffect(() => {
     setIsMounted(true);
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    mq.addEventListener('change', handler);
+    setTimeout(() => setMarketBarAnimated(true), 300);
+    return () => mq.removeEventListener('change', handler);
   }, []);
 
   // 計算市場分布比例
@@ -127,50 +136,130 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
+      {/* ① Summary Cards — enhanced with trend arrows + sparkline */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 border-purple-500 relative">
-          <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider flex justify-between items-center">
+
+        {/* Net Cost Card */}
+        <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-purple-500 relative overflow-hidden group hover:shadow-md transition-shadow">
+          <div className="absolute top-0 right-0 w-16 h-16 opacity-5 group-hover:opacity-10 transition-opacity">
+            <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="28" fill="#7c3aed"/></svg>
+          </div>
+          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider flex justify-between items-center">
             {translations.dashboard.netCost}
-            <button 
+            <button
               onClick={() => setShowCostDetailModal(true)}
-              className="text-indigo-600 hover:text-indigo-800 text-[10px] sm:text-xs bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100"
+              className="text-indigo-600 hover:text-indigo-800 text-[10px] bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100"
               title={translations.dashboard.viewCalculationDetails}
-            >
-              🔍 {translations.dashboard.detail}
-            </button>
+            >🔍 {translations.dashboard.detail}</button>
           </h4>
-          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
+          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2 tabular-nums">
             {formatCurrency(toBase(summary.netInvestedTWD), baseCurrency)}
           </p>
+          {/* Sparkline: historical cost trend */}
+          {isMounted && chartData.length > 1 && (
+            <div className="mt-2 h-8">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData.slice(-8).map(d => ({ v: toBase(d.cost) }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="sg-purple" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="v" stroke="#7c3aed" strokeWidth={1.5} fill="url(#sg-purple)" dot={false} isAnimationActive={true}/>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 border-green-500">
-          <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
-          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
-            {formatCurrency(toBase(summary.totalValueTWD + summary.cashBalanceTWD), baseCurrency)}
-          </p>
-          <div className="flex justify-between items-end mt-1">
-             <p className="text-[10px] sm:text-xs text-slate-400">{translations.dashboard.includeCash}: {formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</p>
-          </div>
-        </div>
-        <div className={`bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-success' : 'border-danger'}`}>
-          <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
-          <div className="flex items-baseline gap-2 mt-2">
-            <p className={`text-xl sm:text-2xl font-bold ${summary.totalPLTWD >= 0 ? 'text-success' : 'text-danger'}`}>
-               {summary.totalPLTWD >= 0 ? '+' : ''}{formatCurrency(toBase(summary.totalPLTWD), baseCurrency)}
+
+        {/* Total Assets Card */}
+        <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-green-500 relative overflow-hidden group hover:shadow-md transition-shadow">
+          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
+          <div className="flex items-center gap-2 mt-2">
+            <p className="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums">
+              {formatCurrency(toBase(summary.totalValueTWD + summary.cashBalanceTWD), baseCurrency)}
             </p>
           </div>
-          <p className={`text-xs sm:text-sm font-bold mt-1 ${summary.totalPLTWD >= 0 ? 'text-success' : 'text-danger'}`}>
-             {summary.totalPLPercent.toFixed(2)}%
-          </p>
+          <p className="text-[10px] text-slate-400 mt-0.5">{translations.dashboard.includeCash}: {formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</p>
+          {isMounted && chartData.length > 1 && (
+            <div className="mt-2 h-8">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData.slice(-8).map(d => ({ v: toBase(d.totalAssets || 0) }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="sg-green" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="v" stroke="#22c55e" strokeWidth={1.5} fill="url(#sg-green)" dot={false} isAnimationActive={true}/>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
-         <div className="bg-white p-4 sm:p-6 rounded-xl shadow border-l-4 border-blue-500">
-          <h4 className="text-slate-500 text-xs sm:text-sm font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
-          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2">
-            {summary.annualizedReturn.toFixed(1)}%
-          </p>
-          <p className="text-[10px] sm:text-xs text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(toBase(summary.netInvestedTWD * 1.08), baseCurrency)}</p>
+
+        {/* Total P/L Card */}
+        <div className={`bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-emerald-500' : 'border-rose-500'} group hover:shadow-md transition-shadow`}>
+          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
+          <div className="flex items-center gap-2 mt-2">
+            {/* ① Trend arrow */}
+            <span className={`text-lg leading-none ${summary.totalPLTWD >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {summary.totalPLTWD >= 0 ? '↑' : '↓'}
+            </span>
+            <p className={`text-xl sm:text-2xl font-bold tabular-nums ${summary.totalPLTWD >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {summary.totalPLTWD >= 0 ? '+' : ''}{formatCurrency(toBase(summary.totalPLTWD), baseCurrency)}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 mt-1">
+            <span className={`inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded ${summary.totalPLTWD >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+              {summary.totalPLPercent.toFixed(2)}%
+            </span>
+          </div>
+          {isMounted && chartData.length > 1 && (
+            <div className="mt-2 h-8">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData.slice(-8).map(d => ({ v: toBase(d.profit || 0) }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="sg-pl" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={summary.totalPLTWD >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={summary.totalPLTWD >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="v" stroke={summary.totalPLTWD >= 0 ? "#10b981" : "#ef4444"} strokeWidth={1.5} fill="url(#sg-pl)" dot={false} isAnimationActive={true}/>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
+
+        {/* Annualized Return Card */}
+        <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-blue-500 group hover:shadow-md transition-shadow">
+          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
+          <div className="flex items-center gap-2 mt-2">
+            <span className={`text-lg leading-none ${summary.annualizedReturn >= 0 ? 'text-blue-500' : 'text-orange-500'}`}>
+              {summary.annualizedReturn >= 0 ? '↑' : '↓'}
+            </span>
+            <p className="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums">
+              {summary.annualizedReturn.toFixed(1)}%
+            </p>
+          </div>
+          {/* ① Progress bar showing return vs 8% target */}
+          <div className="mt-2">
+            <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
+              <span>0%</span><span className="text-slate-500">目標 8%</span><span>20%+</span>
+            </div>
+            <div className="w-full bg-slate-100 rounded-full h-1.5 relative">
+              <div
+                className="h-full rounded-full bg-blue-500 transition-all duration-1000"
+                style={{ width: `${Math.min(Math.max((summary.annualizedReturn / 20) * 100, 0), 100)}%` }}
+              />
+              <div className="absolute top-0 h-full w-px bg-slate-400" style={{ left: '40%' }} title="目標 8%" />
+            </div>
+          </div>
+          <p className="text-[10px] text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(toBase(summary.netInvestedTWD * 1.08), baseCurrency)}</p>
+        </div>
+
       </div>
 
       {/* Detailed Statistics Toggle */}
@@ -346,6 +435,8 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     {/* Lines */}
                     <Line yAxisId="left" type="monotone" dataKey="totalAssets" name={translations.dashboard.chartLabels.totalAssets} stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} />
                     <Line yAxisId="left" type="monotone" dataKey="estTotalAssets" name={translations.dashboard.chartLabels.estimatedAssets} stroke="#f59e0b" strokeWidth={2} dot={false} />
+                    {/* ④ Brush for range selection */}
+                    <Brush dataKey="year" height={24} stroke="#e2e8f0" fill="#f8fafc" travellerWidth={6} startIndex={Math.max(0, chartData.length - 8)} />
                   </ComposedChart>
                 </ResponsiveContainer>
               ) : (
@@ -400,20 +491,35 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 [Market.BR]: 'bg-cyan-600',
               };
               
+              // ③ Market flag map
+              const marketFlags: Record<Market, string> = {
+                [Market.TW]: '🇹🇼', [Market.US]: '🇺🇸', [Market.UK]: '🇬🇧',
+                [Market.JP]: '🇯🇵', [Market.CN]: '🇨🇳', [Market.SZ]: '🇨🇳',
+                [Market.IN]: '🇮🇳', [Market.CA]: '🇨🇦', [Market.FR]: '🇫🇷',
+                [Market.HK]: '🇭🇰', [Market.KR]: '🇰🇷', [Market.DE]: '🇩🇪',
+                [Market.AU]: '🇦🇺', [Market.SA]: '🇸🇦', [Market.BR]: '🇧🇷',
+              };
               return (
-                <div key={item.market} className="flex items-center gap-4">
-                  <div className="w-20 text-sm font-medium text-slate-700">{marketNames[item.market]}</div>
-                  <div className="flex-1 bg-slate-200 rounded-full h-6 overflow-hidden relative">
-                    <div 
-                      className={`h-full ${marketColors[item.market]} transition-all duration-500`}
-                      style={{ width: `${item.ratio}%` }}
-                    >
-                    </div>
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-700 text-xs font-bold ml-2 whitespace-nowrap">
+                <div key={item.market} className="flex items-center gap-3 group">
+                  <div className="w-24 flex items-center gap-1.5 text-sm font-medium text-slate-700 shrink-0">
+                    <span className="text-base leading-none">{marketFlags[item.market]}</span>
+                    <span>{marketNames[item.market]}</span>
+                  </div>
+                  <div className="flex-1 bg-slate-100 rounded-full h-5 overflow-hidden relative">
+                    {/* ③ Animated bar */}
+                    <div
+                      className={`h-full ${marketColors[item.market]} rounded-full transition-all ease-out`}
+                      style={{
+                        width: marketBarAnimated ? `${item.ratio}%` : '0%',
+                        transitionDuration: '800ms',
+                        transitionDelay: `${marketDistribution.indexOf(item) * 60}ms`,
+                      }}
+                    />
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-[10px] font-bold whitespace-nowrap mix-blend-multiply dark:mix-blend-screen">
                       {item.ratio.toFixed(1)}%
                     </span>
                   </div>
-                  <div className="w-24 text-right text-sm font-mono text-slate-600">
+                  <div className="w-28 text-right text-xs font-mono text-slate-500 group-hover:text-slate-800 transition-colors">
                     {formatCurrency(toBase(item.value), baseCurrency)}
                   </div>
                 </div>
@@ -427,46 +533,81 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         )}
       </div>
 
-      {/* Allocation Pie Chart */}
+      {/* ② Allocation Pie Chart — interactive with active sector */}
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-          <h3 className="font-bold text-slate-800 text-xl mb-4">{translations.dashboard.allocation}</h3>
-          <div className="w-full flex justify-center">
-            <div className="w-full max-w-md md:max-w-lg aspect-square">
+          <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
+          {activePieIndex !== undefined && assetAllocation[activePieIndex] && (
+            <div className="mb-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100 flex items-center gap-3 animate-pulse-once">
+              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: assetAllocation[activePieIndex].color }} />
+              <span className="font-semibold text-slate-800">{assetAllocation[activePieIndex].name}</span>
+              <span className="text-slate-500 text-sm ml-auto">{assetAllocation[activePieIndex].ratio.toFixed(1)}%</span>
+              <span className="font-mono font-bold text-slate-700">{formatCurrency(toBase(assetAllocation[activePieIndex].value), baseCurrency)}</span>
+            </div>
+          )}
+          <div className="w-full flex flex-col md:flex-row items-center gap-4">
+            <div className="w-full max-w-xs h-64">
               {isMounted && assetAllocation.length > 0 ? (
-                 <ResponsiveContainer width="100%" height="100%">
-                   <PieChart>
-                      <Pie
-                        data={assetAllocation}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={70}
-                        outerRadius={100}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {assetAllocation.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => formatCurrency(toBase(value), baseCurrency)} />
-                      <Legend 
-                         layout="vertical" 
-                         verticalAlign="middle" 
-                         align="right"
-                         wrapperStyle={{ fontSize: '10px', paddingLeft: '10px' }}
-                         formatter={(value) => {
-                           const item = assetAllocation.find(a => a.name === value);
-                           return <span className="text-xs text-slate-600 ml-1">{value} ({item?.ratio.toFixed(1)}%)</span>;
-                         }}
-                      />
-                   </PieChart>
-                 </ResponsiveContainer>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={assetAllocation}
+                      cx="50%" cy="50%"
+                      innerRadius={60} outerRadius={90}
+                      paddingAngle={2}
+                      dataKey="value"
+                      activeIndex={activePieIndex}
+                      activeShape={(props: any) => {
+                        const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
+                        return (
+                          <Sector
+                            cx={cx} cy={cy}
+                            innerRadius={innerRadius - 4}
+                            outerRadius={outerRadius + 8}
+                            startAngle={startAngle}
+                            endAngle={endAngle}
+                            fill={fill}
+                          />
+                        );
+                      }}
+                      onMouseEnter={(_: any, index: number) => setActivePieIndex(index)}
+                      onMouseLeave={() => setActivePieIndex(undefined)}
+                    >
+                      {assetAllocation.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color}
+                          opacity={activePieIndex === undefined || activePieIndex === index ? 1 : 0.45}
+                          style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number, name: string) => [formatCurrency(toBase(value), baseCurrency), name]}
+                      contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
               ) : (
                 <div className="h-full flex items-center justify-center text-slate-400">
                   {!isMounted ? translations.dashboard.chartLoading : translations.dashboard.noHoldings}
                 </div>
               )}
+            </div>
+            {/* Legend as interactive list */}
+            <div className="flex-1 space-y-1 w-full max-w-xs">
+              {assetAllocation.map((item, index) => (
+                <div
+                  key={item.name}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${activePieIndex === index ? 'bg-slate-50 shadow-sm' : 'hover:bg-slate-50/60'}`}
+                  onMouseEnter={() => setActivePieIndex(index)}
+                  onMouseLeave={() => setActivePieIndex(undefined)}
+                >
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" style={{ backgroundColor: item.color, transform: activePieIndex === index ? 'scale(1.4)' : 'scale(1)' }} />
+                  <span className="text-xs text-slate-700 flex-1">{item.name}</span>
+                  <span className="text-xs font-bold text-slate-500">{item.ratio.toFixed(1)}%</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
