@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Holding, Market } from '../types';
-import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
+import { formatCurrency, valueInBaseCurrency, marketValueToTWD } from '../utils/calculations';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
@@ -61,40 +61,12 @@ const RebalanceView: React.FC<Props> = () => {
         accountIds.includes(h.accountId) && h.ticker === ticker
       );
       const totalValTwd = mergedHolding.reduce((sum, h) => {
-        let valTwd: number;
-        if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
-        else if (h.market === Market.JP) valTwd = (jpyExchangeRate ?? exchangeRate) * h.currentValue;
-        else if (h.market === Market.CN) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.SZ) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.IN) valTwd = (summary.inrExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.CA) valTwd = (summary.cadExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.FR) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.HK) valTwd = (summary.hkdExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.KR) valTwd = (summary.krwExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.DE) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.AU) valTwd = (summary.audExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.SA) valTwd = (summary.sarExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.BR) valTwd = (summary.brlExchangeRate ?? 0) * h.currentValue;
-        else valTwd = h.currentValue;
+        const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
         return sum + valTwd;
       }, 0);
       if (totalValTwd > 0) {
         mergedHolding.forEach(h => {
-          let valTwd: number;
-          if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
-          else if (h.market === Market.JP) valTwd = (jpyExchangeRate ?? exchangeRate) * h.currentValue;
-          else if (h.market === Market.CN) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
-          else if (h.market === Market.SZ) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
-          else if (h.market === Market.IN) valTwd = (summary.inrExchangeRate ?? 0) * h.currentValue;
-          else if (h.market === Market.CA) valTwd = (summary.cadExchangeRate ?? 0) * h.currentValue;
-          else if (h.market === Market.FR) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.HK) valTwd = (summary.hkdExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.KR) valTwd = (summary.krwExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.DE) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.AU) valTwd = (summary.audExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.SA) valTwd = (summary.sarExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.BR) valTwd = (summary.brlExchangeRate ?? 0) * h.currentValue;
-          else valTwd = h.currentValue;
+          const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
           const ratio = valTwd / totalValTwd;
           const oldKey = `${h.accountId}-${h.ticker}`;
           newTargets[oldKey] = parseFloat((num * ratio).toFixed(1));
@@ -113,21 +85,7 @@ const RebalanceView: React.FC<Props> = () => {
     const mergedMap = new Map<string, { holdings: Holding[], totalValTwd: number }>();
     holdings.forEach(h => {
       const mergedKey = `${h.market}-${h.ticker}`;
-      let valTwd: number;
-      if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
-      else if (h.market === Market.JP) valTwd = (jpyExchangeRate ?? exchangeRate) * h.currentValue;
-      else if (h.market === Market.CN) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.SZ) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.IN) valTwd = (summary.inrExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.CA) valTwd = (summary.cadExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.FR) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.HK) valTwd = (summary.hkdExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.KR) valTwd = (summary.krwExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.DE) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.AU) valTwd = (summary.audExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.SA) valTwd = (summary.sarExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.BR) valTwd = (summary.brlExchangeRate ?? 0) * h.currentValue;
-      else valTwd = h.currentValue;
+      const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
       if (!mergedMap.has(mergedKey)) {
         mergedMap.set(mergedKey, { holdings: [], totalValTwd: 0 });
       }
@@ -155,21 +113,7 @@ const RebalanceView: React.FC<Props> = () => {
         
         // 按現值比例分配給各個帳戶
         merged.holdings.forEach(h => {
-          let valTwd: number;
-          if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
-          else if (h.market === Market.JP) valTwd = (jpyExchangeRate ?? exchangeRate) * h.currentValue;
-          else if (h.market === Market.CN) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
-          else if (h.market === Market.SZ) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
-          else if (h.market === Market.IN) valTwd = (summary.inrExchangeRate ?? 0) * h.currentValue;
-          else if (h.market === Market.CA) valTwd = (summary.cadExchangeRate ?? 0) * h.currentValue;
-          else if (h.market === Market.FR) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.HK) valTwd = (summary.hkdExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.KR) valTwd = (summary.krwExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.DE) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.AU) valTwd = (summary.audExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.SA) valTwd = (summary.sarExchangeRate ?? 0) * h.currentValue;
-        else if (h.market === Market.BR) valTwd = (summary.brlExchangeRate ?? 0) * h.currentValue;
-          else valTwd = h.currentValue;
+          const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
           const ratio = merged.totalValTwd > 0 ? valTwd / merged.totalValTwd : 0;
           const oldKey = `${h.accountId}-${h.ticker}`;
           newTargets[oldKey] = parseFloat((pct * ratio).toFixed(1));
@@ -237,21 +181,7 @@ const RebalanceView: React.FC<Props> = () => {
     
     holdings.forEach(h => {
       const mergedKey = `${h.market}-${h.ticker}`;
-      let valTwd: number;
-      if (h.market === Market.US || h.market === Market.UK) valTwd = h.currentValue * exchangeRate;
-      else if (h.market === Market.JP) valTwd = (jpyExchangeRate ?? exchangeRate) * h.currentValue;
-      else if (h.market === Market.CN) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.SZ) valTwd = (summary.cnyExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.IN) valTwd = (summary.inrExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.CA) valTwd = (summary.cadExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.FR) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.HK) valTwd = (summary.hkdExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.KR) valTwd = (summary.krwExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.DE) valTwd = (summary.eurExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.AU) valTwd = (summary.audExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.SA) valTwd = (summary.sarExchangeRate ?? 0) * h.currentValue;
-      else if (h.market === Market.BR) valTwd = (summary.brlExchangeRate ?? 0) * h.currentValue;
-      else valTwd = h.currentValue;
+      const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
       
       if (!mergedMap.has(mergedKey)) {
         mergedMap.set(mergedKey, {
@@ -322,20 +252,7 @@ const RebalanceView: React.FC<Props> = () => {
       
       let diffShares = 0;
       if (avgPrice > 0 && isEnabled) {
-        const rate = merged.market === Market.US || merged.market === Market.UK ? exchangeRate
-          : merged.market === Market.JP ? (jpyExchangeRate ?? exchangeRate)
-          : merged.market === Market.CN ? (summary.cnyExchangeRate ?? 0)
-          : merged.market === Market.SZ ? (summary.cnyExchangeRate ?? 0)
-          : merged.market === Market.IN ? (summary.inrExchangeRate ?? 0)
-          : merged.market === Market.CA ? (summary.cadExchangeRate ?? 0)
-          : merged.market === Market.FR ? (summary.eurExchangeRate ?? 0)
-          : merged.market === Market.HK ? (summary.hkdExchangeRate ?? 0)
-          : merged.market === Market.KR ? (summary.krwExchangeRate ?? 0)
-          : merged.market === Market.DE ? (summary.eurExchangeRate ?? 0)
-          : merged.market === Market.AU ? (summary.audExchangeRate ?? 0)
-          : merged.market === Market.SA ? (summary.sarExchangeRate ?? 0)
-          : merged.market === Market.BR ? (summary.brlExchangeRate ?? 0)
-          : 1;
+        const rate = marketValueToTWD(1, merged.market, rates);
         diffShares = rate > 0 ? diffValTwd / rate / avgPrice : 0;
       }
 

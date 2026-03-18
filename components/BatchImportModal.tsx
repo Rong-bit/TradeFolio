@@ -133,9 +133,7 @@ const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
     try {
       setErrorMsg('');
       setFailCount(0); // Reset failure count
-      console.log('開始解析文字:', text);
       const lines = text.split('\n');
-      console.log('分割後的行數:', lines.length, lines);
       const transactions: Transaction[] = [];
       let currentFailures = 0;
       let headers: string[] = [];

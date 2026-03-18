@@ -86,9 +86,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
           const needsUpdate = val === undefined || val === null || val === 0;
           
           if (!needsUpdate) {
-              console.log(`已找到 ${t.ticker} 的價格: ${val} (key: ${displayTicker})`);
           } else {
-              console.log(`需要更新 ${t.ticker}，當前值: ${val} (檢查的 keys: ${displayTicker}, ${cleanTicker}, ${t.ticker})`);
           }
           
           return needsUpdate;

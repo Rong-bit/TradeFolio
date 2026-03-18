@@ -14,31 +14,13 @@ interface Props {}
 const FundManager: React.FC<Props> = () => {
   const { accounts, cashFlows, addCashFlow, updateCashFlow: onUpdate,
     addBatchCashFlows, removeCashFlow, clearCashFlows } = usePortfolio();
-  const { baseCurrency,
-    exchangeRate: currentExchangeRate,
-    jpyExchangeRate: currentJpyExchangeRate,
-    eurExchangeRate: currentEurExchangeRate,
-    gbpExchangeRate: currentGbpExchangeRate,
-    hkdExchangeRate: currentHkdExchangeRate,
-    krwExchangeRate: currentKrwExchangeRate,
-    cadExchangeRate: currentCadExchangeRate,
-    inrExchangeRate: currentInrExchangeRate,
-  } = useMarket();
+  const { baseCurrency, rates } = useMarket();
+  const { exchangeRateUsdToTwd: currentExchangeRate, jpyExchangeRate: currentJpyExchangeRate, eurExchangeRate: currentEurExchangeRate, gbpExchangeRate: currentGbpExchangeRate, hkdExchangeRate: currentHkdExchangeRate, krwExchangeRate: currentKrwExchangeRate, cadExchangeRate: currentCadExchangeRate, inrExchangeRate: currentInrExchangeRate } = rates;
   const { language } = useUI();
   const onAdd = addCashFlow;
   const onBatchAdd = addBatchCashFlows;
   const onDelete = removeCashFlow;
   const onClearAll = clearCashFlows;
-  const rates = {
-    exchangeRateUsdToTwd: currentExchangeRate,
-    jpyExchangeRate: currentJpyExchangeRate,
-    eurExchangeRate: currentEurExchangeRate,
-    gbpExchangeRate: currentGbpExchangeRate,
-    hkdExchangeRate: currentHkdExchangeRate,
-    krwExchangeRate: currentKrwExchangeRate,
-    cadExchangeRate: currentCadExchangeRate,
-    inrExchangeRate: currentInrExchangeRate,
-  };
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const translations = t(language);
   const ff = translations.fundForm;
