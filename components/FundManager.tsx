@@ -14,15 +14,21 @@ interface Props {}
 const FundManager: React.FC<Props> = () => {
   const { accounts, cashFlows, addCashFlow, updateCashFlow: onUpdate,
     addBatchCashFlows, removeCashFlow, clearCashFlows } = usePortfolio();
-  const { baseCurrency, exchangeRate, jpyExchangeRate, eurExchangeRate,
-    gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cadExchangeRate,
-    inrExchangeRate } = useMarket();
+  const { baseCurrency,
+    exchangeRate: currentExchangeRate,
+    jpyExchangeRate: currentJpyExchangeRate,
+    eurExchangeRate: currentEurExchangeRate,
+    gbpExchangeRate: currentGbpExchangeRate,
+    hkdExchangeRate: currentHkdExchangeRate,
+    krwExchangeRate: currentKrwExchangeRate,
+    cadExchangeRate: currentCadExchangeRate,
+    inrExchangeRate: currentInrExchangeRate,
+  } = useMarket();
   const { language } = useUI();
   const onAdd = addCashFlow;
   const onBatchAdd = addBatchCashFlows;
   const onDelete = removeCashFlow;
   const onClearAll = clearCashFlows;
-  const currentExchangeRate = exchangeRate;
   const rates = {
     exchangeRateUsdToTwd: currentExchangeRate,
     jpyExchangeRate: currentJpyExchangeRate,
