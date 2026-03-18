@@ -680,13 +680,13 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                         onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
                         style={{ transition: "background-color 0.15s" }}
                       >
-                        <td className="px-6 py-3 font-bold" style={{ color: "#334155" }}>
+                        <td className="px-6 py-3 font-bold text-slate-700">
                           {item.year}
                           {item.isRealData && <span title={translations.dashboard.realHistoricalData} className="ml-2 text-xs cursor-help">✅</span>}
                         </td>
-                        <td className="px-6 py-3 text-right" style={{ color: "#64748b" }}>{formatCurrency(startAssets, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right" style={{ color: "#64748b" }}>{formatCurrency(netInflow, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right font-medium" style={{ color: "#1e293b" }}>{formatCurrency(endAssets, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{formatCurrency(startAssets, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{formatCurrency(netInflow, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right font-medium" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{formatCurrency(endAssets, displayCurrency)}</td>
                         <td className="px-6 py-3 text-right font-bold" style={{ color: profit >= 0 ? "#10b981" : "#ef4444" }}>
                           {formatCurrency(profit, displayCurrency)}
                         </td>
