@@ -59,7 +59,7 @@ const HistoryView: React.FC<Props> = ({
   const tr = t(language);
 
   return (
-    <div className="space-y-6">
+    <>
       {/* Tab 切換 */}
       <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit">
         <button
@@ -82,7 +82,8 @@ const HistoryView: React.FC<Props> = ({
 
       {activeTab === 'timeline' ? (
         <StockTimeline />
-      ) : (<>
+      ) : (
+        <div className="space-y-6">
 
       {/* 操作列 */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100">
@@ -379,8 +380,9 @@ const HistoryView: React.FC<Props> = ({
           </div>
         )}
       </div>
-    </div>
-    </>)}
+        </div>
+      )}
+    </>
   );
 };
 
