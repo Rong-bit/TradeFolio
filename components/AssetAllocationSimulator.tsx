@@ -9,21 +9,7 @@ import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 
-interface Props {}>;
-  baseCurrency?: BaseCurrency;
-  exchangeRateUsdToTwd?: number;
-  jpyExchangeRate?: number;
-  eurExchangeRate?: number;
-  gbpExchangeRate?: number;
-  hkdExchangeRate?: number;
-  krwExchangeRate?: number;
-  cadExchangeRate?: number;
-  inrExchangeRate?: number;
-  audExchangeRate?: number;
-  sarExchangeRate?: number;
-  brlExchangeRate?: number;
-  language: Language;
-}
+interface Props {}
 
 const AssetAllocationSimulator: React.FC<Props> = () => {
   const { holdings: rawHoldings } = usePortfolio();
@@ -33,19 +19,6 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
     sarExchangeRate, brlExchangeRate } = useMarket();
   const { language } = useUI();
   const holdings = rawHoldings.map(h => ({ ticker: h.ticker, market: h.market, annualizedReturn: h.annualizedReturn }));
-  const rates = {
-    exchangeRateUsdToTwd,
-    jpyExchangeRate,
-    eurExchangeRate,
-    gbpExchangeRate,
-    hkdExchangeRate,
-    krwExchangeRate,
-    cadExchangeRate,
-    inrExchangeRate,
-    audExchangeRate,
-    sarExchangeRate,
-    brlExchangeRate,
-  };
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const translations = t(language);
   const [assets, setAssets] = useState<AssetSimulationItem[]>([]);
