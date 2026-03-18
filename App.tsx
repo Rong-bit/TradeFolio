@@ -258,11 +258,31 @@ const App: React.FC = () => {
     refreshOnVisible: true,
   });
 
-  const rA = [exchangeRate, jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate] as const;
-  const chartData = useMemo(() => generateAdvancedChartData(transactions, cashFlows, accounts, summary.totalValueTWD+summary.cashBalanceTWD, ...rA, historicalData), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, rates, historicalData]);
-  const assetAllocation = useMemo(() => calculateAssetAllocation(holdings, summary.cashBalanceTWD, ...rA), [holdings, summary.cashBalanceTWD, rates]);
+  // 匯率參數列表（依各函式簽名順序）
+  const ratesArgs = [exchangeRate, jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate] as const;
+
+  // generateAdvancedChartData 簽名：exchangeRate, historicalData, jpy, eur, cny, inr, cad, hkd, krw, aud, sar, brl
+  const chartData = useMemo(() => generateAdvancedChartData(
+    transactions, cashFlows, accounts,
+    summary.totalValueTWD + summary.cashBalanceTWD,
+    exchangeRate, historicalData,
+    jpyExchangeRate, eurExchangeRate, cnyExchangeRate, inrExchangeRate,
+    cadExchangeRate, hkdExchangeRate, krwExchangeRate, audExchangeRate,
+    sarExchangeRate, brlExchangeRate
+  ), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, rates, historicalData]);
+
+  // calculateAssetAllocation 簽名：exchangeRate, jpy, eur, cny, inr, cad, hkd, krw, aud, sar, brl
+  const assetAllocation = useMemo(() => calculateAssetAllocation(
+    holdings, summary.cashBalanceTWD, ...ratesArgs
+  ), [holdings, summary.cashBalanceTWD, rates]);
+
   const annualPerformance = useMemo(() => calculateAnnualPerformance(chartData), [chartData]);
-  const accountPerformance = useMemo(() => calculateAccountPerformance(computedAccounts, holdings, cashFlows, transactions, ...rA, gbpExchangeRate), [computedAccounts, holdings, cashFlows, transactions, rates]);
+
+  // calculateAccountPerformance 簽名：exchangeRate, jpy, eur, cny, inr, cad, hkd, krw, aud, sar, brl, gbp
+  const accountPerformance = useMemo(() => calculateAccountPerformance(
+    computedAccounts, holdings, cashFlows, transactions,
+    ...ratesArgs, gbpExchangeRate
+  ), [computedAccounts, holdings, cashFlows, transactions, rates]);
 
   // ─── Combined Records & Filters ─────────────────────────────
 
