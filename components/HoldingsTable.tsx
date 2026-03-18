@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import RefreshCountdown from './RefreshCountdown';
 import { Holding, Market, Account, Currency } from '../types';
 import { formatCurrency } from '../utils/calculations';
@@ -17,6 +17,7 @@ const HoldingsTable: React.FC<Props> = () => {
   const { language } = useUI();
   const translations = t(language);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('merged');
   // ⑤ Sortable columns
   type SortKey = 'weight' | 'unrealizedPL' | 'unrealizedPLPercent' | 'annualizedReturn' | 'dailyChangePercent' | 'currentValue';
@@ -27,6 +28,15 @@ const HoldingsTable: React.FC<Props> = () => {
     if (sortKey === key) setSortAsc(a => !a);
     else { setSortKey(key); setSortAsc(false); }
   };
+
+  // 跟隨系統深色模式 (prefers-color-scheme)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsDarkMode(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const SortIcon = ({ col }: { col: SortKey }) => (
     <span className={`ml-0.5 text-[10px] ${sortKey === col ? 'text-indigo-500' : 'text-slate-300'}`}>
@@ -302,7 +312,17 @@ const HoldingsTable: React.FC<Props> = () => {
     const uniqueKey = `${h.accountId}-${h.market}-${h.ticker}`;
     
     return (
-      <tr key={uniqueKey} className={`hover:bg-slate-50 transition-colors group ${isDetailedMode ? 'bg-slate-50/30' : ''}`}>
+      <tr
+        key={uniqueKey}
+        className={`transition-colors group ${isDetailedMode ? 'bg-slate-50/30' : ''}`}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#f8fafc';
+        }}
+        onMouseLeave={(e) => {
+          // 清掉 inline style，讓 className 回到原本的底色（例如 isDetailedMode 的 bg-slate-50/30）
+          e.currentTarget.style.backgroundColor = '';
+        }}
+      >
         {/* 1. Market */}
         <td className="px-3 py-2 sticky left-0 bg-white z-10">
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
@@ -379,7 +399,10 @@ const HoldingsTable: React.FC<Props> = () => {
         </td>
 
         {/* 6. Total Cost (New) */}
-        <td className="px-3 py-2 text-right font-medium text-slate-500">
+        <td
+          className="px-3 py-2 text-right font-medium"
+          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
+        >
           {formatCurrency(h.totalCost, currency)}
         </td>
 
@@ -416,7 +439,10 @@ const HoldingsTable: React.FC<Props> = () => {
         </td>
 
         {/* 11. Avg Cost */}
-        <td className="px-3 py-2 text-right text-slate-500 text-xs">
+        <td
+          className="px-3 py-2 text-right text-xs"
+          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
+        >
            {new Intl.NumberFormat('zh-TW', { 
               style: 'currency', 
               currency: currency, 
