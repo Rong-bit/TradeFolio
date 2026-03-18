@@ -350,8 +350,9 @@ const HoldingsTable: React.FC<Props> = () => {
         
         {/* 3. Quantity */}
         <td
-          className={`px-3 py-2 text-right font-mono transition-colors ${!isDarkMode ? 'group-hover:text-white' : ''}`}
-          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
+          className={`px-3 py-2 text-right font-mono transition-colors ${
+            isDarkMode ? 'text-[#94a3b8]' : 'text-[#64748b] group-hover:text-white'
+          }`}
         >
           {(() => {
             const num = h.quantity;
@@ -381,7 +382,13 @@ const HoldingsTable: React.FC<Props> = () => {
         {/* 5. Weight */}
         <td className="px-3 py-2">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-slate-600 text-right">{h.weight.toFixed(1)}%</span>
+            <span
+              className={`text-xs font-medium text-right ${
+                isDarkMode ? 'text-[#94a3b8]' : 'text-[#64748b] group-hover:text-white'
+              }`}
+            >
+              {h.weight.toFixed(1)}%
+            </span>
             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
               <div 
                 className={`h-full rounded-full ${
@@ -418,7 +425,9 @@ const HoldingsTable: React.FC<Props> = () => {
         </td>
 
         {/* 8. P/L */}
-        <td className={`px-3 py-2 text-right font-bold ${plColor}`}>
+        <td
+          className={`px-3 py-2 text-right font-bold ${plColor}`}
+        >
           <div className="flex flex-col items-end leading-tight">
             <span>{formatCurrency(h.unrealizedPL, currency)}</span>
             <span className="text-[10px] opacity-80">{isProfit ? '+' : ''}{h.unrealizedPLPercent.toFixed(2)}%</span>
