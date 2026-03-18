@@ -31,6 +31,8 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const [activePieIndex, setActivePieIndex] = useState<number | undefined>(undefined);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [marketBarAnimated, setMarketBarAnimated] = useState(false);
+  const [hoveredAnnualYear, setHoveredAnnualYear] = useState<string | null>(null);
+  const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const displayRate = getDisplayRateForBaseCurrency(baseCurrency, rates); 
@@ -676,11 +678,20 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     
                     return (
                       <tr key={item.year}
-                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#f8fafc")}
-                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#f8fafc";
+                          setHoveredAnnualYear(item.year);
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                          setHoveredAnnualYear(null);
+                        }}
                         style={{ transition: "background-color 0.15s" }}
                       >
-                        <td className="px-6 py-3 font-bold text-slate-700">
+                        <td
+                          className="px-6 py-3 font-bold"
+                          style={{ color: (!isDarkMode && hoveredAnnualYear === item.year) ? "#ffffff" : "#334155" }}
+                        >
                           {item.year}
                           {item.isRealData && <span title={translations.dashboard.realHistoricalData} className="ml-2 text-xs cursor-help">✅</span>}
                         </td>
@@ -806,15 +817,39 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                   return (
                     <React.Fragment key={acc.id}>
                       <tr
-                        onMouseEnter={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#334155":"#f8fafc")}
-                        onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#f8fafc";
+                          setHoveredAccountId(acc.id);
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                          setHoveredAccountId(null);
+                        }}
                         style={{ transition: "background-color 0.15s" }}
                       >
-                        <td className="px-3 py-2 font-semibold" style={{ color: "#334155" }}>
+                        <td
+                          className="px-3 py-2 font-semibold"
+                          style={{
+                            color:
+                              (!isDarkMode && hoveredAccountId === acc.id)
+                                ? "#ffffff"
+                                : (isDarkMode ? "#94a3b8" : "#64748b"),
+                          }}
+                        >
                           <div className="flex items-center justify-between gap-2">
                             <div>
                               {acc.name}
-                              <span className="text-xs font-normal text-slate-400 ml-1">({acc.currency})</span>
+                              <span
+                                className="text-xs font-normal ml-1"
+                                style={{
+                                  color:
+                                    (!isDarkMode && hoveredAccountId === acc.id)
+                                      ? "#ffffff"
+                                      : (isDarkMode ? "#94a3b8" : "#64748b"),
+                                }}
+                              >
+                                ({acc.currency})
+                              </span>
                             </div>
                             <button
                               type="button"
@@ -826,13 +861,13 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                             </button>
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right font-bold" style={{ color: "#334155" }}>
+                        <td className="px-3 py-2 text-right font-bold" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
                           {formatCurrency(totalAssets, displayCurrency)}
                         </td>
-                        <td className="px-3 py-2 text-right" style={{ color: "#475569" }}>
+                        <td className="px-3 py-2 text-right" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
                           {formatCurrency(marketValue, displayCurrency)}
                         </td>
-                        <td className="px-3 py-2 text-right" style={{ color: "#475569" }}>
+                        <td className="px-3 py-2 text-right" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
                           {formatCurrency(cashBalance, displayCurrency)}
                         </td>
                         <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
