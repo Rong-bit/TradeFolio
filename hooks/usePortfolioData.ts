@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useLocalStorageDebounced } from './useLocalStorageDebounced';
 import { Transaction, Account, CashFlow, HistoricalData, Market } from '../types';
-import { ExchangeRateState } from './useExchangeRates';
 
 interface PortfolioDataState {
   transactions: Transaction[];
