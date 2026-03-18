@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { usePortfolio } from '../contexts/PortfolioContext';
-import { Transaction, CashFlow, Account, HistoricalData, Market } from '../types';
+import { HistoricalData, Market } from '../types';
 import { getPortfolioStateAtDate } from '../utils/calculations';
 import { fetchHistoricalYearEndData } from '../services/yahooFinanceService';
 

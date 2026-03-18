@@ -2,14 +2,15 @@
 import React, { useState, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Account, CashFlow, CashFlowType } from '../types';
+import { usePortfolio } from '../contexts/PortfolioContext';
 
 interface Props {
-  accounts: Account[];
   onImport: (flows: CashFlow[]) => void;
   onClose: () => void;
 }
 
-const BatchCashFlowModal: React.FC<Props> = ({ accounts, onImport, onClose }) => {
+const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
+  const { accounts } = usePortfolio();
   const [step, setStep] = useState<1 | 2>(1); // 1: Paste & Parse, 2: Map Accounts & Preview
   const [inputText, setInputText] = useState('');
   const [parsedRows, setParsedRows] = useState<any[]>([]);

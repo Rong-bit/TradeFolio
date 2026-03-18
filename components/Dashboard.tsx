@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChartDataPoint, PortfolioSummary, Holding, AssetAllocationItem, AnnualPerformanceItem, AccountPerformance, CashFlow, Account, CashFlowType, Currency, Market, BaseCurrency } from '../types';
+import { ChartDataPoint, Holding, CashFlow, Account, CashFlowType, Currency, Market, BaseCurrency } from '../types';
 import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 import HoldingsTable from './HoldingsTable';
-import { Language, t, translate } from '../utils/i18n';
+import { t, translate } from '../utils/i18n';
 
 interface Props {
   onUpdateHistorical?: () => void;

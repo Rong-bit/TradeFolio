@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Language, t, translate } from '../utils/i18n';
+import { t, translate } from '../utils/i18n';
 import { useUI } from '../contexts/UIContext';
 
 interface Props {

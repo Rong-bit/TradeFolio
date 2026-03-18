@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { Account, Currency, BASE_CURRENCIES } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from '../utils/calculations';
-import { Language, t, translate } from '../utils/i18n';
+import { t, translate } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 

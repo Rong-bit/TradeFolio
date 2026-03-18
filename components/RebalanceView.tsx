@@ -1,8 +1,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { PortfolioSummary, Holding, Market, BaseCurrency } from '../types';
+import { Holding, Market, BaseCurrency } from '../types';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
-import { Language, t } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -14,23 +14,11 @@ const RebalanceView: React.FC<Props> = () => {
     updateRebalanceTargets: onUpdateTargets,
     rebalanceEnabledItems: enabledItemsArray,
     setRebalanceEnabledItems: onUpdateEnabledItems } = usePortfolio();
-  const { baseCurrency, exchangeRate, jpyExchangeRate } = useMarket();
+  const { baseCurrency, rates } = useMarket();
+  const { exchangeRateUsdToTwd: exchangeRate, jpyExchangeRate } = rates;
   const { language } = useUI();
   const translations = t(language);
   const totalPortfolioValue = summary.totalValueTWD + summary.cashBalanceTWD;
-  const rates = {
-    exchangeRateUsdToTwd: summary.exchangeRateUsdToTwd,
-    jpyExchangeRate: summary.jpyExchangeRate,
-    eurExchangeRate: summary.eurExchangeRate,
-    gbpExchangeRate: summary.gbpExchangeRate,
-    hkdExchangeRate: summary.hkdExchangeRate,
-    krwExchangeRate: summary.krwExchangeRate,
-    cadExchangeRate: summary.cadExchangeRate,
-    inrExchangeRate: summary.inrExchangeRate,
-    audExchangeRate: summary.audExchangeRate,
-    sarExchangeRate: summary.sarExchangeRate,
-    brlExchangeRate: summary.brlExchangeRate,
-  };
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   
   const enabledItems = useMemo(() => new Set(enabledItemsArray), [enabledItemsArray]);

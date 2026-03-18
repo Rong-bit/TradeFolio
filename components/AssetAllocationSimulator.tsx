@@ -4,7 +4,7 @@ import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import { v4 as uuidv4 } from 'uuid';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { fetchAnnualizedReturn } from '../services/yahooFinanceService';
-import { Language, t, translate } from '../utils/i18n';
+import { t, translate } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';

@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import RefreshCountdown from './RefreshCountdown';
 import { Holding, Market, Account, Currency } from '../types';
 import { formatCurrency } from '../utils/calculations';
-import { Language, t } from '../utils/i18n';
+import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 

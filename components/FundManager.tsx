@@ -4,7 +4,7 @@ import { Account, CashFlow, CashFlowType, Currency, BaseCurrency } from '../type
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import BatchCashFlowModal from './BatchCashFlowModal';
-import { Language, t, translate } from '../utils/i18n';
+import { t, translate } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -778,9 +778,7 @@ const FundManager: React.FC<Props> = () => {
       )}
 
       {isBatchOpen && (
-        <BatchCashFlowModal 
-          accounts={accounts} 
-          onImport={onBatchAdd} 
+        <BatchCashFlowModal onImport={onBatchAdd} 
           onClose={() => setIsBatchOpen(false)} 
         />
       )}

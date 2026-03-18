@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Account, Market, Transaction, TransactionType } from '../types';
-import { Language, t, translate } from '../utils/i18n';
+import { t, translate } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 
