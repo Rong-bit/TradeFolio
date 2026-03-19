@@ -31,6 +31,23 @@ export interface ExchangeRates {
   brlExchangeRate?: number;
 }
 
+/** 市場對應原生交易幣別 */
+export function marketToCurrency(market: Market | string): Currency {
+  if (market === Market.US) return Currency.USD;
+  if (market === Market.UK) return Currency.GBP;
+  if (market === Market.JP) return Currency.JPY;
+  if (market === Market.CN || market === Market.SZ) return Currency.CNY;
+  if (market === Market.IN) return Currency.INR;
+  if (market === Market.CA) return Currency.CAD;
+  if (market === Market.FR || market === Market.DE) return Currency.EUR;
+  if (market === Market.HK) return Currency.HKD;
+  if (market === Market.KR) return Currency.KRW;
+  if (market === Market.AU) return Currency.AUD;
+  if (market === Market.SA) return Currency.SAR;
+  if (market === Market.BR) return Currency.BRL;
+  return Currency.TWD;
+}
+
 
 /** 將市場別的持倉原幣價值換算為 TWD */
 export function marketValueToTWD(
@@ -38,23 +55,11 @@ export function marketValueToTWD(
   market: Market | string,
   rates: ExchangeRates
 ): number {
-  const r = rates;
-  if (market === Market.US || market === Market.UK) return valueNative * r.exchangeRateUsdToTwd;
-  if (market === Market.JP) return valueNative * (r.jpyExchangeRate ?? r.exchangeRateUsdToTwd);
-  if (market === Market.CN || market === Market.SZ) return valueNative * (r.cnyExchangeRate ?? 0);
-  if (market === Market.IN)  return valueNative * (r.inrExchangeRate ?? 0);
-  if (market === Market.CA)  return valueNative * (r.cadExchangeRate ?? 0);
-  if (market === Market.FR || market === Market.DE) return valueNative * (r.eurExchangeRate ?? 0);
-  if (market === Market.HK)  return valueNative * (r.hkdExchangeRate ?? 0);
-  if (market === Market.KR)  return valueNative * (r.krwExchangeRate ?? 0);
-  if (market === Market.AU)  return valueNative * (r.audExchangeRate ?? 0);
-  if (market === Market.SA)  return valueNative * (r.sarExchangeRate ?? 0);
-  if (market === Market.BR)  return valueNative * (r.brlExchangeRate ?? 0);
-  return valueNative; // TW（已是 TWD）
+  return valueNative * currencyToTWDRate(marketToCurrency(market), rates);
 }
 
 /** 將幣別對應到 TWD 匯率 */
-function currencyToTWDRate(currency: Currency, rates: ExchangeRates): number {
+export function currencyToTWDRate(currency: Currency, rates: ExchangeRates): number {
   switch (currency) {
     case Currency.USD: return rates.exchangeRateUsdToTwd;
     case Currency.JPY: return rates.jpyExchangeRate ?? rates.exchangeRateUsdToTwd;
@@ -437,7 +442,7 @@ export const generateAdvancedChartData = (
   historicalData?: HistoricalData
 ): ChartDataPoint[] => {
   const { exchangeRateUsdToTwd: exchangeRate, jpyExchangeRate, eurExchangeRate,
-    cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate,
+    gbpExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate,
     krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate } = rates;
   const years = new Set<string>();
   const allDates = [...transactions.map(t => t.date), ...cashFlows.map(c => c.date)];
@@ -459,13 +464,13 @@ export const generateAdvancedChartData = (
     // 1. Process Net Invested (Cost)
     flowsInYear.forEach(cf => {
       const account = accounts.find(a => a.id === cf.accountId);
-      const isUSD = account?.currency === Currency.USD;
       let amountTWD = 0;
       if (cf.amountTWD && cf.amountTWD > 0) {
         amountTWD = cf.amountTWD;
       } else {
-        let rate = isUSD ? exchangeRate : 1;
-        if (isUSD && cf.exchangeRate && cf.exchangeRate > 0) rate = cf.exchangeRate;
+        const sourceCurrency = account?.currency ?? Currency.TWD;
+        let rate = currencyToTWDRate(sourceCurrency, rates);
+        if (cf.exchangeRate && cf.exchangeRate > 0) rate = cf.exchangeRate;
         amountTWD = cf.amount * rate;
       }
       if (cf.type === CashFlowType.DEPOSIT) cumulativeNetInvestedTWD += amountTWD;
@@ -499,6 +504,24 @@ export const generateAdvancedChartData = (
           const histPrices = historicalData[yearKey].prices;
           const histRate = historicalData[yearKey].exchangeRate || exchangeRate;
           const histJpyRate = historicalData[yearKey].jpyExchangeRate || jpyExchangeRate;
+          const histGbpRate = historicalData[yearKey].gbpExchangeRate || gbpExchangeRate;
+          const histEurRate = historicalData[yearKey].eurExchangeRate || eurExchangeRate;
+          const histHkdRate = historicalData[yearKey].hkdExchangeRate || hkdExchangeRate;
+          const histKrwRate = historicalData[yearKey].krwExchangeRate || krwExchangeRate;
+          const histRates: ExchangeRates = {
+            exchangeRateUsdToTwd: histRate,
+            jpyExchangeRate: histJpyRate,
+            gbpExchangeRate: histGbpRate,
+            eurExchangeRate: histEurRate,
+            cnyExchangeRate,
+            inrExchangeRate,
+            cadExchangeRate,
+            hkdExchangeRate: histHkdRate,
+            krwExchangeRate: histKrwRate,
+            audExchangeRate,
+            sarExchangeRate,
+            brlExchangeRate
+          };
           
           const yearEndDate = new Date(`${y}-12-31`);
           const { holdings, cashBalances } = getPortfolioStateAtDate(yearEndDate, transactions, cashFlows, accounts);
@@ -543,36 +566,8 @@ export const generateAdvancedChartData = (
                   }
                   
                   // 根據市場類型使用對應的匯率
-                  if (market === Market.US || market === Market.UK) {
-                      stockValueTWD += qty * price * histRate;
-                  } else if (market === Market.JP) {
-                      const rate = histJpyRate || histRate;
-                      stockValueTWD += qty * price * rate;
-                  } else if (market === Market.CN) {
-                      stockValueTWD += qty * price * (cnyExchangeRate ?? 0);
-                  } else if (market === Market.SZ) {
-                      stockValueTWD += qty * price * (cnyExchangeRate ?? 0);
-                  } else if (market === Market.IN) {
-                      stockValueTWD += qty * price * (inrExchangeRate ?? 0);
-                  } else if (market === Market.CA) {
-                      stockValueTWD += qty * price * (cadExchangeRate ?? 0);
-                  } else if (market === Market.FR) {
-                      stockValueTWD += qty * price * (eurExchangeRate ?? 0);
-                  } else if (market === Market.HK) {
-                      stockValueTWD += qty * price * (hkdExchangeRate ?? 0);
-                  } else if (market === Market.KR) {
-                      stockValueTWD += qty * price * (krwExchangeRate ?? 0);
-                  } else if (market === Market.DE) {
-                      stockValueTWD += qty * price * (eurExchangeRate ?? 0);
-                  } else if (market === Market.AU) {
-                      stockValueTWD += qty * price * (audExchangeRate ?? 0);
-                  } else if (market === Market.SA) {
-                      stockValueTWD += qty * price * (sarExchangeRate ?? 0);
-                  } else if (market === Market.BR) {
-                      stockValueTWD += qty * price * (brlExchangeRate ?? 0);
-                  } else {
-                      stockValueTWD += Math.round(qty * price);
-                  }
+                  const nativeValue = market === Market.TW ? Math.round(qty * price) : qty * price;
+                  stockValueTWD += marketValueToTWD(nativeValue, market, histRates);
               }
           });
 
@@ -580,15 +575,8 @@ export const generateAdvancedChartData = (
           Object.entries(cashBalances).forEach(([accId, bal]) => {
               const acc = accounts.find(a => a.id === accId);
               if (acc) {
-                  if (acc.currency === Currency.USD) {
-                    cashValueTWD += bal * histRate;
-                  } else if (acc.currency === Currency.JPY) {
-                    // 日幣帳戶使用日幣匯率
-                    const rate = histJpyRate || histRate; // 如果沒有日幣匯率，回退到美元匯率
-                    cashValueTWD += bal * rate;
-                  } else {
-                    cashValueTWD += bal;
-                  }
+                  const cashRate = currencyToTWDRate(acc.currency, histRates);
+                  cashValueTWD += bal * cashRate;
               }
           });
 
