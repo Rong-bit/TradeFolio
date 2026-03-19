@@ -29,13 +29,17 @@ const HoldingsTable: React.FC<Props> = () => {
     else { setSortKey(key); setSortAsc(false); }
   };
 
-  // 跟隨系統深色模式 (prefers-color-scheme)
+  // 跟隨頁面實際 dark class，避免與 DarkModeToggle（localStorage + html.dark）不同步
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    const readFromDom = () => document.documentElement.classList.contains('dark');
+    setIsDarkMode(readFromDom());
+
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(readFromDom());
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
   }, []);
 
   const SortIcon = ({ col }: { col: SortKey }) => (
@@ -352,9 +356,7 @@ const HoldingsTable: React.FC<Props> = () => {
         
         {/* 3. Quantity */}
         <td
-          className={`px-3 py-2 text-right font-mono transition-colors ${
-            isDarkMode ? 'text-[#94a3b8]' : 'text-[#64748b] group-hover:text-white'
-          }`}
+          className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-300 text-xs sm:text-sm"
         >
           {(() => {
             const num = h.quantity;
@@ -369,11 +371,13 @@ const HoldingsTable: React.FC<Props> = () => {
         
         {/* 4. Current Price */}
         <td className="px-3 py-2 text-right">
-           <div className="flex items-center justify-end gap-0.5 group-hover:bg-white bg-slate-50/50 rounded px-1 transition-colors">
-             <span className="text-slate-400 text-xs">$</span>
+           <div
+            className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-white dark:group-hover:bg-slate-600"
+           >
+             <span className="text-slate-500 dark:text-slate-300 text-xs">$</span>
              <input 
               type="number"
-              className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-medium text-slate-700"
+              className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
               value={h.currentPrice}
               onChange={(e) => onUpdatePrice(`${h.market}-${h.ticker}`, parseFloat(e.target.value) || 0)}
               step="0.01"
