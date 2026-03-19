@@ -546,11 +546,19 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
           {activePieIndex !== undefined && assetAllocation[activePieIndex] && (
-            <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3" style={{ backgroundColor: isDarkMode ? "#1e293b" : "#f8fafc", border: isDarkMode ? "1px solid #334155" : "1px solid #e2e8f0" }}>
+            <div
+              className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3"
+              // 這個區塊外層仍是白底卡片（bg-white），若依系統深色偏好把文字改淺色會導致對比不足
+              style={{ backgroundColor: "#f8fafc", border: "1px solid #e2e8f0" }}
+            >
               <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: assetAllocation[activePieIndex].color }} />
-              <span className="font-semibold" style={{ color: isDarkMode ? "#e2e8f0" : "#1e293b" }}>{assetAllocation[activePieIndex].name}</span>
-              <span className="text-sm ml-auto" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{assetAllocation[activePieIndex].ratio.toFixed(1)}%</span>
-              <span className="font-mono font-bold" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
+              <span className="font-semibold" style={{ color: "#1e293b" }}>
+                {assetAllocation[activePieIndex].name}
+              </span>
+              <span className="text-sm ml-auto" style={{ color: "#475569" }}>
+                {assetAllocation[activePieIndex].ratio.toFixed(1)}%
+              </span>
+              <span className="font-mono font-bold" style={{ color: "#475569" }}>
                 {formatCurrency(toBase(assetAllocation[activePieIndex].value), baseCurrency)}
               </span>
             </div>
@@ -609,13 +617,21 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               {assetAllocation.map((item, index) => (
                 <div
                   key={item.name}
-                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all" style={{ backgroundColor: activePieIndex === index ? (isDarkMode ? "#334155" : "#f8fafc") : "transparent", boxShadow: activePieIndex === index ? "0 1px 2px rgba(0,0,0,0.05)" : "none" }}
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all"
+                  style={{
+                    backgroundColor: activePieIndex === index ? "#f8fafc" : "transparent",
+                    boxShadow: activePieIndex === index ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+                  }}
                   onMouseEnter={() => setActivePieIndex(index)}
                   onMouseLeave={() => setActivePieIndex(undefined)}
                 >
                   <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" style={{ backgroundColor: item.color, transform: activePieIndex === index ? 'scale(1.4)' : 'scale(1)' }} />
-                  <span className="text-xs flex-1" style={{ color: isDarkMode ? "#cbd5e1" : "#334155" }}>{item.name}</span>
-                  <span className="text-xs font-bold" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{item.ratio.toFixed(1)}%</span>
+                  <span className="text-xs flex-1" style={{ color: "#334155" }}>
+                    {item.name}
+                  </span>
+                  <span className="text-xs font-bold" style={{ color: "#64748b" }}>
+                    {item.ratio.toFixed(1)}%
+                  </span>
                 </div>
               ))}
             </div>
