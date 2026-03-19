@@ -15,7 +15,7 @@ import {
   calculateHoldings, calculateAccountBalances, generateAdvancedChartData,
   calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance,
   calculateXIRR, getDisplayRateForBaseCurrency, getTransferTargetAmount, ExchangeRates,
-  marketValueToTWD
+  marketValueToTWD, currencyToTWDRate
 } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import Dashboard from './components/Dashboard';
@@ -239,14 +239,17 @@ const App: React.FC = () => {
     let netInvestedTWD = 0, totalUsdInflow = 0, totalTwdCostForUsd = 0;
     cashFlows.forEach((cf: CashFlow) => {
       const account = accounts.find((a: Account) => a.id === cf.accountId);
-      const rate = cf.exchangeRate ?? (account?.currency === Currency.USD ? exchangeRate : 1);
+      const accountCurrency = account?.currency ?? Currency.TWD;
+      const rate = cf.exchangeRate ?? currencyToTWDRate(accountCurrency, rates);
       if (cf.type === CashFlowType.DEPOSIT) netInvestedTWD += cf.amountTWD ?? cf.amount * rate;
       else if (cf.type === CashFlowType.WITHDRAW) netInvestedTWD -= cf.amountTWD ?? cf.amount * rate;
       if (cf.type === CashFlowType.DEPOSIT && account?.currency === Currency.USD) { totalUsdInflow += cf.amount; totalTwdCostForUsd += cf.amountTWD ?? cf.amount * (cf.exchangeRate ?? exchangeRate); }
       if (cf.type === CashFlowType.TRANSFER && cf.targetAccountId) { const ta = accounts.find((a: Account) => a.id === cf.targetAccountId); if (account?.currency === Currency.TWD && ta?.currency === Currency.USD) { totalUsdInflow += cf.exchangeRate ? cf.amount/cf.exchangeRate : cf.amount/exchangeRate; totalTwdCostForUsd += cf.amount; } }
     });
     const stockValueTWD = baseHoldings.reduce((s: number, h: Holding) => s + marketValueToTWD(h.currentValue, h.market, rates), 0);
-    const cashValueTWD = computedAccounts.reduce((s: number, a: Account) => s + (a.currency === Currency.USD ? a.balance * exchangeRate : a.balance), 0);
+    const cashValueTWD = computedAccounts.reduce((s: number, a: Account) => {
+      return s + (a.balance * currencyToTWDRate(a.currency, rates));
+    }, 0);
     const totalValueTWD = stockValueTWD, totalAssets = totalValueTWD + cashValueTWD, totalPLTWD = totalAssets - netInvestedTWD;
     const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => s + marketValueToTWD(t.amount ?? t.price*t.quantity, t.market, rates), 0);
     return {
