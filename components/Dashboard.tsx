@@ -708,20 +708,20 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                         style={{ transition: "background-color 0.15s" }}
                       >
                         <td
-                          className="px-6 py-3 font-bold"
+                          className="px-6 py-3 font-bold text-slate-700 dark:text-slate-200"
                           style={{
                             color:
                               (!isDarkMode && hoveredAnnualYear === item.year)
-                                ? "#ffffff"
-                                : (isDarkMode ? "#94a3b8" : "#64748b"),
+                                ? "#0f172a"
+                                : (isDarkMode ? "#e2e8f0" : "#334155"),
                           }}
                         >
                           {item.year}
                           {item.isRealData && <span title={translations.dashboard.realHistoricalData} className="ml-2 text-xs cursor-help">✅</span>}
                         </td>
-                        <td className="px-6 py-3 text-right" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{formatCurrency(startAssets, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{formatCurrency(netInflow, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right font-medium" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>{formatCurrency(endAssets, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-300 tabular-nums">{formatCurrency(startAssets, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-300 tabular-nums">{formatCurrency(netInflow, displayCurrency)}</td>
+                        <td className="px-6 py-3 text-right font-medium text-slate-700 dark:text-slate-200 tabular-nums">{formatCurrency(endAssets, displayCurrency)}</td>
                         <td className="px-6 py-3 text-right font-bold" style={{ color: profit >= 0 ? "#10b981" : "#ef4444" }}>
                           {formatCurrency(profit, displayCurrency)}
                         </td>
@@ -852,12 +852,12 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                         style={{ transition: "background-color 0.15s" }}
                       >
                         <td
-                          className="px-3 py-2 font-semibold"
+                          className="px-3 py-2 font-semibold text-sm sm:text-base"
                           style={{
                             color:
                               (!isDarkMode && hoveredAccountId === acc.id)
-                                ? "#ffffff"
-                                : (isDarkMode ? "#94a3b8" : "#64748b"),
+                                ? "#0f172a"
+                                : (isDarkMode ? "#e2e8f0" : "#334155"),
                           }}
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -868,8 +868,8 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                                 style={{
                                   color:
                                     (!isDarkMode && hoveredAccountId === acc.id)
-                                      ? "#ffffff"
-                                      : (isDarkMode ? "#94a3b8" : "#64748b"),
+                                      ? "#0f172a"
+                                      : (isDarkMode ? "#cbd5e1" : "#64748b"),
                                 }}
                               >
                                 ({acc.currency})
