@@ -40,12 +40,17 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
   useEffect(() => {
     setIsMounted(true);
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDarkMode(e.matches);
-    mq.addEventListener('change', handler);
+    // 與專案實際 dark class 同步，避免 matchMedia 與 html.dark 不一致造成字色/背景對比錯誤
+    const readFromDom = () => document.documentElement.classList.contains('dark');
+    setIsDarkMode(readFromDom());
+
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(readFromDom());
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
     setTimeout(() => setMarketBarAnimated(true), 300);
-    return () => mq.removeEventListener('change', handler);
+    return () => observer.disconnect();
   }, []);
 
   // 計算市場分布比例
@@ -885,13 +890,22 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                             </button>
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right font-bold" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
+                        <td
+                          className="px-3 py-2 text-right font-bold tabular-nums text-sm sm:text-base"
+                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
+                        >
                           {formatCurrency(totalAssets, displayCurrency)}
                         </td>
-                        <td className="px-3 py-2 text-right" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
+                        <td
+                          className="px-3 py-2 text-right tabular-nums text-sm sm:text-base"
+                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
+                        >
                           {formatCurrency(marketValue, displayCurrency)}
                         </td>
-                        <td className="px-3 py-2 text-right" style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}>
+                        <td
+                          className="px-3 py-2 text-right tabular-nums text-sm sm:text-base"
+                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
+                        >
                           {formatCurrency(cashBalance, displayCurrency)}
                         </td>
                         <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
