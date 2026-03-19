@@ -626,10 +626,11 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                   onMouseLeave={() => setActivePieIndex(undefined)}
                 >
                   <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" style={{ backgroundColor: item.color, transform: activePieIndex === index ? 'scale(1.4)' : 'scale(1)' }} />
-                  <span className="text-xs flex-1" style={{ color: "#334155" }}>
+                  {/* 手機上 text-xs 會偏小且不易辨識，改為手機 text-sm、桌機維持精緻的 text-xs */}
+                  <span className="text-sm sm:text-xs font-semibold flex-1" style={{ color: "#0f172a" }}>
                     {item.name}
                   </span>
-                  <span className="text-xs font-bold" style={{ color: "#64748b" }}>
+                  <span className="text-sm sm:text-xs font-bold tabular-nums" style={{ color: "#475569" }}>
                     {item.ratio.toFixed(1)}%
                   </span>
                 </div>
