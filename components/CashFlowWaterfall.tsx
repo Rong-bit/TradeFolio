@@ -1,12 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import {
   ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, ReferenceLine, LabelList,
+  ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts';
 import { CashFlowType, TransactionType, AnnualPerformanceItem } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
+import { useUI } from '../contexts/UIContext';
 import { valueInBaseCurrency } from '../utils/calculations';
+import { t } from '../utils/i18n';
 
 type Granularity = 'year' | 'quarter';
 
@@ -18,13 +20,13 @@ interface WaterfallBar {
   dividend: number;
   net: number;
   runningTotal: number;
-  // for stacked waterfall rendering
-  baseOffset: number;
 }
 
 const CashFlowWaterfall: React.FC = () => {
   const { cashFlows, transactions, annualPerformance } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
+  const { language, isGuest } = useUI();
+  const tr = t(language);
   const [granularity, setGranularity] = useState<Granularity>('year');
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
@@ -57,7 +59,6 @@ const CashFlowWaterfall: React.FC = () => {
       }
     });
 
-    // Get stock P/L from annualPerformance (profit per year)
     const plByYear: Record<string, number> = {};
     annualPerformance.forEach((item: AnnualPerformanceItem) => {
       plByYear[item.year] = toBase(item.profit);
@@ -71,22 +72,10 @@ const CashFlowWaterfall: React.FC = () => {
     let running = 0;
     return allKeys.map(key => {
       const { deposit = 0, withdraw = 0, dividend = 0 } = map[key] ?? {};
-      const year = key.split(' ')[0];
       const stockPL = granularity === 'year' ? (plByYear[key] ?? 0) : 0;
       const net = deposit - withdraw + stockPL + dividend;
-      const baseOffset = running;
       running += net;
-
-      return {
-        label: key,
-        deposit,
-        withdraw: -withdraw,
-        stockPL,
-        dividend,
-        net,
-        runningTotal: running,
-        baseOffset,
-      };
+      return { label: key, deposit, withdraw: -withdraw, stockPL, dividend, net, runningTotal: running };
     });
   }, [cashFlows, transactions, annualPerformance, granularity, rates, baseCurrency]);
 
@@ -107,19 +96,19 @@ const CashFlowWaterfall: React.FC = () => {
         <div className="space-y-1">
           {d.deposit > 0 && (
             <div className="flex justify-between gap-4">
-              <span className="text-slate-500">資金流入</span>
+              <span className="text-slate-500">{tr.waterfall.deposit}</span>
               <span className="font-mono font-bold text-emerald-600">+{fmt(d.deposit)}</span>
             </div>
           )}
           {Math.abs(d.withdraw) > 0 && (
             <div className="flex justify-between gap-4">
-              <span className="text-slate-500">資金流出</span>
+              <span className="text-slate-500">{tr.waterfall.withdraw}</span>
               <span className="font-mono font-bold text-rose-500">{fmt(d.withdraw)}</span>
             </div>
           )}
           {d.stockPL !== 0 && (
             <div className="flex justify-between gap-4">
-              <span className="text-slate-500">股票盈虧</span>
+              <span className="text-slate-500">{tr.waterfall.stockPL}</span>
               <span className={`font-mono font-bold ${d.stockPL >= 0 ? 'text-blue-600' : 'text-orange-500'}`}>
                 {d.stockPL >= 0 ? '+' : ''}{fmt(d.stockPL)}
               </span>
@@ -127,18 +116,18 @@ const CashFlowWaterfall: React.FC = () => {
           )}
           {d.dividend > 0 && (
             <div className="flex justify-between gap-4">
-              <span className="text-slate-500">配息收入</span>
+              <span className="text-slate-500">{tr.waterfall.dividend}</span>
               <span className="font-mono font-bold text-amber-600">+{fmt(d.dividend)}</span>
             </div>
           )}
           <div className="flex justify-between gap-4 pt-1 border-t border-slate-100 mt-1">
-            <span className="text-slate-600 font-medium">本期淨值</span>
+            <span className="text-slate-600 font-medium">{tr.waterfall.net}</span>
             <span className={`font-mono font-bold ${d.net >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>
               {d.net >= 0 ? '+' : ''}{fmt(d.net)}
             </span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-slate-600 font-medium">累計淨值</span>
+            <span className="text-slate-600 font-medium">{tr.waterfall.runningTotal}</span>
             <span className="font-mono font-bold text-indigo-600">{fmt(d.runningTotal)}</span>
           </div>
         </div>
@@ -146,29 +135,30 @@ const CashFlowWaterfall: React.FC = () => {
     );
   };
 
-  const legend = [
-    { color: '#22c55e', label: '資金流入' },
-    { color: '#ef4444', label: '資金流出' },
-    { color: '#3b82f6', label: '股票盈虧(正)' },
-    { color: '#f97316', label: '股票盈虧(負)' },
-    { color: '#f59e0b', label: '配息收入' },
-  ];
+  if (isGuest) return null;
 
   if (data.length === 0) {
     return (
       <div className="bg-white p-6 rounded-xl shadow">
-        <p className="text-slate-400 text-sm text-center py-8">尚無資金流資料</p>
+        <p className="text-slate-400 text-sm text-center py-8">{tr.waterfall.noData}</p>
       </div>
     );
   }
 
+  const legend = [
+    { color: '#22c55e', label: tr.waterfall.deposit },
+    { color: '#ef4444', label: tr.waterfall.withdraw },
+    { color: '#3b82f6', label: tr.waterfall.plPositive },
+    { color: '#f97316', label: tr.waterfall.plNegative },
+    { color: '#f59e0b', label: tr.waterfall.dividend },
+  ];
+
   return (
     <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-      {/* Header */}
       <div className="flex justify-between items-center mb-5">
         <div>
-          <h3 className="font-bold text-slate-800 text-xl">資金流瀑布圖</h3>
-          <p className="text-xs text-slate-400 mt-0.5">資金流入、盈虧、配息與流出的累積淨值</p>
+          <h3 className="font-bold text-slate-800 text-xl">{tr.waterfall.title}</h3>
+          <p className="text-xs text-slate-400 mt-0.5">{tr.waterfall.subtitle}</p>
         </div>
         <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs font-medium">
           {(['year', 'quarter'] as Granularity[]).map(g => (
@@ -177,13 +167,12 @@ const CashFlowWaterfall: React.FC = () => {
               onClick={() => setGranularity(g)}
               className={`px-3 py-1.5 transition ${granularity === g ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
             >
-              {g === 'year' ? '按年' : '按季'}
+              {g === 'year' ? tr.waterfall.byYear : tr.waterfall.byQuarter}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Chart */}
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 24, right: 16, left: 0, bottom: 5 }}>
@@ -193,34 +182,29 @@ const CashFlowWaterfall: React.FC = () => {
             <Tooltip content={<CustomTooltip />} />
             <ReferenceLine y={0} stroke="#cbd5e1" strokeWidth={1.5} />
 
-            {/* Deposit bars */}
-            <Bar dataKey="deposit" stackId="wf" fill="#22c55e" radius={0} isAnimationActive>
+            <Bar dataKey="deposit" stackId="wf" isAnimationActive>
               {data.map((d, i) => (
                 <Cell key={`dep-${i}`} fill={d.deposit > 0 ? '#22c55e' : 'transparent'} />
               ))}
             </Bar>
 
-            {/* Withdraw bars (negative, shown as red) */}
             <Bar dataKey="withdraw" stackId="wf" isAnimationActive>
               {data.map((d, i) => (
                 <Cell key={`wd-${i}`} fill={d.withdraw < 0 ? '#ef4444' : 'transparent'} />
               ))}
             </Bar>
 
-            {/* Stock P/L */}
             <Bar dataKey="stockPL" stackId="wf" isAnimationActive>
               {data.map((d, i) => (
                 <Cell key={`pl-${i}`} fill={d.stockPL >= 0 ? '#3b82f6' : '#f97316'} />
               ))}
             </Bar>
 
-            {/* Dividend */}
             <Bar dataKey="dividend" stackId="wf" fill="#f59e0b" radius={[4, 4, 0, 0]} isAnimationActive />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Legend */}
       <div className="flex flex-wrap gap-4 mt-3 justify-center">
         {legend.map(({ color, label }) => (
           <div key={label} className="flex items-center gap-1.5 text-xs text-slate-500">
@@ -230,11 +214,10 @@ const CashFlowWaterfall: React.FC = () => {
         ))}
       </div>
 
-      {/* Running total pill */}
       {data.length > 0 && (
         <div className="mt-4 flex justify-end">
           <div className="text-xs bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-full px-3 py-1 font-medium">
-            累計淨值 {fmt(data[data.length - 1].runningTotal)} {baseCurrency}
+            {tr.waterfall.runningTotal} {fmt(data[data.length - 1].runningTotal)} {baseCurrency}
           </div>
         </div>
       )}
