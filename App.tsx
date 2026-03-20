@@ -251,7 +251,7 @@ const App: React.FC = () => {
       return s + (a.balance * currencyToTWDRate(a.currency, rates));
     }, 0);
     const totalValueTWD = stockValueTWD, totalAssets = totalValueTWD + cashValueTWD, totalPLTWD = totalAssets - netInvestedTWD;
-    const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => s + marketValueToTWD(t.amount ?? t.price*t.quantity, t.market, rates), 0);
+    const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => s + marketValueToTWD((t.amount ?? t.price*t.quantity) - t.fees, t.market, rates), 0);
     return {
       totalCostTWD: 0, totalValueTWD, totalPLTWD,
       totalPLPercent: netInvestedTWD > 0 ? (totalPLTWD / netInvestedTWD) * 100 : 0,
