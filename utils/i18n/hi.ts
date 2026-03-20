@@ -136,6 +136,8 @@ export const hi: Translations = {
     yearTotal: 'वर्ष',
     monthTotal: 'माह',
   },
+  funds: {
+    ...en.funds,
     operations: 'संचालन',
     clearAll: 'सभी निधि साफ करें',
     batchImport: 'बैच आयात',

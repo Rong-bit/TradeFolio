@@ -185,6 +185,7 @@ export const ja: Translations = {
     yearTotal: '年計',
     monthTotal: '月計',
   },
+  funds: {
     addRecord: '+記録追加',
     filter: 'フィルタ',
     clearFilters: 'クリア',

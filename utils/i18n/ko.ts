@@ -185,6 +185,7 @@ export const ko: Translations = {
     yearTotal: '연간 합계',
     monthTotal: '월간 합계',
   },
+  funds: {
     clearFilters: '초기화',
     accountFilter: '계좌',
     typeFilter: '유형',
