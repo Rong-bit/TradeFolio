@@ -7,7 +7,7 @@ import { CashFlowType, TransactionType, AnnualPerformanceItem } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { valueInBaseCurrency } from '../utils/calculations';
+import { marketValueToTWD, valueInBaseCurrency } from '../utils/calculations';
 import { t } from '../utils/i18n';
 
 type Granularity = 'year' | 'quarter';
@@ -54,7 +54,8 @@ const CashFlowWaterfall: React.FC = () => {
       const key = periodKey(tx.date);
       if (!map[key]) map[key] = { deposit: 0, withdraw: 0, dividend: 0 };
       if (tx.type === TransactionType.CASH_DIVIDEND) {
-        const amt = toBase((tx.amount ?? tx.price * tx.quantity) - tx.fees);
+        const amtTWD = marketValueToTWD((tx.amount ?? tx.price * tx.quantity) - tx.fees, tx.market, rates);
+        const amt = toBase(amtTWD);
         map[key].dividend += amt;
       }
     });
