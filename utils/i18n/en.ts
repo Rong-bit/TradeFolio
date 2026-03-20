@@ -186,6 +186,7 @@ export const en: Translations = {
     monthTotal: 'Month',
   },
   funds: {
+    title: 'Fund Management',
     operations: 'Operations',
     clearAll: 'Clear All Funds',
     batchImport: 'Batch Import',

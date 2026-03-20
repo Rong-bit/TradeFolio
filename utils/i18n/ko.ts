@@ -186,6 +186,12 @@ export const ko: Translations = {
     monthTotal: '월간 합계',
   },
   funds: {
+    title: '자금 관리',
+    operations: '작업',
+    clearAll: '전체 자금 삭제',
+    batchImport: '일괄 입력',
+    addRecord: '+ 기록 추가',
+    filter: '필터',
     clearFilters: '초기화',
     accountFilter: '계좌',
     typeFilter: '유형',

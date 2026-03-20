@@ -186,6 +186,10 @@ export const ja: Translations = {
     monthTotal: '月計',
   },
   funds: {
+    title: '資金管理',
+    operations: '操作',
+    clearAll: '全資金削除',
+    batchImport: '一括入力',
     addRecord: '+記録追加',
     filter: 'フィルタ',
     clearFilters: 'クリア',
