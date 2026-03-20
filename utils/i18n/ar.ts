@@ -136,6 +136,8 @@ export const ar: Translations = {
     yearTotal: 'السنة',
     monthTotal: 'الشهر',
   },
+  funds: { 
+    ...en.funds,
     operations: 'العمليات',
     clearAll: 'مسح جميع الأموال',
     batchImport: 'استيراد مجمع',
