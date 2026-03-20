@@ -174,6 +174,46 @@ export interface Translations {
     riskWarningDesc: string;
     notInvestmentAdvice: string;
   };
+  // 各市場績效圖
+  marketChart: {
+    title: string;
+    subtitle: string;
+    annualizedReturn: string;
+    weight: string;
+    value: string;
+    noData: string;
+    ratio: string;
+  };
+  // 資金流瀑布圖
+  waterfall: {
+    title: string;
+    subtitle: string;
+    byYear: string;
+    byQuarter: string;
+    deposit: string;
+    withdraw: string;
+    stockPL: string;
+    dividend: string;
+    net: string;
+    runningTotal: string;
+    periodNet: string;
+    noData: string;
+    plPositive: string;
+    plNegative: string;
+  };
+  // 股息熱力圖
+  dividendHeatmap: {
+    title: string;
+    subtitle: string;
+    totalDividend: string;
+    noData: string;
+    bestMonth: string;
+    less: string;
+    more: string;
+    monthlyBreakdown: string;
+    yearTotal: string;
+    monthTotal: string;
+  };
   // 資金管理
   funds: {
     title: string;

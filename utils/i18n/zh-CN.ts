@@ -98,6 +98,43 @@ zhCN.dashboard = {
   riskWarningDesc: '投资有风险，过往绩效不代表未来表现。',
   notInvestmentAdvice: '本应用程式不提供投资建议，所有分析结果仅供参考。',
 };
+zhCN.marketChart = {
+  title: '各市场绩效比较',
+  subtitle: '按市场分组，显示年化报酬率与资产占比',
+  annualizedReturn: '年化报酬率',
+  weight: '占比',
+  value: '市值',
+  noData: '尚无持仓资料',
+  ratio: '占比',
+};
+zhCN.waterfall = {
+  title: '资金流瀑布图',
+  subtitle: '资金流入、盈亏、配息与流出的累积净值',
+  byYear: '按年',
+  byQuarter: '按季',
+  deposit: '资金流入',
+  withdraw: '资金流出',
+  stockPL: '股票盈亏',
+  dividend: '配息收入',
+  net: '本期净值',
+  runningTotal: '累计净值',
+  periodNet: '本期净',
+  noData: '尚无资金流资料',
+  plPositive: '股票盈亏(正)',
+  plNegative: '股票盈亏(负)',
+};
+zhCN.dividendHeatmap = {
+  title: '股息收入热力图',
+  subtitle: '每格代表当月配息金额，颜色越深收入越高',
+  totalDividend: '累计配息',
+  noData: '尚无现金股息记录',
+  bestMonth: '最佳月份',
+  less: '少',
+  more: '多',
+  monthlyBreakdown: '当月明细',
+  yearTotal: '年计',
+  monthTotal: '月计',
+};
 zhCN.funds = {
   ...zhTW.funds,
   title: '资金管理',
