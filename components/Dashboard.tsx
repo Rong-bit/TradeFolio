@@ -7,6 +7,9 @@ import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, Brush, ReferenceLine, AreaChart, Area, Sector } from 'recharts';
 import HoldingsTable from './HoldingsTable';
+import MarketPerformanceChart from './MarketPerformanceChart';
+import CashFlowWaterfall from './CashFlowWaterfall';
+import DividendHeatmap from './DividendHeatmap';
 import { t, translate } from '../utils/i18n';
 
 interface Props {
@@ -962,6 +965,15 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
           </table>
         </div>
       </div>
+
+      {/* Market Performance Chart */}
+      {!isGuest && <MarketPerformanceChart />}
+
+      {/* Cash Flow Waterfall */}
+      {!isGuest && <CashFlowWaterfall />}
+
+      {/* Dividend Heatmap */}
+      {!isGuest && <DividendHeatmap />}
 
       <HoldingsTable />
 
