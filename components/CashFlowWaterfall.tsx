@@ -101,7 +101,7 @@ const CashFlowWaterfall: React.FC = () => {
   const fmt = (v: number) => {
     const abs = Math.abs(v);
     const sign = v < 0 ? '-' : '';
-    if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}M`;
+    if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(2)}M`;
     if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(0)}k`;
     return `${sign}${abs.toFixed(0)}`;
   };
