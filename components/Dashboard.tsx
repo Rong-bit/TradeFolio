@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market } from '../types';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD, buildAttributionSeries } from '../utils/calculations';
+import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD, buildAttributionSeries, calculateStockBondAllocation } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -33,6 +33,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
   const [activeOuterIndex, setActiveOuterIndex] = useState<number | undefined>(undefined);
+  const [activeCoreIndex, setActiveCoreIndex] = useState<number | undefined>(undefined);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hoveredAnnualYear, setHoveredAnnualYear] = useState<string | null>(null);
   const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
@@ -157,6 +158,10 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
     return result;
   }, [holdings, rates, assetAllocation, marketDistribution]);
+
+  const stockBondAllocation = useMemo(() => {
+    return calculateStockBondAllocation(holdings, summary.cashBalanceTWD, rates);
+  }, [holdings, summary.cashBalanceTWD, rates]);
 
   const costDetails = useMemo(() => {
     return cashFlows
@@ -556,8 +561,8 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
-          <p className="text-xs text-slate-500 mb-3">外圓：{translations.dashboard.marketDistribution} / 內圓：{translations.dashboard.allocation}</p>
-          {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && innerAllocationByMarket[activeInnerIndex]) ? (
+          <p className="text-xs text-slate-500 mb-3">外圓：{translations.dashboard.marketDistribution} / 內圓：{translations.dashboard.allocation} / 核心圈：股債比例</p>
+          {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && innerAllocationByMarket[activeInnerIndex]) || (activeCoreIndex !== undefined && stockBondAllocation[activeCoreIndex]) ? (
             <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
               {activeOuterIndex !== undefined && marketDistribution[activeOuterIndex] ? (
                 <>
@@ -587,12 +592,26 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     {formatCurrency(toBase(innerAllocationByMarket[activeInnerIndex].value), baseCurrency)}
                   </span>
                 </>
+              ) : activeCoreIndex !== undefined && stockBondAllocation[activeCoreIndex] ? (
+                <>
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: stockBondAllocation[activeCoreIndex].color }} />
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {stockBondAllocation[activeCoreIndex].name}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-sky-100 text-sky-700 font-semibold">股債比例</span>
+                  <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
+                    {stockBondAllocation[activeCoreIndex].ratio.toFixed(1)}%
+                  </span>
+                  <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
+                    {formatCurrency(toBase(stockBondAllocation[activeCoreIndex].value), baseCurrency)}
+                  </span>
+                </>
               ) : null}
             </div>
           ) : null}
           <div className="w-full flex flex-col lg:flex-row items-center gap-6">
             <div className="w-full max-w-sm h-72">
-              {isMounted && (innerAllocationByMarket.length > 0 || marketDistribution.length > 0) ? (
+              {isMounted && (innerAllocationByMarket.length > 0 || marketDistribution.length > 0 || stockBondAllocation.length > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -606,6 +625,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       onMouseEnter={(_: any, index: number) => {
                         setActiveOuterIndex(index);
                         setActiveInnerIndex(undefined);
+                        setActiveCoreIndex(undefined);
                       }}
                       onMouseLeave={() => setActiveOuterIndex(undefined)}
                     >
@@ -622,13 +642,14 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       data={innerAllocationByMarket}
                       cx="50%"
                       cy="50%"
-                      innerRadius={38}
+                      innerRadius={34}
                       outerRadius={66}
                       paddingAngle={2}
                       dataKey="value"
                       onMouseEnter={(_: any, index: number) => {
                         setActiveInnerIndex(index);
                         setActiveOuterIndex(undefined);
+                        setActiveCoreIndex(undefined);
                       }}
                       onMouseLeave={() => setActiveInnerIndex(undefined)}
                     >
@@ -637,6 +658,30 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                           key={`inner-${entry.market}-${entry.name}-${index}`}
                           fill={entry.color}
                           opacity={activeInnerIndex === undefined || activeInnerIndex === index ? 1 : 0.45}
+                          style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+                        />
+                      ))}
+                    </Pie>
+                    <Pie
+                      data={stockBondAllocation}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={12}
+                      outerRadius={30}
+                      paddingAngle={2}
+                      dataKey="value"
+                      onMouseEnter={(_: any, index: number) => {
+                        setActiveCoreIndex(index);
+                        setActiveInnerIndex(undefined);
+                        setActiveOuterIndex(undefined);
+                      }}
+                      onMouseLeave={() => setActiveCoreIndex(undefined)}
+                    >
+                      {stockBondAllocation.map((entry, index) => (
+                        <Cell
+                          key={`core-${entry.assetClass}-${index}`}
+                          fill={entry.color}
+                          opacity={activeCoreIndex === undefined || activeCoreIndex === index ? 1 : 0.45}
                           style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
                         />
                       ))}
@@ -670,6 +715,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       onMouseEnter={() => {
                         setActiveOuterIndex(index);
                         setActiveInnerIndex(undefined);
+                        setActiveCoreIndex(undefined);
                       }}
                       onMouseLeave={() => setActiveOuterIndex(undefined)}
                     >
@@ -692,11 +738,35 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       onMouseEnter={() => {
                         setActiveInnerIndex(index);
                         setActiveOuterIndex(undefined);
+                        setActiveCoreIndex(undefined);
                       }}
                       onMouseLeave={() => setActiveInnerIndex(undefined)}
                     >
                       <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" style={{ backgroundColor: item.color, transform: activeInnerIndex === index ? 'scale(1.3)' : 'scale(1)' }} />
                       <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{marketMeta[item.market].flag} {item.name}</span>
+                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 mb-1">股債比例（核心圈）</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {stockBondAllocation.map((item, index) => (
+                    <div
+                      key={`${item.assetClass}-${index}`}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
+                        activeCoreIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
+                      }`}
+                      onMouseEnter={() => {
+                        setActiveCoreIndex(index);
+                        setActiveInnerIndex(undefined);
+                        setActiveOuterIndex(undefined);
+                      }}
+                      onMouseLeave={() => setActiveCoreIndex(undefined)}
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.name}</span>
                       <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
                     </div>
                   ))}
