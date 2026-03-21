@@ -3,11 +3,11 @@ import {
   ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts';
-import { CashFlowType, TransactionType, AnnualPerformanceItem } from '../types';
+import { CashFlowType, TransactionType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { marketValueToTWD, valueInBaseCurrency } from '../utils/calculations';
+import { buildAttributionSeries, marketValueToTWD, valueInBaseCurrency } from '../utils/calculations';
 import { t } from '../utils/i18n';
 
 type Granularity = 'year' | 'quarter';
@@ -23,7 +23,7 @@ interface WaterfallBar {
 }
 
 const CashFlowWaterfall: React.FC = () => {
-  const { cashFlows, transactions, annualPerformance } = usePortfolio();
+  const { cashFlows, transactions, chartData, accounts } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { language, isGuest } = useUI();
   const tr = t(language);
@@ -31,7 +31,32 @@ const CashFlowWaterfall: React.FC = () => {
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
 
+  const attributionSeries = useMemo(() => {
+    return buildAttributionSeries(chartData, cashFlows, transactions, accounts, rates);
+  }, [chartData, cashFlows, transactions, accounts, rates]);
+
   const data = useMemo<WaterfallBar[]>(() => {
+    if (granularity === 'year') {
+      let running = 0;
+      return attributionSeries.map(item => {
+        const deposit = item.netInflow > 0 ? item.netInflow : 0;
+        const withdraw = item.netInflow < 0 ? -item.netInflow : 0;
+        const stockPL = item.marketPL;
+        const dividend = item.income;
+        const net = deposit - withdraw + stockPL + dividend;
+        running += net;
+        return {
+          label: item.period,
+          deposit: toBase(deposit),
+          withdraw: -toBase(withdraw),
+          stockPL: toBase(stockPL),
+          dividend: toBase(dividend),
+          net: toBase(net),
+          runningTotal: toBase(running)
+        };
+      });
+    }
+
     const periodKey = (date: string) => {
       const d = new Date(date);
       if (granularity === 'year') return String(d.getFullYear());
@@ -60,25 +85,19 @@ const CashFlowWaterfall: React.FC = () => {
       }
     });
 
-    const plByYear: Record<string, number> = {};
-    annualPerformance.forEach((item: AnnualPerformanceItem) => {
-      plByYear[item.year] = toBase(item.profit);
-    });
-
     const allKeys = Array.from(new Set([
       ...Object.keys(map),
-      ...(granularity === 'year' ? Object.keys(plByYear) : []),
     ])).sort();
 
     let running = 0;
     return allKeys.map(key => {
       const { deposit = 0, withdraw = 0, dividend = 0 } = map[key] ?? {};
-      const stockPL = granularity === 'year' ? (plByYear[key] ?? 0) : 0;
+      const stockPL = 0;
       const net = deposit - withdraw + stockPL + dividend;
       running += net;
       return { label: key, deposit, withdraw: -withdraw, stockPL, dividend, net, runningTotal: running };
     });
-  }, [cashFlows, transactions, annualPerformance, granularity, rates, baseCurrency]);
+  }, [attributionSeries, cashFlows, transactions, granularity, rates, baseCurrency]);
 
   const fmt = (v: number) => {
     const abs = Math.abs(v);
