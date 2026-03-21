@@ -59,7 +59,6 @@ const CashFlowWaterfall: React.FC = () => {
 
     const periodKey = (date: string) => {
       const d = new Date(date);
-      if (granularity === 'year') return String(d.getFullYear());
       const q = Math.floor(d.getMonth() / 3) + 1;
       return `${d.getFullYear()} Q${q}`;
     };
