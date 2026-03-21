@@ -758,17 +758,28 @@ export const classifyAssetClassByTicker = (tickerRaw: string): AssetClass => {
   return AssetClass.EQUITY;
 };
 
+export const getAssetClassForTicker = (
+  tickerRaw: string,
+  overrides?: Record<string, AssetClass>
+): AssetClass => {
+  const ticker = (tickerRaw || '').trim().toUpperCase();
+  if (!ticker) return AssetClass.OTHER;
+  if (overrides && overrides[ticker]) return overrides[ticker];
+  return classifyAssetClassByTicker(ticker);
+};
+
 export const calculateStockBondAllocation = (
   holdings: Holding[],
   cashBalanceTWD: number,
-  rates: ExchangeRates
+  rates: ExchangeRates,
+  overrides?: Record<string, AssetClass>
 ): AssetClassAllocationItem[] => {
   let stockValue = 0;
   let bondValue = 0;
 
   holdings.forEach(h => {
     const value = marketValueToTWD(h.currentValue, h.market, rates);
-    const klass = classifyAssetClassByTicker(h.ticker);
+    const klass = getAssetClassForTicker(h.ticker, overrides);
     if (klass === AssetClass.BOND) bondValue += value;
     else stockValue += value;
   });
