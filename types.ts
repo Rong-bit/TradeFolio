@@ -176,6 +176,21 @@ export interface AssetAllocationItem {
   color: string;
 }
 
+export enum AssetClass {
+  EQUITY = 'EQUITY',
+  BOND = 'BOND',
+  CASH = 'CASH',
+  OTHER = 'OTHER'
+}
+
+export interface AssetClassAllocationItem {
+  assetClass: AssetClass;
+  name: string;
+  value: number;
+  ratio: number;
+  color: string;
+}
+
 export interface AnnualPerformanceItem {
   year: string;
   startAssets: number;
