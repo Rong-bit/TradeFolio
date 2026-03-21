@@ -445,7 +445,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       stackId="a" 
                       barSize={30}
                     >
-                      {trendChartData.map((entry: ChartDataPoint, index: number) => (
+                      {trendChartData.map((entry, index: number) => (
                         <Cell 
                           key={`cell-${index}`} 
                           fill={entry.profit >= 0 ? "#10b981" : "#ef4444"}
