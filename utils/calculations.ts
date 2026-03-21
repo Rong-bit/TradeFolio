@@ -7,6 +7,8 @@ import {
   CashFlowType, 
   Holding, 
   AssetAllocationItem, 
+  AssetClassAllocationItem,
+  AssetClass,
   Market, 
   AnnualPerformanceItem, 
   AccountPerformance,
@@ -702,6 +704,108 @@ export const calculateAssetAllocation = (
   }
 
   return items;
+};
+
+// 手動覆寫：可依需求自行增修（key 請用大寫 ticker）
+export const ASSET_CLASS_OVERRIDE: Record<string, AssetClass> = {
+  AGG: AssetClass.BOND,
+  BND: AssetClass.BOND,
+  BNDX: AssetClass.BOND,
+  IEF: AssetClass.BOND,
+  LQD: AssetClass.BOND,
+  TLT: AssetClass.BOND,
+  VGIT: AssetClass.BOND,
+};
+
+const BOND_KEYWORDS = [
+  'BOND',
+  'TREASURY',
+  'TREAS',
+  'GOVT',
+  'CORP',
+  'FIXEDINCOME'
+];
+
+const BOND_TICKER_PATTERNS = [
+  /^TLT$/,
+  /^IEF$/,
+  /^SHY$/,
+  /^BND$/,
+  /^BNDX$/,
+  /^AGG$/,
+  /^LQD$/,
+  /^VGIT$/,
+  /^GOVT$/,
+  /^TIP$/,
+];
+
+export const classifyAssetClassByTicker = (tickerRaw: string): AssetClass => {
+  const ticker = (tickerRaw || '').trim().toUpperCase();
+  if (!ticker) return AssetClass.OTHER;
+
+  const manual = ASSET_CLASS_OVERRIDE[ticker];
+  if (manual) return manual;
+
+  if (BOND_TICKER_PATTERNS.some(pattern => pattern.test(ticker))) {
+    return AssetClass.BOND;
+  }
+
+  const compact = ticker.replace(/[\s._-]/g, '');
+  if (BOND_KEYWORDS.some(keyword => compact.includes(keyword))) {
+    return AssetClass.BOND;
+  }
+
+  return AssetClass.EQUITY;
+};
+
+export const calculateStockBondAllocation = (
+  holdings: Holding[],
+  cashBalanceTWD: number,
+  rates: ExchangeRates
+): AssetClassAllocationItem[] => {
+  let stockValue = 0;
+  let bondValue = 0;
+
+  holdings.forEach(h => {
+    const value = marketValueToTWD(h.currentValue, h.market, rates);
+    const klass = classifyAssetClassByTicker(h.ticker);
+    if (klass === AssetClass.BOND) bondValue += value;
+    else stockValue += value;
+  });
+
+  const total = stockValue + bondValue + Math.max(cashBalanceTWD, 0);
+  if (total <= 0) return [];
+
+  const result: AssetClassAllocationItem[] = [];
+  if (stockValue > 0) {
+    result.push({
+      assetClass: AssetClass.EQUITY,
+      name: '股票',
+      value: stockValue,
+      ratio: (stockValue / total) * 100,
+      color: '#22c55e'
+    });
+  }
+  if (bondValue > 0) {
+    result.push({
+      assetClass: AssetClass.BOND,
+      name: '債券',
+      value: bondValue,
+      ratio: (bondValue / total) * 100,
+      color: '#3b82f6'
+    });
+  }
+  if (cashBalanceTWD > 0) {
+    result.push({
+      assetClass: AssetClass.CASH,
+      name: '現金',
+      value: cashBalanceTWD,
+      ratio: (cashBalanceTWD / total) * 100,
+      color: '#94a3b8'
+    });
+  }
+
+  return result;
 };
 
 export const calculateAnnualPerformance = (
