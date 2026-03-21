@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market, AssetClass } from '../types';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD, buildAttributionSeries, calculateStockBondAllocation, getAssetClassForTicker } from '../utils/calculations';
+import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD, buildAttributionSeries, getAssetClassForTicker } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -177,22 +177,20 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     return result;
   }, [holdings, rates, assetAllocation, marketDistribution]);
 
-  const stockBondAllocation = useMemo(() => {
-    return calculateStockBondAllocation(holdings, summary.cashBalanceTWD, rates, tickerClassOverrides);
-  }, [holdings, summary.cashBalanceTWD, rates, tickerClassOverrides]);
-
-  const coreAlignedAllocation = useMemo(() => {
-    return innerAllocationByMarket.map(item => {
+  const coreClassAllocation = useMemo(() => {
+    let stockValue = 0;
+    let bondValue = 0;
+    innerAllocationByMarket.forEach(item => {
       const assetClass = getAssetClassForTicker(item.name, tickerClassOverrides);
-      const color = assetClass === AssetClass.BOND ? '#3b82f6' : '#22c55e';
-      const classLabel = assetClass === AssetClass.BOND ? '債' : '股';
-      return {
-        ...item,
-        assetClass,
-        classLabel,
-        color,
-      };
+      if (assetClass === AssetClass.BOND) bondValue += item.value;
+      else stockValue += item.value;
     });
+    const total = stockValue + bondValue;
+    if (total <= 0) return [];
+    const result: Array<{ name: string; value: number; ratio: number; color: string; assetClass: AssetClass }> = [];
+    if (stockValue > 0) result.push({ name: '股', value: stockValue, ratio: (stockValue / total) * 100, color: '#22c55e', assetClass: AssetClass.EQUITY });
+    if (bondValue > 0) result.push({ name: '債', value: bondValue, ratio: (bondValue / total) * 100, color: '#3b82f6', assetClass: AssetClass.BOND });
+    return result;
   }, [innerAllocationByMarket, tickerClassOverrides]);
 
   const costDetails = useMemo(() => {
@@ -606,7 +604,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
           <p className="text-xs text-slate-500 mb-3">外圓：{translations.dashboard.marketDistribution} / 內圓：{translations.dashboard.allocation} / 核心圈：股債比例</p>
-          {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && innerAllocationByMarket[activeInnerIndex]) || (activeCoreIndex !== undefined && coreAlignedAllocation[activeCoreIndex]) ? (
+          {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && innerAllocationByMarket[activeInnerIndex]) || (activeCoreIndex !== undefined && coreClassAllocation[activeCoreIndex]) ? (
             <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
               {activeOuterIndex !== undefined && marketDistribution[activeOuterIndex] ? (
                 <>
@@ -636,18 +634,18 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     {formatCurrency(toBase(innerAllocationByMarket[activeInnerIndex].value), baseCurrency)}
                   </span>
                 </>
-              ) : activeCoreIndex !== undefined && coreAlignedAllocation[activeCoreIndex] ? (
+              ) : activeCoreIndex !== undefined && coreClassAllocation[activeCoreIndex] ? (
                 <>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: coreAlignedAllocation[activeCoreIndex].color }} />
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: coreClassAllocation[activeCoreIndex].color }} />
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {marketMeta[coreAlignedAllocation[activeCoreIndex].market].flag} {coreAlignedAllocation[activeCoreIndex].name}
+                    {coreClassAllocation[activeCoreIndex].name}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded bg-sky-100 text-sky-700 font-semibold">股債比例</span>
                   <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
-                    {coreAlignedAllocation[activeCoreIndex].classLabel}
+                    {coreClassAllocation[activeCoreIndex].ratio.toFixed(1)}%
                   </span>
                   <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
-                    {formatCurrency(toBase(coreAlignedAllocation[activeCoreIndex].value), baseCurrency)}
+                    {formatCurrency(toBase(coreClassAllocation[activeCoreIndex].value), baseCurrency)}
                   </span>
                 </>
               ) : null}
@@ -655,7 +653,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
           ) : null}
           <div className="w-full flex flex-col lg:flex-row items-center gap-6">
             <div className="w-full max-w-sm h-72">
-              {isMounted && (innerAllocationByMarket.length > 0 || marketDistribution.length > 0 || coreAlignedAllocation.length > 0) ? (
+              {isMounted && (innerAllocationByMarket.length > 0 || marketDistribution.length > 0 || coreClassAllocation.length > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -707,7 +705,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       ))}
                     </Pie>
                     <Pie
-                      data={coreAlignedAllocation}
+                      data={coreClassAllocation}
                       cx="50%"
                       cy="50%"
                       innerRadius={12}
@@ -721,9 +719,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       }}
                       onMouseLeave={() => setActiveCoreIndex(undefined)}
                     >
-                      {coreAlignedAllocation.map((entry, index) => (
+                      {coreClassAllocation.map((entry, index) => (
                         <Cell
-                          key={`core-${entry.market}-${entry.name}-${index}`}
+                          key={`core-${entry.assetClass}-${index}`}
                           fill={entry.color}
                           opacity={activeCoreIndex === undefined || activeCoreIndex === index ? 1 : 0.45}
                           style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
@@ -816,7 +814,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               <div>
                 <p className="text-xs font-semibold text-slate-500 mb-1">股債比例（核心圈）</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {stockBondAllocation.map((item, index) => (
+                  {coreClassAllocation.map((item, index) => (
                     <div
                       key={`${item.assetClass}-${index}`}
                       className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
