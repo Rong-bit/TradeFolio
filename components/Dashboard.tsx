@@ -5,7 +5,7 @@ import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, mar
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, Brush, ReferenceLine, AreaChart, Area, Sector } from 'recharts';
+import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, Brush, AreaChart, Area } from 'recharts';
 import HoldingsTable from './HoldingsTable';
 import MarketPerformanceChart from './MarketPerformanceChart';
 import CashFlowWaterfall from './CashFlowWaterfall';
@@ -31,9 +31,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const [showAccountInUSD, setShowAccountInUSD] = useState(false); 
   const [showAnnualInUSD, setShowAnnualInUSD] = useState(false);
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
-  const [activePieIndex, setActivePieIndex] = useState<number | undefined>(undefined);
+  const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
+  const [activeOuterIndex, setActiveOuterIndex] = useState<number | undefined>(undefined);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [marketBarAnimated, setMarketBarAnimated] = useState(false);
   const [hoveredAnnualYear, setHoveredAnnualYear] = useState<string | null>(null);
   const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
 
@@ -52,9 +52,29 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     });
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
-    setTimeout(() => setMarketBarAnimated(true), 300);
     return () => observer.disconnect();
   }, []);
+
+  const marketMeta = useMemo(() => {
+    const isZh = language === 'zh-TW' || language === 'zh-CN';
+    return {
+      [Market.TW]: { name: isZh ? '台股' : 'Taiwan', color: '#3b82f6', flag: '🇹🇼' },
+      [Market.US]: { name: isZh ? '美股' : 'US', color: '#22c55e', flag: '🇺🇸' },
+      [Market.UK]: { name: language === 'zh-TW' ? '英國股' : language === 'zh-CN' ? '英国股' : 'UK', color: '#a855f7', flag: '🇬🇧' },
+      [Market.JP]: { name: isZh ? '日本股' : 'Japan', color: '#ef4444', flag: '🇯🇵' },
+      [Market.CN]: { name: language === 'zh-TW' ? '中國滬' : language === 'zh-CN' ? '中国沪' : 'China', color: '#f59e0b', flag: '🇨🇳' },
+      [Market.SZ]: { name: language === 'zh-TW' ? '中國深' : language === 'zh-CN' ? '中国深' : 'Shenzhen', color: '#d97706', flag: '🇨🇳' },
+      [Market.IN]: { name: isZh ? '印度' : 'India', color: '#14b8a6', flag: '🇮🇳' },
+      [Market.CA]: { name: isZh ? '加拿大' : 'Canada', color: '#f43f5e', flag: '🇨🇦' },
+      [Market.FR]: { name: language === 'zh-TW' ? '法國' : language === 'zh-CN' ? '法国股' : 'France', color: '#6366f1', flag: '🇫🇷' },
+      [Market.HK]: { name: isZh ? '香港' : 'HK', color: '#0ea5e9', flag: '🇭🇰' },
+      [Market.KR]: { name: language === 'zh-TW' ? '韓國' : language === 'zh-CN' ? '韩国' : 'Korea', color: '#ea580c', flag: '🇰🇷' },
+      [Market.DE]: { name: language === 'zh-TW' ? '德國' : language === 'zh-CN' ? '德国' : 'Germany', color: '#ca8a04', flag: '🇩🇪' },
+      [Market.AU]: { name: isZh ? '澳洲' : 'Australia', color: '#65a30d', flag: '🇦🇺' },
+      [Market.SA]: { name: language === 'zh-TW' ? '沙烏地' : language === 'zh-CN' ? '沙特' : 'Saudi', color: '#047857', flag: '🇸🇦' },
+      [Market.BR]: { name: isZh ? '巴西' : 'Brazil', color: '#0891b2', flag: '🇧🇷' },
+    } as Record<Market, { name: string; color: string; flag: string }>;
+  }, [language]);
 
   // 計算市場分布比例
   const marketDistribution = useMemo(() => {
@@ -87,8 +107,11 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       market: market as Market,
       value,
       ratio: totalMarketValue > 0 ? (value / totalMarketValue) * 100 : 0,
+      color: marketMeta[market as Market].color,
+      label: marketMeta[market as Market].name,
+      flag: marketMeta[market as Market].flag,
     })).filter(item => item.value > 0);
-    }, [holdings, rates]);
+    }, [holdings, rates, marketMeta]);
 
   const costDetails = useMemo(() => {
     return cashFlows
@@ -484,149 +507,101 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         </div>
       )}
 
-      {/* Market Distribution */}
-      <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-        <h3 className="font-bold text-slate-800 text-xl mb-4">{translations.dashboard.marketDistribution}</h3>
-        {marketDistribution.length > 0 ? (
-          <div className="space-y-3">
-            {marketDistribution.map((item) => {
-              const isZh = language === 'zh-TW' || language === 'zh-CN';
-              const marketNames: Record<Market, string> = {
-                [Market.TW]: isZh ? '台股' : 'Taiwan',
-                [Market.US]: isZh ? '美股' : 'US',
-                [Market.UK]: language === 'zh-TW' ? '英國股' : language === 'zh-CN' ? '英国股' : 'UK',
-                [Market.JP]: isZh ? '日本股' : 'Japan',
-                [Market.CN]: language === 'zh-TW' ? '中國滬' : language === 'zh-CN' ? '中国沪' : 'China',
-                [Market.SZ]: language === 'zh-TW' ? '中國深' : language === 'zh-CN' ? '中国深' : 'Shenzhen',
-                [Market.IN]: isZh ? '印度' : 'India',
-                [Market.CA]: isZh ? '加拿大' : 'Canada',
-                [Market.FR]: language === 'zh-TW' ? '法國' : language === 'zh-CN' ? '法国股' : 'France',
-                [Market.HK]: isZh ? '香港' : 'HK',
-                [Market.KR]: language === 'zh-TW' ? '韓國' : language === 'zh-CN' ? '韩国' : 'Korea',
-                [Market.DE]: language === 'zh-TW' ? '德國' : language === 'zh-CN' ? '德国' : 'Germany',
-                [Market.AU]: isZh ? '澳洲' : 'Australia',
-                [Market.SA]: language === 'zh-TW' ? '沙烏地' : language === 'zh-CN' ? '沙特' : 'Saudi',
-                [Market.BR]: isZh ? '巴西' : 'Brazil',
-              };
-              const marketColors: Record<Market, string> = {
-                [Market.TW]: 'bg-blue-500',
-                [Market.US]: 'bg-green-500',
-                [Market.UK]: 'bg-purple-500',
-                [Market.JP]: 'bg-red-500',
-                [Market.CN]: 'bg-amber-500',
-                [Market.SZ]: 'bg-amber-600',
-                [Market.IN]: 'bg-teal-500',
-                [Market.CA]: 'bg-rose-500',
-                [Market.FR]: 'bg-indigo-500',
-                [Market.HK]: 'bg-sky-500',
-                [Market.KR]: 'bg-orange-600',
-                [Market.DE]: 'bg-yellow-600',
-                [Market.AU]: 'bg-lime-600',
-                [Market.SA]: 'bg-emerald-700',
-                [Market.BR]: 'bg-cyan-600',
-              };
-              
-              // ③ Market flag map
-              const marketFlags: Record<Market, string> = {
-                [Market.TW]: '🇹🇼', [Market.US]: '🇺🇸', [Market.UK]: '🇬🇧',
-                [Market.JP]: '🇯🇵', [Market.CN]: '🇨🇳', [Market.SZ]: '🇨🇳',
-                [Market.IN]: '🇮🇳', [Market.CA]: '🇨🇦', [Market.FR]: '🇫🇷',
-                [Market.HK]: '🇭🇰', [Market.KR]: '🇰🇷', [Market.DE]: '🇩🇪',
-                [Market.AU]: '🇦🇺', [Market.SA]: '🇸🇦', [Market.BR]: '🇧🇷',
-              };
-              return (
-                <div key={item.market} className="flex items-center gap-3 group">
-                  <div className="w-24 flex items-center gap-1.5 text-sm font-medium text-slate-700 shrink-0">
-                    <span className="text-base leading-none">{marketFlags[item.market]}</span>
-                    <span>{marketNames[item.market]}</span>
-                  </div>
-                  <div className="flex-1 bg-slate-100 rounded-full h-5 overflow-hidden relative">
-                    {/* ③ Animated bar */}
-                    <div
-                      className={`h-full ${marketColors[item.market]} rounded-full transition-all ease-out`}
-                      style={{
-                        width: marketBarAnimated ? `${item.ratio}%` : '0%',
-                        transitionDuration: '800ms',
-                        transitionDelay: `${marketDistribution.indexOf(item) * 60}ms`,
-                      }}
-                    />
-                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-[10px] font-bold whitespace-nowrap mix-blend-multiply dark:mix-blend-screen">
-                      {item.ratio.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="w-28 text-right text-xs font-mono text-slate-500 group-hover:text-slate-800 transition-colors">
-                    {formatCurrency(toBase(item.value), baseCurrency)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center text-slate-400 py-8">
-            {language === 'zh-TW' ? '尚無持倉資料' : 'No holdings data'}
-          </div>
-        )}
-      </div>
-
-      {/* ② Allocation Pie Chart — interactive with active sector */}
+      {/* Combined Market + Allocation Dual Donut */}
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
-          {activePieIndex !== undefined && assetAllocation[activePieIndex] && (
-            <div
-              className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700"
-            >
-              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: assetAllocation[activePieIndex].color }} />
-              <span className="font-semibold text-slate-900 dark:text-slate-100">
-                {assetAllocation[activePieIndex].name}
-              </span>
-              <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
-                {assetAllocation[activePieIndex].ratio.toFixed(1)}%
-              </span>
-              <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
-                {formatCurrency(toBase(assetAllocation[activePieIndex].value), baseCurrency)}
-              </span>
+          <p className="text-xs text-slate-500 mb-3">外圓：{translations.dashboard.marketDistribution} / 內圓：{translations.dashboard.allocation}</p>
+          {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && assetAllocation[activeInnerIndex]) ? (
+            <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+              {activeOuterIndex !== undefined && marketDistribution[activeOuterIndex] ? (
+                <>
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: marketDistribution[activeOuterIndex].color }} />
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {marketDistribution[activeOuterIndex].flag} {marketDistribution[activeOuterIndex].label}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-semibold">{translations.dashboard.marketDistribution}</span>
+                  <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
+                    {marketDistribution[activeOuterIndex].ratio.toFixed(1)}%
+                  </span>
+                  <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
+                    {formatCurrency(toBase(marketDistribution[activeOuterIndex].value), baseCurrency)}
+                  </span>
+                </>
+              ) : activeInnerIndex !== undefined && assetAllocation[activeInnerIndex] ? (
+                <>
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: assetAllocation[activeInnerIndex].color }} />
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    {assetAllocation[activeInnerIndex].name}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-semibold">{translations.dashboard.allocation}</span>
+                  <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
+                    {assetAllocation[activeInnerIndex].ratio.toFixed(1)}%
+                  </span>
+                  <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
+                    {formatCurrency(toBase(assetAllocation[activeInnerIndex].value), baseCurrency)}
+                  </span>
+                </>
+              ) : null}
             </div>
-          )}
-          <div className="w-full flex flex-col md:flex-row items-center gap-4">
-            <div className="w-full max-w-xs h-64">
-              {isMounted && assetAllocation.length > 0 ? (
+          ) : null}
+          <div className="w-full flex flex-col lg:flex-row items-center gap-6">
+            <div className="w-full max-w-sm h-72">
+              {isMounted && (assetAllocation.length > 0 || marketDistribution.length > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
+                      data={marketDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={72}
+                      outerRadius={102}
+                      paddingAngle={1.5}
+                      dataKey="value"
+                      onMouseEnter={(_: any, index: number) => {
+                        setActiveOuterIndex(index);
+                        setActiveInnerIndex(undefined);
+                      }}
+                      onMouseLeave={() => setActiveOuterIndex(undefined)}
+                    >
+                      {marketDistribution.map((entry, index) => (
+                        <Cell
+                          key={`outer-${entry.market}`}
+                          fill={entry.color}
+                          opacity={activeOuterIndex === undefined || activeOuterIndex === index ? 1 : 0.4}
+                          style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
+                        />
+                      ))}
+                    </Pie>
+                    <Pie
                       data={assetAllocation}
-                      cx="50%" cy="50%"
-                      innerRadius={60} outerRadius={90}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={38}
+                      outerRadius={66}
                       paddingAngle={2}
                       dataKey="value"
-                      activeIndex={activePieIndex}
-                      activeShape={(props: any) => {
-                        const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
-                        return (
-                          <Sector
-                            cx={cx} cy={cy}
-                            innerRadius={innerRadius - 4}
-                            outerRadius={outerRadius + 8}
-                            startAngle={startAngle}
-                            endAngle={endAngle}
-                            fill={fill}
-                          />
-                        );
+                      onMouseEnter={(_: any, index: number) => {
+                        setActiveInnerIndex(index);
+                        setActiveOuterIndex(undefined);
                       }}
-                      onMouseEnter={(_: any, index: number) => setActivePieIndex(index)}
-                      onMouseLeave={() => setActivePieIndex(undefined)}
+                      onMouseLeave={() => setActiveInnerIndex(undefined)}
                     >
                       {assetAllocation.map((entry, index) => (
                         <Cell
-                          key={`cell-${index}`}
+                          key={`inner-${entry.name}-${index}`}
                           fill={entry.color}
-                          opacity={activePieIndex === undefined || activePieIndex === index ? 1 : 0.45}
+                          opacity={activeInnerIndex === undefined || activeInnerIndex === index ? 1 : 0.45}
                           style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
                         />
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number, name: string) => [formatCurrency(toBase(value), baseCurrency), name]}
+                      formatter={(value: number, name: string, props: any) => {
+                        const payload = props?.payload;
+                        const ratio = typeof payload?.ratio === 'number' ? ` (${payload.ratio.toFixed(1)}%)` : '';
+                        return [formatCurrency(toBase(value), baseCurrency), `${name}${ratio}`];
+                      }}
                       contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px", backgroundColor: "#ffffff", color: "#1e293b" }}
                     />
                   </PieChart>
@@ -637,31 +612,51 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 </div>
               )}
             </div>
-            {/* Legend as interactive list */}
-            <div className="flex-1 space-y-1 w-full max-w-xs">
-              {assetAllocation.map((item, index) => (
-                <div
-                  key={item.name}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
-                    activePieIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
-                  }`}
-                  onMouseEnter={() => setActivePieIndex(index)}
-                  onMouseLeave={() => setActivePieIndex(undefined)}
-                >
-                  <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" style={{ backgroundColor: item.color, transform: activePieIndex === index ? 'scale(1.4)' : 'scale(1)' }} />
-                  {/* 手機上 text-xs 會偏小且不易辨識，改為手機 text-sm、桌機維持精緻的 text-xs */}
-                  <span
-                    className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100"
-                  >
-                    {item.name}
-                  </span>
-                  <span
-                    className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400"
-                  >
-                    {item.ratio.toFixed(1)}%
-                  </span>
+            <div className="flex-1 w-full space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.marketDistribution}（外圓）</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {marketDistribution.map((item, index) => (
+                    <div
+                      key={item.market}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
+                        activeOuterIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
+                      }`}
+                      onMouseEnter={() => {
+                        setActiveOuterIndex(index);
+                        setActiveInnerIndex(undefined);
+                      }}
+                      onMouseLeave={() => setActiveOuterIndex(undefined)}
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.flag} {item.label}</span>
+                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.allocation}（內圓）</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {assetAllocation.map((item, index) => (
+                    <div
+                      key={item.name}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
+                        activeInnerIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
+                      }`}
+                      onMouseEnter={() => {
+                        setActiveInnerIndex(index);
+                        setActiveOuterIndex(undefined);
+                      }}
+                      onMouseLeave={() => setActiveInnerIndex(undefined)}
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" style={{ backgroundColor: item.color, transform: activeInnerIndex === index ? 'scale(1.3)' : 'scale(1)' }} />
+                      <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.name}</span>
+                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
