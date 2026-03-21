@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market } from '../types';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD, buildAttributionSeries, calculateStockBondAllocation } from '../utils/calculations';
+import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market, AssetClass } from '../types';
+import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD, buildAttributionSeries, calculateStockBondAllocation, getAssetClassForTicker } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -34,6 +34,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
   const [activeOuterIndex, setActiveOuterIndex] = useState<number | undefined>(undefined);
   const [activeCoreIndex, setActiveCoreIndex] = useState<number | undefined>(undefined);
+  const [tickerClassOverrides, setTickerClassOverrides] = useState<Record<string, AssetClass>>({});
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hoveredAnnualYear, setHoveredAnnualYear] = useState<string | null>(null);
   const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
@@ -55,6 +56,23 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('assetClassOverrides');
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Record<string, AssetClass>;
+      if (parsed && typeof parsed === 'object') {
+        setTickerClassOverrides(parsed);
+      }
+    } catch {
+      // ignore invalid localStorage value
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('assetClassOverrides', JSON.stringify(tickerClassOverrides));
+  }, [tickerClassOverrides]);
 
   const marketMeta = useMemo(() => {
     const isZh = language === 'zh-TW' || language === 'zh-CN';
@@ -160,8 +178,8 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   }, [holdings, rates, assetAllocation, marketDistribution]);
 
   const stockBondAllocation = useMemo(() => {
-    return calculateStockBondAllocation(holdings, summary.cashBalanceTWD, rates);
-  }, [holdings, summary.cashBalanceTWD, rates]);
+    return calculateStockBondAllocation(holdings, summary.cashBalanceTWD, rates, tickerClassOverrides);
+  }, [holdings, summary.cashBalanceTWD, rates, tickerClassOverrides]);
 
   const costDetails = useMemo(() => {
     return cashFlows
@@ -215,6 +233,18 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       ...prev,
       [accountId]: !prev[accountId]
     }));
+  };
+
+  const assetClassLabels: Record<AssetClass, string> = {
+    [AssetClass.EQUITY]: '股',
+    [AssetClass.BOND]: '債',
+    [AssetClass.CASH]: '現金',
+    [AssetClass.OTHER]: '其他',
+  };
+
+  const updateTickerClassOverride = (ticker: string, assetClass: AssetClass) => {
+    const key = ticker.trim().toUpperCase();
+    setTickerClassOverrides(prev => ({ ...prev, [key]: assetClass }));
   };
 
   const attributionSeries = useMemo(() => {
@@ -730,22 +760,42 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.allocation}（內圓）</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {innerAllocationByMarket.map((item, index) => (
-                    <div
-                      key={`${item.market}-${item.name}-${index}`}
-                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
-                        activeInnerIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
-                      }`}
-                      onMouseEnter={() => {
-                        setActiveInnerIndex(index);
-                        setActiveOuterIndex(undefined);
-                        setActiveCoreIndex(undefined);
-                      }}
-                      onMouseLeave={() => setActiveInnerIndex(undefined)}
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" style={{ backgroundColor: item.color, transform: activeInnerIndex === index ? 'scale(1.3)' : 'scale(1)' }} />
-                      <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{marketMeta[item.market].flag} {item.name}</span>
-                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
-                    </div>
+                    (() => {
+                      const key = item.name.trim().toUpperCase();
+                      const hasManual = !!tickerClassOverrides[key];
+                      const effectiveAssetClass = getAssetClassForTicker(item.name, tickerClassOverrides);
+                      return (
+                        <div
+                          key={`${item.market}-${item.name}-${index}`}
+                          className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
+                            activeInnerIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
+                          }`}
+                          onMouseEnter={() => {
+                            setActiveInnerIndex(index);
+                            setActiveOuterIndex(undefined);
+                            setActiveCoreIndex(undefined);
+                          }}
+                          onMouseLeave={() => setActiveInnerIndex(undefined)}
+                        >
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" style={{ backgroundColor: item.color, transform: activeInnerIndex === index ? 'scale(1.3)' : 'scale(1)' }} />
+                          <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{marketMeta[item.market].flag} {item.name}</span>
+                          <span className="text-[11px] text-slate-500">{assetClassLabels[effectiveAssetClass]}</span>
+                          <select
+                            className="text-[11px] border border-slate-200 rounded px-1 py-0.5 bg-white text-slate-600"
+                            value={effectiveAssetClass}
+                            onChange={(e) => updateTickerClassOverride(item.name, e.target.value as AssetClass)}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value={AssetClass.EQUITY}>股</option>
+                            <option value={AssetClass.BOND}>債</option>
+                            <option value={AssetClass.CASH}>現金</option>
+                            <option value={AssetClass.OTHER}>其他</option>
+                          </select>
+                          {hasManual && <span className="text-[10px] px-1 rounded bg-amber-100 text-amber-700">手動</span>}
+                          <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
+                        </div>
+                      );
+                    })()
                   ))}
                 </div>
               </div>
