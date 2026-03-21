@@ -186,6 +186,21 @@ export interface AnnualPerformanceItem {
   isRealData?: boolean;
 }
 
+export interface AttributionPoint {
+  period: string;
+  startAssets: number;
+  endAssets: number;
+  deltaAssets: number;
+  netInflow: number;
+  income: number;
+  marketPL: number;
+  cumulativeCost: number;
+  cumulativeProfit: number;
+  isRealData?: boolean;
+  reconciledDiff: number;
+  isConsistent: boolean;
+}
+
 export interface AccountPerformance {
   id: string;
   name: string;
