@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market } from '../types';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD } from '../utils/calculations';
+import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD, buildAttributionSeries } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -18,7 +18,7 @@ interface Props {
 
 const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const { summary, holdings, chartData, assetAllocation, annualPerformance,
-    accountPerformance, cashFlows, accounts: computedAccounts,
+    accountPerformance, cashFlows, transactions, accounts: portfolioAccounts, computedAccounts,
     updatePrice: onUpdatePrice, handleAutoUpdatePrices: onAutoUpdate,
     refreshIntervalMs } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
@@ -143,6 +143,26 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       [accountId]: !prev[accountId]
     }));
   };
+
+  const attributionSeries = useMemo(() => {
+    return buildAttributionSeries(chartData, cashFlows, transactions, portfolioAccounts, rates);
+  }, [chartData, cashFlows, transactions, portfolioAccounts, rates]);
+
+  const trendChartData = useMemo(() => {
+    const estMap = new Map(chartData.map(item => [item.year, item.estTotalAssets]));
+    return attributionSeries.map(item => ({
+      year: item.period,
+      cost: toBase(item.cumulativeCost),
+      profit: toBase(item.cumulativeProfit),
+      totalAssets: toBase(item.endAssets),
+      estTotalAssets: toBase(estMap.get(item.period) || 0),
+      isRealData: item.isRealData,
+      isConsistent: item.isConsistent,
+      reconciledDiff: toBase(item.reconciledDiff),
+    }));
+  }, [attributionSeries, chartData, toBase]);
+
+  const hasAttributionMismatch = attributionSeries.some(item => !item.isConsistent);
 
   return (
     <div className="space-y-6">
@@ -345,16 +365,10 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
           
           <div className="w-full">
             <div className="w-full h-[300px] md:h-[450px]">
-              {isMounted && chartData.length > 0 ? (
+              {isMounted && trendChartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart
-                    data={chartData.map(d => ({
-                      ...d,
-                      cost: toBase(d.cost),
-                      profit: toBase(d.profit),
-                      totalAssets: toBase(d.totalAssets),
-                      estTotalAssets: toBase(d.estTotalAssets),
-                    }))}
+                    data={trendChartData}
                     margin={{ top: 10, right: 30, left: 10, bottom: 60 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -431,7 +445,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       stackId="a" 
                       barSize={30}
                     >
-                      {chartData.map((entry: ChartDataPoint, index: number) => (
+                      {trendChartData.map((entry: ChartDataPoint, index: number) => (
                         <Cell 
                           key={`cell-${index}`} 
                           fill={entry.profit >= 0 ? "#10b981" : "#ef4444"}
@@ -457,10 +471,15 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full flex items-center justify-center text-slate-400">
-                    {!isMounted ? translations.dashboard.chartLoading : chartData.length === 0 ? translations.dashboard.noChartData : translations.dashboard.chartLoading}
+                    {!isMounted ? translations.dashboard.chartLoading : trendChartData.length === 0 ? translations.dashboard.noChartData : translations.dashboard.chartLoading}
                 </div>
               )}
             </div>
+            {hasAttributionMismatch && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                資料對帳提醒：部分年度「資產變化」與「淨流入 + 收益 + 市場損益」存在微小差異，請檢查匯率或歷史估值來源。
+              </div>
+            )}
           </div>
         </div>
       )}
