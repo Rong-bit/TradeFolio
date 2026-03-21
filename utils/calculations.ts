@@ -12,7 +12,8 @@ import {
   AccountPerformance,
   TransactionType,
   HistoricalData,
-  BaseCurrency
+  BaseCurrency,
+  AttributionPoint
 } from '../types';
 
 /** 匯率物件（X→TWD：1 X = N TWD） */
@@ -737,6 +738,74 @@ export const calculateAnnualPerformance = (
   }
 
   return items.reverse();
+};
+
+export const buildAttributionSeries = (
+  chartData: ChartDataPoint[],
+  cashFlows: CashFlow[],
+  transactions: Transaction[],
+  accounts: Account[],
+  rates: ExchangeRates
+): AttributionPoint[] => {
+  if (chartData.length === 0) return [];
+
+  const getCashFlowAmountTWD = (cf: CashFlow): number => {
+    if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
+    const account = accounts.find(a => a.id === cf.accountId);
+    const sourceCurrency = account?.currency ?? Currency.TWD;
+    const rate = (cf.exchangeRate && cf.exchangeRate > 0)
+      ? cf.exchangeRate
+      : currencyToTWDRate(sourceCurrency, rates);
+    return cf.amount * rate;
+  };
+
+  const incomeByYear: Record<string, number> = {};
+  cashFlows.forEach(cf => {
+    if (cf.type !== CashFlowType.INTEREST) return;
+    const year = String(new Date(cf.date).getFullYear());
+    incomeByYear[year] = (incomeByYear[year] || 0) + getCashFlowAmountTWD(cf);
+  });
+  transactions.forEach(tx => {
+    if (tx.type !== TransactionType.CASH_DIVIDEND) return;
+    const year = String(new Date(tx.date).getFullYear());
+    const nativeIncome = (tx.amount ?? (tx.price * tx.quantity)) - (tx.fees || 0);
+    const incomeTWD = marketValueToTWD(nativeIncome, tx.market, rates);
+    incomeByYear[year] = (incomeByYear[year] || 0) + incomeTWD;
+  });
+
+  const sorted = [...chartData].sort((a, b) => Number(a.year) - Number(b.year));
+  const result: AttributionPoint[] = [];
+
+  for (let i = 0; i < sorted.length; i++) {
+    const current = sorted[i];
+    const prev = i > 0 ? sorted[i - 1] : null;
+    const startAssets = prev ? prev.totalAssets : 0;
+    const endAssets = current.totalAssets;
+    const deltaAssets = endAssets - startAssets;
+    const netInflow = current.cost - (prev ? prev.cost : 0);
+    const income = incomeByYear[current.year] || 0;
+    const marketPL = deltaAssets - netInflow - income;
+
+    const reconciledDiff = deltaAssets - (netInflow + income + marketPL);
+    const isConsistent = Math.abs(reconciledDiff) < 0.01;
+
+    result.push({
+      period: current.year,
+      startAssets,
+      endAssets,
+      deltaAssets,
+      netInflow,
+      income,
+      marketPL,
+      cumulativeCost: current.cost,
+      cumulativeProfit: current.profit,
+      isRealData: current.isRealData,
+      reconciledDiff,
+      isConsistent
+    });
+  }
+
+  return result;
 };
 
 export const calculateAccountPerformance = (
