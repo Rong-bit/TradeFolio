@@ -3,11 +3,11 @@ import {
   ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts';
-import { CashFlowType, TransactionType } from '../types';
+import { CashFlowType, Currency, TransactionType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { buildAttributionSeries, marketValueToTWD, valueInBaseCurrency } from '../utils/calculations';
+import { buildAttributionSeries, currencyToTWDRate, marketValueToTWD, valueInBaseCurrency } from '../utils/calculations';
 import { t } from '../utils/i18n';
 
 type Granularity = 'year' | 'quarter';
@@ -65,10 +65,20 @@ const CashFlowWaterfall: React.FC = () => {
 
     const map: Record<string, { deposit: number; withdraw: number; dividend: number }> = {};
 
+    const getCashFlowAmountTWD = (cf: { amount: number; amountTWD?: number; exchangeRate?: number; accountId: string }) => {
+      if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
+      const account = accounts.find(a => a.id === cf.accountId);
+      const sourceCurrency = account?.currency ?? Currency.TWD;
+      const rate = (cf.exchangeRate && cf.exchangeRate > 0)
+        ? cf.exchangeRate
+        : currencyToTWDRate(sourceCurrency, rates);
+      return cf.amount * rate;
+    };
+
     cashFlows.forEach(cf => {
       const key = periodKey(cf.date);
       if (!map[key]) map[key] = { deposit: 0, withdraw: 0, dividend: 0 };
-      const amt = toBase(cf.amountTWD ?? cf.amount);
+      const amt = toBase(getCashFlowAmountTWD(cf));
       if (cf.type === CashFlowType.DEPOSIT) map[key].deposit += amt;
       else if (cf.type === CashFlowType.WITHDRAW) map[key].withdraw += amt;
       else if (cf.type === CashFlowType.INTEREST) map[key].dividend += amt;
