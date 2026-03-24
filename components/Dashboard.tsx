@@ -17,7 +17,7 @@ interface Props {
 }
 
 const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
-  const { summary, holdings, chartData, assetAllocation, annualPerformance,
+  const { summary, holdings, chartData, annualPerformance,
     accountPerformance, cashFlows, transactions, accounts: portfolioAccounts, computedAccounts,
     updatePrice: onUpdatePrice, handleAutoUpdatePrices: onAutoUpdate,
     refreshIntervalMs } = usePortfolio();
@@ -33,7 +33,6 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
   const [activeOuterIndex, setActiveOuterIndex] = useState<number | undefined>(undefined);
-  const [activeCoreIndex, setActiveCoreIndex] = useState<number | undefined>(undefined);
   const [tickerClassOverrides, setTickerClassOverrides] = useState<Record<string, AssetClass>>({});
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hoveredAnnualYear, setHoveredAnnualYear] = useState<string | null>(null);
@@ -132,69 +131,14 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     })).filter(item => item.value > 0);
     }, [holdings, rates, marketMeta]);
 
-  const innerAllocationByMarket = useMemo(() => {
-    const colorMap = new Map<string, string>();
-    assetAllocation.forEach(item => {
-      colorMap.set(item.name, item.color);
-    });
-
-    const grouped = new Map<Market, Array<{ name: string; value: number; color: string }>>();
-    let total = 0;
-
-    holdings.forEach(h => {
-      const value = marketValueToTWD(h.currentValue, h.market, rates);
-      total += value;
-      const list = grouped.get(h.market) || [];
-      const existing = list.find(item => item.name === h.ticker);
-      if (existing) {
-        existing.value += value;
-      } else {
-        list.push({
-          name: h.ticker,
-          value,
-          color: colorMap.get(h.ticker) || '#94a3b8'
-        });
-      }
-      grouped.set(h.market, list);
-    });
-
-    const marketOrder = marketDistribution.map(item => item.market);
-    const result: Array<{ name: string; value: number; ratio: number; color: string; market: Market }> = [];
-
-    marketOrder.forEach(market => {
-      const list = grouped.get(market) || [];
-      list
-        .sort((a, b) => b.value - a.value)
-        .forEach(item => {
-          result.push({
-            ...item,
-            ratio: total > 0 ? (item.value / total) * 100 : 0,
-            market
-          });
-        });
-    });
-
-    return result;
-  }, [holdings, rates, assetAllocation, marketDistribution]);
-
-  const coreAlignedAllocation = useMemo(() => {
-    return innerAllocationByMarket.map(item => {
-      const assetClass = getAssetClassForTicker(item.name, tickerClassOverrides);
-      return {
-        ...item,
-        assetClass,
-        name: assetClass === AssetClass.BOND ? '債' : '股',
-        color: assetClass === AssetClass.BOND ? '#3b82f6' : '#22c55e',
-      };
-    });
-  }, [innerAllocationByMarket, tickerClassOverrides]);
-
-  const coreClassAllocation = useMemo(() => {
+  const stockBondAllocation = useMemo(() => {
     let stockValue = 0;
     let bondValue = 0;
-    coreAlignedAllocation.forEach(item => {
-      if (item.assetClass === AssetClass.BOND) bondValue += item.value;
-      else stockValue += item.value;
+    holdings.forEach((h: Holding) => {
+      const value = marketValueToTWD(h.currentValue, h.market, rates);
+      const assetClass = getAssetClassForTicker(h.ticker, tickerClassOverrides);
+      if (assetClass === AssetClass.BOND) bondValue += value;
+      else if (assetClass === AssetClass.EQUITY) stockValue += value;
     });
     const total = stockValue + bondValue;
     if (total <= 0) return [];
@@ -202,13 +146,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     if (stockValue > 0) result.push({ name: '股', value: stockValue, ratio: (stockValue / total) * 100, color: '#22c55e', assetClass: AssetClass.EQUITY });
     if (bondValue > 0) result.push({ name: '債', value: bondValue, ratio: (bondValue / total) * 100, color: '#3b82f6', assetClass: AssetClass.BOND });
     return result;
-  }, [coreAlignedAllocation]);
-
-  const activeCoreSummary = useMemo(() => {
-    if (activeCoreIndex === undefined || !coreAlignedAllocation[activeCoreIndex]) return null;
-    const activeClass = coreAlignedAllocation[activeCoreIndex].assetClass;
-    return coreClassAllocation.find(item => item.assetClass === activeClass) || null;
-  }, [activeCoreIndex, coreAlignedAllocation, coreClassAllocation]);
+  }, [holdings, rates, tickerClassOverrides]);
 
   const costDetails = useMemo(() => {
     return cashFlows
@@ -262,18 +200,6 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       ...prev,
       [accountId]: !prev[accountId]
     }));
-  };
-
-  const assetClassLabels: Record<AssetClass, string> = {
-    [AssetClass.EQUITY]: '股',
-    [AssetClass.BOND]: '債',
-    [AssetClass.CASH]: '現金',
-    [AssetClass.OTHER]: '其他',
-  };
-
-  const updateTickerClassOverride = (ticker: string, assetClass: AssetClass) => {
-    const key = ticker.trim().toUpperCase();
-    setTickerClassOverrides(prev => ({ ...prev, [key]: assetClass }));
   };
 
   const attributionSeries = useMemo(() => {
@@ -616,12 +542,12 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         </div>
       )}
 
-      {/* Combined Market + Allocation Dual Donut */}
+      {/* Combined Market + Stock/Bond Dual Donut */}
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
-          <p className="text-xs text-slate-500 mb-3">外圓：{translations.dashboard.marketDistribution} / 內圓：{translations.dashboard.allocation} / 核心圈：股債比例</p>
-          {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && innerAllocationByMarket[activeInnerIndex]) || (activeCoreSummary !== null) ? (
+          <p className="text-xs text-slate-500 mb-3">外圓：{translations.dashboard.marketDistribution} / 內圓：股債比例（不含現金）</p>
+          {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex]) ? (
             <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
               {activeOuterIndex !== undefined && marketDistribution[activeOuterIndex] ? (
                 <>
@@ -637,32 +563,18 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     {formatCurrency(toBase(marketDistribution[activeOuterIndex].value), baseCurrency)}
                   </span>
                 </>
-              ) : activeInnerIndex !== undefined && innerAllocationByMarket[activeInnerIndex] ? (
+              ) : activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex] ? (
                 <>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: innerAllocationByMarket[activeInnerIndex].color }} />
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: stockBondAllocation[activeInnerIndex].color }} />
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {marketMeta[innerAllocationByMarket[activeInnerIndex].market].flag} {innerAllocationByMarket[activeInnerIndex].name}
+                    {stockBondAllocation[activeInnerIndex].name}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-semibold">{translations.dashboard.allocation}</span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-semibold">股債比例</span>
                   <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
-                    {innerAllocationByMarket[activeInnerIndex].ratio.toFixed(1)}%
+                    {stockBondAllocation[activeInnerIndex].ratio.toFixed(1)}%
                   </span>
                   <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
-                    {formatCurrency(toBase(innerAllocationByMarket[activeInnerIndex].value), baseCurrency)}
-                  </span>
-                </>
-              ) : activeCoreSummary ? (
-                <>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: activeCoreSummary.color }} />
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {activeCoreSummary.name}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-sky-100 text-sky-700 font-semibold">股債比例</span>
-                  <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
-                    {activeCoreSummary.ratio.toFixed(1)}%
-                  </span>
-                  <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
-                    {formatCurrency(toBase(activeCoreSummary.value), baseCurrency)}
+                    {formatCurrency(toBase(stockBondAllocation[activeInnerIndex].value), baseCurrency)}
                   </span>
                 </>
               ) : null}
@@ -670,7 +582,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
           ) : null}
           <div className="w-full flex flex-col lg:flex-row items-center gap-6">
             <div className="w-full max-w-sm h-72">
-              {isMounted && (innerAllocationByMarket.length > 0 || marketDistribution.length > 0 || coreClassAllocation.length > 0) ? (
+              {isMounted && (stockBondAllocation.length > 0 || marketDistribution.length > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -684,7 +596,6 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       onMouseEnter={(_: any, index: number) => {
                         setActiveOuterIndex(index);
                         setActiveInnerIndex(undefined);
-                        setActiveCoreIndex(undefined);
                       }}
                       onMouseLeave={() => setActiveOuterIndex(undefined)}
                     >
@@ -698,49 +609,24 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       ))}
                     </Pie>
                     <Pie
-                      data={innerAllocationByMarket}
+                      data={stockBondAllocation}
                       cx="50%"
                       cy="50%"
-                      innerRadius={34}
+                      innerRadius={36}
                       outerRadius={66}
                       paddingAngle={2}
                       dataKey="value"
                       onMouseEnter={(_: any, index: number) => {
                         setActiveInnerIndex(index);
                         setActiveOuterIndex(undefined);
-                        setActiveCoreIndex(undefined);
                       }}
                       onMouseLeave={() => setActiveInnerIndex(undefined)}
                     >
-                      {innerAllocationByMarket.map((entry, index) => (
+                      {stockBondAllocation.map((entry, index) => (
                         <Cell
-                          key={`inner-${entry.market}-${entry.name}-${index}`}
+                          key={`inner-${entry.assetClass}-${index}`}
                           fill={entry.color}
                           opacity={activeInnerIndex === undefined || activeInnerIndex === index ? 1 : 0.45}
-                          style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                        />
-                      ))}
-                    </Pie>
-                    <Pie
-                      data={coreAlignedAllocation}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={12}
-                      outerRadius={30}
-                      paddingAngle={2}
-                      dataKey="value"
-                      onMouseEnter={(_: any, index: number) => {
-                        setActiveCoreIndex(index);
-                        setActiveInnerIndex(undefined);
-                        setActiveOuterIndex(undefined);
-                      }}
-                      onMouseLeave={() => setActiveCoreIndex(undefined)}
-                    >
-                      {coreAlignedAllocation.map((entry, index) => (
-                        <Cell
-                          key={`core-${entry.market}-${entry.name}-${index}`}
-                          fill={entry.color}
-                          opacity={activeCoreIndex === undefined || activeCoreIndex === index ? 1 : 0.45}
                           style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
                         />
                       ))}
@@ -774,7 +660,6 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       onMouseEnter={() => {
                         setActiveOuterIndex(index);
                         setActiveInnerIndex(undefined);
-                        setActiveCoreIndex(undefined);
                       }}
                       onMouseLeave={() => setActiveOuterIndex(undefined)}
                     >
@@ -786,63 +671,19 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.allocation}（內圓）</p>
+                <p className="text-xs font-semibold text-slate-500 mb-1">股債比例（內圓）</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {innerAllocationByMarket.map((item, index) => (
-                    (() => {
-                      const key = item.name.trim().toUpperCase();
-                      const hasManual = !!tickerClassOverrides[key];
-                      const effectiveAssetClass = getAssetClassForTicker(item.name, tickerClassOverrides);
-                      return (
-                        <div
-                          key={`${item.market}-${item.name}-${index}`}
-                          className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
-                            activeInnerIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
-                          }`}
-                          onMouseEnter={() => {
-                            setActiveInnerIndex(index);
-                            setActiveOuterIndex(undefined);
-                            setActiveCoreIndex(undefined);
-                          }}
-                          onMouseLeave={() => setActiveInnerIndex(undefined)}
-                        >
-                          <div className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" style={{ backgroundColor: item.color, transform: activeInnerIndex === index ? 'scale(1.3)' : 'scale(1)' }} />
-                          <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{marketMeta[item.market].flag} {item.name}</span>
-                          <span className="text-[11px] text-slate-500">{assetClassLabels[effectiveAssetClass]}</span>
-                          <select
-                            className="text-[11px] border border-slate-200 rounded px-1 py-0.5 bg-white text-slate-600"
-                            value={effectiveAssetClass}
-                            onChange={(e) => updateTickerClassOverride(item.name, e.target.value as AssetClass)}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <option value={AssetClass.EQUITY}>股</option>
-                            <option value={AssetClass.BOND}>債</option>
-                            <option value={AssetClass.CASH}>現金</option>
-                            <option value={AssetClass.OTHER}>其他</option>
-                          </select>
-                          {hasManual && <span className="text-[10px] px-1 rounded bg-amber-100 text-amber-700">手動</span>}
-                          <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
-                        </div>
-                      );
-                    })()
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">股債比例（核心圈）</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {coreClassAllocation.map((item, index) => (
+                  {stockBondAllocation.map((item, index) => (
                     <div
                       key={`${item.assetClass}-${index}`}
                       className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
-                        activeCoreIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
+                        activeInnerIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
                       }`}
                       onMouseEnter={() => {
-                        setActiveCoreIndex(index);
-                        setActiveInnerIndex(undefined);
+                        setActiveInnerIndex(index);
                         setActiveOuterIndex(undefined);
                       }}
-                      onMouseLeave={() => setActiveCoreIndex(undefined)}
+                      onMouseLeave={() => setActiveInnerIndex(undefined)}
                     >
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                       <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.name}</span>
