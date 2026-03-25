@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market, AssetClass } from '../types';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, marketValueToTWD, buildAttributionSeries, getAssetClassForTicker } from '../utils/calculations';
+import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, getAssetClassForTicker } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -115,7 +115,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     };
 
     holdings.forEach((h: Holding) => {
-      const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
+      const valTwd = holdingValueToTWD(h, portfolioAccounts, rates);
       marketValues[h.market] = (marketValues[h.market] || 0) + valTwd;
     });
 
@@ -129,13 +129,13 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       label: marketMeta[market as Market].name,
       flag: marketMeta[market as Market].flag,
     })).filter(item => item.value > 0);
-    }, [holdings, rates, marketMeta]);
+    }, [holdings, rates, marketMeta, portfolioAccounts]);
 
   const stockBondAllocation = useMemo(() => {
     let stockValue = 0;
     let bondValue = 0;
     holdings.forEach((h: Holding) => {
-      const value = marketValueToTWD(h.currentValue, h.market, rates);
+      const value = holdingValueToTWD(h, portfolioAccounts, rates);
       const assetClass = getAssetClassForTicker(h.ticker, tickerClassOverrides);
       if (assetClass === AssetClass.BOND) bondValue += value;
       else if (assetClass === AssetClass.EQUITY) stockValue += value;
@@ -146,7 +146,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     if (stockValue > 0) result.push({ name: '股', value: stockValue, ratio: (stockValue / total) * 100, color: '#22c55e', assetClass: AssetClass.EQUITY });
     if (bondValue > 0) result.push({ name: '債', value: bondValue, ratio: (bondValue / total) * 100, color: '#3b82f6', assetClass: AssetClass.BOND });
     return result;
-  }, [holdings, rates, tickerClassOverrides]);
+  }, [holdings, rates, tickerClassOverrides, portfolioAccounts]);
 
   const costDetails = useMemo(() => {
     return cashFlows

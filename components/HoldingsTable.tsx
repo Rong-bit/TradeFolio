@@ -2,9 +2,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import RefreshCountdown from './RefreshCountdown';
 import { Holding, Market, Account, Currency } from '../types';
-import { formatCurrency } from '../utils/calculations';
+import { formatCurrency, convertAccountCurrencyToMarketQuote, valuationCurrencyForHolding } from '../utils/calculations';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
+import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 
 interface Props {}
@@ -14,6 +15,7 @@ type DisplayMode = 'merged' | 'detailed';
 const HoldingsTable: React.FC<Props> = () => {
   const { holdings, accounts, updatePrice: onUpdatePrice,
     handleAutoUpdatePrices: onAutoUpdate, refreshIntervalMs } = usePortfolio();
+  const { rates } = useMarket();
   const { language } = useUI();
   const translations = t(language);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -52,11 +54,12 @@ const HoldingsTable: React.FC<Props> = () => {
   const mergedHoldings = useMemo(() => {
     const map = new Map<string, Holding>();
 
+    const MS = '\x1e';
     holdings.forEach(h => {
-      const key = `${h.market}-${h.ticker}`;
+      // 不同證券戶幣別不可合併加總市值（幣別維度不同）
+      const key = `${h.market}${MS}${h.ticker}${MS}${valuationCurrencyForHolding(h, accounts)}`;
       if (!map.has(key)) {
-        // Clone to avoid mutation
-        map.set(key, { ...h, accountId: 'merged' });
+        map.set(key, { ...h, accountId: `merged${MS}${key}` });
       } else {
         const existing = map.get(key)!;
         
@@ -101,7 +104,7 @@ const HoldingsTable: React.FC<Props> = () => {
 
     // Sort by Weight Descending
     return Array.from(map.values()).sort((a, b) => b.weight - a.weight);
-  }, [holdings]);
+  }, [holdings, accounts]);
 
   // ⑤ Apply sort to mergedHoldings
   const sortedMergedHoldings = useMemo(() => {
@@ -263,7 +266,7 @@ const HoldingsTable: React.FC<Props> = () => {
                   const accountTotalValue = accountHoldings.reduce((sum, h) => sum + h.currentValue, 0);
                   const accountTotalPL = accountHoldings.reduce((sum, h) => sum + h.unrealizedPL, 0);
                   const accountTotalWeight = accountHoldings.reduce((sum, h) => sum + h.weight, 0);
-                  const currency = account.currency === Currency.USD ? 'USD' : 'TWD';
+                  const currency = String(account.currency);
                   
                   return (
                     <React.Fragment key={account.id}>
@@ -303,10 +306,23 @@ const HoldingsTable: React.FC<Props> = () => {
     </div>
   );
 
+  function marketNativeCurrency(m: Market): string {
+    return m === Market.TW ? 'TWD' : m === Market.JP ? 'JPY' : m === Market.CN ? 'CNY' : m === Market.SZ ? 'CNY' : m === Market.IN ? 'INR' : m === Market.CA ? 'CAD' : m === Market.FR ? 'EUR' : m === Market.HK ? 'HKD' : m === Market.KR ? 'KRW' : m === Market.DE ? 'EUR' : m === Market.AU ? 'AUD' : m === Market.SA ? 'SAR' : m === Market.BR ? 'BRL' : m === Market.UK ? 'GBP' : 'USD';
+  }
+
+  const MS_ROW = '\x1e';
+
   // 渲染持倉行的輔助函數
   function renderHoldingRow(h: Holding, isDetailedMode: boolean = false) {
     const isProfit = h.unrealizedPL >= 0;
-    const currency = h.market === Market.TW ? 'TWD' : h.market === Market.JP ? 'JPY' : h.market === Market.CN ? 'CNY' : h.market === Market.SZ ? 'CNY' : h.market === Market.IN ? 'INR' : h.market === Market.CA ? 'CAD' : h.market === Market.FR ? 'EUR' : h.market === Market.HK ? 'HKD' : h.market === Market.KR ? 'KRW' : h.market === Market.DE ? 'EUR' : h.market === Market.AU ? 'AUD' : h.market === Market.SA ? 'SAR' : h.market === Market.BR ? 'BRL' : 'USD';
+    const acc = accounts.find(a => a.id === h.accountId);
+    const mergedCurrency =
+      h.accountId.startsWith('merged') && h.accountId.includes(MS_ROW)
+        ? h.accountId.split(MS_ROW).slice(-1)[0]
+        : null;
+    const currency = isDetailedMode && acc
+      ? String(acc.currency)
+      : mergedCurrency ?? marketNativeCurrency(h.market);
     // 未實現損益色要與「證券戶列表」的 text-success/text-danger 完全一致
     const plColor = isProfit ? 'text-success' : 'text-danger';
     // 年化：對齊儀表板的藍/橘風格顏色
@@ -379,7 +395,22 @@ const HoldingsTable: React.FC<Props> = () => {
               type="number"
               className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
               value={h.currentPrice}
-              onChange={(e) => onUpdatePrice(`${h.market}-${h.ticker}`, parseFloat(e.target.value) || 0)}
+              onChange={(e) => {
+                const raw = parseFloat(e.target.value) || 0;
+                let marketPrice = raw;
+                const mCcy = marketNativeCurrency(h.market);
+                if (isDetailedMode && acc && !h.accountId.startsWith('merged')) {
+                  marketPrice = convertAccountCurrencyToMarketQuote(raw, h.market, acc.currency, rates);
+                } else if (mergedCurrency && mergedCurrency !== mCcy) {
+                  marketPrice = convertAccountCurrencyToMarketQuote(
+                    raw,
+                    h.market,
+                    mergedCurrency as Currency,
+                    rates
+                  );
+                }
+                onUpdatePrice(`${h.market}-${h.ticker}`, marketPrice);
+              }}
               step="0.01"
              />
            </div>

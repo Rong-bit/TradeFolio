@@ -7,7 +7,7 @@ import { CashFlowType, Currency, TransactionType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { buildAttributionSeries, currencyToTWDRate, marketValueToTWD, valueInBaseCurrency } from '../utils/calculations';
+import { buildAttributionSeries, currencyToTWDRate, transactionAmountNativeToTWD, valueInBaseCurrency } from '../utils/calculations';
 import { t } from '../utils/i18n';
 
 type Granularity = 'year' | 'quarter';
@@ -88,7 +88,8 @@ const CashFlowWaterfall: React.FC = () => {
       const key = periodKey(tx.date);
       if (!map[key]) map[key] = { deposit: 0, withdraw: 0, dividend: 0 };
       if (tx.type === TransactionType.CASH_DIVIDEND) {
-        const amtTWD = marketValueToTWD((tx.amount ?? tx.price * tx.quantity) - tx.fees, tx.market, rates);
+        const raw = (tx.amount ?? tx.price * tx.quantity) - tx.fees;
+        const amtTWD = transactionAmountNativeToTWD(raw, tx, accounts, rates);
         const amt = toBase(amtTWD);
         map[key].dividend += amt;
       }
@@ -106,7 +107,7 @@ const CashFlowWaterfall: React.FC = () => {
       running += net;
       return { label: key, deposit, withdraw: -withdraw, stockPL, dividend, net, runningTotal: running };
     });
-  }, [attributionSeries, cashFlows, transactions, granularity, rates, baseCurrency]);
+  }, [attributionSeries, cashFlows, transactions, accounts, granularity, rates, baseCurrency]);
 
   const fmt = (v: number) => {
     const abs = Math.abs(v);

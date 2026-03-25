@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Holding, Market } from '../types';
-import { formatCurrency, valueInBaseCurrency, marketValueToTWD } from '../utils/calculations';
+import { formatCurrency, valueInBaseCurrency, holdingValueToTWD } from '../utils/calculations';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
@@ -10,7 +10,7 @@ import { useUI } from '../contexts/UIContext';
 interface Props {}
 
 const RebalanceView: React.FC<Props> = () => {
-  const { summary, holdings, rebalanceTargets: targets,
+  const { summary, holdings, accounts, rebalanceTargets: targets,
     updateRebalanceTargets: onUpdateTargets,
     rebalanceEnabledItems: enabledItemsArray,
     setRebalanceEnabledItems: onUpdateEnabledItems } = usePortfolio();
@@ -61,12 +61,12 @@ const RebalanceView: React.FC<Props> = () => {
         accountIds.includes(h.accountId) && h.ticker === ticker
       );
       const totalValTwd = mergedHolding.reduce((sum, h) => {
-        const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
+        const valTwd = holdingValueToTWD(h, accounts, rates);
         return sum + valTwd;
       }, 0);
       if (totalValTwd > 0) {
         mergedHolding.forEach(h => {
-          const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
+          const valTwd = holdingValueToTWD(h, accounts, rates);
           const ratio = valTwd / totalValTwd;
           const oldKey = `${h.accountId}-${h.ticker}`;
           newTargets[oldKey] = parseFloat((num * ratio).toFixed(1));
@@ -85,7 +85,7 @@ const RebalanceView: React.FC<Props> = () => {
     const mergedMap = new Map<string, { holdings: Holding[], totalValTwd: number }>();
     holdings.forEach(h => {
       const mergedKey = `${h.market}-${h.ticker}`;
-      const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
+      const valTwd = holdingValueToTWD(h, accounts, rates);
       if (!mergedMap.has(mergedKey)) {
         mergedMap.set(mergedKey, { holdings: [], totalValTwd: 0 });
       }
@@ -113,7 +113,7 @@ const RebalanceView: React.FC<Props> = () => {
         
         // 按現值比例分配給各個帳戶
         merged.holdings.forEach(h => {
-          const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
+          const valTwd = holdingValueToTWD(h, accounts, rates);
           const ratio = merged.totalValTwd > 0 ? valTwd / merged.totalValTwd : 0;
           const oldKey = `${h.accountId}-${h.ticker}`;
           newTargets[oldKey] = parseFloat((pct * ratio).toFixed(1));
@@ -181,7 +181,7 @@ const RebalanceView: React.FC<Props> = () => {
     
     holdings.forEach(h => {
       const mergedKey = `${h.market}-${h.ticker}`;
-      const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
+      const valTwd = holdingValueToTWD(h, accounts, rates);
       
       if (!mergedMap.has(mergedKey)) {
         mergedMap.set(mergedKey, {
@@ -251,9 +251,9 @@ const RebalanceView: React.FC<Props> = () => {
       const diffValTwd = targetValTwd - merged.totalValTwd;
       
       let diffShares = 0;
-      if (avgPrice > 0 && isEnabled) {
-        const rate = marketValueToTWD(1, merged.market, rates);
-        diffShares = rate > 0 ? diffValTwd / rate / avgPrice : 0;
+      if (isEnabled && merged.totalValTwd > 0 && merged.totalQuantity > 0) {
+        const twdPerShare = merged.totalValTwd / merged.totalQuantity;
+        diffShares = twdPerShare > 0 ? diffValTwd / twdPerShare : 0;
       }
 
       return {
@@ -273,7 +273,7 @@ const RebalanceView: React.FC<Props> = () => {
         holdings: merged.holdings // 保留原始 holdings 用於顯示帳戶資訊
       };
     });
-  }, [holdings, targets, totalPortfolioValue, exchangeRate, jpyExchangeRate, enabledItems, summary.cashBalanceTWD]);
+  }, [holdings, accounts, targets, totalPortfolioValue, exchangeRate, jpyExchangeRate, enabledItems, summary.cashBalanceTWD, rates]);
 
   // Calculate totals - 只計算啟用的項目
   const enabledRows = rebalanceRows.filter(row => row.isEnabled);

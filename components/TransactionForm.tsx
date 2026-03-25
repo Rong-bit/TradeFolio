@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Market, Transaction, TransactionType, Holding } from '../types';
+import { Market, Transaction, TransactionType, Holding, Account } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
@@ -182,26 +182,10 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     }
   };
 
-  // 取得市場的貨幣符號
-  const getCurrency = (market: Market): string => {
-    switch (market) {
-      case Market.TW: return 'TWD';
-      case Market.JP: return 'JPY';
-      case Market.UK: return 'USD';
-      case Market.US: return 'USD';
-      case Market.CN: return 'CNY';
-      case Market.SZ: return 'CNY';
-      case Market.IN: return 'INR';
-      case Market.CA: return 'CAD';
-      case Market.FR: return 'EUR';
-      case Market.HK: return 'HKD';
-      case Market.KR: return 'KRW';
-      case Market.DE: return 'EUR';
-      case Market.AU: return 'AUD';
-      case Market.SA: return 'SAR';
-      case Market.BR: return 'BRL';
-      default: return 'USD';
-    }
+  /** 交易入帳幣別 = 所選證券戶幣別（與市場報價幣別無須一致） */
+  const getAccountCurrencyCode = (accountId: string): string => {
+    const a = accounts.find((x: Account) => x.id === accountId);
+    return a ? String(a.currency) : 'TWD';
   };
 
   // 從 holdings 中根據 ticker 查找對應的市場
@@ -311,6 +295,8 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     return account ? `${account.name} (${account.currency})` : accountId;
   };
 
+  const selectedAccountCurrency = getAccountCurrencyCode(formData.accountId);
+
   return (
     <>
       {/* 確認對話框 */}
@@ -348,7 +334,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-600">{tf.priceLabel}</span>
                   <span className="font-medium">
-                    {pendingTransaction.price.toFixed(2)} {getCurrency(pendingTransaction.market)}
+                    {pendingTransaction.price.toFixed(2)} {getAccountCurrencyCode(pendingTransaction.accountId)}
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100">
@@ -358,7 +344,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-600">{tf.feesLabel}</span>
                   <span className="font-medium">
-                    {pendingTransaction.fees.toFixed(2)} {getCurrency(pendingTransaction.market)}
+                    {pendingTransaction.fees.toFixed(2)} {getAccountCurrencyCode(pendingTransaction.accountId)}
                   </span>
                 </div>
                 {pendingTransaction.note && (
@@ -371,7 +357,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                   <div className="flex justify-between">
                     <span className="text-slate-700 font-semibold">{tf.totalAmount}</span>
                     <span className="font-bold text-lg text-slate-900">
-                      {pendingTransaction.amount?.toFixed(2) || '0.00'} {getCurrency(pendingTransaction.market)}
+                      {pendingTransaction.amount?.toFixed(2) || '0.00'} {getAccountCurrencyCode(pendingTransaction.accountId)}
                     </span>
                   </div>
                 </div>
@@ -480,23 +466,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               </select>
             </div>
              <div>
-              <label className="block text-sm font-medium text-slate-700">{tf.price} ({
-                formData.market === Market.TW ? 'TWD' : 
-                formData.market === Market.UK ? 'USD' : 
-                formData.market === Market.JP ? 'JPY' : 
-                formData.market === Market.CN ? 'CNY' :
-                formData.market === Market.SZ ? 'CNY' :
-                formData.market === Market.IN ? 'INR' :
-                formData.market === Market.CA ? 'CAD' :
-                formData.market === Market.FR ? 'EUR' :
-                formData.market === Market.HK ? 'HKD' :
-                formData.market === Market.KR ? 'KRW' :
-                formData.market === Market.DE ? 'EUR' :
-                formData.market === Market.AU ? 'AUD' :
-                formData.market === Market.SA ? 'SAR' :
-                formData.market === Market.BR ? 'BRL' :
-                'USD'
-              })</label>
+              <label className="block text-sm font-medium text-slate-700">{tf.price} ({selectedAccountCurrency})</label>
               <input 
                 type="number" name="price" required step="any" min="0"
                 value={formData.price} onChange={handleChange}
@@ -545,7 +515,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               <div className="text-lg font-bold text-slate-800">
                 {calculatePreviewAmount().toFixed(2)}
                 <span className="text-xs text-slate-500 ml-2">
-                  ({getCurrency(formData.market)})
+                  ({selectedAccountCurrency})
                 </span>
               </div>
               <div className="text-xs text-slate-500 mt-1">

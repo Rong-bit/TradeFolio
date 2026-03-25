@@ -7,7 +7,7 @@ import { Holding } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { marketValueToTWD, valueInBaseCurrency } from '../utils/calculations';
+import { holdingValueToTWD, valueInBaseCurrency } from '../utils/calculations';
 import { t } from '../utils/i18n';
 
 const MARKET_FLAGS: Record<string, string> = {
@@ -26,7 +26,7 @@ const MARKET_COLORS: Record<string, string> = {
 type Metric = 'annualizedReturn' | 'weight' | 'value';
 
 const MarketPerformanceChart: React.FC = () => {
-  const { holdings } = usePortfolio();
+  const { holdings, accounts } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { language, isGuest } = useUI();
   const tr = t(language);
@@ -36,7 +36,7 @@ const MarketPerformanceChart: React.FC = () => {
     const map: Record<string, { totalValue: number; weightedReturn: number; count: number }> = {};
     holdings.forEach((h: Holding) => {
       const m = h.market as string;
-      const valTwd = marketValueToTWD(h.currentValue, h.market, rates);
+      const valTwd = holdingValueToTWD(h, accounts, rates);
       if (!map[m]) map[m] = { totalValue: 0, weightedReturn: 0, count: 0 };
       map[m].totalValue += valTwd;
       map[m].weightedReturn += h.annualizedReturn * valTwd;
@@ -59,7 +59,7 @@ const MarketPerformanceChart: React.FC = () => {
         if (metric === 'weight') return b.weight - a.weight;
         return b.value - a.value;
       });
-  }, [holdings, rates, baseCurrency, metric]);
+  }, [holdings, accounts, rates, baseCurrency, metric]);
 
   const formatValue = (v: number) => {
     if (metric === 'annualizedReturn' || metric === 'weight') return `${v.toFixed(1)}%`;

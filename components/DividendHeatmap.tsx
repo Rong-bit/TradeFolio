@@ -3,7 +3,7 @@ import { TransactionType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { marketValueToTWD, valueInBaseCurrency } from '../utils/calculations';
+import { transactionAmountNativeToTWD, valueInBaseCurrency } from '../utils/calculations';
 import { t } from '../utils/i18n';
 
 function colorForAmount(amount: number, maxAmount: number): string {
@@ -22,7 +22,7 @@ function textColorForAmount(amount: number, maxAmount: number): string {
 }
 
 const DividendHeatmap: React.FC = () => {
-  const { transactions } = usePortfolio();
+  const { transactions, accounts } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { language, isGuest } = useUI();
   const tr = t(language);
@@ -48,7 +48,8 @@ const DividendHeatmap: React.FC = () => {
       const d = new Date(tx.date);
       const year = d.getFullYear();
       const month = d.getMonth();
-      const amountTWD = marketValueToTWD((tx.amount ?? tx.price * tx.quantity) - tx.fees, tx.market, rates);
+      const amt = (tx.amount ?? tx.price * tx.quantity) - tx.fees;
+      const amountTWD = transactionAmountNativeToTWD(amt, tx, accounts, rates);
       const amount = toBase(amountTWD);
       if (!map[year]) map[year] = {};
       if (!map[year][month]) map[year][month] = { amount: 0, tickers: {} };
@@ -74,7 +75,7 @@ const DividendHeatmap: React.FC = () => {
     });
 
     return { grid: map, years, maxAmount, totalDividend: total, monthTotals, yearTotals };
-  }, [transactions, rates, baseCurrency]);
+  }, [transactions, accounts, rates, baseCurrency]);
 
   const fmt = (v: number) => {
     if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`;
