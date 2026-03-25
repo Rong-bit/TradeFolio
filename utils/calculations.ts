@@ -52,13 +52,75 @@ export function marketToCurrency(market: Market | string): Currency {
 }
 
 
-/** 將市場別的持倉原幣價值換算為 TWD */
+/** 將市場別的持倉原幣價值換算為 TWD（行情幣別；若要以證券戶幣別換匯請用 holdingValueToTWD） */
 export function marketValueToTWD(
   valueNative: number,
   market: Market | string,
   rates: ExchangeRates
 ): number {
   return valueNative * currencyToTWDRate(marketToCurrency(market), rates);
+}
+
+/** 將「證券戶幣別」金額換算為 TWD（1 帳戶幣 = N TWD） */
+export function nativeValueInAccountCurrencyToTWD(
+  valueNative: number,
+  accountCurrency: Currency,
+  rates: ExchangeRates
+): number {
+  return valueNative * currencyToTWDRate(accountCurrency, rates);
+}
+
+/** 依帳戶設定取得換匯幣別：有帳戶則用證券戶幣別，否則退回市場幣別 */
+export function valuationCurrencyForHolding(h: Holding, accounts: Account[]): Currency {
+  const acc = accounts.find(a => a.id === h.accountId);
+  return acc?.currency ?? marketToCurrency(h.market);
+}
+
+/** 持倉市值依「證券戶幣別」換算為 TWD（currentValue 須已是證券戶幣別） */
+export function holdingValueToTWD(h: Holding, accounts: Account[], rates: ExchangeRates): number {
+  return nativeValueInAccountCurrencyToTWD(h.currentValue, valuationCurrencyForHolding(h, accounts), rates);
+}
+
+/**
+ * Yahoo/市場報價幣別下的數值 → 證券戶幣別（經 TWD 交叉換算；若缺匯率則維持原值）
+ */
+export function convertQuotedValueToAccountCurrency(
+  valueInMarketQuote: number,
+  market: Market,
+  accountCurrency: Currency,
+  rates: ExchangeRates
+): number {
+  const mc = marketToCurrency(market);
+  if (mc === accountCurrency) return valueInMarketQuote;
+  const vTwd = valueInMarketQuote * currencyToTWDRate(mc, rates);
+  const rAcct = currencyToTWDRate(accountCurrency, rates);
+  return rAcct > 0 ? vTwd / rAcct : valueInMarketQuote;
+}
+
+/** 手動輸入證券戶幣別價格 → 存回 currentPrices 用的市場報價幣價格 */
+export function convertAccountCurrencyToMarketQuote(
+  valueInAccount: number,
+  market: Market,
+  accountCurrency: Currency,
+  rates: ExchangeRates
+): number {
+  const mc = marketToCurrency(market);
+  if (mc === accountCurrency) return valueInAccount;
+  const vTwd = valueInAccount * currencyToTWDRate(accountCurrency, rates);
+  const rM = currencyToTWDRate(mc, rates);
+  return rM > 0 ? vTwd / rM : valueInAccount;
+}
+
+/** 交易入帳金額（已含於 tx.amount 或 price*qty）依該筆帳戶幣別換算為 TWD */
+export function transactionAmountNativeToTWD(
+  amountNative: number,
+  tx: Transaction,
+  accounts: Account[],
+  rates: ExchangeRates
+): number {
+  const acc = accounts.find(a => a.id === tx.accountId);
+  const ccy = acc?.currency ?? marketToCurrency(tx.market);
+  return nativeValueInAccountCurrencyToTWD(amountNative, ccy, rates);
 }
 
 /** 將幣別對應到 TWD 匯率 */
@@ -150,7 +212,10 @@ export function getDisplayRateForBaseCurrency(
 export const calculateHoldings = (
   transactions: Transaction[], 
   currentPrices: Record<string, number>,
-  priceDetails?: Record<string, { change: number, changePercent: number }>
+  priceDetails?: Record<string, { change: number, changePercent: number }>,
+  /** 若有帳戶與匯率，會把現價/市值/涨跌金額依證券戶幣別換算，與 totalCost（入帳幣）一致 */
+  accounts?: Account[],
+  rates?: ExchangeRates
 ): Holding[] => {
   const map = new Map<string, Holding>();
   const flowsMap = new Map<string, { amount: number, date: number }[]>();
@@ -245,22 +310,32 @@ export const calculateHoldings = (
         currentValue = Math.round(currentValue);
       }
 
-      const unrealizedPL = currentValue - h.totalCost;
+      const acc = accounts?.find(a => a.id === h.accountId);
+      let outPrice = currentPrice;
+      let outValue = currentValue;
+      const details = priceDetails?.[priceKey];
+      let dailyChange = details !== undefined ? (details.change !== undefined ? details.change : 0) : undefined;
+      const dailyChangePercent = details !== undefined ? (details.changePercent !== undefined ? details.changePercent : 0) : undefined;
+
+      if (acc && rates) {
+        outPrice = convertQuotedValueToAccountCurrency(currentPrice, h.market, acc.currency, rates);
+        outValue = convertQuotedValueToAccountCurrency(currentValue, h.market, acc.currency, rates);
+        if (dailyChange !== undefined) {
+          dailyChange = convertQuotedValueToAccountCurrency(dailyChange, h.market, acc.currency, rates);
+        }
+      }
+
+      const unrealizedPL = outValue - h.totalCost;
       const unrealizedPLPercent = h.totalCost > 0 ? (unrealizedPL / h.totalCost) * 100 : 0;
       
       const flows = flowsMap.get(`${h.accountId}-${h.ticker}`) || [];
-      const xirrFlows = [...flows, { amount: currentValue, date: Date.now() }];
+      const xirrFlows = [...flows, { amount: outValue, date: Date.now() }];
       const annualizedReturn = calculateGenericXIRR(xirrFlows);
-
-      const details = priceDetails?.[priceKey];
-      // 如果有 details，使用其實際值（即使是 0 也代表平盤）；如果沒有，使用 undefined 表示未取得
-      const dailyChange = details !== undefined ? (details.change !== undefined ? details.change : 0) : undefined;
-      const dailyChangePercent = details !== undefined ? (details.changePercent !== undefined ? details.changePercent : 0) : undefined;
 
       return { 
         ...h, 
-        currentPrice, 
-        currentValue, 
+        currentPrice: outPrice, 
+        currentValue: outValue, 
         unrealizedPL, 
         unrealizedPLPercent, 
         annualizedReturn,
@@ -352,6 +427,14 @@ export const calculateAccountBalances = (accounts: Account[], cashFlows: CashFlo
     return accounts.map(a => ({ ...a, balance: balMap[a.id] || 0 }));
 }
 
+/** 年底/某日持倉（依帳戶拆開，供正確依證券戶幣別換匯） */
+export interface AccountScopedHolding {
+  accountId: string;
+  market: Market;
+  ticker: string;
+  quantity: number;
+}
+
 // Time Machine Helper: Calculate holdings and cash at a specific date
 // EXPORT THIS FUNCTION for HistoricalDataModal
 export const getPortfolioStateAtDate = (
@@ -359,7 +442,12 @@ export const getPortfolioStateAtDate = (
     transactions: Transaction[],
     cashFlows: CashFlow[],
     accounts: Account[]
-): { holdings: Record<string, number>, cashBalances: Record<string, number> } => {
+): {
+  holdings: Record<string, number>;
+  /** 同 market-ticker 在不同帳戶各有一筆；換匯時請用 accountId 對應帳戶幣別 */
+  accountHoldings: AccountScopedHolding[];
+  cashBalances: Record<string, number>;
+} => {
     
     // 1. Calculate Cash Balances
     const cashBalances: Record<string, number> = {};
@@ -400,11 +488,13 @@ export const getPortfolioStateAtDate = (
         }
     });
 
-    // 2. Calculate Holdings
-    const holdings: Record<string, number> = {}; // Key: "Market-Ticker"
+    // 2. Calculate Holdings（依帳戶拆開；另聚合成舊版 market-ticker key 供相容）
+    const scopedMap = new Map<string, number>();
+    const scopedKey = (accountId: string, market: Market, ticker: string) =>
+      `${accountId}\x1e${market}\x1e${ticker}`;
 
     transactions.filter(tx => new Date(tx.date) <= targetDate).forEach(tx => {
-        const key = `${tx.market}-${tx.ticker}`;
+        const sKey = scopedKey(tx.accountId, tx.market, tx.ticker);
         
         // Update Cash from Tx cost logic (simplified here as we only need cashBalances roughly correct, but holdings exact)
         let baseVal = tx.price * tx.quantity;
@@ -414,26 +504,36 @@ export const getPortfolioStateAtDate = (
         
         if (tx.type === TransactionType.BUY) {
             cashBalances[tx.accountId] = (cashBalances[tx.accountId] || 0) - cost;
-            holdings[key] = (holdings[key] || 0) + tx.quantity;
+            scopedMap.set(sKey, (scopedMap.get(sKey) || 0) + tx.quantity);
         } else if (tx.type === TransactionType.SELL) {
             const proceeds = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
             cashBalances[tx.accountId] = (cashBalances[tx.accountId] || 0) + proceeds;
-            holdings[key] = (holdings[key] || 0) - tx.quantity;
+            scopedMap.set(sKey, (scopedMap.get(sKey) || 0) - tx.quantity);
         } else if (tx.type === TransactionType.CASH_DIVIDEND) {
              const divAmt = tx.amount !== undefined ? tx.amount : ((tx.price * tx.quantity) - (tx.fees || 0));
              cashBalances[tx.accountId] = (cashBalances[tx.accountId] || 0) + divAmt;
         } else if (tx.type === TransactionType.DIVIDEND) {
-             holdings[key] = (holdings[key] || 0) + tx.quantity;
+             scopedMap.set(sKey, (scopedMap.get(sKey) || 0) + tx.quantity);
         } else if (tx.type === TransactionType.TRANSFER_IN) {
              cashBalances[tx.accountId] = (cashBalances[tx.accountId] || 0) - (tx.fees || 0);
-             holdings[key] = (holdings[key] || 0) + tx.quantity;
+             scopedMap.set(sKey, (scopedMap.get(sKey) || 0) + tx.quantity);
         } else if (tx.type === TransactionType.TRANSFER_OUT) {
              cashBalances[tx.accountId] = (cashBalances[tx.accountId] || 0) - (tx.fees || 0);
-             holdings[key] = (holdings[key] || 0) - tx.quantity;
+             scopedMap.set(sKey, (scopedMap.get(sKey) || 0) - tx.quantity);
         }
     });
 
-    return { holdings, cashBalances };
+    const accountHoldings: AccountScopedHolding[] = [];
+    const holdings: Record<string, number> = {};
+    scopedMap.forEach((qty, key) => {
+      if (qty <= 0.000001) return;
+      const [accountId, market, ticker] = key.split('\x1e');
+      accountHoldings.push({ accountId, market: market as Market, ticker, quantity: qty });
+      const aggKey = `${market}-${ticker}`;
+      holdings[aggKey] = (holdings[aggKey] || 0) + qty;
+    });
+
+    return { holdings, accountHoldings, cashBalances };
 };
 
 export const generateAdvancedChartData = (
@@ -527,14 +627,13 @@ export const generateAdvancedChartData = (
           };
           
           const yearEndDate = new Date(`${y}-12-31`);
-          const { holdings, cashBalances } = getPortfolioStateAtDate(yearEndDate, transactions, cashFlows, accounts);
+          const { accountHoldings, cashBalances } = getPortfolioStateAtDate(yearEndDate, transactions, cashFlows, accounts);
           
           let stockValueTWD = 0;
           let hasMissingPrices = false;
           
-          Object.entries(holdings).forEach(([key, qty]) => {
+          accountHoldings.forEach(({ market, ticker, quantity: qty }) => {
               if (qty > 0.000001) {
-                  const [market, ticker] = key.split('-');
                   // 移除 (BAK) 後綴（備份股票代號）
                   const cleanTicker = ticker.replace(/\(BAK\)/gi, '').trim();
                   
@@ -568,7 +667,7 @@ export const generateAdvancedChartData = (
                       hasMissingPrices = true;
                   }
                   
-                  // 根據市場類型使用對應的匯率
+                  // 行情幣別 = 市場幣別；換算 TWD 與經帳戶幣種再換 TWD 在數學上等價
                   const nativeValue = market === Market.TW ? Math.round(qty * price) : qty * price;
                   stockValueTWD += marketValueToTWD(nativeValue, market, histRates);
               }
@@ -667,13 +766,14 @@ export const formatCurrency = (val: number, currency: string): string => {
 export const calculateAssetAllocation = (
   holdings: Holding[],
   cashBalanceTWD: number,
-  rates: ExchangeRates
+  rates: ExchangeRates,
+  accounts: Account[]
 ): AssetAllocationItem[] => {
   const tickerMap: Record<string, number> = {};
   let totalValue = cashBalanceTWD;
 
   holdings.forEach(h => {
-    const valTWD = marketValueToTWD(h.currentValue, h.market, rates);
+    const valTWD = holdingValueToTWD(h, accounts, rates);
     if (!tickerMap[h.ticker]) tickerMap[h.ticker] = 0;
     tickerMap[h.ticker] += valTWD;
     totalValue += valTWD;
@@ -772,13 +872,14 @@ export const calculateStockBondAllocation = (
   holdings: Holding[],
   cashBalanceTWD: number,
   rates: ExchangeRates,
+  accounts: Account[],
   overrides?: Record<string, AssetClass>
 ): AssetClassAllocationItem[] => {
   let stockValue = 0;
   let bondValue = 0;
 
   holdings.forEach(h => {
-    const value = marketValueToTWD(h.currentValue, h.market, rates);
+    const value = holdingValueToTWD(h, accounts, rates);
     const klass = getAssetClassForTicker(h.ticker, overrides);
     if (klass === AssetClass.BOND) bondValue += value;
     else stockValue += value;
@@ -884,7 +985,7 @@ export const buildAttributionSeries = (
     if (tx.type !== TransactionType.CASH_DIVIDEND) return;
     const year = String(new Date(tx.date).getFullYear());
     const nativeIncome = (tx.amount ?? (tx.price * tx.quantity)) - (tx.fees || 0);
-    const incomeTWD = marketValueToTWD(nativeIncome, tx.market, rates);
+    const incomeTWD = transactionAmountNativeToTWD(nativeIncome, tx, accounts, rates);
     incomeByYear[year] = (incomeByYear[year] || 0) + incomeTWD;
   });
 
@@ -949,14 +1050,11 @@ export const calculateAccountPerformance = (
     return cf.amount * effectiveRate;
   };
 
-  const getMarketRate = (market: Market): number =>
-    marketValueToTWD(1, market, rates);
-
   const getTransactionAmountTWD = (tx: Transaction): number => {
     let baseVal = tx.price * tx.quantity;
     if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
     const val = tx.amount !== undefined ? tx.amount : baseVal;
-    return val * getMarketRate(tx.market);
+    return transactionAmountNativeToTWD(val, tx, accounts, rates);
   };
 
   return accounts.map(acc => {
@@ -966,10 +1064,10 @@ export const calculateAccountPerformance = (
     const cashTWD = acc.balance * normalizedAccountRate;
     const accountHoldings = holdings.filter(h => h.accountId === acc.id);
     const stockValueTWD = accountHoldings.reduce((sum, h) => {
-      return sum + h.currentValue * getMarketRate(h.market);
+      return sum + h.currentValue * normalizedAccountRate;
     }, 0);
     const holdingsCostTWD = accountHoldings.reduce((sum, h) => {
-      return sum + h.totalCost * getMarketRate(h.market);
+      return sum + h.totalCost * normalizedAccountRate;
     }, 0);
     const unrealizedProfitTWD = stockValueTWD - holdingsCostTWD;
     const stockValueNative = accountHoldings.reduce((sum, h) => sum + h.currentValue, 0);
@@ -1019,7 +1117,7 @@ export const calculateAccountPerformance = (
       let baseVal = tx.price * tx.quantity;
       if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
       const incomeVal = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
-      incomeTWD += incomeVal * getMarketRate(tx.market);
+      incomeTWD += transactionAmountNativeToTWD(incomeVal, tx, accounts, rates);
     });
     cashFlows.forEach(cf => {
       if (cf.accountId !== acc.id) return;
