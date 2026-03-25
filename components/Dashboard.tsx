@@ -34,6 +34,19 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
   const [activeOuterIndex, setActiveOuterIndex] = useState<number | undefined>(undefined);
   const [tickerClassOverrides, setTickerClassOverrides] = useState<Record<string, AssetClass>>({});
+  // 股/債覆寫用：寫入 localStorage：assetClassOverrides
+  const [overrideTickerInput, setOverrideTickerInput] = useState<string>('');
+  const [overrideAssetClass, setOverrideAssetClass] = useState<AssetClass>(AssetClass.EQUITY);
+  const tickerSuggestions = useMemo(
+    () => Array.from(new Set(holdings.map((h: Holding) => h.ticker))).sort((a, b) => a.localeCompare(b)),
+    [holdings]
+  );
+  const overrideChips = useMemo(() => {
+    const set = new Set(tickerSuggestions);
+    return Object.entries(tickerClassOverrides)
+      .filter(([ticker]) => set.has(ticker))
+      .sort(([a], [b]) => a.localeCompare(b));
+  }, [tickerClassOverrides, tickerSuggestions]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hoveredAnnualYear, setHoveredAnnualYear] = useState<string | null>(null);
   const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
@@ -72,6 +85,25 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   useEffect(() => {
     localStorage.setItem('assetClassOverrides', JSON.stringify(tickerClassOverrides));
   }, [tickerClassOverrides]);
+
+  const normalizeOverrideKey = (raw: string) => raw.trim().toUpperCase();
+
+  const setOverrideForTicker = () => {
+    const key = normalizeOverrideKey(overrideTickerInput);
+    if (!key) return;
+    setTickerClassOverrides(prev => ({ ...prev, [key]: overrideAssetClass }));
+  };
+
+  const clearOverrideForTicker = (tickerKey: string) => {
+    const key = normalizeOverrideKey(tickerKey);
+    if (!key) return;
+    setTickerClassOverrides(prev => {
+      if (!(key in prev)) return prev;
+      const next: Record<string, AssetClass> = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
 
   const marketMeta = useMemo(() => {
     const isZh = language === 'zh-TW' || language === 'zh-CN';
@@ -691,6 +723,80 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* 股/債覆寫小表單：用來編輯 localStorage: assetClassOverrides */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-slate-700 mb-2">自訂股/債分類（覆寫）</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">Ticker</label>
+                    <input
+                      value={overrideTickerInput}
+                      onChange={(e) => setOverrideTickerInput(e.target.value)}
+                      list="ticker-suggestions"
+                      placeholder="例如：AGG / TLT / BND"
+                      className="w-full bg-white border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    <datalist id="ticker-suggestions">
+                      {tickerSuggestions.map((t) => (
+                        <option key={t} value={t} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">分類</label>
+                    <select
+                      value={overrideAssetClass}
+                      onChange={(e) => setOverrideAssetClass(e.target.value as AssetClass)}
+                      className="w-full bg-white border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value={AssetClass.EQUITY}>股</option>
+                      <option value={AssetClass.BOND}>債</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={setOverrideForTicker}
+                    className="flex-1 px-3 py-1.5 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700 transition"
+                  >
+                    保存覆寫
+                  </button>
+                  <button
+                    onClick={() => clearOverrideForTicker(overrideTickerInput)}
+                    className="flex-1 px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-700 hover:bg-slate-100 transition"
+                  >
+                    清除
+                  </button>
+                </div>
+
+                {overrideChips.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-[11px] text-slate-500 mb-1">目前覆寫</p>
+                    <div className="flex flex-wrap gap-2">
+                      {overrideChips.map(([tickerKey, assetClass]) => {
+                        const label = assetClass === AssetClass.BOND ? '債' : '股';
+                        return (
+                          <button
+                            key={tickerKey}
+                            type="button"
+                            onClick={() => clearOverrideForTicker(tickerKey)}
+                            className="px-2 py-1 rounded bg-white border border-slate-200 hover:border-indigo-200 transition flex items-center gap-2"
+                            title="點擊移除覆寫"
+                          >
+                            <span className="text-xs font-mono text-slate-700">{tickerKey}</span>
+                            <span className={`text-[11px] font-semibold ${assetClass === AssetClass.BOND ? 'text-blue-700' : 'text-emerald-700'}`}>
+                              {label}
+                            </span>
+                            <span className="text-[11px] text-slate-400">×</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
