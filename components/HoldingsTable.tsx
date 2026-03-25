@@ -160,6 +160,189 @@ const HoldingsTable: React.FC<Props> = () => {
     }
   };
 
+  function marketNativeCurrency(m: Market): string {
+    return m === Market.TW ? 'TWD' : m === Market.JP ? 'JPY' : m === Market.CN ? 'CNY' : m === Market.SZ ? 'CNY' : m === Market.IN ? 'INR' : m === Market.CA ? 'CAD' : m === Market.FR ? 'EUR' : m === Market.HK ? 'HKD' : m === Market.KR ? 'KRW' : m === Market.DE ? 'EUR' : m === Market.AU ? 'AUD' : m === Market.SA ? 'SAR' : m === Market.BR ? 'BRL' : m === Market.UK ? 'GBP' : 'USD';
+  }
+
+  const MS_ROW = '\x1e';
+
+  function renderHoldingRow(h: Holding, isDetailedMode: boolean = false) {
+    const isProfit = h.unrealizedPL >= 0;
+    const acc = accounts.find(a => a.id === h.accountId);
+    const mergedCurrency =
+      h.accountId.startsWith('merged') && h.accountId.includes(MS_ROW)
+        ? h.accountId.split(MS_ROW).slice(-1)[0]
+        : null;
+    const currency = isDetailedMode && acc
+      ? String(acc.currency)
+      : mergedCurrency ?? marketNativeCurrency(h.market);
+    const plColor = isProfit ? 'text-success' : 'text-danger';
+    const roiColor = h.annualizedReturn >= 0 ? 'text-blue-600' : 'text-orange-600';
+    const dailyChangeColor = h.dailyChange !== undefined && h.dailyChange !== null
+      ? (h.dailyChange >= 0 ? 'text-success' : 'text-danger')
+      : 'text-slate-500';
+    const uniqueKey = `${h.accountId}-${h.market}-${h.ticker}`;
+
+    return (
+      <tr
+        key={uniqueKey}
+        className={`transition-colors group ${isDetailedMode ? 'bg-slate-50/30' : ''}`}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#f8fafc';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = '';
+        }}
+      >
+        <td className="px-3 py-2 sticky left-0 bg-white z-10">
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
+            h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' :
+            h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' :
+            h.market === Market.JP ? 'bg-orange-50 text-orange-600 border-orange-100' :
+            h.market === Market.CN ? 'bg-amber-50 text-amber-600 border-amber-100' :
+            h.market === Market.HK ? 'bg-sky-50 text-sky-600 border-sky-100' :
+            h.market === Market.KR ? 'bg-orange-50 text-orange-600 border-orange-100' :
+            h.market === Market.DE ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+            h.market === Market.AU ? 'bg-lime-50 text-lime-600 border-lime-100' :
+            h.market === Market.SA ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+            h.market === Market.BR ? 'bg-cyan-50 text-cyan-600 border-cyan-100' :
+            h.market === Market.IN ? 'bg-teal-50 text-teal-600 border-teal-100' :
+            h.market === Market.CA ? 'bg-rose-50 text-rose-600 border-rose-100' :
+            h.market === Market.FR ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+            'bg-green-50 text-green-600 border-green-100'
+          }`}>
+            {h.market}
+          </span>
+        </td>
+
+        <td className="px-3 py-2 sticky left-14 bg-white z-10 font-bold text-slate-700">{h.ticker}</td>
+
+        <td
+          className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-300 text-xs sm:text-sm"
+        >
+          {(() => {
+            const num = h.quantity;
+            if (num % 1 === 0) {
+              return num.toLocaleString('en-US');
+            }
+            const fixed = num.toFixed(5);
+            return fixed.replace(/\.?0+$/, '');
+          })()}
+        </td>
+
+        <td className="px-3 py-2 text-right">
+           <div
+            className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-white dark:group-hover:bg-slate-600"
+           >
+             <span className="text-slate-500 dark:text-slate-300 text-xs">$</span>
+             <input
+              type="number"
+              className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
+              value={h.currentPrice}
+              onChange={(e) => {
+                const raw = parseFloat(e.target.value) || 0;
+                let marketPrice = raw;
+                const mCcy = marketNativeCurrency(h.market);
+                if (isDetailedMode && acc && !h.accountId.startsWith('merged')) {
+                  marketPrice = convertAccountCurrencyToMarketQuote(raw, h.market, acc.currency, rates);
+                } else if (mergedCurrency && mergedCurrency !== mCcy) {
+                  marketPrice = convertAccountCurrencyToMarketQuote(
+                    raw,
+                    h.market,
+                    mergedCurrency as Currency,
+                    rates
+                  );
+                }
+                onUpdatePrice(`${h.market}-${h.ticker}`, marketPrice);
+              }}
+              step="0.01"
+             />
+           </div>
+        </td>
+
+        <td className="px-3 py-2">
+          <div className="flex flex-col gap-1">
+            <span
+              className={`text-xs font-medium text-right ${
+                isDarkMode ? 'text-[#94a3b8]' : 'text-[#64748b] group-hover:text-white'
+              }`}
+            >
+              {h.weight.toFixed(1)}%
+            </span>
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${
+                  h.market === Market.US ? 'bg-blue-400' :
+                  h.market === Market.UK ? 'bg-purple-400' :
+                  h.market === Market.JP ? 'bg-orange-400' :
+                  h.market === Market.CN ? 'bg-amber-400' :
+                  h.market === Market.SZ ? 'bg-amber-500' :
+                  h.market === Market.IN ? 'bg-teal-400' :
+                  h.market === Market.CA ? 'bg-rose-400' :
+                  h.market === Market.FR ? 'bg-indigo-400' :
+                  'bg-green-400'
+                }`}
+                style={{ width: `${Math.min(h.weight, 100)}%` }}
+              ></div>
+            </div>
+          </div>
+        </td>
+
+        <td
+          className="px-3 py-2 text-right font-medium"
+          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
+        >
+          {formatCurrency(h.totalCost, currency)}
+        </td>
+
+        <td
+          className="px-3 py-2 text-right font-medium"
+          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
+        >
+          {formatCurrency(h.currentValue, currency)}
+        </td>
+
+        <td
+          className={`px-3 py-2 text-right font-bold ${plColor}`}
+        >
+          <div className="flex flex-col items-end leading-tight">
+            <span>{formatCurrency(h.unrealizedPL, currency)}</span>
+            <span className="text-[10px] opacity-80">{isProfit ? '+' : ''}{h.unrealizedPLPercent.toFixed(2)}%</span>
+          </div>
+        </td>
+
+        <td className={`px-3 py-2 text-right font-bold ${roiColor}`}>
+          {h.annualizedReturn && h.annualizedReturn !== 0 ? `${h.annualizedReturn.toFixed(1)}%` : '-'}
+        </td>
+
+        <td className={`px-3 py-2 text-right text-xs font-bold ${dailyChangeColor}`}>
+          {h.dailyChange !== undefined && h.dailyChange !== null ? (
+             <div className="flex flex-col items-end">
+               <span>{h.dailyChange > 0 ? '+' : ''}{h.dailyChange.toFixed(2)}</span>
+               {h.dailyChangePercent !== undefined && h.dailyChangePercent !== null && (
+                 <span className="opacity-75">({h.dailyChangePercent > 0 ? '+' : ''}{h.dailyChangePercent.toFixed(2)}%)</span>
+               )}
+             </div>
+          ) : (
+            <span className="text-slate-400">-</span>
+          )}
+        </td>
+
+        <td
+          className="px-3 py-2 text-right text-xs"
+          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
+        >
+           {new Intl.NumberFormat('zh-TW', {
+              style: 'currency',
+              currency: currency,
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+           }).format(h.avgCost)}
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl shadow overflow-hidden border border-slate-100">
       <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center flex-wrap gap-2 bg-slate-50">
@@ -305,206 +488,6 @@ const HoldingsTable: React.FC<Props> = () => {
       </div>
     </div>
   );
-
-  function marketNativeCurrency(m: Market): string {
-    return m === Market.TW ? 'TWD' : m === Market.JP ? 'JPY' : m === Market.CN ? 'CNY' : m === Market.SZ ? 'CNY' : m === Market.IN ? 'INR' : m === Market.CA ? 'CAD' : m === Market.FR ? 'EUR' : m === Market.HK ? 'HKD' : m === Market.KR ? 'KRW' : m === Market.DE ? 'EUR' : m === Market.AU ? 'AUD' : m === Market.SA ? 'SAR' : m === Market.BR ? 'BRL' : m === Market.UK ? 'GBP' : 'USD';
-  }
-
-  const MS_ROW = '\x1e';
-
-  // 渲染持倉行的輔助函數
-  function renderHoldingRow(h: Holding, isDetailedMode: boolean = false) {
-    const isProfit = h.unrealizedPL >= 0;
-    const acc = accounts.find(a => a.id === h.accountId);
-    const mergedCurrency =
-      h.accountId.startsWith('merged') && h.accountId.includes(MS_ROW)
-        ? h.accountId.split(MS_ROW).slice(-1)[0]
-        : null;
-    const currency = isDetailedMode && acc
-      ? String(acc.currency)
-      : mergedCurrency ?? marketNativeCurrency(h.market);
-    // 未實現損益色要與「證券戶列表」的 text-success/text-danger 完全一致
-    const plColor = isProfit ? 'text-success' : 'text-danger';
-    // 年化：對齊儀表板的藍/橘風格顏色
-    const roiColor = h.annualizedReturn >= 0 ? 'text-blue-600' : 'text-orange-600';
-    // 只有當 dailyChange 不是 undefined/null 時才根據正負值決定顏色，否則保持預設顏色
-    const dailyChangeColor = h.dailyChange !== undefined && h.dailyChange !== null 
-      ? (h.dailyChange >= 0 ? 'text-success' : 'text-danger')
-      : 'text-slate-500';
-    const uniqueKey = `${h.accountId}-${h.market}-${h.ticker}`;
-    
-    return (
-      <tr
-        key={uniqueKey}
-        className={`transition-colors group ${isDetailedMode ? 'bg-slate-50/30' : ''}`}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#f8fafc';
-        }}
-        onMouseLeave={(e) => {
-          // 清掉 inline style，讓 className 回到原本的底色（例如 isDetailedMode 的 bg-slate-50/30）
-          e.currentTarget.style.backgroundColor = '';
-        }}
-      >
-        {/* 1. Market */}
-        <td className="px-3 py-2 sticky left-0 bg-white z-10">
-          <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
-            h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' : 
-            h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' : 
-            h.market === Market.JP ? 'bg-orange-50 text-orange-600 border-orange-100' :
-            h.market === Market.CN ? 'bg-amber-50 text-amber-600 border-amber-100' :
-            h.market === Market.HK ? 'bg-sky-50 text-sky-600 border-sky-100' :
-            h.market === Market.KR ? 'bg-orange-50 text-orange-600 border-orange-100' :
-            h.market === Market.DE ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
-            h.market === Market.AU ? 'bg-lime-50 text-lime-600 border-lime-100' :
-            h.market === Market.SA ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-            h.market === Market.BR ? 'bg-cyan-50 text-cyan-600 border-cyan-100' :
-            h.market === Market.IN ? 'bg-teal-50 text-teal-600 border-teal-100' :
-            h.market === Market.CA ? 'bg-rose-50 text-rose-600 border-rose-100' :
-            h.market === Market.FR ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
-            'bg-green-50 text-green-600 border-green-100'
-          }`}>
-            {h.market}
-          </span>
-        </td>
-        
-        {/* 2. Ticker */}
-        <td className="px-3 py-2 sticky left-14 bg-white z-10 font-bold text-slate-700">{h.ticker}</td>
-        
-        {/* 3. Quantity */}
-        <td
-          className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-300 text-xs sm:text-sm"
-        >
-          {(() => {
-            const num = h.quantity;
-            if (num % 1 === 0) {
-              return num.toLocaleString('en-US');
-            }
-            // 使用 toFixed(5) 确保显示最多5位小数，然后移除尾部的零
-            const fixed = num.toFixed(5);
-            return fixed.replace(/\.?0+$/, '');
-          })()}
-        </td>
-        
-        {/* 4. Current Price */}
-        <td className="px-3 py-2 text-right">
-           <div
-            className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-white dark:group-hover:bg-slate-600"
-           >
-             <span className="text-slate-500 dark:text-slate-300 text-xs">$</span>
-             <input 
-              type="number"
-              className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
-              value={h.currentPrice}
-              onChange={(e) => {
-                const raw = parseFloat(e.target.value) || 0;
-                let marketPrice = raw;
-                const mCcy = marketNativeCurrency(h.market);
-                if (isDetailedMode && acc && !h.accountId.startsWith('merged')) {
-                  marketPrice = convertAccountCurrencyToMarketQuote(raw, h.market, acc.currency, rates);
-                } else if (mergedCurrency && mergedCurrency !== mCcy) {
-                  marketPrice = convertAccountCurrencyToMarketQuote(
-                    raw,
-                    h.market,
-                    mergedCurrency as Currency,
-                    rates
-                  );
-                }
-                onUpdatePrice(`${h.market}-${h.ticker}`, marketPrice);
-              }}
-              step="0.01"
-             />
-           </div>
-        </td>
-
-        {/* 5. Weight */}
-        <td className="px-3 py-2">
-          <div className="flex flex-col gap-1">
-            <span
-              className={`text-xs font-medium text-right ${
-                isDarkMode ? 'text-[#94a3b8]' : 'text-[#64748b] group-hover:text-white'
-              }`}
-            >
-              {h.weight.toFixed(1)}%
-            </span>
-            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-              <div 
-                className={`h-full rounded-full ${
-                  h.market === Market.US ? 'bg-blue-400' : 
-                  h.market === Market.UK ? 'bg-purple-400' : 
-                  h.market === Market.JP ? 'bg-orange-400' :
-                  h.market === Market.CN ? 'bg-amber-400' :
-                  h.market === Market.SZ ? 'bg-amber-500' :
-                  h.market === Market.IN ? 'bg-teal-400' :
-                  h.market === Market.CA ? 'bg-rose-400' :
-                  h.market === Market.FR ? 'bg-indigo-400' :
-                  'bg-green-400'
-                }`} 
-                style={{ width: `${Math.min(h.weight, 100)}%` }}
-              ></div>
-            </div>
-          </div>
-        </td>
-
-        {/* 6. Total Cost (New) */}
-        <td
-          className="px-3 py-2 text-right font-medium"
-          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
-        >
-          {formatCurrency(h.totalCost, currency)}
-        </td>
-
-        {/* 7. Market Value */}
-        <td
-          className="px-3 py-2 text-right font-medium"
-          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
-        >
-          {formatCurrency(h.currentValue, currency)}
-        </td>
-
-        {/* 8. P/L */}
-        <td
-          className={`px-3 py-2 text-right font-bold ${plColor}`}
-        >
-          <div className="flex flex-col items-end leading-tight">
-            <span>{formatCurrency(h.unrealizedPL, currency)}</span>
-            <span className="text-[10px] opacity-80">{isProfit ? '+' : ''}{h.unrealizedPLPercent.toFixed(2)}%</span>
-          </div>
-        </td>
-
-        {/* 9. Annualized Return */}
-        <td className={`px-3 py-2 text-right font-bold ${roiColor}`}>
-          {h.annualizedReturn && h.annualizedReturn !== 0 ? `${h.annualizedReturn.toFixed(1)}%` : '-'}
-        </td>
-
-        {/* 10. Daily Change */}
-        <td className={`px-3 py-2 text-right text-xs font-bold ${dailyChangeColor}`}>
-          {h.dailyChange !== undefined && h.dailyChange !== null ? (
-             <div className="flex flex-col items-end">
-               <span>{h.dailyChange > 0 ? '+' : ''}{h.dailyChange.toFixed(2)}</span>
-               {h.dailyChangePercent !== undefined && h.dailyChangePercent !== null && (
-                 <span className="opacity-75">({h.dailyChangePercent > 0 ? '+' : ''}{h.dailyChangePercent.toFixed(2)}%)</span>
-               )}
-             </div>
-          ) : (
-            <span className="text-slate-400">-</span>
-          )}
-        </td>
-
-        {/* 11. Avg Cost */}
-        <td
-          className="px-3 py-2 text-right text-xs"
-          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
-        >
-           {new Intl.NumberFormat('zh-TW', { 
-              style: 'currency', 
-              currency: currency, 
-              minimumFractionDigits: 2, 
-              maximumFractionDigits: 2 
-           }).format(h.avgCost)}
-        </td>
-      </tr>
-    );
-  }
 };
 
 export default HoldingsTable;
