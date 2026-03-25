@@ -15,7 +15,7 @@ import {
   calculateHoldings, calculateAccountBalances, generateAdvancedChartData,
   calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance,
   calculateXIRR, getDisplayRateForBaseCurrency, getTransferTargetAmount, ExchangeRates,
-  marketValueToTWD, currencyToTWDRate
+  currencyToTWDRate, holdingValueToTWD, transactionAmountNativeToTWD
 } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
 import Dashboard from './components/Dashboard';
@@ -232,7 +232,10 @@ const App: React.FC = () => {
 
   // ─── 計算 ───────────────────────────────────────────────────
 
-  const baseHoldings = useMemo(() => calculateHoldings(transactions, currentPrices, priceDetails), [transactions, currentPrices, priceDetails]);
+  const baseHoldings = useMemo(
+    () => calculateHoldings(transactions, currentPrices, priceDetails, accounts, rates),
+    [transactions, currentPrices, priceDetails, accounts, rates]
+  );
   const computedAccounts = useMemo(() => calculateAccountBalances(accounts, cashFlows, transactions), [accounts, cashFlows, transactions]);
 
   const summary = useMemo<PortfolioSummary>(() => {
@@ -246,12 +249,16 @@ const App: React.FC = () => {
       if (cf.type === CashFlowType.DEPOSIT && account?.currency === Currency.USD) { totalUsdInflow += cf.amount; totalTwdCostForUsd += cf.amountTWD ?? cf.amount * (cf.exchangeRate ?? exchangeRate); }
       if (cf.type === CashFlowType.TRANSFER && cf.targetAccountId) { const ta = accounts.find((a: Account) => a.id === cf.targetAccountId); if (account?.currency === Currency.TWD && ta?.currency === Currency.USD) { totalUsdInflow += cf.exchangeRate ? cf.amount/cf.exchangeRate : cf.amount/exchangeRate; totalTwdCostForUsd += cf.amount; } }
     });
-    const stockValueTWD = baseHoldings.reduce((s: number, h: Holding) => s + marketValueToTWD(h.currentValue, h.market, rates), 0);
+    const stockValueTWD = baseHoldings.reduce((s: number, h: Holding) => s + holdingValueToTWD(h, accounts, rates), 0);
     const cashValueTWD = computedAccounts.reduce((s: number, a: Account) => {
       return s + (a.balance * currencyToTWDRate(a.currency, rates));
     }, 0);
     const totalValueTWD = stockValueTWD, totalAssets = totalValueTWD + cashValueTWD, totalPLTWD = totalAssets - netInvestedTWD;
-    const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => s + marketValueToTWD((t.amount ?? t.price*t.quantity) - t.fees, t.market, rates), 0);
+    const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => {
+      const baseVal = t.price * t.quantity;
+      const amt = (t.amount ?? baseVal) - t.fees;
+      return s + transactionAmountNativeToTWD(amt, t, accounts, rates);
+    }, 0);
     return {
       totalCostTWD: 0, totalValueTWD, totalPLTWD,
       totalPLPercent: netInvestedTWD > 0 ? (totalPLTWD / netInvestedTWD) * 100 : 0,
@@ -271,8 +278,8 @@ const App: React.FC = () => {
 
   const holdings = useMemo(() => {
     const total = summary.totalValueTWD + summary.cashBalanceTWD;
-    return baseHoldings.map((h: Holding) => ({ ...h, weight: total>0 ? (marketValueToTWD(h.currentValue, h.market, rates)/total)*100 : 0 }));
-  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, rates]);
+    return baseHoldings.map((h: Holding) => ({ ...h, weight: total>0 ? (holdingValueToTWD(h, accounts, rates)/total)*100 : 0 }));
+  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, rates, accounts]);
 
   // useAutoRefresh：登入且有持倉時自動每 3 分鐘刷新，切回前台立即補刷
   useAutoRefresh(handleAutoUpdatePrices, {
@@ -288,8 +295,8 @@ const App: React.FC = () => {
   ), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, rates, historicalData]);
 
   const assetAllocation = useMemo(() => calculateAssetAllocation(
-    holdings, summary.cashBalanceTWD, rates
-  ), [holdings, summary.cashBalanceTWD, rates]);
+    holdings, summary.cashBalanceTWD, rates, accounts
+  ), [holdings, summary.cashBalanceTWD, rates, accounts]);
 
   const annualPerformance = useMemo(() => calculateAnnualPerformance(chartData), [chartData]);
 
