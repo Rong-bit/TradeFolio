@@ -169,6 +169,16 @@ function shouldDebugSymbol(symbol: string): boolean {
   return s.includes('DTLA') || s.includes('VOD');
 }
 
+function normalizeYahooCurrency(cur: unknown): string | undefined {
+  if (cur == null) return undefined;
+  const s = String(cur).trim();
+  // Yahoo 對英股便士常見回傳：GBp（注意小寫 p）
+  // 也可能回傳：GBX
+  if (/^GB[pP]$/.test(s)) return 'GBX';
+  if (s.toUpperCase() === 'GBX') return 'GBX';
+  return s.toUpperCase();
+}
+
 function marketToExpectedQuoteCurrency(market?: YahooMarket): string {
   if (!market) return 'TWD';
   // 這裡要對齊 utils/calculations.ts 的 marketToCurrency：程式下游假設 currentPrice 已是「市場幣別」。
@@ -217,7 +227,8 @@ async function fetchSinglePrice(symbol: string, interval: '1m'|'1d' = '1m'): Pro
   if (!price && interval === '1m') return fetchSinglePrice(symbol, '1d');
 
   if (shouldDebugSymbol(symbol)) {
-    const currency = meta.currency ?? '';
+    const rawCurrency = meta.currency ?? '';
+    const currency = normalizeYahooCurrency(rawCurrency) ?? '';
     const rawPrice = Number(price);
     const normalizedPrice = currency === 'GBX' ? rawPrice / 100 : rawPrice;
     console.log('[PRICE_DEBUG]', {
@@ -244,7 +255,7 @@ async function fetchSinglePrice(symbol: string, interval: '1m'|'1d' = '1m'): Pro
     price,
     change: isNaN(chg) ? 0 : chg,
     changePercent: isNaN(pct) ? 0 : pct,
-    currency: meta.currency ? String(meta.currency).toUpperCase() : undefined,
+    currency: meta.currency ? normalizeYahooCurrency(meta.currency) : undefined,
   };
   setCache(ck, result);
   return result;
