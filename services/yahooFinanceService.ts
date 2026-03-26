@@ -162,6 +162,10 @@ function toYahoo(ticker: string, market?: YahooMarket): string {
   return t;
 }
 
+function shouldDebugSymbol(symbol: string): boolean {
+  return symbol.toUpperCase().includes('DTLA');
+}
+
 // ── 即時股價 ─────────────────────────────────────────────────────────────────
 
 async function fetchSinglePrice(symbol: string, interval: '1m'|'1d' = '1m'): Promise<PriceData | null> {
@@ -179,6 +183,26 @@ async function fetchSinglePrice(symbol: string, interval: '1m'|'1d' = '1m'): Pro
 
   const price = meta.regularMarketPrice ?? meta.previousClose ?? 0;
   if (!price && interval === '1m') return fetchSinglePrice(symbol, '1d');
+
+  if (shouldDebugSymbol(symbol)) {
+    const currency = meta.currency ?? '';
+    const rawPrice = Number(price);
+    const normalizedPrice = currency === 'GBX' ? rawPrice / 100 : rawPrice;
+    console.log('[PRICE_DEBUG]', {
+      inputSymbol: symbol,
+      interval,
+      currency,
+      exchangeName: meta.exchangeName ?? meta.fullExchangeName ?? '',
+      rawPrice,
+      normalizedPrice,
+      // Yahoo 通常用秒時間戳，轉成 ISO 方便比對
+      quoteTime: meta.regularMarketTime
+        ? new Date(meta.regularMarketTime * 1000).toISOString()
+        : null,
+      previousClose: meta.previousClose ?? null,
+      source: 'yahoo-chart-meta',
+    });
+  }
 
   const prev = meta.previousClose ?? meta.chartPreviousClose ?? 0;
   const chg  = meta.regularMarketChange ?? meta.postMarketChange ?? meta.preMarketChange ?? (price - prev);
