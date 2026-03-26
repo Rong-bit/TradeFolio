@@ -217,6 +217,7 @@ export const calculateHoldings = (
   accounts?: Account[],
   rates?: ExchangeRates
 ): Holding[] => {
+  const dbgOnceKey = new Set<string>();
   const map = new Map<string, Holding>();
   const flowsMap = new Map<string, { amount: number, date: number }[]>();
   const sortedTx = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -302,7 +303,8 @@ export const calculateHoldings = (
     .filter(h => h.quantity > 0.000001)
     .map(h => {
       const priceKey = `${h.market}-${h.ticker}`;
-      const currentPrice = currentPrices[priceKey] || h.avgCost;
+      const hasCurrentPrice = Object.prototype.hasOwnProperty.call(currentPrices, priceKey);
+      const currentPrice = hasCurrentPrice ? currentPrices[priceKey] : h.avgCost;
       
       // 策略更新：若是台股，市值(CurrentValue)四捨五入取整；美股則保留運算精確度
       let currentValue = currentPrice * h.quantity;
@@ -322,6 +324,23 @@ export const calculateHoldings = (
         outValue = convertQuotedValueToAccountCurrency(currentValue, h.market, acc.currency, rates);
         if (dailyChange !== undefined) {
           dailyChange = convertQuotedValueToAccountCurrency(dailyChange, h.market, acc.currency, rates);
+        }
+      }
+
+      if (h.market === Market.UK && h.ticker.toUpperCase().includes('DTLA')) {
+        const dk = `${h.accountId}-${priceKey}`;
+        if (!dbgOnceKey.has(dk)) {
+          dbgOnceKey.add(dk);
+          console.log('[HOLDING_DEBUG]', {
+            priceKey,
+            from: hasCurrentPrice ? 'currentPrices' : 'avgCost',
+            currentPrice,
+            market: h.market,
+            accountCurrency: acc?.currency,
+            outPrice,
+            currentValue,
+            outValue,
+          });
         }
       }
 
