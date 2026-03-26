@@ -10,6 +10,8 @@ export interface PriceData {
   price: number;
   change: number;
   changePercent: number;
+  /** Yahoo Finance 回傳的 quote 幣別（例如 USD / GBP / GBX） */
+  currency?: string;
 }
 
 export type YahooMarket =
@@ -166,6 +168,35 @@ function shouldDebugSymbol(symbol: string): boolean {
   return symbol.toUpperCase().includes('DTLA');
 }
 
+function marketToExpectedQuoteCurrency(market?: YahooMarket): string {
+  if (!market) return 'TWD';
+  // 這裡要對齊 utils/calculations.ts 的 marketToCurrency：程式下游假設 currentPrice 已是「市場幣別」。
+  switch (market) {
+    case 'US': return 'USD';
+    case 'TW': return 'TWD';
+    case 'UK': return 'GBP';
+    case 'JP': return 'JPY';
+    case 'CN':
+    case 'SZ': return 'CNY';
+    case 'IN': return 'INR';
+    case 'CA': return 'CAD';
+    case 'FR':
+    case 'DE': return 'EUR';
+    case 'HK': return 'HKD';
+    case 'KR': return 'KRW';
+    case 'AU': return 'AUD';
+    case 'SA': return 'SAR';
+    case 'BR': return 'BRL';
+    default: return 'TWD';
+  }
+}
+
+function rateToTwd(currency: string, rateMap: Record<string, number>): number {
+  const c = currency.toUpperCase();
+  if (c === 'TWD') return 1;
+  return rateMap[c] ?? 0;
+}
+
 // ── 即時股價 ─────────────────────────────────────────────────────────────────
 
 async function fetchSinglePrice(symbol: string, interval: '1m'|'1d' = '1m'): Promise<PriceData | null> {
@@ -208,7 +239,12 @@ async function fetchSinglePrice(symbol: string, interval: '1m'|'1d' = '1m'): Pro
   const chg  = meta.regularMarketChange ?? meta.postMarketChange ?? meta.preMarketChange ?? (price - prev);
   const pct  = meta.regularMarketChangePercent ?? meta.postMarketChangePercent ?? meta.preMarketChangePercent ?? (prev > 0 ? chg / prev * 100 : 0);
 
-  const result: PriceData = { price, change: isNaN(chg) ? 0 : chg, changePercent: isNaN(pct) ? 0 : pct };
+  const result: PriceData = {
+    price,
+    change: isNaN(chg) ? 0 : chg,
+    changePercent: isNaN(pct) ? 0 : pct,
+    currency: meta.currency ? String(meta.currency).toUpperCase() : undefined,
+  };
   setCache(ck, result);
   return result;
 }
@@ -313,7 +349,62 @@ export const fetchCurrentPrices = async (
   const [priceList, rateMap] = await Promise.all([batchPrices(), fetchRates(currencies)]);
 
   const prices: Record<string, PriceData> = {};
-  tickers.forEach((t, i) => { if (priceList[i]) prices[t] = priceList[i]!; });
+  tickers.forEach((t, i) => {
+    const p = priceList[i];
+    if (!p) return;
+
+    // 目標：讓 prices[t].price / change 都成為「程式下游期待的市場幣別」。
+    // 例如：Holding.market=UK -> utils/calculations.ts 期望 quote 幣別是 GBP，
+    // 但 Yahoo 可能回傳 currency=USD，此時要先 USD->GBP 再存入 currentPrices。
+    const expectedCcy = markets?.[i] ? marketToExpectedQuoteCurrency(markets[i]) : null;
+    if (!expectedCcy) {
+      prices[t] = p;
+      return;
+    }
+
+    let fromCcy = (p.currency ?? '').toUpperCase();
+    let normalizedPrice = p.price;
+    let normalizedChange = p.change;
+
+    // 英股有時 quote 會是 GBX（pence），程式期望 market=UK 的 quote 是 GBP
+    if (fromCcy === 'GBX') {
+      fromCcy = 'GBP';
+      normalizedPrice /= 100;
+      normalizedChange /= 100;
+    }
+
+    const toCcy = expectedCcy.toUpperCase();
+    if (!fromCcy || fromCcy === toCcy) {
+      prices[t] = { ...p, price: normalizedPrice, change: normalizedChange, currency: fromCcy || p.currency };
+      return;
+    }
+
+    const fromRate = rateToTwd(fromCcy, rateMap);
+    const toRate = rateToTwd(toCcy, rateMap);
+    if (fromRate > 0 && toRate > 0) {
+      const factor = fromRate / toRate; // (from->TWD) / (to->TWD)
+      if (t.toUpperCase().includes('DTLA')) {
+        console.log('[PRICE_CONVERT_DEBUG]', {
+          ticker: t,
+          quoteCurrency: fromCcy,
+          expectedQuoteCurrency: toCcy,
+          inputPrice: p.price,
+          normalizedPrice,
+          factor,
+          convertedPrice: normalizedPrice * factor,
+        });
+      }
+      prices[t] = {
+        ...p,
+        price: normalizedPrice * factor,
+        change: normalizedChange * factor,
+        currency: toCcy, // 存入「市場幣別」
+      };
+    } else {
+      // 缺匯率時保守：不轉換，讓下游至少不會 NaN
+      prices[t] = p;
+    }
+  });
 
   return {
     prices,
