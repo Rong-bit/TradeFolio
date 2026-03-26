@@ -327,7 +327,7 @@ export const calculateHoldings = (
         }
       }
 
-      if (h.market === Market.UK && h.ticker.toUpperCase().includes('DTLA')) {
+      if (h.market === Market.UK && (h.ticker.toUpperCase().includes('DTLA') || h.ticker.toUpperCase().includes('VOD'))) {
         const dk = `${h.accountId}-${priceKey}`;
         if (!dbgOnceKey.has(dk)) {
           dbgOnceKey.add(dk);
