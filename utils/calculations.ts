@@ -331,16 +331,12 @@ export const calculateHoldings = (
         const dk = `${h.accountId}-${priceKey}`;
         if (!dbgOnceKey.has(dk)) {
           dbgOnceKey.add(dk);
-          console.log('[HOLDING_DEBUG]', {
-            priceKey,
-            from: hasCurrentPrice ? 'currentPrices' : 'avgCost',
-            currentPrice,
-            market: h.market,
-            accountCurrency: acc?.currency,
-            outPrice,
-            currentValue,
-            outValue,
-          });
+          console.log(
+            `[HOLDING_DEBUG] ${priceKey} from=${hasCurrentPrice ? 'currentPrices' : 'avgCost'} ` +
+            `market=${h.market} account=${acc?.currency ?? 'N/A'} ` +
+            `currentPrice(quote)=${currentPrice} outPrice(account)=${outPrice} ` +
+            `currentValue=${currentValue} outValue=${outValue}`
+          );
         }
       }
 
