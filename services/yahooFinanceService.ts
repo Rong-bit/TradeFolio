@@ -384,15 +384,10 @@ export const fetchCurrentPrices = async (
     if (fromRate > 0 && toRate > 0) {
       const factor = fromRate / toRate; // (from->TWD) / (to->TWD)
       if (t.toUpperCase().includes('DTLA')) {
-        console.log('[PRICE_CONVERT_DEBUG]', {
-          ticker: t,
-          quoteCurrency: fromCcy,
-          expectedQuoteCurrency: toCcy,
-          inputPrice: p.price,
-          normalizedPrice,
-          factor,
-          convertedPrice: normalizedPrice * factor,
-        });
+        const converted = normalizedPrice * factor;
+        console.log(
+          `[PRICE_CONVERT_DEBUG] ${t}: ${fromCcy}->${toCcy} raw=${p.price} normalized=${normalizedPrice} fromRate=${fromRate} toRate=${toRate} factor=${factor} convertedGBP=${converted}`
+        );
       }
       prices[t] = {
         ...p,
