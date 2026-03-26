@@ -165,7 +165,8 @@ function toYahoo(ticker: string, market?: YahooMarket): string {
 }
 
 function shouldDebugSymbol(symbol: string): boolean {
-  return symbol.toUpperCase().includes('DTLA');
+  const s = symbol.toUpperCase();
+  return s.includes('DTLA') || s.includes('VOD');
 }
 
 function marketToExpectedQuoteCurrency(market?: YahooMarket): string {
@@ -383,7 +384,7 @@ export const fetchCurrentPrices = async (
     const toRate = rateToTwd(toCcy, rateMap);
     if (fromRate > 0 && toRate > 0) {
       const factor = fromRate / toRate; // (from->TWD) / (to->TWD)
-      if (t.toUpperCase().includes('DTLA')) {
+      if (t.toUpperCase().includes('DTLA') || t.toUpperCase().includes('VOD')) {
         const converted = normalizedPrice * factor;
         console.log(
           `[PRICE_CONVERT_DEBUG] ${t}: ${fromCcy}->${toCcy} raw=${p.price} normalized=${normalizedPrice} fromRate=${fromRate} toRate=${toRate} factor=${factor} convertedGBP=${converted}`
