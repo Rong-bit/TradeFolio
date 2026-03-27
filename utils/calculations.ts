@@ -1111,13 +1111,6 @@ export const calculateAccountPerformance = (
     return cf.amount * effectiveRate;
   };
 
-  const getTransactionAmountTWD = (tx: Transaction): number => {
-    let baseVal = tx.price * tx.quantity;
-    if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
-    const val = tx.amount !== undefined ? tx.amount : baseVal;
-    return transactionAmountNativeToTWD(val, tx, accounts, rates);
-  };
-
   return accounts.map(acc => {
     const accountRate = getRateByCurrency(acc.currency);
     const normalizedAccountRate = accountRate > 0 ? accountRate : 1;
@@ -1156,20 +1149,9 @@ export const calculateAccountPerformance = (
       }
     });
 
-    // 2. Process Stock Transfers (TRANSFER_IN / TRANSFER_OUT)
-    transactions.forEach(tx => {
-       if (tx.accountId !== acc.id) return;
-       
-       if (tx.type === TransactionType.TRANSFER_IN || tx.type === TransactionType.TRANSFER_OUT) {
-          const valTWD = getTransactionAmountTWD(tx);
-
-          if (tx.type === TransactionType.TRANSFER_IN) {
-              netInvestedTWD += valTWD;
-          } else {
-              netInvestedTWD -= valTWD;
-          }
-       }
-    });
+    // 2. Stock transfer transactions are excluded from net invested.
+    // TRANSFER_IN / TRANSFER_OUT represent position migration, not external capital flows.
+    // Including them here would double-count cost basis and distort realized P/L.
 
     let incomeTWD = 0;
     transactions.forEach(tx => {
