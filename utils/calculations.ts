@@ -1139,10 +1139,34 @@ export const calculateAccountPerformance = (
         return;
       }
 
+      if (tx.type === TransactionType.TRANSFER_IN) {
+        // Carry in cost basis without realizing profit/loss.
+        const inFallback = baseVal;
+        const inCost = normalizeTxAmountToAccountCurrency(tx, inFallback, baseVal);
+        pos.totalCost += inCost;
+        pos.quantity += tx.quantity;
+        posMap.set(key, pos);
+        return;
+      }
+
       if (tx.type === TransactionType.DIVIDEND) {
         // Stock dividend increases shares with zero realized P/L.
         pos.quantity += tx.quantity;
         posMap.set(key, pos);
+        return;
+      }
+
+      if (tx.type === TransactionType.TRANSFER_OUT) {
+        // Carry out cost basis without realizing profit/loss.
+        if (pos.quantity <= 0.000001) return;
+        const outQty = Math.min(tx.quantity, pos.quantity);
+        const ratio = outQty / pos.quantity;
+        let costOfMoved = pos.totalCost * ratio;
+        if (tx.market === Market.TW) costOfMoved = Math.round(costOfMoved);
+        pos.totalCost -= costOfMoved;
+        pos.quantity -= outQty;
+        if (pos.quantity <= 0.000001) posMap.delete(key);
+        else posMap.set(key, pos);
         return;
       }
 
@@ -1155,7 +1179,8 @@ export const calculateAccountPerformance = (
       if (tx.market === Market.TW) costOfSold = Math.round(costOfSold);
 
       const sellFallback = baseVal - (tx.fees || 0);
-      const proceeds = normalizeTxAmountToAccountCurrency(tx, sellFallback, baseVal);
+      const fullProceeds = normalizeTxAmountToAccountCurrency(tx, sellFallback, baseVal);
+      const proceeds = tx.quantity > 0 ? fullProceeds * (sellQty / tx.quantity) : 0;
       realized += proceeds - costOfSold;
 
       pos.totalCost -= costOfSold;
