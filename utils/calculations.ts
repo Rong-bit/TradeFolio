@@ -1092,12 +1092,17 @@ export const calculateAccountPerformance = (
   transactions: Transaction[],
   rates: ExchangeRates
 ): AccountPerformance[] => {
+  const normalizeUsdTwdRate = (rate: number | undefined): number => {
+    if (!rate || !Number.isFinite(rate)) return 31.5;
+    return rate >= 10 && rate <= 100 ? rate : 31.5;
+  };
+
   const calculateRealizedPLByTrades = (accountId: string): number => {
     const posMap = new Map<string, { quantity: number; totalCost: number }>();
     const account = accounts.find(a => a.id === accountId);
     const accountCurrency = account?.currency ?? Currency.TWD;
     const accountRate = accountCurrency === Currency.USD
-      ? (rates.exchangeRateUsdToTwd > 0 ? rates.exchangeRateUsdToTwd : 31.5)
+      ? normalizeUsdTwdRate(rates.exchangeRateUsdToTwd)
       : currencyToTWDRate(accountCurrency, rates);
 
     const normalizeTxAmountToAccountCurrency = (tx: Transaction, fallbackAmount: number, baseVal: number): number => {
@@ -1167,9 +1172,9 @@ export const calculateAccountPerformance = (
 
   const getRateByCurrency = (currency: Currency): number => {
     const rate = currencyToTWDRate(currency, rates);
+    if (currency === Currency.USD) return normalizeUsdTwdRate(rate);
     if (rate > 0) return rate;
     if (currency === Currency.TWD) return 1;
-    if (currency === Currency.USD) return rates.exchangeRateUsdToTwd > 0 ? rates.exchangeRateUsdToTwd : 31.5;
     return 1;
   };
 
