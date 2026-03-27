@@ -26,6 +26,8 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
   const [selectedYear, setSelectedYear] = useState<number>(years[0] || new Date().getFullYear() - 1);
   const [localData, setLocalData] = useState<HistoricalData>(historicalData);
   const [loading, setLoading] = useState(false);
+  const [forceRefresh, setForceRefresh] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; year: number } | null>(null);
 
   // Determine tickers for selected year
   const activeTickers = useMemo(() => {
@@ -82,8 +84,8 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
           const val3 = currentYearData.prices[t.ticker];
           const val = val1 !== undefined ? val1 : (val2 !== undefined ? val2 : val3);
           
-          // 如果值為 undefined、null 或 0，則需要更新
-          const needsUpdate = val === undefined || val === null || val === 0;
+          // 如果值為 undefined、null 或 0，或強制重新抓取，則需要更新
+          const needsUpdate = forceRefresh || val === undefined || val === null || val === 0;
           
           if (!needsUpdate) {
           } else {
@@ -95,10 +97,10 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
       // 3. Check if exchange rate needs update
       // Rule: Allow update if it's missing (0/undefined) OR it is exactly 30 (default).
       // If it is any other number (e.g. 32.5), assume user set it and do not overwrite.
-      const rateNeedsUpdate = !currentYearData.exchangeRate || currentYearData.exchangeRate === 0 || currentYearData.exchangeRate === 30;
+      const rateNeedsUpdate = forceRefresh || !currentYearData.exchangeRate || currentYearData.exchangeRate === 0 || currentYearData.exchangeRate === 30;
 
       if (missingTickers.length === 0 && !rateNeedsUpdate) {
-          alert('所有持股與匯率皆已有數據，無須 AI 更新。\n若需重新抓取，請先將數值歸零或設為 30。');
+          alert('所有持股與匯率皆已有數據，無須 AI 更新。\n若需強制重新抓取，請勾選「強制重新抓取」。');
           return;
       }
 
@@ -216,6 +218,114 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
       }
   };
 
+  const handleBatchFetch = async () => {
+      if (years.length === 0) return;
+      setLoading(true);
+      setBatchProgress({ current: 0, total: years.length, year: years[0] });
+
+      type MarketCode = 'US' | 'TW' | 'UK' | 'JP' | 'CN' | 'SZ' | 'IN' | 'CA' | 'FR' | 'HK' | 'KR' | 'DE' | 'AU' | 'SA' | 'BR';
+      const toMarketCode = (m: Market): MarketCode => {
+          if (m === Market.TW) return 'TW';
+          if (m === Market.UK) return 'UK';
+          if (m === Market.JP) return 'JP';
+          if (m === Market.CN) return 'CN';
+          if (m === Market.SZ) return 'SZ';
+          if (m === Market.IN) return 'IN';
+          if (m === Market.CA) return 'CA';
+          if (m === Market.FR) return 'FR';
+          if (m === Market.HK) return 'HK';
+          if (m === Market.KR) return 'KR';
+          if (m === Market.DE) return 'DE';
+          if (m === Market.AU) return 'AU';
+          if (m === Market.SA) return 'SA';
+          if (m === Market.BR) return 'BR';
+          return 'US';
+      };
+
+      // 逐年抓取，避免同時大量請求
+      let accumulated: HistoricalData = { ...localData };
+
+      for (let i = 0; i < years.length; i++) {
+          const y = years[i];
+          setBatchProgress({ current: i + 1, total: years.length, year: y });
+
+          try {
+              const yearEndDate = new Date(`${y}-12-31`);
+              const { holdings } = getPortfolioStateAtDate(yearEndDate, transactions, cashFlows, accounts);
+              const yearTickers = Object.keys(holdings)
+                  .filter(k => holdings[k] > 0.000001)
+                  .map(k => {
+                      const [market, ticker] = k.split('-');
+                      return { market, ticker };
+                  });
+
+              if (yearTickers.length === 0) continue;
+
+              const prevYearData = accumulated[y] || { prices: {}, exchangeRate: 0 };
+
+              // 決定要查哪些 ticker（forceRefresh 時全部，否則只補缺漏）
+              const toQuery = forceRefresh ? yearTickers : yearTickers.filter(t => {
+                  const clean = t.ticker.replace(/\(BAK\)/gi, '');
+                  const display = t.market === Market.TW && !clean.includes('TPE:') ? `TPE:${clean}` : clean;
+                  const val = prevYearData.prices[display] ?? prevYearData.prices[clean] ?? prevYearData.prices[t.ticker];
+                  return val === undefined || val === null || val === 0;
+              });
+
+              const rateNeedsUpdate = forceRefresh || !prevYearData.exchangeRate || prevYearData.exchangeRate === 0 || prevYearData.exchangeRate === 30;
+
+              if (toQuery.length === 0 && !rateNeedsUpdate) continue;
+
+              const queryTickers = (toQuery.length > 0 ? toQuery : [yearTickers[0]]).map(t => {
+                  const clean = t.ticker.replace(/\(BAK\)/gi, '');
+                  return t.market === Market.TW && !clean.includes('TPE:') ? `TPE:${clean}` : clean;
+              });
+              const queryMarkets = (toQuery.length > 0 ? toQuery : [yearTickers[0]]).map(t => toMarketCode(t.market as Market));
+
+              const result = await fetchHistoricalYearEndData(y, queryTickers, queryMarkets);
+
+              const pickRate = (current: number | undefined, fetched: number | undefined) =>
+                  (forceRefresh || !current || current === 0) && fetched && fetched > 0 ? fetched : current;
+
+              const shouldUpdateRate = forceRefresh || !prevYearData.exchangeRate || prevYearData.exchangeRate === 0 || prevYearData.exchangeRate === 30;
+              const newRate = shouldUpdateRate ? (result.exchangeRate || 30) : prevYearData.exchangeRate;
+
+              const mergedPrices = { ...prevYearData.prices };
+              Object.entries(result.prices).forEach(([key, price]) => {
+                  mergedPrices[key] = price;
+                  if (key.startsWith('TPE:')) mergedPrices[key.replace(/^TPE:/i, '')] = price;
+                  else if (key.match(/^\d{4}$/)) mergedPrices[`TPE:${key}`] = price;
+              });
+
+              accumulated = {
+                  ...accumulated,
+                  [y]: {
+                      ...prevYearData,
+                      prices: mergedPrices,
+                      exchangeRate: newRate,
+                      jpyExchangeRate: pickRate(prevYearData.jpyExchangeRate, result.jpyExchangeRate),
+                      eurExchangeRate: pickRate(prevYearData.eurExchangeRate, result.eurExchangeRate),
+                      gbpExchangeRate: pickRate(prevYearData.gbpExchangeRate, result.gbpExchangeRate),
+                      hkdExchangeRate: pickRate(prevYearData.hkdExchangeRate, result.hkdExchangeRate),
+                      krwExchangeRate: pickRate(prevYearData.krwExchangeRate, result.krwExchangeRate),
+                      cnyExchangeRate: pickRate(prevYearData.cnyExchangeRate, result.cnyExchangeRate),
+                      cadExchangeRate: pickRate(prevYearData.cadExchangeRate, result.cadExchangeRate),
+                      audExchangeRate: pickRate(prevYearData.audExchangeRate, result.audExchangeRate),
+                  }
+              };
+          } catch (e) {
+              console.warn(`${y} 年抓取失敗，跳過`, e);
+          }
+
+          // 每年之間稍微等待，避免 API rate limit
+          if (i < years.length - 1) await new Promise(r => setTimeout(r, 500));
+      }
+
+      setLocalData(accumulated);
+      setBatchProgress(null);
+      setLoading(false);
+      alert(`所有年度抓取完成！共處理 ${years.length} 個年度。`);
+  };
+
   const handleSave = () => {
       onSave(localData);
       onClose();
@@ -247,15 +357,42 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                    </select>
                </div>
                
-               <div className="flex-1 text-right">
-                   <button 
-                     onClick={handleAiFetch}
-                     disabled={loading || years.length === 0}
-                     className={`px-4 py-2 rounded shadow text-sm font-bold text-white transition flex items-center gap-2 ml-auto
-                       ${loading ? 'bg-slate-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
-                   >
-                       {loading ? 'AI 搜尋中...' : '🤖 AI 自動補齊缺漏數據'}
-                   </button>
+               <div className="flex-1 flex flex-col items-end gap-2">
+                   <div className="flex gap-2">
+                       <button
+                         onClick={handleAiFetch}
+                         disabled={loading || years.length === 0}
+                         className={`px-4 py-2 rounded shadow text-sm font-bold text-white transition flex items-center gap-2
+                           ${loading ? 'bg-slate-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                       >
+                           {loading && !batchProgress ? 'AI 搜尋中...' : '🤖 補齊本年度'}
+                       </button>
+                       <button
+                         onClick={handleBatchFetch}
+                         disabled={loading || years.length === 0}
+                         className={`px-4 py-2 rounded shadow text-sm font-bold text-white transition flex items-center gap-2
+                           ${loading ? 'bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                       >
+                           {batchProgress ? `⏳ 抓取中 ${batchProgress.current}/${batchProgress.total}（${batchProgress.year} 年）` : '🚀 一鍵抓取所有年度'}
+                       </button>
+                   </div>
+                   <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
+                       <input
+                         type="checkbox"
+                         checked={forceRefresh}
+                         onChange={e => setForceRefresh(e.target.checked)}
+                         className="rounded"
+                       />
+                       強制重新抓取（覆蓋已有數據）
+                   </label>
+                   {batchProgress && (
+                       <div className="w-full bg-slate-200 rounded-full h-1.5 mt-1">
+                           <div
+                             className="bg-emerald-500 h-1.5 rounded-full transition-all"
+                             style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                           />
+                       </div>
+                   )}
                </div>
            </div>
 
