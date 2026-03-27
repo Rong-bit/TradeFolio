@@ -1092,9 +1092,13 @@ export const calculateAccountPerformance = (
   transactions: Transaction[],
   rates: ExchangeRates
 ): AccountPerformance[] => {
-  const { exchangeRateUsdToTwd: exchangeRate } = rates;
-  const getRateByCurrency = (currency: Currency): number =>
-    currencyToTWDRate(currency, rates);
+  const getRateByCurrency = (currency: Currency): number => {
+    const rate = currencyToTWDRate(currency, rates);
+    if (rate > 0) return rate;
+    if (currency === Currency.TWD) return 1;
+    if (currency === Currency.USD) return rates.exchangeRateUsdToTwd > 0 ? rates.exchangeRateUsdToTwd : 31.5;
+    return 1;
+  };
 
   const getCashFlowAmountTWD = (cf: CashFlow): number => {
     if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
