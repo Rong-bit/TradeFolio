@@ -1156,20 +1156,9 @@ export const calculateAccountPerformance = (
       }
     });
 
-    // 2. Process Stock Transfers (TRANSFER_IN / TRANSFER_OUT)
-    transactions.forEach(tx => {
-       if (tx.accountId !== acc.id) return;
-       
-       if (tx.type === TransactionType.TRANSFER_IN || tx.type === TransactionType.TRANSFER_OUT) {
-          const valTWD = getTransactionAmountTWD(tx);
-
-          if (tx.type === TransactionType.TRANSFER_IN) {
-              netInvestedTWD += valTWD;
-          } else {
-              netInvestedTWD -= valTWD;
-          }
-       }
-    });
+    // 2. Stock transfers do not change strategy-level net invested.
+    // They are internal position moves between broker accounts and should
+    // not be treated as new capital contribution/withdrawal for this account's P/L view.
 
     let incomeTWD = 0;
     transactions.forEach(tx => {
