@@ -20,6 +20,12 @@ const DEFAULT_RATES: ExchangeRateState = {
   brlExchangeRate: undefined,
 };
 
+const parsePositiveNumber = (raw: string | null): number | undefined => {
+  if (!raw) return undefined;
+  const val = parseFloat(raw);
+  return Number.isFinite(val) && val > 0 ? val : undefined;
+};
+
 // localStorage key 對應表
 const RATE_KEYS: Record<keyof ExchangeRateState, string> = {
   exchangeRateUsdToTwd: 'exchangeRate',
@@ -41,9 +47,9 @@ export function useExchangeRates() {
 
   /** 從 localStorage 載入所有匯率 */
   const loadRates = useCallback((getKey: (k: string) => string) => {
-    const usdRate = localStorage.getItem(getKey('exchangeRate'));
+    const usdRate = parsePositiveNumber(localStorage.getItem(getKey('exchangeRate')));
     const loaded: ExchangeRateState = {
-      exchangeRateUsdToTwd: usdRate ? parseFloat(usdRate) : 31.5,
+      exchangeRateUsdToTwd: usdRate ?? DEFAULT_RATES.exchangeRateUsdToTwd,
       jpyExchangeRate: undefined,
       eurExchangeRate: undefined,
       gbpExchangeRate: undefined,
@@ -65,8 +71,7 @@ export function useExchangeRates() {
     ];
 
     optionalKeys.forEach(key => {
-      const stored = localStorage.getItem(getKey(RATE_KEYS[key]));
-      if (stored) loaded[key] = parseFloat(stored);
+      loaded[key] = parsePositiveNumber(localStorage.getItem(getKey(RATE_KEYS[key])));
     });
 
     setRates(loaded);
