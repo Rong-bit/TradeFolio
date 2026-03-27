@@ -604,7 +604,8 @@ export const generateAdvancedChartData = (
     accumulatedEstAssets = (accumulatedEstAssets + netInflowThisYear) * 1.08;
     if (accumulatedEstAssets < 0) accumulatedEstAssets = 0;
 
-    const cost = Math.max(0, cumulativeNetInvestedTWD);
+    // Keep true cumulative net invested amount for accurate annual attribution.
+    const cost = cumulativeNetInvestedTWD;
     
     // --- 2. Calculate Total Assets (The Hybrid Logic) ---
     let totalAssets = 0;
