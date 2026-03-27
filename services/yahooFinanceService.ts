@@ -455,12 +455,14 @@ export const fetchHistoricalYearEndData = async (
   const [priceList, ...rateResults] = await Promise.all([
     Promise.all(tickers.map(async (ticker, i) => {
       const sym  = toYahoo(ticker, markets?.[i]);
-      // 用月線抓 12 月，避免日線 timestamp 時區偏移導致取到開盤價而非收盤價
+      // 用日線抓整個 12 月，取最後一個有效交易日的收盤價
+      // 注意：優先用 adjCloses（調整後）僅在有配息時才有差異；
+      // 對資產估值應用原始 closes，但要確保取的是最後交易日而非 timestamp 最接近的那筆
       const moStartTs = Math.floor(Date.UTC(year, 11, 1, 0, 0, 0) / 1000);
-      const url  = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?period1=${moStartTs}&period2=${endTs}&interval=1mo`;
+      const url  = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?period1=${moStartTs}&period2=${endTs}&interval=1d`;
       const resp = await tryFetch(url);
-      const { closes } = extractOhlcv(resp?.json ?? null);
-      // 月線只有一筆（12 月），直接取最後一個有效收盤價
+      const { timestamps, closes } = extractOhlcv(resp?.json ?? null);
+      // 取 period 內最後一個有效收盤價（最後交易日），不用 findYearEnd 避免 timestamp 偏移問題
       for (let j = closes.length - 1; j >= 0; j--) {
         if (closes[j] != null && closes[j]! > 0) return closes[j];
       }
