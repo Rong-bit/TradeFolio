@@ -164,16 +164,22 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                   ? (result.exchangeRate || 30) 
                   : currentRate;
 
-              // 處理日幣匯率
-              const currentJpyRate = prevData.jpyExchangeRate;
-              const shouldUpdateJpyRate = !currentJpyRate || currentJpyRate === 0;
-              const newJpyRate = shouldUpdateJpyRate && result.jpyExchangeRate
-                  ? result.jpyExchangeRate
-                  : currentJpyRate;
+              // 各地區歷史匯率：只在尚未設定（0 或 undefined）時才覆蓋
+              const pickRate = (current: number | undefined, fetched: number | undefined) =>
+                  (!current || current === 0) && fetched && fetched > 0 ? fetched : current;
+
+              const newJpyRate = pickRate(prevData.jpyExchangeRate, result.jpyExchangeRate);
+              const newEurRate = pickRate(prevData.eurExchangeRate, result.eurExchangeRate);
+              const newGbpRate = pickRate(prevData.gbpExchangeRate, result.gbpExchangeRate);
+              const newHkdRate = pickRate(prevData.hkdExchangeRate, result.hkdExchangeRate);
+              const newKrwRate = pickRate(prevData.krwExchangeRate, result.krwExchangeRate);
+              const newCnyRate = pickRate(prevData.cnyExchangeRate, result.cnyExchangeRate);
+              const newCadRate = pickRate(prevData.cadExchangeRate, result.cadExchangeRate);
+              const newAudRate = pickRate(prevData.audExchangeRate, result.audExchangeRate);
 
               // 合併價格數據，確保兩種格式的 key 都能正確對應
               const mergedPrices = { ...prevData.prices };
-              
+
               Object.entries(result.prices).forEach(([key, price]) => {
                   mergedPrices[key] = price;
                   // 如果是 TPE: 格式，也同時儲存不帶前綴的版本
@@ -185,7 +191,6 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                       mergedPrices[`TPE:${key}`] = price;
                   }
               });
-              
 
               return {
                   ...prev,
@@ -193,7 +198,14 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                       ...prevData,
                       prices: mergedPrices,
                       exchangeRate: newRate,
-                      jpyExchangeRate: newJpyRate
+                      jpyExchangeRate: newJpyRate,
+                      eurExchangeRate: newEurRate,
+                      gbpExchangeRate: newGbpRate,
+                      hkdExchangeRate: newHkdRate,
+                      krwExchangeRate: newKrwRate,
+                      cnyExchangeRate: newCnyRate,
+                      cadExchangeRate: newCadRate,
+                      audExchangeRate: newAudRate,
                   }
               };
           });
