@@ -626,17 +626,20 @@ export const generateAdvancedChartData = (
           const histEurRate = historicalData[yearKey].eurExchangeRate || eurExchangeRate;
           const histHkdRate = historicalData[yearKey].hkdExchangeRate || hkdExchangeRate;
           const histKrwRate = historicalData[yearKey].krwExchangeRate || krwExchangeRate;
+          const histCnyRate = (historicalData[yearKey] as any).cnyExchangeRate || cnyExchangeRate;
+          const histCadRate = (historicalData[yearKey] as any).cadExchangeRate || cadExchangeRate;
+          const histAudRate = (historicalData[yearKey] as any).audExchangeRate || audExchangeRate;
           const histRates: ExchangeRates = {
             exchangeRateUsdToTwd: histRate,
             jpyExchangeRate: histJpyRate,
             gbpExchangeRate: histGbpRate,
             eurExchangeRate: histEurRate,
-            cnyExchangeRate,
+            cnyExchangeRate: histCnyRate,
             inrExchangeRate,
-            cadExchangeRate,
+            cadExchangeRate: histCadRate,
             hkdExchangeRate: histHkdRate,
             krwExchangeRate: histKrwRate,
-            audExchangeRate,
+            audExchangeRate: histAudRate,
             sarExchangeRate,
             brlExchangeRate
           };
