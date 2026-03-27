@@ -249,6 +249,9 @@ export interface HistoricalData {
     gbpExchangeRate?: number; // GBP to TWD on Dec 31 (optional)
     hkdExchangeRate?: number; // HKD to TWD on Dec 31 (optional)
     krwExchangeRate?: number; // KRW to TWD on Dec 31 (optional)
+    cnyExchangeRate?: number; // CNY to TWD on Dec 31 (optional)
+    cadExchangeRate?: number; // CAD to TWD on Dec 31 (optional)
+    audExchangeRate?: number; // AUD to TWD on Dec 31 (optional)
   };
 }
 
