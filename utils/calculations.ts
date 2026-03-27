@@ -651,7 +651,7 @@ export const generateAdvancedChartData = (
           let stockValueTWD = 0;
           let hasMissingPrices = false;
           
-          accountHoldings.forEach(({ market, ticker, quantity: qty }) => {
+          accountHoldings.forEach(({ accountId, market, ticker, quantity: qty }) => {
               if (qty > 0.000001) {
                   // 移除 (BAK) 後綴（備份股票代號）
                   const cleanTicker = ticker.replace(/\(BAK\)/gi, '').trim();
@@ -686,9 +686,11 @@ export const generateAdvancedChartData = (
                       hasMissingPrices = true;
                   }
                   
-                  // 行情幣別 = 市場幣別；換算 TWD 與經帳戶幣種再換 TWD 在數學上等價
+                  // 歷史估值需與入帳邏輯一致：以證券戶幣別換匯（而非市場來源幣別）
                   const nativeValue = market === Market.TW ? Math.round(qty * price) : qty * price;
-                  stockValueTWD += marketValueToTWD(nativeValue, market, histRates);
+                  const acc = accounts.find(a => a.id === accountId);
+                  const valuationCurrency = acc?.currency ?? marketToCurrency(market);
+                  stockValueTWD += nativeValueInAccountCurrencyToTWD(nativeValue, valuationCurrency, histRates);
               }
           });
 
