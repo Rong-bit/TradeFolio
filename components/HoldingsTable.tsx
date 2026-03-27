@@ -183,6 +183,10 @@ const HoldingsTable: React.FC<Props> = () => {
       : 'text-slate-500';
     const uniqueKey = `${h.accountId}-${h.market}-${h.ticker}`;
 
+    const displayCurrentPrice = Number.isFinite(h.currentPrice)
+      ? Number(h.currentPrice.toFixed(2))
+      : 0;
+
     return (
       <tr
         key={uniqueKey}
@@ -238,7 +242,7 @@ const HoldingsTable: React.FC<Props> = () => {
              <input
               type="number"
               className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
-              value={h.currentPrice}
+              value={displayCurrentPrice}
               onChange={(e) => {
                 const raw = parseFloat(e.target.value) || 0;
                 let marketPrice = raw;
