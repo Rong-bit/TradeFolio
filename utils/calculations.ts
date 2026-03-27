@@ -1092,6 +1092,59 @@ export const calculateAccountPerformance = (
   transactions: Transaction[],
   rates: ExchangeRates
 ): AccountPerformance[] => {
+  const calculateRealizedPLByTrades = (accountId: string): number => {
+    const posMap = new Map<string, { quantity: number; totalCost: number }>();
+    const accountTxs = transactions
+      .filter(tx => tx.accountId === accountId)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    let realized = 0;
+
+    accountTxs.forEach(tx => {
+      const key = `${tx.market}-${tx.ticker}`;
+      const pos = posMap.get(key) || { quantity: 0, totalCost: 0 };
+
+      let baseVal = tx.price * tx.quantity;
+      if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+
+      if (tx.type === TransactionType.BUY) {
+        const buyCost = tx.amount !== undefined ? tx.amount : (baseVal + (tx.fees || 0));
+        pos.totalCost += buyCost;
+        pos.quantity += tx.quantity;
+        posMap.set(key, pos);
+        return;
+      }
+
+      if (tx.type === TransactionType.DIVIDEND) {
+        // Stock dividend increases shares with zero realized P/L.
+        pos.quantity += tx.quantity;
+        posMap.set(key, pos);
+        return;
+      }
+
+      if (tx.type !== TransactionType.SELL) return;
+      if (pos.quantity <= 0.000001) return;
+
+      const sellQty = Math.min(tx.quantity, pos.quantity);
+      const ratio = sellQty / pos.quantity;
+      let costOfSold = pos.totalCost * ratio;
+      if (tx.market === Market.TW) costOfSold = Math.round(costOfSold);
+
+      const proceeds = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
+      realized += proceeds - costOfSold;
+
+      pos.totalCost -= costOfSold;
+      pos.quantity -= sellQty;
+      if (pos.quantity <= 0.000001) {
+        posMap.delete(key);
+      } else {
+        posMap.set(key, pos);
+      }
+    });
+
+    return realized;
+  };
+
   const getRateByCurrency = (currency: Currency): number => {
     const rate = currencyToTWDRate(currency, rates);
     if (rate > 0) return rate;
@@ -1172,8 +1225,9 @@ export const calculateAccountPerformance = (
       incomeTWD += getCashFlowAmountTWD(cf);
     });
 
-    const profitTWD = totalAssetsTWD - netInvestedTWD;
-    const realizedProfitTWD = profitTWD - unrealizedProfitTWD - incomeTWD;
+    const realizedProfitNative = calculateRealizedPLByTrades(acc.id);
+    const realizedProfitTWD = realizedProfitNative * normalizedAccountRate;
+    const profitTWD = unrealizedProfitTWD + realizedProfitTWD + incomeTWD;
     const roi = netInvestedTWD > 0 ? (profitTWD / netInvestedTWD) * 100 : 0;
 
     // 計算原始幣種數值（用於切換顯示）
@@ -1184,7 +1238,7 @@ export const calculateAccountPerformance = (
     const profitNative = profitTWD / normalizedAccountRate;
     const netInvestedNative = netInvestedTWD / normalizedAccountRate;
     const unrealizedProfitNative = unrealizedProfitTWD / normalizedAccountRate;
-    const realizedProfitNative = realizedProfitTWD / normalizedAccountRate;
+    const realizedProfitNativeOut = realizedProfitTWD / normalizedAccountRate;
     const incomeNative = incomeTWD / normalizedAccountRate;
 
     return {
@@ -1205,7 +1259,7 @@ export const calculateAccountPerformance = (
       realizedProfitTWD,
       incomeTWD,
       unrealizedProfitNative,
-      realizedProfitNative,
+      realizedProfitNative: realizedProfitNativeOut,
       incomeNative
     };
   });
