@@ -434,26 +434,51 @@ export const fetchHistoricalYearEndData = async (
   year: number,
   tickers: string[],
   markets?: YahooMarket[],
-): Promise<{ prices: Record<string, number>; exchangeRate: number; jpyExchangeRate?: number }> => {
+): Promise<{
+  prices: Record<string, number>;
+  exchangeRate: number;
+  jpyExchangeRate?: number;
+  eurExchangeRate?: number;
+  gbpExchangeRate?: number;
+  hkdExchangeRate?: number;
+  krwExchangeRate?: number;
+  cnyExchangeRate?: number;
+  cadExchangeRate?: number;
+  audExchangeRate?: number;
+}> => {
   const endTs   = Math.floor(Date.UTC(year, 11, 31, 23, 59, 59) / 1000);
   const startTs = Math.floor(Date.UTC(year, 11,  1,  0,  0,  0) / 1000);
-  const hasJP   = markets?.some(m => m === 'JP') ?? false;
 
-  const [priceList, exchangeRate, jpyExchangeRate] = await Promise.all([
+  // 根據實際持有市場決定需要抓哪些匯率
+  const neededRates = neededCurrencies(markets ?? []);
+
+  const [priceList, ...rateResults] = await Promise.all([
     Promise.all(tickers.map(async (ticker, i) => {
       const sym  = toYahoo(ticker, markets?.[i]);
-      const url  = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?period1=${startTs}&period2=${endTs}&interval=1d`;
+      // 用月線抓 12 月，避免日線 timestamp 時區偏移導致取到開盤價而非收盤價
+      const moStartTs = Math.floor(Date.UTC(year, 11, 1, 0, 0, 0) / 1000);
+      const url  = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?period1=${moStartTs}&period2=${endTs}&interval=1mo`;
       const resp = await tryFetch(url);
-      const { timestamps, closes } = extractOhlcv(resp?.json ?? null);
-      return findYearEnd(timestamps, closes, endTs);
+      const { closes } = extractOhlcv(resp?.json ?? null);
+      // 月線只有一筆（12 月），直接取最後一個有效收盤價
+      for (let j = closes.length - 1; j >= 0; j--) {
+        if (closes[j] != null && closes[j]! > 0) return closes[j];
+      }
+      return null;
     })),
-    fetchHistoricalRate('USD', year),
-    hasJP ? fetchHistoricalRate('JPY', year) : Promise.resolve(undefined),
+    // 永遠抓 USD；其餘依持有市場動態決定
+    ...neededRates.map(currency => fetchHistoricalRate(currency, year)),
   ]);
+
+  const rateMap: Record<string, number> = {};
+  neededRates.forEach((currency, i) => {
+    const v = rateResults[i] as number | undefined;
+    if (v != null && v > 0) rateMap[currency] = v;
+  });
 
   const prices: Record<string, number> = {};
   tickers.forEach((ticker, i) => {
-    const p = priceList[i];
+    const p = (priceList as (number | null)[])[i];
     if (p != null && p > 0) {
       prices[ticker] = p;
       const clean = ticker.replace(/^TPE:/i, '');
@@ -461,7 +486,18 @@ export const fetchHistoricalYearEndData = async (
     }
   });
 
-  return { prices, exchangeRate, jpyExchangeRate };
+  return {
+    prices,
+    exchangeRate:    rateMap['USD'] ?? 31.5,
+    jpyExchangeRate: rateMap['JPY'],
+    eurExchangeRate: rateMap['EUR'],
+    gbpExchangeRate: rateMap['GBP'],
+    hkdExchangeRate: rateMap['HKD'],
+    krwExchangeRate: rateMap['KRW'],
+    cnyExchangeRate: rateMap['CNY'],
+    cadExchangeRate: rateMap['CAD'],
+    audExchangeRate: rateMap['AUD'],
+  };
 };
 
 export const fetchAnnualizedReturn = async (
