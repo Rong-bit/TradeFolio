@@ -20,6 +20,9 @@ const DEFAULT_RATES: ExchangeRateState = {
   brlExchangeRate: undefined,
 };
 
+const DEFAULT_USD_TWD = DEFAULT_RATES.exchangeRateUsdToTwd;
+const isReasonableUsdTwd = (rate: number): boolean => rate >= 10 && rate <= 100;
+
 const parsePositiveNumber = (raw: string | null): number | undefined => {
   if (!raw) return undefined;
   const val = parseFloat(raw);
@@ -49,7 +52,7 @@ export function useExchangeRates() {
   const loadRates = useCallback((getKey: (k: string) => string) => {
     const usdRate = parsePositiveNumber(localStorage.getItem(getKey('exchangeRate')));
     const loaded: ExchangeRateState = {
-      exchangeRateUsdToTwd: usdRate ?? DEFAULT_RATES.exchangeRateUsdToTwd,
+      exchangeRateUsdToTwd: usdRate !== undefined && isReasonableUsdTwd(usdRate) ? usdRate : DEFAULT_USD_TWD,
       jpyExchangeRate: undefined,
       eurExchangeRate: undefined,
       gbpExchangeRate: undefined,
@@ -109,7 +112,8 @@ export function useExchangeRates() {
 
   /** 僅更新 USD/TWD 匯率 */
   const setUsdRate = useCallback((rate: number) => {
-    setRates(prev => ({ ...prev, exchangeRateUsdToTwd: rate }));
+    const safeRate = isReasonableUsdTwd(rate) ? rate : DEFAULT_USD_TWD;
+    setRates(prev => ({ ...prev, exchangeRateUsdToTwd: safeRate }));
   }, []);
 
   /** 重置所有匯率為預設值 */
