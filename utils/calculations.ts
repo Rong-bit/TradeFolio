@@ -1094,6 +1094,24 @@ export const calculateAccountPerformance = (
 ): AccountPerformance[] => {
   const calculateRealizedPLByTrades = (accountId: string): number => {
     const posMap = new Map<string, { quantity: number; totalCost: number }>();
+    const account = accounts.find(a => a.id === accountId);
+    const accountCurrency = account?.currency ?? Currency.TWD;
+    const accountRate = accountCurrency === Currency.USD
+      ? (rates.exchangeRateUsdToTwd > 0 ? rates.exchangeRateUsdToTwd : 31.5)
+      : currencyToTWDRate(accountCurrency, rates);
+
+    const normalizeTxAmountToAccountCurrency = (tx: Transaction, fallbackAmount: number, baseVal: number): number => {
+      if (tx.amount === undefined) return fallbackAmount;
+      if (accountCurrency === Currency.TWD) return tx.amount;
+      if (baseVal <= 0 || accountRate <= 0) return tx.amount;
+
+      // Backward-compatibility: some legacy imports stored tx.amount in TWD even for USD accounts.
+      // If tx.amount is much larger than price*qty scale, treat it as TWD and convert back.
+      const ratio = Math.abs(tx.amount) / Math.abs(baseVal);
+      if (ratio > 5) return tx.amount / accountRate;
+      return tx.amount;
+    };
+
     const accountTxs = transactions
       .filter(tx => tx.accountId === accountId)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -1108,7 +1126,8 @@ export const calculateAccountPerformance = (
       if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
 
       if (tx.type === TransactionType.BUY) {
-        const buyCost = tx.amount !== undefined ? tx.amount : (baseVal + (tx.fees || 0));
+        const buyFallback = baseVal + (tx.fees || 0);
+        const buyCost = normalizeTxAmountToAccountCurrency(tx, buyFallback, baseVal);
         pos.totalCost += buyCost;
         pos.quantity += tx.quantity;
         posMap.set(key, pos);
@@ -1130,7 +1149,8 @@ export const calculateAccountPerformance = (
       let costOfSold = pos.totalCost * ratio;
       if (tx.market === Market.TW) costOfSold = Math.round(costOfSold);
 
-      const proceeds = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
+      const sellFallback = baseVal - (tx.fees || 0);
+      const proceeds = normalizeTxAmountToAccountCurrency(tx, sellFallback, baseVal);
       realized += proceeds - costOfSold;
 
       pos.totalCost -= costOfSold;
