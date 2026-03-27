@@ -551,6 +551,16 @@ export const getPortfolioStateAtDate = (
     return { holdings, accountHoldings, cashBalances };
 };
 
+const isAnnualPerfDebugEnabled = (): boolean => {
+  // Browser only: toggle by localStorage key without changing app behavior by default.
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem('debug:annual-performance') === '1';
+  } catch {
+    return false;
+  }
+};
+
 export const generateAdvancedChartData = (
   transactions: Transaction[],
   cashFlows: CashFlow[],
@@ -610,6 +620,9 @@ export const generateAdvancedChartData = (
     // --- 2. Calculate Total Assets (The Hybrid Logic) ---
     let totalAssets = 0;
     let isRealData = false;
+
+    let stockValueTWDForDebug = 0;
+    let cashValueTWDForDebug = 0;
 
     if (y === endYear) {
       // Current year: Use live calculated value
@@ -703,6 +716,8 @@ export const generateAdvancedChartData = (
               }
           });
 
+          stockValueTWDForDebug = stockValueTWD;
+          cashValueTWDForDebug = cashValueTWD;
           totalAssets = stockValueTWD + cashValueTWD;
           
           // 判斷是否為真實數據：
@@ -740,6 +755,31 @@ export const generateAdvancedChartData = (
     const adjustedTotalAssets = cost + profit;
     
     const assetCostRatio = cost > 0 ? adjustedTotalAssets / cost : 0;
+
+    if (isAnnualPerfDebugEnabled()) {
+      console.log('[ANNUAL_PERF_DEBUG]', {
+        year: y,
+        isRealData,
+        cost,
+        stockValueTWD: stockValueTWDForDebug,
+        cashValueTWD: cashValueTWDForDebug,
+        totalAssets: adjustedTotalAssets,
+        profit,
+        rates: {
+          usd: exchangeRate,
+          jpy: jpyExchangeRate,
+          eur: eurExchangeRate,
+          gbp: gbpExchangeRate,
+          hkd: hkdExchangeRate,
+          krw: krwExchangeRate,
+          cny: cnyExchangeRate,
+          cad: cadExchangeRate,
+          aud: audExchangeRate,
+          sar: sarExchangeRate,
+          brl: brlExchangeRate
+        }
+      });
+    }
 
     data.push({
       year: y.toString(),
