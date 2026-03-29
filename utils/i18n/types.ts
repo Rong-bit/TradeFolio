@@ -110,6 +110,24 @@ export interface Translations {
     aiCorrectHistory: string;
     marketDistribution: string;
     allocation: string;
+    /** 雙層甜甜圈副標：外圓市場 / 內圓股債（不含現金） */
+    allocationDonutSubtitle: string;
+    /** 內圈選中時徽章 */
+    stockBondRatioBadge: string;
+    /** 圖例：市場（外圓） */
+    legendMarketOuter: string;
+    /** 圖例：股債（內圓） */
+    legendStockBondInner: string;
+    assetClassOverrideTitle: string;
+    tickerSymbolLabel: string;
+    tickerPlaceholderExamples: string;
+    assetClassSelectLabel: string;
+    equityLabelShort: string;
+    bondLabelShort: string;
+    saveAssetClassOverride: string;
+    clearTickerOverride: string;
+    currentOverridesHeading: string;
+    removeOverrideTitle: string;
     annualPerformance: string;
     year: string;
     startAssets: string;
