@@ -54,7 +54,7 @@ export enum Currency {
 export enum TransactionType {
   BUY = 'BUY',
   SELL = 'SELL',
-  DIVIDEND = 'DIVIDEND', // Reinvested (Stock dividend)
+  DIVIDEND = 'DIVIDEND', // +shares; DRIP 再投資時應填單價/股數/金額，與 BUY 同樣增加成本（見 calculateHoldings）
   CASH_DIVIDEND = 'CASH_DIVIDEND', // Cash payout
   TRANSFER_IN = 'TRANSFER_IN', // Stock Transfer In
   TRANSFER_OUT = 'TRANSFER_OUT' // Stock Transfer Out
@@ -214,6 +214,19 @@ export interface AttributionPoint {
   isRealData?: boolean;
   reconciledDiff: number;
   isConsistent: boolean;
+}
+
+/** 資金流瀑布圖單一期間（金額為 TWD） */
+export interface WaterfallPeriodRow {
+  period: string;
+  startAssets: number;
+  endAssets: number;
+  netInflow: number;
+  income: number;
+  marketPL: number;
+  deposit: number;
+  withdraw: number;
+  isRealData?: boolean;
 }
 
 export interface AccountPerformance {
