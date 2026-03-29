@@ -1,664 +1,330 @@
 
-// 語言類型
-export type Language = 'zh-TW' | 'zh-CN' | 'en' | 'ja' | 'ko' | 'de' | 'fr' | 'hi' | 'ar' | 'pt';
+/** 基準顯示幣別（儀表板總額等用此幣顯示） */
+export type BaseCurrency = 'TWD' | 'USD' | 'JPY' | 'EUR' | 'GBP' | 'HKD' | 'KRW' | 'CAD' | 'INR' | 'CNY' | 'AUD' | 'SAR' | 'BRL';
 
-/** 語系選項（用於下拉選單） */
-export const LANGUAGES: { code: Language; label: string }[] = [
-  { code: 'zh-TW', label: '繁' },
-  { code: 'zh-CN', label: '简' },
-  { code: 'en', label: 'EN' },
-  { code: 'ja', label: '日' },
-  { code: 'ko', label: '한' },
-  { code: 'de', label: 'DE' },
-  { code: 'fr', label: 'FR' },
-  { code: 'hi', label: 'हि' },
-  { code: 'ar', label: 'ع' },
-  { code: 'pt', label: 'PT' },
-];
+export const BASE_CURRENCIES: BaseCurrency[] = ['TWD', 'USD', 'JPY', 'EUR', 'GBP', 'HKD', 'KRW', 'CAD', 'INR', 'CNY', 'AUD', 'SAR', 'BRL'];
 
-// 基準幣別代碼
-export type BaseCurrencyCode = 'TWD' | 'USD' | 'JPY' | 'EUR' | 'GBP' | 'HKD' | 'KRW' | 'CAD' | 'INR' | 'CNY' | 'AUD' | 'SAR' | 'BRL';
+export enum Market {
+  US = 'US',
+  TW = 'TW',
+  UK = 'UK',
+  JP = 'JP',
+  CN = 'CN',
+  SZ = 'SZ',
+  IN = 'IN',
+  CA = 'CA',
+  FR = 'FR',
+  HK = 'HK',
+  KR = 'KR',
+  DE = 'DE',
+  AU = 'AU',
+  SA = 'SA',
+  BR = 'BR'
+}
 
-// 翻譯鍵值類型
-export interface Translations {
-  // 基準幣顯示名稱
-  baseCurrency: {
-    TWD: string;
-    USD: string;
-    JPY: string;
-    EUR: string;
-    GBP: string;
-    HKD: string;
-    KRW: string;
-    CAD: string;
-    INR: string;
-    CNY?: string;
-    AUD?: string;
-    SAR?: string;
-    BRL?: string;
-  };
-  // 通用
-  common: {
-    confirm: string;
-    cancel: string;
-    delete: string;
-    edit: string;
-    save: string;
-    close: string;
-    loading: string;
-    search: string;
-    logoutConfirm: string;
-    upgrade: string;
-  };
-  // 導航
-  nav: {
-    dashboard: string;
-    history: string;
-    funds: string;
-    accounts: string;
-    rebalance: string;
-    simulator: string;
-    help: string;
-    logout: string;
-  };
-  // 頁面標題
-  pages: {
-    dashboard: string;
-    history: string;
-    funds: string;
-    accounts: string;
-    rebalance: string;
-    simulator: string;
-    help: string;
-  };
-  // 登入頁
-  login: {
-    title: string;
-    subtitle: string;
-    email: string;
-    password: string;
-    login: string;
-    privacy: string;
-    privacyDesc: string;
-    riskDisclaimer: string;
-    riskDisclaimerDesc: string;
-  };
-  // 儀表板
-  dashboard: {
-    netCost: string;
-    totalAssets: string;
-    totalPL: string;
-    annualizedReturn: string;
-    detail: string;
-    includeCash: string;
-    detailedStatistics: string;
-    totalCost: string;
-    totalPLAmount: string;
-    accumulatedCashDividends: string;
-    accumulatedStockDividends: string;
-    annualizedReturnRate: string;
-    avgExchangeRate: string;
-    currentExchangeRate: string;
-    totalReturnRate: string;
-    assetVsCostTrend: string;
-    assetTrendMergedSubtitle: string;
-    toggleYearlyFlowBars: string;
-    yearlyFlowIn: string;
-    yearlyFlowOut: string;
-    yearlyMarketPL: string;
-    yearlyIncome: string;
-    aiCorrectHistory: string;
-    marketDistribution: string;
-    allocation: string;
-    annualPerformance: string;
-    year: string;
-    startAssets: string;
-    annualNetInflow: string;
-    endAssets: string;
-    annualProfit: string;
-    annualROI: string;
-    brokerageAccounts: string;
-    accountName: string;
-    totalAssetsNT: string;
-    marketValueNT: string;
-    balanceNT: string;
-    profitNT: string;
-    profitFormulaTooltip: string;
-    unrealizedPL: string;
-    realizedPL: string;
-    dividendInterest: string;
-    displayCurrency: string;
-    ntd: string;
-    usd: string;
-    annualizedROI: string;
-    portfolioHoldings: string;
-    mergedDisplay: string;
-    detailedDisplay: string;
-    aiUpdatePrices: string;
-    estimatedGrowth8: string;
-    chartLoading: string;
-    noChartData: string;
-    noHoldings: string;
-    noAccounts: string;
-    costBreakdown: string;
-    netInvestedBreakdown: string;
-    calculationFormula: string;
-    formulaNote: string;
-    attention: string;
-    date: string;
-    category: string;
-    originalAmount: string;
-    twdCost: string;
-    totalNetInvested: string;
-    deposit: string;
-    withdraw: string;
-    fixedTWD: string;
-    historicalRate: string;
-    currentRate: string;
-    taiwanDollar: string;
-    chartLabels: {
-      investmentCost: string;
-      accumulatedPL: string;
-      estimatedAssets: string;
-      totalAssets: string;
-      realData: string;
-      estimated: string;
-      profit: string;
-      loss: string;
-      barName: string;
-    };
-    noHoldingsData: string;
-    realHistoricalData: string;
-    formulaLabel: string;
-    aiCorrectHistoryTitle: string;
-    aiAdvisor: string;
-    aiAdvisorDesc: string;
-    startAnalysis: string;
-    analyzing: string;
-    viewCalculationDetails: string;
-    riskWarning: string;
-    riskWarningDesc: string;
-    notInvestmentAdvice: string;
-  };
-  // 各市場績效圖
-  marketChart: {
-    title: string;
-    subtitle: string;
-    annualizedReturn: string;
-    weight: string;
-    value: string;
-    noData: string;
-    ratio: string;
-  };
-  // 資金流瀑布圖
-  waterfall: {
-    title: string;
-    subtitle: string;
-    byYear: string;
-    byQuarter: string;
-    deposit: string;
-    withdraw: string;
-    stockPL: string;
-    dividend: string;
-    net: string;
-    runningTotal: string;
-    periodNet: string;
-    noData: string;
-    plPositive: string;
-    plNegative: string;
-    /** 圖例下方說明（與柱狀顏色對應） */
-    legendHintStart: string;
-    legendHintInflow: string;
-    legendHintDividend: string;
-    legendHintPL: string;
-  };
-  // 股息熱力圖
-  dividendHeatmap: {
-    title: string;
-    subtitle: string;
-    totalDividend: string;
-    noData: string;
-    bestMonth: string;
-    less: string;
-    more: string;
-    monthlyBreakdown: string;
-    yearTotal: string;
-    monthTotal: string;
-  };
-  // 資金管理
-  funds: {
-    title: string;
-    operations: string;
-    clearAll: string;
-    batchImport: string;
-    addRecord: string;
-    filter: string;
-    clearFilters: string;
-    accountFilter: string;
-    typeFilter: string;
-    dateFrom: string;
-    dateTo: string;
-    allAccounts: string;
-    allTypes: string;
-    deposit: string;
-    withdraw: string;
-    transfer: string;
-    interest: string;
-    showRecords: string;
-    totalRecords: string;
-    last30Days: string;
-    thisYear: string;
-    confirmClearAll: string;
-    confirmClearAllMessage: string;
-    confirmClear: string;
-  };
-  // 交易記錄
-  history: {
-    operations: string;
-    batchUpdateMarket: string;
-    clearAll: string;
-    batchImport: string;
-    addRecord: string;
-    filter: string;
-    clearFilters: string;
-    accountFilter: string;
-    tickerFilter: string;
-    dateFrom: string;
-    dateTo: string;
-    includeCashFlow: string;
-    showingRecords: string;
-    totalRecords: string;
-    last30Days: string;
-    thisYear: string;
-    noTransactions: string;
-    noMatchingTransactions: string;
-    edit: string;
-    delete: string;
-    includeCashFlowDesc: string;
-    hiddenCashFlowRecords: string;
-    cashFlowDeposit: string;
-    cashFlowWithdraw: string;
-    cashFlowTransfer: string;
-    cashFlowTransferIn: string;
-  };
-  // 其他常用文字
-  labels: {
-    date: string;
-    account: string;
-    amount: string;
-    balance: string;
-    action: string;
-    type: string;
-    price: string;
-    quantity: string;
-    currency: string;
-    fee: string;
-    exchangeRate: string;
-    totalCost: string;
-    category: string;
-    description: string;
-    note: string;
-  };
-  // 持倉明細表
-  holdings: {
-    portfolioHoldings: string;
-    mergedDisplay: string;
-    detailedDisplay: string;
-    aiUpdatePrices: string;
-    aiSearching: string;
-    market: string;
-    ticker: string;
-    quantity: string;
-    currentPrice: string;
-    weight: string;
-    cost: string;
-    marketValue: string;
-    profitLoss: string;
-    annualizedROI: string;
-    dailyChange: string;
-    avgPrice: string;
-    noHoldings: string;
-  };
-  // 帳戶管理
-  accounts: {
-    addAccount: string;
-    accountName: string;
-    accountNamePlaceholder: string;
-    currency: string;
-    currencyTWD: string;
-    currencyUSD: string;
-    currencyJPY: string;
-    currencyEUR: string;
-    currencyGBP: string;
-    currencyHKD: string;
-    currencyKRW: string;
-    currencyCNY: string;
-    currencyINR: string;
-    currencyCAD: string;
-    currencyAUD: string;
-    currencySAR: string;
-    currencyBRL: string;
-    subBrokerage: string;
-    add: string;
-    update: string;
-    editAccount: string;
-    balance: string;
-    cancel: string;
-    updateAccount: string;
-    confirmDelete: string;
-    confirmDeleteMessage: string;
-    deleteWarning: string;
-    deleteAccount: string;
-    noAccounts: string;
-    cashBalance: string;
-    editAccountTitle: string;
-  };
-  // 再平衡
-  rebalance: {
-    title: string;
-    resetToCurrent: string;
-    totalAssets: string;
-    enable: string;
-    symbol: string;
-    currentPrice: string;
-    currentValue: string;
-    currentWeight: string;
-    targetWeight: string;
-    targetValue: string;
-    adjustAmount: string;
-    suggestedAction: string;
-    cash: string;
-    totalEnabled: string;
-    remainingFunds: string;
-    notParticipating: string;
-    accounts: string;
-    description: string;
-    description1: string;
-    description2: string;
-    description3: string;
-    description4: string;
-    description5: string;
-    description6: string;
-    buy: string;
-    sell: string;
-    accountLabel: string;
-    sharesLabel: string;
-    totalLabel: string;
-    accountCount: string;
-  };
-  // 模擬器
-  simulator: {
-    title: string;
-    description: string;
-    descriptionWarning: string;
-    basicSettings: string;
-    initialAmount: string;
-    investmentYears: string;
-    regularInvestment: string;
-    regularAmount: string;
-    frequency: string;
-    monthly: string;
-    quarterly: string;
-    yearly: string;
-    annualTotal: string;
-    setToZero: string;
-    importFromHoldings: string;
-    importButton: string;
-    manualAdd: string;
-    ticker: string;
-    tickerPlaceholder: string;
-    market: string;
-    marketTW: string;
-    marketUS: string;
-    marketUK: string;
-    marketJP: string;
-    marketCN: string;
-    marketSZ: string;
-    marketIN: string;
-    marketCA: string;
-    marketFR: string;
-    marketHK: string;
-    marketKR: string;
-    marketDE: string;
-    marketAU: string;
-    marketSA: string;
-    marketBR: string;
-    annualReturn: string;
-    autoQuery: string;
-    querying: string;
-    allocation: string;
-    add: string;
-    assetList: string;
-    autoBalance: string;
-    clearAll: string;
-    allocationSum: string;
-    totalInvested: string;
-    finalValue: string;
-    totalReturn: string;
-    portfolioAnnualReturn: string;
-    initial: string;
-    yearlyProjection: string;
-    yearlyReturnAnalysis: string;
-    detailedYearlyProjection: string;
-    year: string;
-    assetValue: string;
-    yearlyReturn: string;
-    cumulativeInvestment: string;
-    yearlyReturnRate: string;
-    allocationWarning: string;
-    confirmClear: string;
-    confirmClearMessage: string;
-    dataWarning: string;
-    dataWarningDesc: string;
-    cagrExplanation: string;
-    cagrFormula: string;
-    cagrFormulaDesc: string;
-    cagrExample: string;
-    cagrExampleValue: string;
-    errorEnterTicker: string;
-    errorAllocationRange: string;
-    errorAllocationSum: string;
-    errorNoHoldings: string;
-    errorEnterTickerFirst: string;
-    errorCannotGetReturn: string;
-    errorQueryFailed: string;
-    close: string;
-    cancel: string;
-    yearPrefix: string;
-    yearSuffix: string;
-    queryingReturn: string;
-    autoQueryTitle: string;
-    addRow: string;
-    action: string;
-    delete: string;
-    addAll: string;
-    yearlyInvestment: string;
-  };
-  // 系統說明
-  help: {
-    dataManagement: string;
-    export: string;
-    exportDesc: string;
-    downloadBackup: string;
-    import: string;
-    importWarning: string;
-    uploadBackup: string;
-    authorizedUsers: string;
-    authorizedUsersDesc: string;
-    emailAccount: string;
-    status: string;
-    systemAuthorized: string;
-    contact: string;
-    contactTitle: string;
-    contactDesc: string;
-    contactEmail: string;
-    documentation: string;
-    copyAll: string;
-    copied: string;
-    print: string;
-    confirmImport: string;
-    confirmImportMessage: string;
-    confirmImportWarning: string;
-    confirmOverride: string;
-    documentationContent: string;
-    androidPublish: string;
-    androidPublishTitle: string;
-    androidPublishDesc: string;
-  };
-  // 交易表單
-  transactionForm: {
-    addTransaction: string;
-    editTransaction: string;
-    date: string;
-    account: string;
-    market: string;
-    ticker: string;
-    tickerPlaceholder: string;
-    category: string;
-    price: string;
-    quantity: string;
-    quantityFixed: string;
-    fees: string;
-    note: string;
-    cancel: string;
-    saveTransaction: string;
-    updateTransaction: string;
-    confirmTitle: string;
-    confirmMessage: string;
-    dateLabel: string;
-    accountLabel: string;
-    marketLabel: string;
-    tickerLabel: string;
-    typeLabel: string;
-    priceLabel: string;
-    quantityLabel: string;
-    feesLabel: string;
-    noteLabel: string;
-    totalAmount: string;
-    shares: string;
-    backToEdit: string;
-    confirmSave: string;
-    previewTitle: string;
-    calculationFormula: string;
-    marketTW: string;
-    marketUS: string;
-    marketUK: string;
-    marketJP: string;
-    marketCN: string;
-    marketSZ: string;
-    marketIN: string;
-    marketCA: string;
-    marketFR: string;
-    marketHK: string;
-    marketKR: string;
-    marketDE: string;
-    marketAU: string;
-    marketSA: string;
-    marketBR: string;
-    typeBuy: string;
-    typeSell: string;
-    typeDividend: string;
-    typeCashDividend: string;
-    typeTransferIn: string;
-    typeTransferOut: string;
-    placeholderPrice: string;
-    placeholderQuantity: string;
-    errorNoAccount: string;
-    feesShort: string;
-    formulaNote: string;
-  };
-  // 資金管理表單
-  fundForm: {
-    addFundRecord: string;
-    editFundRecord: string;
-    date: string;
-    type: string;
-    account: string;
-    sourceAccount: string;
-    amount: string;
-    targetAccount: string;
-    selectAccount: string;
-    exchangeRate: string;
-    exchangeRateUSD: string;
-    exchangeRateJPY: string;
-    exchangeRateUsdTwd: string;
-    exchangeRateUsdJpy: string;
-    exchangeRatePair: string;
-    crossCurrencyTransfer: string;
-    usdConversion: string;
-    jpyConversion: string;
-    sameCurrencyTransfer: string;
-    fees: string;
-    feesNote: string;
-    note: string;
-    cancel: string;
-    updateRecord: string;
-    confirmExecute: string;
-    typeDeposit: string;
-    typeWithdraw: string;
-    typeTransfer: string;
-    typeInterest: string;
-    confirmTitle: string;
-    confirmMessage: string;
-    dateLabel: string;
-    typeLabel: string;
-    accountLabel: string;
-    targetAccountLabel: string;
-    amountLabel: string;
-    exchangeRateLabel: string;
-    feesLabel: string;
-    noteLabel: string;
-    totalTWD: string;
-    backToEdit: string;
-    confirmSave: string;
-    errorNoAccount: string;
-  };
-  // 批次匯入模組
-  batchImportModal: {
-    title: string;
-    selectAccount: string;
-    selectAccountPlaceholder: string;
-    noAccountsWarning: string;
-    noAccountsMessage: string;
-    tabPaste: string;
-    tabUpload: string;
-    pasteLabel: string;
-    pasteFormat: string;
-    pasteTip: string;
-    parseButton: string;
-    uploadLabel: string;
-    uploadSupported: string;
-    noFileSelected: string;
-    selectFile: string;
-    previewTitle: string;
-    previewSuccess: string;
-    previewSelected: string;
-    previewFailed: string;
-    previewSelectTransactions: string;
-    selectAll: string;
-    deselectAll: string;
-    allSelected: string;
-    selectedCount: string;
-    tableDate: string;
-    tableAction: string;
-    tableMarket: string;
-    tableSymbol: string;
-    tableQty: string;
-    tablePrice: string;
-    tableFees: string;
-    tableAmount: string;
-    cancel: string;
-    confirmImport: string;
-    confirmImportCount: string;
-    errorNoAccounts: string;
-    errorNoAccountSelected: string;
-    errorNoData: string;
-    errorParseFirst: string;
-    errorNoTransactionsSelected: string;
-    errorParseFailed: string;
-    errorParseFailedCount: string;
-    errorParseError: string;
+export enum Currency {
+  TWD = 'TWD',
+  USD = 'USD',
+  JPY = 'JPY',
+  HKD = 'HKD',
+  SGD = 'SGD',
+  CNY = 'CNY',
+  INR = 'INR',
+  KRW = 'KRW',
+  THB = 'THB',
+  MYR = 'MYR',
+  IDR = 'IDR',
+  VND = 'VND',
+  PHP = 'PHP',
+  EUR = 'EUR',
+  GBP = 'GBP',
+  CHF = 'CHF',
+  SEK = 'SEK',
+  NOK = 'NOK',
+  DKK = 'DKK',
+  AUD = 'AUD',
+  CAD = 'CAD',
+  NZD = 'NZD',
+  ZAR = 'ZAR',
+  BRL = 'BRL',
+  MXN = 'MXN',
+  SAR = 'SAR'
+}
+
+export enum TransactionType {
+  BUY = 'BUY',
+  SELL = 'SELL',
+  DIVIDEND = 'DIVIDEND', // +shares; DRIP 再投資時應填單價/股數/金額，與 BUY 同樣增加成本（見 calculateHoldings）
+  CASH_DIVIDEND = 'CASH_DIVIDEND', // Cash payout
+  TRANSFER_IN = 'TRANSFER_IN', // Stock Transfer In
+  TRANSFER_OUT = 'TRANSFER_OUT' // Stock Transfer Out
+}
+
+export enum CashFlowType {
+  DEPOSIT = 'DEPOSIT', // Import: Salary, Savings -> Account
+  WITHDRAW = 'WITHDRAW', // Export: Account -> Living expenses
+  TRANSFER = 'TRANSFER', // Internal: Account A -> Account B
+  INTEREST = 'INTEREST' // Interest income
+}
+
+export enum CashFlowCategory {
+  INVESTMENT = 'INVESTMENT', // 投資
+  EDUCATION = 'EDUCATION', // 教育資金
+  TRAVEL = 'TRAVEL', // 旅遊
+  LIVING = 'LIVING', // 生活費
+  EMERGENCY = 'EMERGENCY', // 緊急預備金
+  OTHER = 'OTHER' // 其他
+}
+
+export interface Account {
+  id: string;
+  name: string;
+  currency: Currency;
+  isSubBrokerage: boolean; // For USD accounts in TW brokers
+  balance: number; // Cash balance
+}
+
+export interface CashFlow {
+  id: string;
+  date: string;
+  type: CashFlowType;
+  amount: number; // Native currency amount (e.g., USD for USD account)
+  amountTWD?: number; // Exact TWD value involved (for cost basis accuracy)
+  fee?: number; // Fee involved in the transaction (e.g. wire fee)
+  accountId: string; // Source account (or Target for Deposit)
+  targetAccountId?: string; // Only for Transfer
+  exchangeRate?: number; // If transferring between currencies
+  note?: string;
+  category?: CashFlowCategory; // 資金用途類別
+}
+
+export interface Transaction {
+  id: string;
+  date: string; // ISO Date string
+  ticker: string;
+  market: Market;
+  type: TransactionType;
+  price: number;
+  quantity: number;
+  fees: number;
+  accountId: string;
+  note?: string;
+  amount?: number;
+  category?: CashFlowCategory; // 股票用途類別
+}
+
+export interface Holding {
+  ticker: string;
+  market: Market;
+  quantity: number;
+  avgCost: number;
+  totalCost: number;
+  currentPrice: number;
+  currentValue: number;
+  unrealizedPL: number;
+  unrealizedPLPercent: number;
+  accountId: string;
+  // New fields for Asset Allocation Table
+  weight: number; // % of Total Portfolio (Invested + Cash)
+  annualizedReturn: number; // CAGR %
+  dailyChange?: number; // Price change amount
+  dailyChangePercent?: number; // Price change %
+  firstBuyDate?: string; // Helper for ROI calc
+  category?: CashFlowCategory; // 股票用途類別
+}
+
+export interface PortfolioSummary {
+  totalCostTWD: number;
+  totalValueTWD: number;
+  totalPLTWD: number;
+  totalPLPercent: number;
+  cashBalanceTWD: number; // Total cash across accounts converted to TWD
+  netInvestedTWD: number; // Total cash deposits - withdrawals
+  annualizedReturn: number; // CAGR
+  exchangeRateUsdToTwd: number;
+  jpyExchangeRate?: number; // JPY to TWD exchange rate (optional)
+  eurExchangeRate?: number; // EUR to TWD (1 EUR = N TWD)
+  gbpExchangeRate?: number; // GBP to TWD (1 GBP = N TWD)
+  hkdExchangeRate?: number; // HKD to TWD (1 HKD = N TWD)
+  krwExchangeRate?: number; // KRW to TWD (1 KRW = N TWD)
+  cnyExchangeRate?: number; // CNY to TWD (1 CNY = N TWD)
+  inrExchangeRate?: number; // INR to TWD (1 INR = N TWD)
+  cadExchangeRate?: number; // CAD to TWD (1 CAD = N TWD)
+  audExchangeRate?: number; // AUD to TWD (1 AUD = N TWD)
+  sarExchangeRate?: number; // SAR to TWD (1 SAR = N TWD)
+  brlExchangeRate?: number; // BRL to TWD (1 BRL = N TWD)
+  // Detailed fields
+  accumulatedCashDividendsTWD: number;
+  accumulatedStockDividendsTWD: number;
+  avgExchangeRate: number;
+}
+
+export interface ChartDataPoint {
+  year: string;
+  cost: number; // Purple: Cumulative Invested Cost (Principal)
+  profit: number; // New: Cumulative Profit/Loss (Assets - Cost)
+  totalAssets: number; // Green: Simulated Historical Value
+  estTotalAssets: number; // Blue: Projected/Target curve
+  assetCostRatio: number; // Red: Ratio (plotted on separate axis usually, or normalized)
+  isRealData?: boolean; // New: Indicates if this point uses real historical prices
+}
+
+export interface AssetAllocationItem {
+  name: string; // Ticker or "Cash" or "Others"
+  value: number; // TWD Value
+  ratio: number; // Percentage 0-100
+  color: string;
+}
+
+export enum AssetClass {
+  EQUITY = 'EQUITY',
+  BOND = 'BOND',
+  CASH = 'CASH',
+  OTHER = 'OTHER'
+}
+
+export interface AssetClassAllocationItem {
+  assetClass: AssetClass;
+  name: string;
+  value: number;
+  ratio: number;
+  color: string;
+}
+
+export interface AnnualPerformanceItem {
+  year: string;
+  startAssets: number;
+  netInflow: number;
+  endAssets: number;
+  profit: number;
+  roi: number;
+  isRealData?: boolean;
+}
+
+export interface AttributionPoint {
+  period: string;
+  startAssets: number;
+  endAssets: number;
+  deltaAssets: number;
+  netInflow: number;
+  income: number;
+  marketPL: number;
+  cumulativeCost: number;
+  cumulativeProfit: number;
+  isRealData?: boolean;
+  reconciledDiff: number;
+  isConsistent: boolean;
+}
+
+/** 資金流瀑布圖單一期間（金額為 TWD） */
+export interface WaterfallPeriodRow {
+  period: string;
+  startAssets: number;
+  endAssets: number;
+  netInflow: number;
+  income: number;
+  marketPL: number;
+  deposit: number;
+  withdraw: number;
+  isRealData?: boolean;
+}
+
+export interface AccountPerformance {
+  id: string;
+  name: string;
+  currency: Currency;
+  totalAssetsTWD: number;
+  marketValueTWD: number;
+  cashBalanceTWD: number;
+  profitTWD: number;
+  roi: number;
+  // 原始幣種數值（用於切換顯示）
+  totalAssetsNative?: number;
+  marketValueNative?: number;
+  cashBalanceNative?: number;
+  profitNative?: number;
+  netInvestedNative?: number;
+  unrealizedProfitTWD?: number;
+  realizedProfitTWD?: number;
+  incomeTWD?: number;
+  unrealizedProfitNative?: number;
+  realizedProfitNative?: number;
+  incomeNative?: number;
+}
+
+// New Interface for Historical Data Storage
+export interface HistoricalData {
+  [year: string]: {
+    prices: Record<string, number>; // Ticker -> Price on Dec 31
+    exchangeRate: number; // USD to TWD on Dec 31
+    jpyExchangeRate?: number; // JPY to TWD on Dec 31 (optional)
+    eurExchangeRate?: number; // EUR to TWD on Dec 31 (optional)
+    gbpExchangeRate?: number; // GBP to TWD on Dec 31 (optional)
+    hkdExchangeRate?: number; // HKD to TWD on Dec 31 (optional)
+    krwExchangeRate?: number; // KRW to TWD on Dec 31 (optional)
+    cnyExchangeRate?: number; // CNY to TWD on Dec 31 (optional)
+    cadExchangeRate?: number; // CAD to TWD on Dec 31 (optional)
+    audExchangeRate?: number; // AUD to TWD on Dec 31 (optional)
   };
 }
 
-// 繁體中文翻譯
+// 資產配置模擬相關類型
+export interface AssetSimulationItem {
+  id: string;
+  ticker: string;
+  market: Market;
+  name?: string; // 可選的資產名稱
+  annualizedReturn: number; // 年化報酬率 (%)
+  allocation: number; // 配置比例 (%)
+}
+
+export interface SimulationResult {
+  initialAmount: number; // 初始投資金額
+  years: number; // 投資年數
+  finalValue: number; // 最終價值
+  totalReturn: number; // 總報酬
+  totalReturnPercent: number; // 總報酬率 (%)
+  annualizedReturn: number; // 組合年化報酬率 (%)
+  yearlyProjections: YearlyProjection[]; // 年度預測
+  regularInvestment?: {
+    amount: number; // 定期定額金額
+    frequency: 'monthly' | 'quarterly' | 'yearly'; // 投入頻率
+    totalInvested: number; // 總投入金額（包含初始和定期定額）
+  };
+}
+
+export interface YearlyProjection {
+  year: number;
+  value: number; // 該年度末的價值
+  return: number; // 該年度的報酬
+  returnPercent: number; // 該年度的報酬率 (%)
+  regularInvestment?: number; // 該年度的定期定額投入
+  cumulativeInvestment?: number; // 累積總投入（包含初始和定期定額）
+}
+
+// 用於交易記錄和資金流動記錄的統一型別
+export interface CombinedRecord {
+  id: string;
+  date: string;
+  accountId: string;
+  type: 'TRANSACTION' | 'CASHFLOW';
+  subType: TransactionType | CashFlowType | 'TRANSFER_IN';
+  ticker: string;
+  market: Market | '';
+  price: number;
+  quantity: number;
+  amount: number;
+  fees: number;
+  description: string;
+  originalRecord: Transaction | CashFlow;
+  balance?: number;
+  balanceChange?: number;
+  // 僅用於 CASHFLOW 的欄位
+  targetAccountId?: string;
+  sourceAccountId?: string;
+  exchangeRate?: number;
+  isSourceRecord?: boolean;
+  isTargetRecord?: boolean;
+}
+
+
