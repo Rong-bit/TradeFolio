@@ -114,6 +114,10 @@ export const de: Translations = {
     noData: 'Keine Cashflow-Daten',
     plPositive: 'Aktien G/V (+)',
     plNegative: 'Aktien G/V (−)',
+    legendHintStart: 'Gesamtportfoliowert (inkl. Bargeld) zu Periodenbeginn.',
+    legendHintInflow: 'Einzahlungen minus Auszahlungen. Blau = Nettozufluss, Orange = Nettoabfluss.',
+    legendHintDividend: 'Bardividenden und Zinsen in der Periode.',
+    legendHintPL: 'Vermögensänderung abzüglich Nettozufluss und Erträge; näherungsweise Markt-G/V. Grün = Gewinn, Rot = Verlust.',
   },
   dividendHeatmap: {
     title: 'Dividenden-Heatmap',

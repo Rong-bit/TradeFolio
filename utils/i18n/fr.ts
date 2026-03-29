@@ -115,6 +115,10 @@ export const fr: Translations = {
     noData: 'Aucun flux de trésorerie',
     plPositive: 'P&L Actions (+)',
     plNegative: 'P&L Actions (−)',
+    legendHintStart: 'Valeur totale du portefeuille (dont liquidités) en début de période.',
+    legendHintInflow: 'Dépôts moins retraits sur la période. Bleu = flux net entrant, orange = sortant.',
+    legendHintDividend: 'Dividendes en espèces et intérêts crédités sur la période.',
+    legendHintPL: 'Variation d’actifs hors flux net et revenus ; P&L de marché approximatif. Vert = gain, rouge = perte.',
   },
   dividendHeatmap: {
     title: 'Carte Thermique Dividendes',

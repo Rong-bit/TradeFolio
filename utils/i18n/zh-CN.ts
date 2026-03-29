@@ -41,7 +41,8 @@ zhCN.dashboard = {
   marketValueNT: '市值',
   balanceNT: '余额',
   profitNT: '损益',
-  profitFormulaTooltip: '总损益 = 未实现 + 已实现 + 股息/利息',
+  profitFormulaTooltip:
+    '总损益 = 总资产 − 净投入（与总览一致）。未实现／已实现／股息为分项，加总未必等于总损益。',
   unrealizedPL: '未实现损益',
   realizedPL: '已实现损益',
   dividendInterest: '累计股息/利息',
@@ -122,6 +123,10 @@ zhCN.waterfall = {
   noData: '尚无资金流资料',
   plPositive: '股票盈亏(正)',
   plNegative: '股票盈亏(负)',
+  legendHintStart: '该期开始时的投资组合总资产（含现金）。',
+  legendHintInflow: '期内汇入减汇出。蓝色＝净流入，橙色＝净流出。',
+  legendHintDividend: '该期入账的现金股息与利息。',
+  legendHintPL: '资产变动扣除净投入与配息后的部分，近似市场损益；绿色为正、红色为负。',
 };
 zhCN.dividendHeatmap = {
   title: '股息收入热力图',

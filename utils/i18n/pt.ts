@@ -115,6 +115,10 @@ export const pt: Translations = {
     noData: 'Sem dados de fluxo de caixa',
     plPositive: 'P&L Ações (+)',
     plNegative: 'P&L Ações (−)',
+    legendHintStart: 'Valor total da carteira (incl. caixa) no início de cada período.',
+    legendHintInflow: 'Depósitos menos levantamentos no período. Azul = entrada líquida, laranja = saída líquida.',
+    legendHintDividend: 'Dividendos em numerário e juros creditados no período.',
+    legendHintPL: 'Variação do ativo após fluxo líquido e rendimentos; P&L de mercado aproximado. Verde = ganho, vermelho = perda.',
   },
   dividendHeatmap: {
     title: 'Mapa de Calor de Dividendos',

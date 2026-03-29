@@ -1,5 +1,13 @@
 // utils/i18n/index.ts
-// 對外介面與原本 utils/i18n.ts 完全相同，所有 import 路徑不需要改動。
+// 由此目錄提供 i18n；請使用 import ... from '../utils/i18n'（勿再新增單檔 utils/i18n.ts，以免覆蓋此目錄）。
+//
+// 若舊單檔裡曾有：
+//   marketChart: en.marketChart,
+//   waterfall: en.waterfall,
+//   dividendHeatmap: en.dividendHeatmap,
+// 請改到「該語言檔」utils/i18n/xx.ts：
+//   • 若該檔已是 export const xx = { ...en, ... }，不必再寫這三行（已由 en 繼承）。
+//   • 否則在該檔 import { en } from './en'，於物件內加上上列三行，或貼上 en.ts 裡對應區塊並改翻譯。
 
 export type { Language, BaseCurrencyCode, Translations } from './types';
 export { LANGUAGES } from './types';
