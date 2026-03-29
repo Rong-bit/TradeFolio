@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market, AssetClass } from '../types';
+import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market, AssetClass } from '../portfolioTypes';
 import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildWaterfallQuarterRows, getAssetClassForTicker } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
@@ -904,6 +904,10 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         </div>
       )}
 
+      {/* 各市場績效比較、股息熱力圖（置於年度績效表上方） */}
+      {!isGuest && <MarketPerformanceChart />}
+      {!isGuest && <DividendHeatmap />}
+
       {/* Annual Performance Table */}
       {!isGuest && annualPerformance.length > 0 && (
           <div className="bg-white rounded-xl shadow overflow-hidden">
@@ -1221,12 +1225,6 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
           </table>
         </div>
       </div>
-
-      {/* Market Performance Chart */}
-      {!isGuest && <MarketPerformanceChart />}
-
-      {/* Dividend Heatmap */}
-      {!isGuest && <DividendHeatmap />}
 
       <HoldingsTable />
 
