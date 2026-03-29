@@ -101,6 +101,12 @@ export interface Translations {
     currentExchangeRate: string;
     totalReturnRate: string;
     assetVsCostTrend: string;
+    assetTrendMergedSubtitle: string;
+    toggleYearlyFlowBars: string;
+    yearlyFlowIn: string;
+    yearlyFlowOut: string;
+    yearlyMarketPL: string;
+    yearlyIncome: string;
     aiCorrectHistory: string;
     marketDistribution: string;
     allocation: string;
@@ -200,6 +206,11 @@ export interface Translations {
     noData: string;
     plPositive: string;
     plNegative: string;
+    /** 圖例下方說明（與柱狀顏色對應） */
+    legendHintStart: string;
+    legendHintInflow: string;
+    legendHintDividend: string;
+    legendHintPL: string;
   };
   // 股息熱力圖
   dividendHeatmap: {
