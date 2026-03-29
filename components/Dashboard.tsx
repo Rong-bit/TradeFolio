@@ -267,7 +267,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   return (
     <div className="space-y-6">
       {/* ① Summary Cards — enhanced with trend arrows + sparkline */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
 
         {/* Net Cost Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-purple-500 relative group hover:shadow-md transition-shadow">
@@ -320,6 +320,39 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     </linearGradient>
                   </defs>
                   <Area type="monotone" dataKey="v" stroke="#22c55e" strokeWidth={1.5} fill="url(#sg-green)" dot={false} activeDot={false} isAnimationActive={true}/>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Total P/L Card */}
+        <div className={`bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-emerald-500' : 'border-rose-500'} group hover:shadow-md transition-shadow`}>
+          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
+          <div className="flex items-center gap-2 mt-2">
+            <span className={`text-lg leading-none ${summary.totalPLTWD >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+              {summary.totalPLTWD >= 0 ? '↑' : '↓'}
+            </span>
+            <p className={`text-xl sm:text-2xl font-bold tabular-nums ${summary.totalPLTWD >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {summary.totalPLTWD >= 0 ? '+' : ''}{formatCurrency(toBase(summary.totalPLTWD), baseCurrency)}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 mt-1">
+            <span className={`inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded ${summary.totalPLTWD >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+              {summary.totalPLPercent.toFixed(2)}%
+            </span>
+          </div>
+          {isMounted && chartData.length > 1 && (
+            <div className="mt-2 h-8">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData.slice(-8).map(d => ({ v: toBase(d.profit || 0) }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="sg-pl" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={summary.totalPLTWD >= 0 ? '#10b981' : '#ef4444'} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={summary.totalPLTWD >= 0 ? '#10b981' : '#ef4444'} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="v" stroke={summary.totalPLTWD >= 0 ? '#10b981' : '#ef4444'} strokeWidth={1.5} fill="url(#sg-pl)" dot={false} activeDot={false} isAnimationActive />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -421,27 +454,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-3">
             <div className="min-w-0 flex-1">
               {mainChartTab === 'cumulative' ? (
-                <>
-                  <h3 className="font-bold text-blue-600 text-xl">{translations.dashboard.assetVsCostTrend}</h3>
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                    <span className="text-slate-500 text-xs font-semibold uppercase tracking-wide">
-                      {translations.dashboard.chartLabels.accumulatedPL}
-                    </span>
-                    <span
-                      className={`text-lg font-bold tabular-nums ${summary.totalPLTWD >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}
-                    >
-                      {summary.totalPLTWD >= 0 ? '+' : ''}
-                      {formatCurrency(toBase(summary.totalPLTWD), baseCurrency)}
-                    </span>
-                    <span
-                      className={`text-xs font-bold px-2 py-0.5 rounded ${
-                        summary.totalPLTWD >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-                      }`}
-                    >
-                      {summary.totalPLPercent.toFixed(2)}%
-                    </span>
-                  </div>
-                </>
+                <h3 className="font-bold text-blue-600 text-xl">{translations.dashboard.assetVsCostTrend}</h3>
               ) : (
                 <>
                   <h3 className="font-bold text-slate-800 text-xl">{translations.waterfall.title}</h3>
