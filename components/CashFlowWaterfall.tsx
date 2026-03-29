@@ -23,6 +23,13 @@ interface Props {
   hideHeader?: boolean;
 }
 
+const WF_COLOR_START = '#94a3b8';
+const WF_COLOR_INFLOW_POS = '#3b82f6';
+const WF_COLOR_INFLOW_NEG = '#f97316';
+const WF_COLOR_DIVIDEND = '#eab308';
+const WF_COLOR_PL_POS = '#10b981';
+const WF_COLOR_PL_NEG = '#ef4444';
+
 const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
   const { baseCurrency, rates } = useMarket();
   const { language } = useUI();
@@ -37,8 +44,8 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
       segFlow: toBase(r.netInflow),
       segIncome: toBase(r.income),
       segPL: toBase(r.marketPL),
-      flowFill: r.netInflow >= 0 ? '#22c55e' : '#f97316',
-      plFill: r.marketPL >= 0 ? '#10b981' : '#ef4444',
+      flowFill: r.netInflow >= 0 ? WF_COLOR_INFLOW_POS : WF_COLOR_INFLOW_NEG,
+      plFill: r.marketPL >= 0 ? WF_COLOR_PL_POS : WF_COLOR_PL_NEG,
     }));
   }, [rows, baseCurrency, rates]);
 
@@ -105,13 +112,13 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
                 return value;
               }}
             />
-            <Bar dataKey="segStart" name="segStart" stackId="wf" fill="#94a3b8" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="segStart" name="segStart" stackId="wf" fill={WF_COLOR_START} radius={[0, 0, 0, 0]} />
             <Bar dataKey="segFlow" name="segFlow" stackId="wf" radius={[0, 0, 0, 0]}>
               {data.map((entry, i) => (
                 <Cell key={`f-${i}`} fill={entry.flowFill} />
               ))}
             </Bar>
-            <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill="#eab308" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar dataKey="segPL" name="segPL" stackId="wf" radius={[2, 2, 0, 0]}>
               {data.map((entry, i) => (
                 <Cell key={`p-${i}`} fill={entry.plFill} />
@@ -122,6 +129,63 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             )}
           </BarChart>
         </ResponsiveContainer>
+      </div>
+
+      <div className="mt-3 border-t border-slate-200 dark:border-slate-600 pt-2.5 space-y-2 text-[11px] leading-snug text-slate-600 dark:text-slate-400">
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
+            <span
+              className="w-3 h-3 rounded-sm shrink-0 mt-0.5 ring-1 ring-slate-200/80 dark:ring-slate-600"
+              style={{ backgroundColor: WF_COLOR_START }}
+            />
+            <span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.dashboard.startAssets}</span>
+              <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintStart}</span>
+            </span>
+          </span>
+          <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
+            <span className="inline-flex gap-0.5 shrink-0 mt-0.5">
+              <span
+                className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
+                style={{ backgroundColor: WF_COLOR_INFLOW_POS }}
+              />
+              <span
+                className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
+                style={{ backgroundColor: WF_COLOR_INFLOW_NEG }}
+              />
+            </span>
+            <span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.dashboard.annualNetInflow}</span>
+              <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintInflow}</span>
+            </span>
+          </span>
+          <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
+            <span
+              className="w-3 h-3 rounded-sm shrink-0 mt-0.5 ring-1 ring-slate-200/80 dark:ring-slate-600"
+              style={{ backgroundColor: WF_COLOR_DIVIDEND }}
+            />
+            <span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.waterfall.dividend}</span>
+              <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintDividend}</span>
+            </span>
+          </span>
+          <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
+            <span className="inline-flex gap-0.5 shrink-0 mt-0.5">
+              <span
+                className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
+                style={{ backgroundColor: WF_COLOR_PL_POS }}
+              />
+              <span
+                className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
+                style={{ backgroundColor: WF_COLOR_PL_NEG }}
+              />
+            </span>
+            <span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.waterfall.stockPL}</span>
+              <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintPL}</span>
+            </span>
+          </span>
+        </div>
       </div>
     </div>
   );
