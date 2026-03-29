@@ -1,1210 +1,1436 @@
+import { 
+  Transaction, 
+  CashFlow, 
+  Account, 
+  ChartDataPoint, 
+  Currency, 
+  CashFlowType, 
+  Holding, 
+  AssetAllocationItem, 
+  AssetClassAllocationItem,
+  AssetClass,
+  Market, 
+  AnnualPerformanceItem, 
+  AccountPerformance,
+  TransactionType,
+  HistoricalData,
+  BaseCurrency,
+  AttributionPoint,
+  WaterfallPeriodRow
+} from '../types';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market, AssetClass } from '../types';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, getAssetClassForTicker } from '../utils/calculations';
-import { usePortfolio } from '../contexts/PortfolioContext';
-import { useMarket } from '../contexts/MarketContext';
-import { useUI } from '../contexts/UIContext';
-import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, Brush, AreaChart, Area } from 'recharts';
-import HoldingsTable from './HoldingsTable';
-import MarketPerformanceChart from './MarketPerformanceChart';
-import CashFlowWaterfall from './CashFlowWaterfall';
-import DividendHeatmap from './DividendHeatmap';
-import { t, translate } from '../utils/i18n';
-
-interface Props {
-  onUpdateHistorical?: () => void;
+/** 匯率物件（X→TWD：1 X = N TWD） */
+export interface ExchangeRates {
+  exchangeRateUsdToTwd: number;
+  jpyExchangeRate?: number;
+  eurExchangeRate?: number;
+  gbpExchangeRate?: number;
+  hkdExchangeRate?: number;
+  krwExchangeRate?: number;
+  cadExchangeRate?: number;
+  inrExchangeRate?: number;
+  cnyExchangeRate?: number;
+  audExchangeRate?: number;
+  sarExchangeRate?: number;
+  brlExchangeRate?: number;
 }
 
-const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
-  const { summary, holdings, chartData, annualPerformance,
-    accountPerformance, cashFlows, transactions, accounts: portfolioAccounts, computedAccounts,
-    updatePrice: onUpdatePrice, handleAutoUpdatePrices: onAutoUpdate,
-    refreshIntervalMs } = usePortfolio();
-  const { baseCurrency, rates } = useMarket();
-  const { language, isGuest } = useUI();
-  const accounts = computedAccounts;
-  const translations = t(language);
-  const [showDetails, setShowDetails] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  const [showCostDetailModal, setShowCostDetailModal] = useState(false);
-  const [showAccountInUSD, setShowAccountInUSD] = useState(false); 
-  const [showAnnualInUSD, setShowAnnualInUSD] = useState(false);
-  const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
-  const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
-  const [activeOuterIndex, setActiveOuterIndex] = useState<number | undefined>(undefined);
-  const [tickerClassOverrides, setTickerClassOverrides] = useState<Record<string, AssetClass>>({});
-  // 股/債覆寫用：寫入 localStorage：assetClassOverrides
-  const [overrideTickerInput, setOverrideTickerInput] = useState<string>('');
-  const [overrideAssetClass, setOverrideAssetClass] = useState<AssetClass>(AssetClass.EQUITY);
-  const tickerSuggestions = useMemo(
-    () => Array.from(new Set(holdings.map((h: Holding) => h.ticker))).sort((a, b) => a.localeCompare(b)),
-    [holdings]
-  );
-  const overrideChips = useMemo(() => {
-    const set = new Set(tickerSuggestions);
-    return Object.entries(tickerClassOverrides)
-      .filter(([ticker]) => set.has(ticker))
-      .sort(([a], [b]) => a.localeCompare(b));
-  }, [tickerClassOverrides, tickerSuggestions]);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [hoveredAnnualYear, setHoveredAnnualYear] = useState<string | null>(null);
-  const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
-
-  const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
-  const displayRate = getDisplayRateForBaseCurrency(baseCurrency, rates); 
+/** 市場對應原生交易幣別 */
+export function marketToCurrency(market: Market | string): Currency {
+  if (market === Market.US) return Currency.USD;
+  if (market === Market.UK) return Currency.GBP;
+  if (market === Market.JP) return Currency.JPY;
+  if (market === Market.CN || market === Market.SZ) return Currency.CNY;
+  if (market === Market.IN) return Currency.INR;
+  if (market === Market.CA) return Currency.CAD;
+  if (market === Market.FR || market === Market.DE) return Currency.EUR;
+  if (market === Market.HK) return Currency.HKD;
+  if (market === Market.KR) return Currency.KRW;
+  if (market === Market.AU) return Currency.AUD;
+  if (market === Market.SA) return Currency.SAR;
+  if (market === Market.BR) return Currency.BRL;
+  return Currency.TWD;
+}
 
 
-  useEffect(() => {
-    setIsMounted(true);
-    // 與專案實際 dark class 同步，避免 matchMedia 與 html.dark 不一致造成字色/背景對比錯誤
-    const readFromDom = () => document.documentElement.classList.contains('dark');
-    setIsDarkMode(readFromDom());
+/** 將市場別的持倉原幣價值換算為 TWD（行情幣別；若要以證券戶幣別換匯請用 holdingValueToTWD） */
+export function marketValueToTWD(
+  valueNative: number,
+  market: Market | string,
+  rates: ExchangeRates
+): number {
+  return valueNative * currencyToTWDRate(marketToCurrency(market), rates);
+}
 
-    const observer = new MutationObserver(() => {
-      setIsDarkMode(readFromDom());
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+/** 將「證券戶幣別」金額換算為 TWD（1 帳戶幣 = N TWD） */
+export function nativeValueInAccountCurrencyToTWD(
+  valueNative: number,
+  accountCurrency: Currency,
+  rates: ExchangeRates
+): number {
+  return valueNative * currencyToTWDRate(accountCurrency, rates);
+}
 
-    return () => observer.disconnect();
-  }, []);
+/** 依帳戶設定取得換匯幣別：有帳戶則用證券戶幣別，否則退回市場幣別 */
+export function valuationCurrencyForHolding(h: Holding, accounts: Account[]): Currency {
+  const acc = accounts.find(a => a.id === h.accountId);
+  return acc?.currency ?? marketToCurrency(h.market);
+}
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('assetClassOverrides');
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as Record<string, AssetClass>;
-      if (parsed && typeof parsed === 'object') {
-        setTickerClassOverrides(parsed);
+/** 持倉市值依「證券戶幣別」換算為 TWD（currentValue 須已是證券戶幣別） */
+export function holdingValueToTWD(h: Holding, accounts: Account[], rates: ExchangeRates): number {
+  return nativeValueInAccountCurrencyToTWD(h.currentValue, valuationCurrencyForHolding(h, accounts), rates);
+}
+
+/**
+ * Yahoo/市場報價幣別下的數值 → 證券戶幣別（經 TWD 交叉換算；若缺匯率則維持原值）
+ */
+export function convertQuotedValueToAccountCurrency(
+  valueInMarketQuote: number,
+  market: Market,
+  accountCurrency: Currency,
+  rates: ExchangeRates
+): number {
+  const mc = marketToCurrency(market);
+  if (mc === accountCurrency) return valueInMarketQuote;
+  const vTwd = valueInMarketQuote * currencyToTWDRate(mc, rates);
+  const rAcct = currencyToTWDRate(accountCurrency, rates);
+  return rAcct > 0 ? vTwd / rAcct : valueInMarketQuote;
+}
+
+/** 手動輸入證券戶幣別價格 → 存回 currentPrices 用的市場報價幣價格 */
+export function convertAccountCurrencyToMarketQuote(
+  valueInAccount: number,
+  market: Market,
+  accountCurrency: Currency,
+  rates: ExchangeRates
+): number {
+  const mc = marketToCurrency(market);
+  if (mc === accountCurrency) return valueInAccount;
+  const vTwd = valueInAccount * currencyToTWDRate(accountCurrency, rates);
+  const rM = currencyToTWDRate(mc, rates);
+  return rM > 0 ? vTwd / rM : valueInAccount;
+}
+
+/** 交易入帳金額（已含於 tx.amount 或 price*qty）依該筆帳戶幣別換算為 TWD */
+export function transactionAmountNativeToTWD(
+  amountNative: number,
+  tx: Transaction,
+  accounts: Account[],
+  rates: ExchangeRates
+): number {
+  const acc = accounts.find(a => a.id === tx.accountId);
+  const ccy = acc?.currency ?? marketToCurrency(tx.market);
+  return nativeValueInAccountCurrencyToTWD(amountNative, ccy, rates);
+}
+
+/** 將幣別對應到 TWD 匯率 */
+export function currencyToTWDRate(currency: Currency, rates: ExchangeRates): number {
+  switch (currency) {
+    case Currency.USD: return rates.exchangeRateUsdToTwd;
+    case Currency.JPY: return rates.jpyExchangeRate ?? rates.exchangeRateUsdToTwd;
+    case Currency.EUR: return rates.eurExchangeRate ?? 0;
+    case Currency.GBP: return rates.gbpExchangeRate ?? 0;
+    case Currency.HKD: return rates.hkdExchangeRate ?? 0;
+    case Currency.KRW: return rates.krwExchangeRate ?? 0;
+    case Currency.CNY: return rates.cnyExchangeRate ?? 0;
+    case Currency.INR: return rates.inrExchangeRate ?? 0;
+    case Currency.CAD: return rates.cadExchangeRate ?? 0;
+    case Currency.AUD: return rates.audExchangeRate ?? 0;
+    case Currency.SAR: return rates.sarExchangeRate ?? 0;
+    case Currency.BRL: return rates.brlExchangeRate ?? 0;
+    default:           return 1; // TWD
+  }
+}
+
+/** 將 TWD 換算為基準幣（僅顯示用；內部仍以 TWD 為單位） */
+export function valueInBaseCurrency(
+  valueTWD: number,
+  baseCurrency: BaseCurrency,
+  rates: ExchangeRates
+): number {
+  if (baseCurrency === 'TWD') return valueTWD;
+  if (baseCurrency === 'USD') return valueTWD / rates.exchangeRateUsdToTwd;
+  const jpyRate = rates.jpyExchangeRate && rates.jpyExchangeRate > 0 ? rates.jpyExchangeRate : 0.21;
+  if (baseCurrency === 'JPY') return valueTWD / jpyRate;
+  const eurRate = rates.eurExchangeRate && rates.eurExchangeRate > 0 ? rates.eurExchangeRate : 34;
+  if (baseCurrency === 'EUR') return valueTWD / eurRate;
+  const gbpRate = rates.gbpExchangeRate && rates.gbpExchangeRate > 0 ? rates.gbpExchangeRate : 40;
+  if (baseCurrency === 'GBP') return valueTWD / gbpRate;
+  const hkdRate = rates.hkdExchangeRate && rates.hkdExchangeRate > 0 ? rates.hkdExchangeRate : 4;
+  if (baseCurrency === 'HKD') return valueTWD / hkdRate;
+  const krwRate = rates.krwExchangeRate && rates.krwExchangeRate > 0 ? rates.krwExchangeRate : 0.023;
+  if (baseCurrency === 'KRW') return valueTWD / krwRate;
+  const cadRate = rates.cadExchangeRate && rates.cadExchangeRate > 0 ? rates.cadExchangeRate : 23;
+  if (baseCurrency === 'CAD') return valueTWD / cadRate;
+  const inrRate = rates.inrExchangeRate && rates.inrExchangeRate > 0 ? rates.inrExchangeRate : 0.38;
+  if (baseCurrency === 'INR') return valueTWD / inrRate;
+  const cnyRate = rates.cnyExchangeRate && rates.cnyExchangeRate > 0 ? rates.cnyExchangeRate : 4.4;
+  if (baseCurrency === 'CNY') return valueTWD / cnyRate;
+  const audRate = rates.audExchangeRate && rates.audExchangeRate > 0 ? rates.audExchangeRate : 20.5;
+  if (baseCurrency === 'AUD') return valueTWD / audRate;
+  const sarRate = rates.sarExchangeRate && rates.sarExchangeRate > 0 ? rates.sarExchangeRate : 8.3;
+  if (baseCurrency === 'SAR') return valueTWD / sarRate;
+  const brlRate = rates.brlExchangeRate && rates.brlExchangeRate > 0 ? rates.brlExchangeRate : 6.2;
+  if (baseCurrency === 'BRL') return valueTWD / brlRate;
+  return valueTWD;
+}
+
+/** 儀表板僅顯示一個主要匯率：回傳 { label, value }
+ * 基準幣為 X 時顯示 USD/X（1 美元 = N X）；基準幣為 USD 時維持 TWD/USD 不變。 */
+export function getDisplayRateForBaseCurrency(
+  baseCurrency: BaseCurrency,
+  rates: ExchangeRates
+): { label: string; value: number } {
+  const usdToTwd = rates.exchangeRateUsdToTwd;
+  if (baseCurrency === 'TWD') return { label: 'USD/TWD', value: usdToTwd };
+  if (baseCurrency === 'USD') return { label: 'TWD/USD', value: 1 / usdToTwd };
+  const jpy = rates.jpyExchangeRate && rates.jpyExchangeRate > 0 ? rates.jpyExchangeRate : 0.21;
+  if (baseCurrency === 'JPY') return { label: 'USD/JPY', value: usdToTwd / jpy };
+  const eurRate = rates.eurExchangeRate && rates.eurExchangeRate > 0 ? rates.eurExchangeRate : 34;
+  if (baseCurrency === 'EUR') return { label: 'USD/EUR', value: usdToTwd / eurRate };
+  const gbpRate = rates.gbpExchangeRate && rates.gbpExchangeRate > 0 ? rates.gbpExchangeRate : 40;
+  if (baseCurrency === 'GBP') return { label: 'USD/GBP', value: usdToTwd / gbpRate };
+  const hkdRate = rates.hkdExchangeRate && rates.hkdExchangeRate > 0 ? rates.hkdExchangeRate : 4;
+  if (baseCurrency === 'HKD') return { label: 'USD/HKD', value: usdToTwd / hkdRate };
+  const krwRate = rates.krwExchangeRate && rates.krwExchangeRate > 0 ? rates.krwExchangeRate : 0.023;
+  if (baseCurrency === 'KRW') return { label: 'USD/KRW', value: usdToTwd / krwRate };
+  const cadRate = rates.cadExchangeRate && rates.cadExchangeRate > 0 ? rates.cadExchangeRate : 23;
+  if (baseCurrency === 'CAD') return { label: 'USD/CAD', value: usdToTwd / cadRate };
+  const inrRate = rates.inrExchangeRate && rates.inrExchangeRate > 0 ? rates.inrExchangeRate : 0.38;
+  if (baseCurrency === 'INR') return { label: 'USD/INR', value: usdToTwd / inrRate };
+  const cnyRate = rates.cnyExchangeRate && rates.cnyExchangeRate > 0 ? rates.cnyExchangeRate : 4.4;
+  if (baseCurrency === 'CNY') return { label: 'USD/CNY', value: usdToTwd / cnyRate };
+  const audRate = rates.audExchangeRate && rates.audExchangeRate > 0 ? rates.audExchangeRate : 20.5;
+  if (baseCurrency === 'AUD') return { label: 'USD/AUD', value: usdToTwd / audRate };
+  const sarRate = rates.sarExchangeRate && rates.sarExchangeRate > 0 ? rates.sarExchangeRate : 8.3;
+  if (baseCurrency === 'SAR') return { label: 'USD/SAR', value: usdToTwd / sarRate };
+  const brlRate = rates.brlExchangeRate && rates.brlExchangeRate > 0 ? rates.brlExchangeRate : 6.2;
+  if (baseCurrency === 'BRL') return { label: 'USD/BRL', value: usdToTwd / brlRate };
+  return { label: 'USD/TWD', value: usdToTwd };
+}
+
+export const calculateHoldings = (
+  transactions: Transaction[], 
+  currentPrices: Record<string, number>,
+  priceDetails?: Record<string, { change: number, changePercent: number }>,
+  /** 若有帳戶與匯率，會把現價/市值/涨跌金額依證券戶幣別換算，與 totalCost（入帳幣）一致 */
+  accounts?: Account[],
+  rates?: ExchangeRates
+): Holding[] => {
+  const dbgOnceKey = new Set<string>();
+  const map = new Map<string, Holding>();
+  const flowsMap = new Map<string, { amount: number, date: number }[]>();
+  const sortedTx = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  sortedTx.forEach(tx => {
+     const key = `${tx.accountId}-${tx.ticker}`;
+     if (!map.has(key)) {
+       map.set(key, {
+         ticker: tx.ticker,
+         market: tx.market,
+         quantity: 0,
+         avgCost: 0,
+         totalCost: 0,
+         currentPrice: 0,
+         currentValue: 0,
+         unrealizedPL: 0,
+         unrealizedPLPercent: 0,
+         accountId: tx.accountId,
+         weight: 0,
+         annualizedReturn: 0,
+         firstBuyDate: tx.date
+       });
+     }
+     
+     if (!flowsMap.has(key)) {
+       flowsMap.set(key, []);
+     }
+     const flows = flowsMap.get(key)!;
+
+     const h = map.get(key)!;
+     
+     if (tx.type === TransactionType.BUY || tx.type === TransactionType.TRANSFER_IN || tx.type === TransactionType.DIVIDEND) {
+       // 台股邏輯：股價 * 股數 無條件捨去 + 手續費
+       let baseVal = tx.price * tx.quantity;
+       if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+
+       const txCost = tx.amount !== undefined ? tx.amount : (baseVal + (tx.fees || 0));
+       const newTotalCost = h.totalCost + txCost;
+       const newQty = h.quantity + tx.quantity;
+      h.avgCost = newQty > 0 ? newTotalCost / newQty : 0;
+      h.totalCost = newTotalCost;
+      h.quantity = newQty;
+      
+      const flowDate = new Date(tx.date).getTime();
+       if (tx.type === TransactionType.BUY) {
+          flows.push({ amount: -txCost, date: flowDate });
+       } else if (tx.type === TransactionType.TRANSFER_IN) {
+          flows.push({ amount: -txCost, date: flowDate });
+       }
+       
+     } else if (tx.type === TransactionType.SELL || tx.type === TransactionType.TRANSFER_OUT) {
+       if (h.quantity > 0) {
+         const ratio = tx.quantity / h.quantity;
+         let costOfSold = h.totalCost * ratio;
+         
+         // 修正邏輯：若是台股，將扣除的成本進行四捨五入取整，確保剩餘總成本為整數
+         if (tx.market === Market.TW) {
+            costOfSold = Math.round(costOfSold);
+         }
+
+         h.totalCost -= costOfSold;
+         h.quantity -= tx.quantity;
+         
+         let baseVal = tx.price * tx.quantity;
+         if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+
+         const proceeds = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
+         const flowDate = new Date(tx.date).getTime();
+         
+         if (tx.type === TransactionType.SELL) {
+            flows.push({ amount: proceeds, date: flowDate });
+         } else {
+            flows.push({ amount: proceeds, date: flowDate });
+         }
+       }
+     } else if (tx.type === TransactionType.CASH_DIVIDEND) {
+        const proceeds = tx.amount !== undefined ? tx.amount : ((tx.price * tx.quantity) - (tx.fees || 0));
+        flows.push({ amount: proceeds, date: new Date(tx.date).getTime() });
+     }
+  });
+  
+  return Array.from(map.values())
+    .filter(h => h.quantity > 0.000001)
+    .map(h => {
+      const priceKey = `${h.market}-${h.ticker}`;
+      const hasCurrentPrice = Object.prototype.hasOwnProperty.call(currentPrices, priceKey);
+      const currentPrice = hasCurrentPrice ? currentPrices[priceKey] : h.avgCost;
+      
+      // 策略更新：若是台股，市值(CurrentValue)四捨五入取整；美股則保留運算精確度
+      let currentValue = currentPrice * h.quantity;
+      if (h.market === Market.TW) {
+        currentValue = Math.round(currentValue);
       }
-    } catch {
-      // ignore invalid localStorage value
-    }
-  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('assetClassOverrides', JSON.stringify(tickerClassOverrides));
-  }, [tickerClassOverrides]);
+      const acc = accounts?.find(a => a.id === h.accountId);
+      let outPrice = currentPrice;
+      let outValue = currentValue;
+      const details = priceDetails?.[priceKey];
+      let dailyChange = details !== undefined ? (details.change !== undefined ? details.change : 0) : undefined;
+      const dailyChangePercent = details !== undefined ? (details.changePercent !== undefined ? details.changePercent : 0) : undefined;
 
-  const normalizeOverrideKey = (raw: string) => raw.trim().toUpperCase();
+      if (acc && rates) {
+        outPrice = convertQuotedValueToAccountCurrency(currentPrice, h.market, acc.currency, rates);
+        outValue = convertQuotedValueToAccountCurrency(currentValue, h.market, acc.currency, rates);
+        if (dailyChange !== undefined) {
+          dailyChange = convertQuotedValueToAccountCurrency(dailyChange, h.market, acc.currency, rates);
+        }
+      }
 
-  const setOverrideForTicker = () => {
-    const key = normalizeOverrideKey(overrideTickerInput);
-    if (!key) return;
-    setTickerClassOverrides(prev => ({ ...prev, [key]: overrideAssetClass }));
-  };
+      if (h.market === Market.UK && (h.ticker.toUpperCase().includes('DTLA') || h.ticker.toUpperCase().includes('VOD'))) {
+        const dk = `${h.accountId}-${priceKey}`;
+        if (!dbgOnceKey.has(dk)) {
+          dbgOnceKey.add(dk);
+          console.log(
+            `[HOLDING_DEBUG] ${priceKey} from=${hasCurrentPrice ? 'currentPrices' : 'avgCost'} ` +
+            `market=${h.market} account=${acc?.currency ?? 'N/A'} ` +
+            `currentPrice(quote)=${currentPrice} outPrice(account)=${outPrice} ` +
+            `currentValue=${currentValue} outValue=${outValue}`
+          );
+        }
+      }
 
-  const clearOverrideForTicker = (tickerKey: string) => {
-    const key = normalizeOverrideKey(tickerKey);
-    if (!key) return;
-    setTickerClassOverrides(prev => {
-      if (!(key in prev)) return prev;
-      const next: Record<string, AssetClass> = { ...prev };
-      delete next[key];
-      return next;
+      const unrealizedPL = outValue - h.totalCost;
+      const unrealizedPLPercent = h.totalCost > 0 ? (unrealizedPL / h.totalCost) * 100 : 0;
+      
+      const flows = flowsMap.get(`${h.accountId}-${h.ticker}`) || [];
+      const xirrFlows = [...flows, { amount: outValue, date: Date.now() }];
+      const annualizedReturn = calculateGenericXIRR(xirrFlows);
+
+      return { 
+        ...h, 
+        currentPrice: outPrice, 
+        currentValue: outValue, 
+        unrealizedPL, 
+        unrealizedPLPercent, 
+        annualizedReturn,
+        dailyChange,
+        dailyChangePercent
+      };
     });
-  };
-
-  const marketMeta = useMemo(() => {
-    const isZh = language === 'zh-TW' || language === 'zh-CN';
-    return {
-      [Market.TW]: { name: isZh ? '台股' : 'Taiwan', color: '#3b82f6', flag: '🇹🇼' },
-      [Market.US]: { name: isZh ? '美股' : 'US', color: '#22c55e', flag: '🇺🇸' },
-      [Market.UK]: { name: language === 'zh-TW' ? '英國股' : language === 'zh-CN' ? '英国股' : 'UK', color: '#a855f7', flag: '🇬🇧' },
-      [Market.JP]: { name: isZh ? '日本股' : 'Japan', color: '#ef4444', flag: '🇯🇵' },
-      [Market.CN]: { name: language === 'zh-TW' ? '中國滬' : language === 'zh-CN' ? '中国沪' : 'China', color: '#f59e0b', flag: '🇨🇳' },
-      [Market.SZ]: { name: language === 'zh-TW' ? '中國深' : language === 'zh-CN' ? '中国深' : 'Shenzhen', color: '#d97706', flag: '🇨🇳' },
-      [Market.IN]: { name: isZh ? '印度' : 'India', color: '#14b8a6', flag: '🇮🇳' },
-      [Market.CA]: { name: isZh ? '加拿大' : 'Canada', color: '#f43f5e', flag: '🇨🇦' },
-      [Market.FR]: { name: language === 'zh-TW' ? '法國' : language === 'zh-CN' ? '法国股' : 'France', color: '#6366f1', flag: '🇫🇷' },
-      [Market.HK]: { name: isZh ? '香港' : 'HK', color: '#0ea5e9', flag: '🇭🇰' },
-      [Market.KR]: { name: language === 'zh-TW' ? '韓國' : language === 'zh-CN' ? '韩国' : 'Korea', color: '#ea580c', flag: '🇰🇷' },
-      [Market.DE]: { name: language === 'zh-TW' ? '德國' : language === 'zh-CN' ? '德国' : 'Germany', color: '#ca8a04', flag: '🇩🇪' },
-      [Market.AU]: { name: isZh ? '澳洲' : 'Australia', color: '#65a30d', flag: '🇦🇺' },
-      [Market.SA]: { name: language === 'zh-TW' ? '沙烏地' : language === 'zh-CN' ? '沙特' : 'Saudi', color: '#047857', flag: '🇸🇦' },
-      [Market.BR]: { name: isZh ? '巴西' : 'Brazil', color: '#0891b2', flag: '🇧🇷' },
-    } as Record<Market, { name: string; color: string; flag: string }>;
-  }, [language]);
-
-  // 計算市場分布比例
-  const marketDistribution = useMemo(() => {
-    const marketValues: Record<Market, number> = {
-      [Market.TW]: 0,
-      [Market.US]: 0,
-      [Market.UK]: 0,
-      [Market.JP]: 0,
-      [Market.CN]: 0,
-      [Market.SZ]: 0,
-      [Market.IN]: 0,
-      [Market.CA]: 0,
-      [Market.FR]: 0,
-      [Market.HK]: 0,
-      [Market.KR]: 0,
-      [Market.DE]: 0,
-      [Market.AU]: 0,
-      [Market.SA]: 0,
-      [Market.BR]: 0,
-    };
-
-    holdings.forEach((h: Holding) => {
-      const valTwd = holdingValueToTWD(h, portfolioAccounts, rates);
-      marketValues[h.market] = (marketValues[h.market] || 0) + valTwd;
-    });
-
-    const totalMarketValue = Object.values(marketValues).reduce((sum, val) => sum + val, 0);
-    
-    return Object.entries(marketValues).map(([market, value]) => ({
-      market: market as Market,
-      value,
-      ratio: totalMarketValue > 0 ? (value / totalMarketValue) * 100 : 0,
-      color: marketMeta[market as Market].color,
-      label: marketMeta[market as Market].name,
-      flag: marketMeta[market as Market].flag,
-    })).filter(item => item.value > 0);
-    }, [holdings, rates, marketMeta, portfolioAccounts]);
-
-  const stockBondAllocation = useMemo(() => {
-    let stockValue = 0;
-    let bondValue = 0;
-    holdings.forEach((h: Holding) => {
-      const value = holdingValueToTWD(h, portfolioAccounts, rates);
-      const assetClass = getAssetClassForTicker(h.ticker, tickerClassOverrides);
-      if (assetClass === AssetClass.BOND) bondValue += value;
-      else if (assetClass === AssetClass.EQUITY) stockValue += value;
-    });
-    const total = stockValue + bondValue;
-    if (total <= 0) return [];
-    const result: Array<{ name: string; value: number; ratio: number; color: string; assetClass: AssetClass }> = [];
-    if (stockValue > 0) result.push({ name: '股', value: stockValue, ratio: (stockValue / total) * 100, color: '#22c55e', assetClass: AssetClass.EQUITY });
-    if (bondValue > 0) result.push({ name: '債', value: bondValue, ratio: (bondValue / total) * 100, color: '#3b82f6', assetClass: AssetClass.BOND });
-    return result;
-  }, [holdings, rates, tickerClassOverrides, portfolioAccounts]);
-
-  const costDetails = useMemo(() => {
-    return cashFlows
-      .filter((cf: CashFlow) => cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.WITHDRAW)
-      .sort((a: CashFlow, b: CashFlow) => new Date(a.date).getTime() - new Date(b.date).getTime())
-      .map(cf => {
-          const account = accounts.find(a => a.id === cf.accountId);
-          if (!account) return null;
-          const isUSD = account.currency === Currency.USD;
-          
-          let rate = 1;
-          let rateSource = translations.dashboard.taiwanDollar;
-          let amountTWD = 0;
-
-          if (cf.amountTWD && cf.amountTWD > 0) {
-             amountTWD = cf.amountTWD;
-             rate = cf.amount > 0 ? amountTWD / cf.amount : 0; 
-             rateSource = translations.dashboard.fixedTWD;
-          } else {
-             if (isUSD) {
-               if (cf.exchangeRate && cf.exchangeRate > 0) {
-                   rate = cf.exchangeRate;
-                   rateSource = `${translations.dashboard.historicalRate} (${cf.exchangeRate})`;
-               } else {
-                   rate = summary.exchangeRateUsdToTwd;
-                   rateSource = `${translations.dashboard.currentRate} (${rate})`;
-               }
-             }
-             amountTWD = cf.amount * rate;
-          }
-          
-          return {
-              ...cf,
-              accountName: account.name,
-              currency: account.currency,
-              rate,
-              rateSource,
-              amountTWD
-          };
-      }).filter((item): item is NonNullable<typeof item> => item !== null);
-  }, [cashFlows, accounts, summary.exchangeRateUsdToTwd]);
-
-  const verifyTotal = costDetails.reduce((acc, item) => {
-      if (item.type === CashFlowType.DEPOSIT) return acc + item.amountTWD;
-      if (item.type === CashFlowType.WITHDRAW) return acc - item.amountTWD;
-      return acc;
-  }, 0);
-
-  const toggleAccountRow = (accountId: string) => {
-    setExpandedAccountRows(prev => ({
-      ...prev,
-      [accountId]: !prev[accountId]
-    }));
-  };
-
-  const attributionSeries = useMemo(() => {
-    return buildAttributionSeries(chartData, cashFlows, transactions, portfolioAccounts, rates);
-  }, [chartData, cashFlows, transactions, portfolioAccounts, rates]);
-
-  const trendChartData = useMemo(() => {
-    const estMap = new Map(chartData.map(item => [item.year, item.estTotalAssets]));
-    return attributionSeries.map(item => ({
-      year: item.period,
-      cost: toBase(item.cumulativeCost),
-      profit: toBase(item.cumulativeProfit),
-      totalAssets: toBase(item.endAssets),
-      estTotalAssets: toBase(estMap.get(item.period) || 0),
-      isRealData: item.isRealData,
-      isConsistent: item.isConsistent,
-      reconciledDiff: toBase(item.reconciledDiff),
-    }));
-  }, [attributionSeries, chartData, toBase]);
-
-  const hasAttributionMismatch = attributionSeries.some(item => !item.isConsistent);
-
-  return (
-    <div className="space-y-6">
-      {/* ① Summary Cards — enhanced with trend arrows + sparkline */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-
-        {/* Net Cost Card */}
-        <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-purple-500 relative group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider flex justify-between items-center">
-            {translations.dashboard.netCost}
-            <button
-              onClick={() => setShowCostDetailModal(true)}
-              className="relative z-10 text-indigo-600 hover:text-indigo-800 text-[10px] bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100"
-              title={translations.dashboard.viewCalculationDetails}
-            >🔍 {translations.dashboard.detail}</button>
-          </h4>
-          <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2 tabular-nums">
-            {formatCurrency(toBase(summary.netInvestedTWD), baseCurrency)}
-          </p>
-          {/* Sparkline: historical cost trend */}
-          {isMounted && chartData.length > 1 && (
-            <div className="mt-2 h-8">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData.slice(-8).map(d => ({ v: toBase(d.cost) }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="sg-purple" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="#7c3aed" strokeWidth={1.5} fill="url(#sg-purple)" dot={false} activeDot={false} isAnimationActive={true}/>
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-
-        {/* Total Assets Card */}
-        <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-green-500 relative overflow-hidden group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
-          <div className="flex items-center gap-2 mt-2">
-            <p className="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums">
-              {formatCurrency(toBase(summary.totalValueTWD + summary.cashBalanceTWD), baseCurrency)}
-            </p>
-          </div>
-          <p className="text-[10px] text-slate-400 mt-0.5">{translations.dashboard.includeCash}: {formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</p>
-          {isMounted && chartData.length > 1 && (
-            <div className="mt-2 h-8">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData.slice(-8).map(d => ({ v: toBase(d.totalAssets || 0) }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="sg-green" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="#22c55e" strokeWidth={1.5} fill="url(#sg-green)" dot={false} activeDot={false} isAnimationActive={true}/>
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-
-        {/* Total P/L Card */}
-        <div className={`bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-emerald-500' : 'border-rose-500'} group hover:shadow-md transition-shadow`}>
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
-          <div className="flex items-center gap-2 mt-2">
-            {/* ① Trend arrow */}
-            <span className={`text-lg leading-none ${summary.totalPLTWD >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-              {summary.totalPLTWD >= 0 ? '↑' : '↓'}
-            </span>
-            <p className={`text-xl sm:text-2xl font-bold tabular-nums ${summary.totalPLTWD >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-              {summary.totalPLTWD >= 0 ? '+' : ''}{formatCurrency(toBase(summary.totalPLTWD), baseCurrency)}
-            </p>
-          </div>
-          <div className="flex items-center gap-1 mt-1">
-            <span className={`inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.5 rounded ${summary.totalPLTWD >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-              {summary.totalPLPercent.toFixed(2)}%
-            </span>
-          </div>
-          {isMounted && chartData.length > 1 && (
-            <div className="mt-2 h-8">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData.slice(-8).map(d => ({ v: toBase(d.profit || 0) }))} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="sg-pl" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={summary.totalPLTWD >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={summary.totalPLTWD >= 0 ? "#10b981" : "#ef4444"} stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke={summary.totalPLTWD >= 0 ? "#10b981" : "#ef4444"} strokeWidth={1.5} fill="url(#sg-pl)" dot={false} activeDot={false} isAnimationActive={true}/>
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-
-        {/* Annualized Return Card */}
-        <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-blue-500 group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
-          <div className="flex items-center gap-2 mt-2">
-            <span className={`text-lg leading-none ${summary.annualizedReturn >= 0 ? 'text-blue-500' : 'text-orange-500'}`}>
-              {summary.annualizedReturn >= 0 ? '↑' : '↓'}
-            </span>
-            <p className="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums">
-              {summary.annualizedReturn.toFixed(1)}%
-            </p>
-          </div>
-          {/* ① Progress bar showing return vs 8% target */}
-          <div className="mt-2">
-            <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
-              <span>0%</span><span className="text-slate-500">目標 8%</span><span>20%+</span>
-            </div>
-            <div className="w-full bg-slate-100 rounded-full h-1.5 relative">
-              <div
-                className="h-full rounded-full bg-blue-500 transition-all duration-1000"
-                style={{ width: `${Math.min(Math.max((summary.annualizedReturn / 20) * 100, 0), 100)}%` }}
-              />
-              <div className="absolute top-0 h-full w-px bg-slate-400" style={{ left: '40%' }} title="目標 8%" />
-            </div>
-          </div>
-          <p className="text-[10px] text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(toBase(summary.netInvestedTWD * 1.08), baseCurrency)}</p>
-        </div>
-
-      </div>
-
-      {/* Detailed Statistics Toggle */}
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <button 
-          onClick={() => setShowDetails(!showDetails)}
-          className="w-full flex justify-between items-center p-4 transition font-medium text-sm" style={{ backgroundColor: isDarkMode ? "#1e293b" : "#f8fafc", color: isDarkMode ? "#cbd5e1" : "#334155" }} onMouseEnter={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#334155":"#f1f5f9")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#1e293b":"#f8fafc")}
-        >
-          <span>{translations.dashboard.detailedStatistics}</span>
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className={`h-5 w-5 transition-transform ${showDetails ? 'rotate-180' : ''}`} 
-            viewBox="0 0 20 20" fill="currentColor"
-          >
-            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        </button>
-        
-        {showDetails && (
-          <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-4 animate-fade-in border-t border-slate-100">
-            <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.totalCost}</p>
-              <p className="text-xl font-bold text-slate-800">{formatCurrency(toBase(summary.netInvestedTWD), baseCurrency)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.totalPLAmount}</p>
-              <p className={`text-xl font-bold ${summary.totalPLTWD >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(toBase(summary.totalPLTWD), baseCurrency)}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.accumulatedCashDividends}</p>
-              <p className="text-xl font-bold text-yellow-600">{formatCurrency(toBase(summary.accumulatedCashDividendsTWD), baseCurrency)}</p>
-            </div>
-             <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.accumulatedStockDividends}</p>
-              <p className="text-xl font-bold text-yellow-600">{formatCurrency(toBase(summary.accumulatedStockDividendsTWD), baseCurrency)}</p>
-            </div>
-             <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.annualizedReturnRate}</p>
-              <p className={`text-xl font-bold ${summary.annualizedReturn >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                {summary.annualizedReturn.toFixed(2)}%
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.avgExchangeRate}</p>
-              <p className="text-xl font-bold text-slate-700">{summary.avgExchangeRate > 0 ? summary.avgExchangeRate.toFixed(2) : '-'}</p>
-            </div>
-             <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.currentExchangeRate} ({displayRate.label})</p>
-              <p className="text-xl font-bold text-slate-700">{displayRate.value.toFixed(2)}</p>
-            </div>
-             <div>
-              <p className="text-sm text-slate-500 mb-1">{translations.dashboard.totalReturnRate}</p>
-              <p className={`text-xl font-bold ${summary.totalPLPercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {summary.totalPLPercent.toFixed(2)}%
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Main Chart (Cost vs Asset) */}
-      {!isGuest && (
-        <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-          <div className="flex justify-between items-center mb-2">
-              <h3 className="font-bold text-blue-600 text-xl">{translations.dashboard.assetVsCostTrend}</h3>
-                              <button 
-                  onClick={onUpdateHistorical}
-                  className="text-xs px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded border border-indigo-200 flex items-center gap-1 transition"
-                  title={translations.dashboard.aiCorrectHistoryTitle}
-                >
-                  <span>🤖</span> {translations.dashboard.aiCorrectHistory}
-                </button>
-          </div>
-          
-          <div className="w-full">
-            <div className="w-full h-[300px] md:h-[450px]">
-              {isMounted && trendChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart
-                    data={trendChartData}
-                    margin={{ top: 10, right: 30, left: 10, bottom: 60 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis 
-                      dataKey="year" 
-                      stroke="#64748b" 
-                      fontSize={10}
-                      className="text-xs"
-                      padding={{ left: 10, right: 10 }}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                    />
-                    <YAxis
-                      yAxisId="left"
-                      stroke="#64748b"
-                      fontSize={10}
-                      className="text-xs"
-                      tickFormatter={(val: number) => {
-                        if (Math.abs(val) >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
-                        if (Math.abs(val) >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
-                        return val.toFixed(0);
-                      }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                      formatter={(value: number, name: string, props: any) => {
-                         const isReal = props.payload.isRealData;
-                         let suffix = '';
-                         if (name === translations.dashboard.chartLabels.totalAssets && isReal) suffix = translations.dashboard.chartLabels.realData;
-                         else if (name === translations.dashboard.chartLabels.totalAssets) suffix = translations.dashboard.chartLabels.estimated;
-
-                         if (name.includes(translations.dashboard.chartLabels.accumulatedPL)) {
-                           return [formatCurrency(value, baseCurrency), translations.dashboard.chartLabels.accumulatedPL];
-                         }
-
-                         return [formatCurrency(value, baseCurrency), name + suffix];
-                      }}
-                    />
-                    <Legend 
-                      iconSize={0}
-                      formatter={(value: string, entry: any) => {
-                        if (value.includes(translations.dashboard.chartLabels.accumulatedPL)) {
-                          return (
-                            <span className="inline-flex items-center gap-3">
-                              <span className="flex items-center gap-1">
-                                <span style={{ display: 'inline-block', width: '10px', height: '10px', backgroundColor: '#10b981', borderRadius: '2px', marginRight: '4px' }}></span>
-                                <span style={{ color: '#10b981', fontWeight: 600 }}>{translations.dashboard.chartLabels.profit}</span>
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <span style={{ display: 'inline-block', width: '10px', height: '10px', backgroundColor: '#ef4444', borderRadius: '2px', marginRight: '4px' }}></span>
-                                <span style={{ color: '#ef4444', fontWeight: 600 }}>{translations.dashboard.chartLabels.loss}</span>
-                              </span>
-                            </span>
-                          );
-                        }
-                        return (
-                          <span className="inline-flex items-center gap-1">
-                            <span style={{ display: 'inline-block', width: '10px', height: '10px', backgroundColor: entry.color, borderRadius: '2px', marginRight: '4px' }}></span>
-                            <span className="text-slate-700 font-medium">{value}</span>
-                          </span>
-                        );
-                      }}
-                    />
-                    {/* Cost Bar */}
-                    <Bar yAxisId="left" dataKey="cost" name={translations.dashboard.chartLabels.investmentCost} stackId="a" fill="#8b5cf6" barSize={30} />
-                    
-                    {/* Profit Bar - Stacked on Cost */}
-                    <Bar 
-                      yAxisId="left" 
-                      dataKey="profit" 
-                      fill="#000" 
-                      name={translations.dashboard.chartLabels.barName} 
-                      stackId="a" 
-                      barSize={30}
-                    >
-                      {trendChartData.map((entry, index: number) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.profit >= 0 ? "#10b981" : "#ef4444"}
-                        />
-                      ))}
-                    </Bar>
-
-                    {/* Lines */}
-                    <Line yAxisId="left" type="monotone" dataKey="totalAssets" name={translations.dashboard.chartLabels.totalAssets} stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} />
-                    <Line yAxisId="left" type="monotone" dataKey="estTotalAssets" name={translations.dashboard.chartLabels.estimatedAssets} stroke="#f59e0b" strokeWidth={2} dot={false} />
-                    {/* ④ Brush for range selection */}
-                    <Brush
-                      dataKey="year"
-                      height={28}
-                      stroke="#94a3b8"
-                      fill="#f1f5f9"
-                      travellerWidth={8}
-                      startIndex={0}
-                      style={{ fontSize: '10px' }}
-                      tickFormatter={(v) => String(v)}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-400">
-                    {!isMounted ? translations.dashboard.chartLoading : trendChartData.length === 0 ? translations.dashboard.noChartData : translations.dashboard.chartLoading}
-                </div>
-              )}
-            </div>
-            {hasAttributionMismatch && (
-              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                資料對帳提醒：部分年度「資產變化」與「淨流入 + 收益 + 市場損益」存在微小差異，請檢查匯率或歷史估值來源。
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Combined Market + Stock/Bond Dual Donut */}
-      {!isGuest && (
-        <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-          <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
-          <p className="text-xs text-slate-500 mb-3">外圓：{translations.dashboard.marketDistribution} / 內圓：股債比例（不含現金）</p>
-          {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex]) ? (
-            <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-              {activeOuterIndex !== undefined && marketDistribution[activeOuterIndex] ? (
-                <>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: marketDistribution[activeOuterIndex].color }} />
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {marketDistribution[activeOuterIndex].flag} {marketDistribution[activeOuterIndex].label}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-semibold">{translations.dashboard.marketDistribution}</span>
-                  <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
-                    {marketDistribution[activeOuterIndex].ratio.toFixed(1)}%
-                  </span>
-                  <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
-                    {formatCurrency(toBase(marketDistribution[activeOuterIndex].value), baseCurrency)}
-                  </span>
-                </>
-              ) : activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex] ? (
-                <>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: stockBondAllocation[activeInnerIndex].color }} />
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {stockBondAllocation[activeInnerIndex].name}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-semibold">股債比例</span>
-                  <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
-                    {stockBondAllocation[activeInnerIndex].ratio.toFixed(1)}%
-                  </span>
-                  <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
-                    {formatCurrency(toBase(stockBondAllocation[activeInnerIndex].value), baseCurrency)}
-                  </span>
-                </>
-              ) : null}
-            </div>
-          ) : null}
-          <div className="w-full flex flex-col lg:flex-row items-center gap-6">
-            <div className="w-full max-w-sm h-72">
-              {isMounted && (stockBondAllocation.length > 0 || marketDistribution.length > 0) ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={marketDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={72}
-                      outerRadius={102}
-                      paddingAngle={1.5}
-                      dataKey="value"
-                      onMouseEnter={(_: any, index: number) => {
-                        setActiveOuterIndex(index);
-                        setActiveInnerIndex(undefined);
-                      }}
-                      onMouseLeave={() => setActiveOuterIndex(undefined)}
-                    >
-                      {marketDistribution.map((entry, index) => (
-                        <Cell
-                          key={`outer-${entry.market}`}
-                          fill={entry.color}
-                          opacity={activeOuterIndex === undefined || activeOuterIndex === index ? 1 : 0.4}
-                          style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                        />
-                      ))}
-                    </Pie>
-                    <Pie
-                      data={stockBondAllocation}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={36}
-                      outerRadius={66}
-                      paddingAngle={2}
-                      dataKey="value"
-                      onMouseEnter={(_: any, index: number) => {
-                        setActiveInnerIndex(index);
-                        setActiveOuterIndex(undefined);
-                      }}
-                      onMouseLeave={() => setActiveInnerIndex(undefined)}
-                    >
-                      {stockBondAllocation.map((entry, index) => (
-                        <Cell
-                          key={`inner-${entry.assetClass}-${index}`}
-                          fill={entry.color}
-                          opacity={activeInnerIndex === undefined || activeInnerIndex === index ? 1 : 0.45}
-                          style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: number, name: string, props: any) => {
-                        const payload = props?.payload;
-                        const ratio = typeof payload?.ratio === 'number' ? ` (${payload.ratio.toFixed(1)}%)` : '';
-                        return [formatCurrency(toBase(value), baseCurrency), `${name}${ratio}`];
-                      }}
-                      contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px", backgroundColor: "#ffffff", color: "#1e293b" }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-400">
-                  {!isMounted ? translations.dashboard.chartLoading : translations.dashboard.noHoldings}
-                </div>
-              )}
-            </div>
-            <div className="flex-1 w-full space-y-3">
-              <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.marketDistribution}（外圓）</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {marketDistribution.map((item, index) => (
-                    <div
-                      key={item.market}
-                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
-                        activeOuterIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
-                      }`}
-                      onMouseEnter={() => {
-                        setActiveOuterIndex(index);
-                        setActiveInnerIndex(undefined);
-                      }}
-                      onMouseLeave={() => setActiveOuterIndex(undefined)}
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.flag} {item.label}</span>
-                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">股債比例（內圓）</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {stockBondAllocation.map((item, index) => (
-                    <div
-                      key={`${item.assetClass}-${index}`}
-                      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
-                        activeInnerIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
-                      }`}
-                      onMouseEnter={() => {
-                        setActiveInnerIndex(index);
-                        setActiveOuterIndex(undefined);
-                      }}
-                      onMouseLeave={() => setActiveInnerIndex(undefined)}
-                    >
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.name}</span>
-                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 股/債覆寫小表單：用來編輯 localStorage: assetClassOverrides */}
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-slate-700 mb-2">自訂股/債分類（覆寫）</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
-                  <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">Ticker</label>
-                    <input
-                      value={overrideTickerInput}
-                      onChange={(e) => setOverrideTickerInput(e.target.value)}
-                      list="ticker-suggestions"
-                      placeholder="例如：AGG / TLT / BND"
-                      className="w-full bg-white border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                    <datalist id="ticker-suggestions">
-                      {tickerSuggestions.map((t) => (
-                        <option key={t} value={t} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">分類</label>
-                    <select
-                      value={overrideAssetClass}
-                      onChange={(e) => setOverrideAssetClass(e.target.value as AssetClass)}
-                      className="w-full bg-white border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    >
-                      <option value={AssetClass.EQUITY}>股</option>
-                      <option value={AssetClass.BOND}>債</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mt-2 flex gap-2">
-                  <button
-                    onClick={setOverrideForTicker}
-                    className="flex-1 px-3 py-1.5 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700 transition"
-                  >
-                    保存覆寫
-                  </button>
-                  <button
-                    onClick={() => clearOverrideForTicker(overrideTickerInput)}
-                    className="flex-1 px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-700 hover:bg-slate-100 transition"
-                  >
-                    清除
-                  </button>
-                </div>
-
-                {overrideChips.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-[11px] text-slate-500 mb-1">目前覆寫</p>
-                    <div className="flex flex-wrap gap-2">
-                      {overrideChips.map(([tickerKey, assetClass]) => {
-                        const label = assetClass === AssetClass.BOND ? '債' : '股';
-                        return (
-                          <button
-                            key={tickerKey}
-                            type="button"
-                            onClick={() => clearOverrideForTicker(tickerKey)}
-                            className="px-2 py-1 rounded bg-white border border-slate-200 hover:border-indigo-200 transition flex items-center gap-2"
-                            title="點擊移除覆寫"
-                          >
-                            <span className="text-xs font-mono text-slate-700">{tickerKey}</span>
-                            <span className={`text-[11px] font-semibold ${assetClass === AssetClass.BOND ? 'text-blue-700' : 'text-emerald-700'}`}>
-                              {label}
-                            </span>
-                            <span className="text-[11px] text-slate-400">×</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Annual Performance Table */}
-      {!isGuest && annualPerformance.length > 0 && (
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.annualPerformance}</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
-                <button
-                  onClick={() => setShowAnnualInUSD(false)}
-                  className={`px-3 py-1.5 text-sm rounded transition ${
-                    !showAnnualInUSD 
-                      ? 'bg-indigo-600 text-white font-medium' 
-                      : ''
-                  }`}
-                  style={!showAnnualInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
-                  onMouseEnter={e=>{ if(!showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
-                  onMouseLeave={e=>{ if(!showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
-                >
-                  {baseCurrency}
-                </button>
-                <button
-                  onClick={() => setShowAnnualInUSD(true)}
-                  className={`px-3 py-1.5 text-sm rounded transition ${
-                    showAnnualInUSD 
-                      ? 'bg-indigo-600 text-white font-medium' 
-                      : ''
-                  }`}
-                  style={showAnnualInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
-                  onMouseEnter={e=>{ if(showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
-                  onMouseLeave={e=>{ if(showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
-                >
-                  {translations.dashboard.usd}
-                </button>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm text-left">
-                <thead style={{ backgroundColor: '#f8fafc', color: '#64748b' }} className="uppercase font-medium">
-                  <tr>
-                    <th className="px-6 py-3">{translations.dashboard.year}</th>
-                    <th className="px-6 py-3 text-right">{translations.dashboard.startAssets}</th>
-                    <th className="px-6 py-3 text-right">{translations.dashboard.annualNetInflow}</th>
-                    <th className="px-6 py-3 text-right">{translations.dashboard.endAssets}</th>
-                    <th className="px-6 py-3 text-right">{translations.dashboard.annualProfit}</th>
-                    <th className="px-6 py-3 text-right">{translations.dashboard.annualROI}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {annualPerformance.map(item => {
-                    const displayCurrency = showAnnualInUSD ? 'USD' : baseCurrency;
-                    const startAssets = showAnnualInUSD ? item.startAssets / summary.exchangeRateUsdToTwd : toBase(item.startAssets);
-                    const netInflow = showAnnualInUSD ? item.netInflow / summary.exchangeRateUsdToTwd : toBase(item.netInflow);
-                    const endAssets = showAnnualInUSD ? item.endAssets / summary.exchangeRateUsdToTwd : toBase(item.endAssets);
-                    const profit = showAnnualInUSD ? item.profit / summary.exchangeRateUsdToTwd : toBase(item.profit);
-                    
-                    return (
-                      <tr key={item.year}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#f8fafc";
-                          setHoveredAnnualYear(item.year);
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                          setHoveredAnnualYear(null);
-                        }}
-                        style={{ transition: "background-color 0.15s" }}
-                      >
-                        <td
-                          className="px-6 py-3 font-bold text-slate-700 dark:text-slate-200"
-                          style={{
-                            color:
-                              (!isDarkMode && hoveredAnnualYear === item.year)
-                                ? "#0f172a"
-                                : (isDarkMode ? "#e2e8f0" : "#334155"),
-                          }}
-                        >
-                          {item.year}
-                          {item.isRealData && <span title={translations.dashboard.realHistoricalData} className="ml-2 text-xs cursor-help">✅</span>}
-                        </td>
-                        <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-300 tabular-nums">{formatCurrency(startAssets, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right text-slate-600 dark:text-slate-300 tabular-nums">{formatCurrency(netInflow, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right font-medium text-slate-700 dark:text-slate-200 tabular-nums">{formatCurrency(endAssets, displayCurrency)}</td>
-                        <td className="px-6 py-3 text-right font-bold" style={{ color: profit >= 0 ? "#10b981" : "#ef4444" }}>
-                          {formatCurrency(profit, displayCurrency)}
-                        </td>
-                        <td className="px-6 py-3 text-right font-bold" style={{ color: item.roi >= 0 ? "#10b981" : "#ef4444" }}>
-                          {item.roi.toFixed(2)}%
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-      )}
-
-      {/* Account List Card */}
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-          <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.brokerageAccounts}</h3>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
-            <button
-              onClick={() => setShowAccountInUSD(false)}
-              className={`px-3 py-1.5 text-sm rounded transition ${
-                !showAccountInUSD 
-                  ? 'bg-indigo-600 text-white font-medium' 
-                  : ''
-              }`}
-              style={!showAccountInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
-              onMouseEnter={e=>{ if(!showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
-              onMouseLeave={e=>{ if(!showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
-            >
-              {baseCurrency}
-            </button>
-            <button
-              onClick={() => setShowAccountInUSD(true)}
-              className={`px-3 py-1.5 text-sm rounded transition ${
-                showAccountInUSD 
-                  ? 'bg-indigo-600 text-white font-medium' 
-                  : ''
-              }`}
-              style={showAccountInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
-              onMouseEnter={e=>{ if(showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
-              onMouseLeave={e=>{ if(showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
-            >
-              {translations.dashboard.usd}
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm sm:text-base text-left">
-            <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
-              <tr>
-                <th className="px-3 py-2">{translations.dashboard.accountName}</th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.totalAssetsNT}</th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.marketValueNT}</th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.balanceNT}</th>
-                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.unrealizedPL}</th>
-                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.realizedPL}</th>
-                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.dividendInterest}</th>
-                <th className="px-3 py-2 text-right">
-                  <span className="inline-flex items-center justify-end gap-1">
-                    {translations.dashboard.profitNT}
-                    <span
-                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] text-slate-500 cursor-help"
-                      title={translations.dashboard.profitFormulaTooltip}
-                    >
-                      i
-                    </span>
-                  </span>
-                </th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.annualizedROI}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {accountPerformance.length > 0 ? (
-                accountPerformance.map(acc => {
-                  let displayCurrency: string;
-                  let totalAssets: number;
-                  let marketValue: number;
-                  let cashBalance: number;
-                  let unrealizedProfit: number;
-                  let realizedProfit: number;
-                  let income: number;
-                  let profit: number;
-                  
-                  if (showAccountInUSD) {
-                    displayCurrency = 'USD';
-                    if (acc.currency === Currency.USD) {
-                      totalAssets = acc.totalAssetsNative || acc.totalAssetsTWD / summary.exchangeRateUsdToTwd;
-                      marketValue = acc.marketValueNative || acc.marketValueTWD / summary.exchangeRateUsdToTwd;
-                      cashBalance = acc.cashBalanceNative || acc.cashBalanceTWD / summary.exchangeRateUsdToTwd;
-                      unrealizedProfit = acc.unrealizedProfitNative || (acc.unrealizedProfitTWD || 0) / summary.exchangeRateUsdToTwd;
-                      realizedProfit = acc.realizedProfitNative || (acc.realizedProfitTWD || 0) / summary.exchangeRateUsdToTwd;
-                      income = acc.incomeNative || (acc.incomeTWD || 0) / summary.exchangeRateUsdToTwd;
-                      profit = acc.profitNative || acc.profitTWD / summary.exchangeRateUsdToTwd;
-                    } else {
-                      totalAssets = acc.totalAssetsTWD / summary.exchangeRateUsdToTwd;
-                      marketValue = acc.marketValueTWD / summary.exchangeRateUsdToTwd;
-                      cashBalance = acc.cashBalanceTWD / summary.exchangeRateUsdToTwd;
-                      unrealizedProfit = (acc.unrealizedProfitTWD || 0) / summary.exchangeRateUsdToTwd;
-                      realizedProfit = (acc.realizedProfitTWD || 0) / summary.exchangeRateUsdToTwd;
-                      income = (acc.incomeTWD || 0) / summary.exchangeRateUsdToTwd;
-                      profit = acc.profitTWD / summary.exchangeRateUsdToTwd;
-                    }
-                  } else {
-                    displayCurrency = baseCurrency;
-                    totalAssets = toBase(acc.totalAssetsTWD);
-                    marketValue = toBase(acc.marketValueTWD);
-                    cashBalance = toBase(acc.cashBalanceTWD);
-                    unrealizedProfit = toBase(acc.unrealizedProfitTWD || 0);
-                    realizedProfit = toBase(acc.realizedProfitTWD || 0);
-                    income = toBase(acc.incomeTWD || 0);
-                    profit = toBase(acc.profitTWD);
-                  }
-                  
-                  return (
-                    <React.Fragment key={acc.id}>
-                      <tr
-                        onMouseEnter={e => {
-                          e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#f8fafc";
-                          setHoveredAccountId(acc.id);
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                          setHoveredAccountId(null);
-                        }}
-                        style={{ transition: "background-color 0.15s" }}
-                      >
-                        <td
-                          className="px-3 py-2 font-semibold text-sm sm:text-base"
-                          style={{
-                            color:
-                              (!isDarkMode && hoveredAccountId === acc.id)
-                                ? "#0f172a"
-                                : (isDarkMode ? "#e2e8f0" : "#334155"),
-                          }}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div>
-                              {acc.name}
-                              <span
-                                className="text-xs font-normal ml-1"
-                                style={{
-                                  color:
-                                    (!isDarkMode && hoveredAccountId === acc.id)
-                                      ? "#0f172a"
-                                      : (isDarkMode ? "#cbd5e1" : "#64748b"),
-                                }}
-                              >
-                                ({acc.currency})
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => toggleAccountRow(acc.id)}
-                              className="md:hidden text-xs px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-100"
-                              aria-label="toggle account breakdown"
-                            >
-                              {expandedAccountRows[acc.id] ? '▲' : '▼'}
-                            </button>
-                          </div>
-                        </td>
-                        <td
-                          className="px-3 py-2 text-right font-bold tabular-nums text-sm sm:text-base"
-                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
-                        >
-                          {formatCurrency(totalAssets, displayCurrency)}
-                        </td>
-                        <td
-                          className="px-3 py-2 text-right tabular-nums text-sm sm:text-base"
-                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
-                        >
-                          {formatCurrency(marketValue, displayCurrency)}
-                        </td>
-                        <td
-                          className="px-3 py-2 text-right tabular-nums text-sm sm:text-base"
-                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
-                        >
-                          {formatCurrency(cashBalance, displayCurrency)}
-                        </td>
-                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
-                          {formatCurrency(unrealizedProfit, displayCurrency)}
-                        </td>
-                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
-                          {formatCurrency(realizedProfit, displayCurrency)}
-                        </td>
-                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${income >= 0 ? 'text-success' : 'text-danger'}`}>
-                          {formatCurrency(income, displayCurrency)}
-                        </td>
-                        <td className={`px-3 py-2 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
-                          {formatCurrency(profit, displayCurrency)}
-                        </td>
-                        <td className={`px-3 py-2 text-right font-bold ${acc.roi >= 0 ? 'text-success' : 'text-danger'}`}>
-                          {acc.roi.toFixed(2)}%
-                        </td>
-                      </tr>
-                      {expandedAccountRows[acc.id] && (
-                        <tr className="md:hidden bg-slate-50">
-                          <td colSpan={9} className="px-3 py-2">
-                            <div className="grid grid-cols-1 gap-1 text-xs">
-                              <div className="flex justify-between">
-                                <span className="text-slate-500">{translations.dashboard.unrealizedPL}</span>
-                                <span className={`font-bold ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
-                                  {formatCurrency(unrealizedProfit, displayCurrency)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-slate-500">{translations.dashboard.realizedPL}</span>
-                                <span className={`font-bold ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
-                                  {formatCurrency(realizedProfit, displayCurrency)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-slate-500">{translations.dashboard.dividendInterest}</span>
-                                <span className={`font-bold ${income >= 0 ? 'text-success' : 'text-danger'}`}>
-                                  {formatCurrency(income, displayCurrency)}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={9} className="px-3 py-4 text-center text-slate-400">{translations.dashboard.noAccounts}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Market Performance Chart */}
-      {!isGuest && <MarketPerformanceChart />}
-
-      {/* Cash Flow Waterfall */}
-      {!isGuest && <CashFlowWaterfall />}
-
-      {/* Dividend Heatmap */}
-      {!isGuest && <DividendHeatmap />}
-
-      <HoldingsTable />
-
-      {showCostDetailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
-            <div className="bg-slate-900 p-4 flex justify-between items-center shrink-0">
-              <h2 className="text-white font-bold text-lg flex items-center gap-2">
-                <span>💰</span> {translations.dashboard.netInvestedBreakdown}
-              </h2>
-              <button onClick={() => setShowCostDetailModal(false)} className="text-slate-400 hover:text-white text-2xl">&times;</button>
-            </div>
-            
-            <div className="p-4 bg-blue-50 border-b border-blue-100 text-sm text-blue-800">
-              <p>ℹ️ <strong>{translations.dashboard.formulaLabel}</strong> {translations.dashboard.calculationFormula}</p>
-              <p>⚠️ <strong>{translations.dashboard.attention}：</strong> {translations.dashboard.formulaNote}</p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-0">
-              <table className="min-w-full text-sm sm:text-base text-left">
-                <thead className="bg-slate-100 sticky top-0 text-slate-600 font-bold border-b border-slate-200">
-                  <tr>
-                    <th className="px-3 py-2">{translations.dashboard.date}</th>
-                    <th className="px-3 py-2">{translations.dashboard.category}</th>
-                    <th className="px-3 py-2">{translations.labels.account}</th>
-                    <th className="px-3 py-2 text-right">{translations.dashboard.originalAmount}</th>
-                    <th className="px-3 py-2 text-right">{translations.labels.exchangeRate}</th>
-                    <th className="px-3 py-2 text-right">{translate('dashboard.twdCost', language, { currency: baseCurrency })}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {costDetails.map((item, idx) => (
-                    <tr key={item.id} onMouseEnter={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#334155":"#f8fafc")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")} style={{ transition: "background-color 0.15s" }}>
-                      <td className="px-3 py-2 whitespace-nowrap">{item.date}</td>
-                      <td className="px-3 py-2">
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${item.type === CashFlowType.DEPOSIT ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {item.type === CashFlowType.DEPOSIT ? translations.dashboard.deposit : translations.dashboard.withdraw}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        {item.accountName} <span className="text-xs text-slate-400">({item.currency})</span>
-                      </td>
-                      <td className="px-3 py-2 text-right font-mono">
-                        {item.currency === Currency.USD ? '$' : 'NT$'}{item.amount.toLocaleString()}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <div className="flex flex-col items-end">
-                          <span>{item.rate.toFixed(2)}</span>
-                          <span className="text-[10px] text-slate-400">{item.rateSource}</span>
-                        </div>
-                      </td>
-                      <td className={`px-3 py-2 text-right font-bold font-mono ${item.type === CashFlowType.DEPOSIT ? 'text-slate-800' : 'text-red-500'}`}>
-                        {item.type === CashFlowType.WITHDRAW ? '-' : ''}{formatCurrency(toBase(item.amountTWD), baseCurrency)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot className="bg-slate-50 sticky bottom-0 border-t-2 border-slate-300 font-bold text-slate-800">
-                  <tr>
-                    <td colSpan={5} className="px-3 py-2 text-right">{translations.dashboard.totalNetInvested}</td>
-                    <td className="px-3 py-2 text-right text-lg">{formatCurrency(toBase(verifyTotal), baseCurrency)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-            
-            <div className="p-4 border-t border-slate-200 bg-white flex justify-end">
-              <button onClick={() => setShowCostDetailModal(false)} className="px-6 py-2 bg-slate-900 text-white rounded hover:bg-slate-800">
-                {translations.common.close}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 };
 
-export default Dashboard;
+/**
+ * 內部轉帳轉入金額換算（彈性支援多幣別）。
+ * 匯率約定統一為「匯率 (A/B) = 1 A = 多少 B」：
+ * - USD/TWD：1 USD = X TWD → 乘
+ * - TWD→USD：X TWD = 1 USD → 除
+ * - JPY/TWD：1 JPY = X TWD → 來源→目標時用除（目標金額 = 來源金額 / 匯率）
+ */
+export const getTransferTargetAmount = (
+  sourceCurrency: Currency,
+  targetCurrency: Currency,
+  amount: number,
+  exchangeRate: number | undefined
+): number => {
+  if (sourceCurrency === targetCurrency || !exchangeRate || exchangeRate <= 0) return amount;
+  if (sourceCurrency === Currency.USD) return amount * exchangeRate;   // 1 USD = X 轉入幣
+  if (targetCurrency === Currency.USD) return amount / exchangeRate;  // X 來源幣 = 1 USD
+  return amount / exchangeRate;  // 兩方皆非 USD：匯率 (target/source) = 1 target = X source，故 目標 = 來源 / 匯率
+};
+
+export const calculateAccountBalances = (accounts: Account[], cashFlows: CashFlow[], transactions: Transaction[]): Account[] => {
+    const balMap: Record<string, number> = {};
+    accounts.forEach(a => balMap[a.id] = 0); 
+    
+    cashFlows.forEach(cf => {
+      if (cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.INTEREST) {
+        balMap[cf.accountId] = (balMap[cf.accountId] || 0) + cf.amount;
+      } else if (cf.type === CashFlowType.WITHDRAW) {
+        balMap[cf.accountId] = (balMap[cf.accountId] || 0) - cf.amount;
+      } else if (cf.type === CashFlowType.TRANSFER) {
+        const sourceAcc = accounts.find(a => a.id === cf.accountId);
+        // 內部轉帳：從來源帳戶扣除金額和手續費
+        let feeAmount = cf.fee || 0;
+        // 如果手續費是 TWD 但來源帳戶不是 TWD，需要轉換
+        if (feeAmount > 0 && sourceAcc && sourceAcc.currency !== Currency.TWD) {
+          // 使用轉帳匯率轉換手續費（如果有的話，且匯率不是 1）
+          // 匯率為 1 表示同幣種轉帳，此時手續費應該已經是帳戶幣種
+          if (cf.exchangeRate && cf.exchangeRate > 0 && cf.exchangeRate !== 1) {
+            if (sourceAcc.currency === Currency.USD) {
+              // TWD 手續費轉換為 USD：feeTWD / exchangeRate (exchangeRate 是 TWD/USD)
+              feeAmount = feeAmount / cf.exchangeRate;
+            } else if (sourceAcc.currency === Currency.JPY) {
+              // TWD 手續費轉換為 JPY：feeTWD / exchangeRate (exchangeRate 是 TWD/JPY)
+              feeAmount = feeAmount / cf.exchangeRate;
+            }
+          }
+          // 如果匯率是 1 或不存在（同幣種轉帳），假設手續費已經是帳戶幣種（保持原值）
+        }
+        balMap[cf.accountId] = (balMap[cf.accountId] || 0) - cf.amount - feeAmount;
+        if (cf.targetAccountId) {
+             const targetAcc = accounts.find(a => a.id === cf.targetAccountId);
+             if (sourceAcc && targetAcc) {
+                const inAmount = getTransferTargetAmount(sourceAcc.currency, targetAcc.currency, cf.amount, cf.exchangeRate);
+                balMap[cf.targetAccountId!] = (balMap[cf.targetAccountId!] || 0) + inAmount;
+             }
+        }
+      }
+    });
+
+    transactions.forEach(tx => {
+       let baseVal = tx.price * tx.quantity;
+       if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+
+       const cost = tx.amount !== undefined ? tx.amount : (baseVal + (tx.fees || 0));
+       
+       if (tx.type === TransactionType.BUY) {
+         balMap[tx.accountId] = (balMap[tx.accountId] || 0) - cost;
+       } else if (tx.type === TransactionType.SELL) {
+         const proceeds = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
+         balMap[tx.accountId] = (balMap[tx.accountId] || 0) + proceeds;
+       } else if (tx.type === TransactionType.CASH_DIVIDEND) {
+         const divAmt = tx.amount !== undefined ? tx.amount : ((tx.price * tx.quantity) - (tx.fees || 0));
+         balMap[tx.accountId] = (balMap[tx.accountId] || 0) + divAmt;
+       } else if (tx.type === TransactionType.TRANSFER_OUT) {
+         balMap[tx.accountId] = (balMap[tx.accountId] || 0) - (tx.fees || 0);
+       } else if (tx.type === TransactionType.TRANSFER_IN) {
+         balMap[tx.accountId] = (balMap[tx.accountId] || 0) - (tx.fees || 0);
+       }
+    });
+
+    return accounts.map(a => ({ ...a, balance: balMap[a.id] || 0 }));
+}
+
+/** 年底/某日持倉（依帳戶拆開，供正確依證券戶幣別換匯） */
+export interface AccountScopedHolding {
+  accountId: string;
+  market: Market;
+  ticker: string;
+  quantity: number;
+}
+
+// Time Machine Helper: Calculate holdings and cash at a specific date
+// EXPORT THIS FUNCTION for HistoricalDataModal
+export const getPortfolioStateAtDate = (
+    targetDate: Date,
+    transactions: Transaction[],
+    cashFlows: CashFlow[],
+    accounts: Account[]
+): {
+  holdings: Record<string, number>;
+  /** 同 market-ticker 在不同帳戶各有一筆；換匯時請用 accountId 對應帳戶幣別 */
+  accountHoldings: AccountScopedHolding[];
+  cashBalances: Record<string, number>;
+} => {
+    
+    // 1. Calculate Cash Balances
+    const cashBalances: Record<string, number> = {};
+    accounts.forEach(a => cashBalances[a.id] = 0);
+
+    cashFlows.filter(cf => new Date(cf.date) <= targetDate).forEach(cf => {
+        if (cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.INTEREST) {
+            cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) + cf.amount;
+        } else if (cf.type === CashFlowType.WITHDRAW) {
+            cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) - cf.amount;
+        } else if (cf.type === CashFlowType.TRANSFER) {
+            const sourceAcc = accounts.find(a => a.id === cf.accountId);
+            // 內部轉帳：從來源帳戶扣除金額和手續費
+            let feeAmount = cf.fee || 0;
+            // 如果手續費是 TWD 但來源帳戶不是 TWD，需要轉換
+            if (feeAmount > 0 && sourceAcc && sourceAcc.currency !== Currency.TWD) {
+              // 使用轉帳匯率轉換手續費（如果有的話，且匯率不是 1）
+              // 匯率為 1 表示同幣種轉帳，此時手續費應該已經是帳戶幣種
+              if (cf.exchangeRate && cf.exchangeRate > 0 && cf.exchangeRate !== 1) {
+                if (sourceAcc.currency === Currency.USD) {
+                  // TWD 手續費轉換為 USD：feeTWD / exchangeRate (exchangeRate 是 TWD/USD)
+                  feeAmount = feeAmount / cf.exchangeRate;
+                } else if (sourceAcc.currency === Currency.JPY) {
+                  // TWD 手續費轉換為 JPY：feeTWD / exchangeRate (exchangeRate 是 TWD/JPY)
+                  feeAmount = feeAmount / cf.exchangeRate;
+                }
+              }
+              // 如果匯率是 1 或不存在（同幣種轉帳），假設手續費已經是帳戶幣種（保持原值）
+            }
+            cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) - cf.amount - feeAmount;
+            if (cf.targetAccountId) {
+                const targetAcc = accounts.find(a => a.id === cf.targetAccountId);
+                const inAmount = sourceAcc && targetAcc
+                  ? getTransferTargetAmount(sourceAcc.currency, targetAcc.currency, cf.amount, cf.exchangeRate)
+                  : cf.amount;
+                cashBalances[cf.targetAccountId] = (cashBalances[cf.targetAccountId] || 0) + inAmount;
+            }
+        }
+    });
+
+    // 2. Calculate Holdings（依帳戶拆開；另聚合成舊版 market-ticker key 供相容）
+    const scopedMap = new Map<string, number>();
+    const scopedKey = (accountId: string, market: Market, ticker: string) =>
+      `${accountId}\x1e${market}\x1e${ticker}`;
+
+    transactions.filter(tx => new Date(tx.date) <= targetDate).forEach(tx => {
+        const sKey = scopedKey(tx.accountId, tx.market, tx.ticker);
+        
+        // Update Cash from Tx cost logic (simplified here as we only need cashBalances roughly correct, but holdings exact)
+        let baseVal = tx.price * tx.quantity;
+        if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+
+        const cost = tx.amount !== undefined ? tx.amount : (baseVal + (tx.fees || 0));
+        
+        if (tx.type === TransactionType.BUY) {
+            cashBalances[tx.accountId] = (cashBalances[tx.accountId] || 0) - cost;
+            scopedMap.set(sKey, (scopedMap.get(sKey) || 0) + tx.quantity);
+        } else if (tx.type === TransactionType.SELL) {
+            const proceeds = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
+            cashBalances[tx.accountId] = (cashBalances[tx.accountId] || 0) + proceeds;
+            scopedMap.set(sKey, (scopedMap.get(sKey) || 0) - tx.quantity);
+        } else if (tx.type === TransactionType.CASH_DIVIDEND) {
+             const divAmt = tx.amount !== undefined ? tx.amount : ((tx.price * tx.quantity) - (tx.fees || 0));
+             cashBalances[tx.accountId] = (cashBalances[tx.accountId] || 0) + divAmt;
+        } else if (tx.type === TransactionType.DIVIDEND) {
+             scopedMap.set(sKey, (scopedMap.get(sKey) || 0) + tx.quantity);
+        } else if (tx.type === TransactionType.TRANSFER_IN) {
+             cashBalances[tx.accountId] = (cashBalances[tx.accountId] || 0) - (tx.fees || 0);
+             scopedMap.set(sKey, (scopedMap.get(sKey) || 0) + tx.quantity);
+        } else if (tx.type === TransactionType.TRANSFER_OUT) {
+             cashBalances[tx.accountId] = (cashBalances[tx.accountId] || 0) - (tx.fees || 0);
+             scopedMap.set(sKey, (scopedMap.get(sKey) || 0) - tx.quantity);
+        }
+    });
+
+    const accountHoldings: AccountScopedHolding[] = [];
+    const holdings: Record<string, number> = {};
+    scopedMap.forEach((qty, key) => {
+      if (qty <= 0.000001) return;
+      const [accountId, market, ticker] = key.split('\x1e');
+      accountHoldings.push({ accountId, market: market as Market, ticker, quantity: qty });
+      const aggKey = `${market}-${ticker}`;
+      holdings[aggKey] = (holdings[aggKey] || 0) + qty;
+    });
+
+    return { holdings, accountHoldings, cashBalances };
+};
+
+const isAnnualPerfDebugEnabled = (): boolean => {
+  // Browser only: toggle by localStorage key without changing app behavior by default.
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem('debug:annual-performance') === '1';
+  } catch {
+    return false;
+  }
+};
+
+export const generateAdvancedChartData = (
+  transactions: Transaction[],
+  cashFlows: CashFlow[],
+  accounts: Account[],
+  currentTotalValueTWD: number,
+  rates: ExchangeRates,
+  historicalData?: HistoricalData
+): ChartDataPoint[] => {
+  const { exchangeRateUsdToTwd: exchangeRate, jpyExchangeRate, eurExchangeRate,
+    gbpExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate, hkdExchangeRate,
+    krwExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate } = rates;
+  const years = new Set<string>();
+  const allDates = [...transactions.map(t => t.date), ...cashFlows.map(c => c.date)];
+  if (allDates.length === 0) return [];
+
+  const startYear = new Date(allDates.sort()[0]).getFullYear();
+  const endYear = new Date().getFullYear();
+
+  const data: ChartDataPoint[] = [];
+  
+  let cumulativeNetInvestedTWD = 0; 
+  let accumulatedEstAssets = 0; 
+
+  for (let y = startYear; y <= endYear; y++) {
+    const prevCost = cumulativeNetInvestedTWD; 
+    const flowsInYear = cashFlows.filter(c => new Date(c.date).getFullYear() === y);
+    const txsInYear = transactions.filter(t => new Date(t.date).getFullYear() === y);
+    
+    // 1. Process Net Invested (Cost)
+    flowsInYear.forEach(cf => {
+      const account = accounts.find(a => a.id === cf.accountId);
+      let amountTWD = 0;
+      if (cf.amountTWD && cf.amountTWD > 0) {
+        amountTWD = cf.amountTWD;
+      } else {
+        const sourceCurrency = account?.currency ?? Currency.TWD;
+        let rate = currencyToTWDRate(sourceCurrency, rates);
+        if (cf.exchangeRate && cf.exchangeRate > 0) rate = cf.exchangeRate;
+        amountTWD = cf.amount * rate;
+      }
+      if (cf.type === CashFlowType.DEPOSIT) cumulativeNetInvestedTWD += amountTWD;
+      else if (cf.type === CashFlowType.WITHDRAW) cumulativeNetInvestedTWD -= amountTWD;
+    });
+
+    // 注意：不處理 TRANSFER_IN 和 TRANSFER_OUT
+    // 因為這些只是帳戶間股票轉移，不影響淨投入成本
+    // 如果一個轉入和一個轉出配對，成本應該不變
+
+    // Net Inflow for Estimate
+    const netInflowThisYear = cumulativeNetInvestedTWD - prevCost;
+    accumulatedEstAssets = (accumulatedEstAssets + netInflowThisYear) * 1.08;
+    if (accumulatedEstAssets < 0) accumulatedEstAssets = 0;
+
+    // Keep true cumulative net invested amount for accurate annual attribution.
+    const cost = cumulativeNetInvestedTWD;
+    
+    // --- 2. Calculate Total Assets (The Hybrid Logic) ---
+    let totalAssets = 0;
+    let isRealData = false;
+
+    let stockValueTWDForDebug = 0;
+    let cashValueTWDForDebug = 0;
+
+    if (y === endYear) {
+      // Current year: Use live calculated value
+      totalAssets = currentTotalValueTWD;
+      isRealData = true; 
+    } else {
+       // Historical years: Try to use AI fetched data
+       const yearKey = y.toString();
+       if (historicalData && historicalData[yearKey]) {
+          // YES! We have historical prices
+          const histPrices = historicalData[yearKey].prices;
+          const histRate = historicalData[yearKey].exchangeRate || exchangeRate;
+          const histJpyRate = historicalData[yearKey].jpyExchangeRate || jpyExchangeRate;
+          const histGbpRate = historicalData[yearKey].gbpExchangeRate || gbpExchangeRate;
+          const histEurRate = historicalData[yearKey].eurExchangeRate || eurExchangeRate;
+          const histHkdRate = historicalData[yearKey].hkdExchangeRate || hkdExchangeRate;
+          const histKrwRate = historicalData[yearKey].krwExchangeRate || krwExchangeRate;
+          const histCnyRate = (historicalData[yearKey] as any).cnyExchangeRate || cnyExchangeRate;
+          const histCadRate = (historicalData[yearKey] as any).cadExchangeRate || cadExchangeRate;
+          const histAudRate = (historicalData[yearKey] as any).audExchangeRate || audExchangeRate;
+          const histRates: ExchangeRates = {
+            exchangeRateUsdToTwd: histRate,
+            jpyExchangeRate: histJpyRate,
+            gbpExchangeRate: histGbpRate,
+            eurExchangeRate: histEurRate,
+            cnyExchangeRate: histCnyRate,
+            inrExchangeRate,
+            cadExchangeRate: histCadRate,
+            hkdExchangeRate: histHkdRate,
+            krwExchangeRate: histKrwRate,
+            audExchangeRate: histAudRate,
+            sarExchangeRate,
+            brlExchangeRate
+          };
+          
+          const yearEndDate = new Date(`${y}-12-31`);
+          const { accountHoldings, cashBalances } = getPortfolioStateAtDate(yearEndDate, transactions, cashFlows, accounts);
+          
+          let stockValueTWD = 0;
+          let hasMissingPrices = false;
+          
+          accountHoldings.forEach(({ accountId, market, ticker, quantity: qty }) => {
+              if (qty > 0.000001) {
+                  // 移除 (BAK) 後綴（備份股票代號）
+                  const cleanTicker = ticker.replace(/\(BAK\)/gi, '').trim();
+                  
+                  // 嘗試多種格式查找歷史價格
+                  // 1. 直接使用 ticker（可能是 "TPE:2330" 或 "2330" 或 "AAPL"）
+                  // 2. 如果是台股且沒有 TPE: 前綴，嘗試加上 TPE: 前綴
+                  // 3. 如果是台股且有 TPE: 前綴，嘗試移除前綴
+                  // 4. 同時嘗試移除 (BAK) 後綴後的版本
+                  let price = 0;
+                  
+                  // 先嘗試原始 ticker（可能包含 (BAK)）
+                  if (histPrices[ticker]) {
+                      price = histPrices[ticker];
+                  } else if (market === Market.TW) {
+                      // 台股：嘗試多種格式
+                      if (cleanTicker.startsWith('TPE:')) {
+                          // 如果 cleanTicker 是 "TPE:2412"，嘗試 "TPE:2412" 和 "2412"
+                          const withoutPrefix = cleanTicker.replace(/^TPE:/i, '');
+                          price = histPrices[cleanTicker] || histPrices[withoutPrefix] || histPrices[`TPE:${withoutPrefix}`] || 0;
+                      } else {
+                          // 如果 cleanTicker 是 "2412"，嘗試 "TPE:2412" 和 "2412"
+                          price = histPrices[`TPE:${cleanTicker}`] || histPrices[cleanTicker] || 0;
+                      }
+                  } else {
+                      // 美股：先嘗試原始 ticker，再嘗試移除 (BAK) 後的版本
+                      price = histPrices[ticker] || histPrices[cleanTicker] || 0;
+                  }
+                  
+                  // 檢查是否有缺失的價格
+                  if (price === 0) {
+                      hasMissingPrices = true;
+                  }
+                  
+                  // 歷史估值需與入帳邏輯一致：以證券戶幣別換匯（而非市場來源幣別）
+                  const nativeValue = market === Market.TW ? Math.round(qty * price) : qty * price;
+                  const acc = accounts.find(a => a.id === accountId);
+                  const valuationCurrency = acc?.currency ?? marketToCurrency(market);
+                  stockValueTWD += nativeValueInAccountCurrencyToTWD(nativeValue, valuationCurrency, histRates);
+              }
+          });
+
+          let cashValueTWD = 0;
+          Object.entries(cashBalances).forEach(([accId, bal]) => {
+              const acc = accounts.find(a => a.id === accId);
+              if (acc) {
+                  const cashRate = currencyToTWDRate(acc.currency, histRates);
+                  cashValueTWD += bal * cashRate;
+              }
+          });
+
+          stockValueTWDForDebug = stockValueTWD;
+          cashValueTWDForDebug = cashValueTWD;
+          totalAssets = stockValueTWD + cashValueTWD;
+          
+          // 判斷是否為真實數據：
+          // 只要有歷史數據且沒有缺失價格，就標記為真實數據
+          // 即使 totalAssets < cost（市場下跌時可能發生），只要所有股票都有價格，仍然是真實數據
+          if (hasMissingPrices) {
+              // 有缺失價格，使用插值計算作為備選方案
+              const totalYears = endYear - startYear + 1;
+              const currentYearIndex = y - startYear + 1;
+              const progress = currentYearIndex / totalYears;
+              const totalProfit = currentTotalValueTWD - cumulativeNetInvestedTWD;
+              totalAssets = cost + (totalProfit * progress);
+              isRealData = false;
+          } else {
+              // 所有股票都有價格，標記為真實數據
+              isRealData = true;
+          }
+
+       } else {
+          // NO historical data: Fallback to linear interpolation
+          const totalYears = endYear - startYear + 1;
+          const currentYearIndex = y - startYear + 1;
+          const progress = currentYearIndex / totalYears;
+          const totalProfit = currentTotalValueTWD - cumulativeNetInvestedTWD;
+          totalAssets = cost + (totalProfit * progress);
+       }
+    }
+    
+    // 計算 profit，確保 totalAssets = cost + profit 成立
+    const profit = totalAssets - cost;
+    
+    // 處理浮點數精度問題：確保 totalAssets 與 cost + profit 完全一致
+    // 這樣折線圖才能正確對齊到疊加柱狀圖的頂部
+    // 使用原始 totalAssets 值，但確保它等於 cost + profit（理論上應該總是成立）
+    const adjustedTotalAssets = cost + profit;
+    
+    const assetCostRatio = cost > 0 ? adjustedTotalAssets / cost : 0;
+
+    if (isAnnualPerfDebugEnabled()) {
+      console.log('[ANNUAL_PERF_DEBUG]', {
+        year: y,
+        isRealData,
+        cost,
+        stockValueTWD: stockValueTWDForDebug,
+        cashValueTWD: cashValueTWDForDebug,
+        totalAssets: adjustedTotalAssets,
+        profit,
+        rates: {
+          usd: exchangeRate,
+          jpy: jpyExchangeRate,
+          eur: eurExchangeRate,
+          gbp: gbpExchangeRate,
+          hkd: hkdExchangeRate,
+          krw: krwExchangeRate,
+          cny: cnyExchangeRate,
+          cad: cadExchangeRate,
+          aud: audExchangeRate,
+          sar: sarExchangeRate,
+          brl: brlExchangeRate
+        }
+      });
+    }
+
+    data.push({
+      year: y.toString(),
+      cost,
+      profit,
+      totalAssets: adjustedTotalAssets, // 使用調整後的 totalAssets 確保與疊加柱狀圖對齊
+      estTotalAssets: accumulatedEstAssets,
+      assetCostRatio,
+      isRealData
+    });
+  }
+
+  return data;
+};
+
+export const formatCurrency = (val: number, currency: string): string => {
+  // 將 -0 或接近 0 的值轉換為 0，避免顯示 "-0" 或 "-$0.00"
+  const normalizedVal = Math.abs(val) < 0.0001 ? 0 : val;
+  
+  try {
+    if (!currency || currency.trim() === '' || currency.length !== 3) {
+      return new Intl.NumberFormat('zh-TW', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(normalizedVal);
+    }
+
+    // Hybrid Strategy:
+    // USD, EUR, GBP, HKD: 2 decimals
+    // TWD, JPY, KRW: 0 decimals
+    const twoDecimals = ['USD', 'EUR', 'GBP', 'HKD'].includes(currency);
+
+    return new Intl.NumberFormat('zh-TW', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: twoDecimals ? 2 : 0,
+      maximumFractionDigits: twoDecimals ? 2 : 0,
+    }).format(normalizedVal);
+  } catch (error) {
+    return normalizedVal.toLocaleString();
+  }
+};
+
+export const calculateAssetAllocation = (
+  holdings: Holding[],
+  cashBalanceTWD: number,
+  rates: ExchangeRates,
+  accounts: Account[]
+): AssetAllocationItem[] => {
+  const tickerMap: Record<string, number> = {};
+  let totalValue = cashBalanceTWD;
+
+  holdings.forEach(h => {
+    const valTWD = holdingValueToTWD(h, accounts, rates);
+    if (!tickerMap[h.ticker]) tickerMap[h.ticker] = 0;
+    tickerMap[h.ticker] += valTWD;
+    totalValue += valTWD;
+  });
+
+  const items: AssetAllocationItem[] = [];
+  const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
+  let colorIdx = 0;
+
+  Object.entries(tickerMap).forEach(([name, value]) => {
+    items.push({
+      name,
+      value,
+      ratio: totalValue > 0 ? (value / totalValue) * 100 : 0,
+      color: colors[colorIdx++ % colors.length]
+    });
+  });
+
+  items.sort((a, b) => b.value - a.value);
+
+  if (cashBalanceTWD > 0) {
+    items.unshift({
+      name: '現金 (Cash)',
+      value: cashBalanceTWD,
+      ratio: totalValue > 0 ? (cashBalanceTWD / totalValue) * 100 : 0,
+      color: '#cbd5e1'
+    });
+  }
+
+  return items;
+};
+
+// 手動覆寫：可依需求自行增修（key 請用大寫 ticker）
+export const ASSET_CLASS_OVERRIDE: Record<string, AssetClass> = {
+  AGG: AssetClass.BOND,
+  BND: AssetClass.BOND,
+  BNDX: AssetClass.BOND,
+  IEF: AssetClass.BOND,
+  LQD: AssetClass.BOND,
+  TLT: AssetClass.BOND,
+  VGIT: AssetClass.BOND,
+};
+
+const BOND_KEYWORDS = [
+  'BOND',
+  'TREASURY',
+  'TREAS',
+  'GOVT',
+  'CORP',
+  'FIXEDINCOME'
+];
+
+const BOND_TICKER_PATTERNS = [
+  /^TLT$/,
+  /^IEF$/,
+  /^SHY$/,
+  /^BND$/,
+  /^BNDX$/,
+  /^AGG$/,
+  /^LQD$/,
+  /^VGIT$/,
+  /^GOVT$/,
+  /^TIP$/,
+];
+
+export const classifyAssetClassByTicker = (tickerRaw: string): AssetClass => {
+  const ticker = (tickerRaw || '').trim().toUpperCase();
+  if (!ticker) return AssetClass.OTHER;
+
+  const manual = ASSET_CLASS_OVERRIDE[ticker];
+  if (manual) return manual;
+
+  if (BOND_TICKER_PATTERNS.some(pattern => pattern.test(ticker))) {
+    return AssetClass.BOND;
+  }
+
+  const compact = ticker.replace(/[\s._-]/g, '');
+  if (BOND_KEYWORDS.some(keyword => compact.includes(keyword))) {
+    return AssetClass.BOND;
+  }
+
+  return AssetClass.EQUITY;
+};
+
+export const getAssetClassForTicker = (
+  tickerRaw: string,
+  overrides?: Record<string, AssetClass>
+): AssetClass => {
+  const ticker = (tickerRaw || '').trim().toUpperCase();
+  if (!ticker) return AssetClass.OTHER;
+  if (overrides && overrides[ticker]) return overrides[ticker];
+  return classifyAssetClassByTicker(ticker);
+};
+
+export const calculateStockBondAllocation = (
+  holdings: Holding[],
+  cashBalanceTWD: number,
+  rates: ExchangeRates,
+  accounts: Account[],
+  overrides?: Record<string, AssetClass>
+): AssetClassAllocationItem[] => {
+  let stockValue = 0;
+  let bondValue = 0;
+
+  holdings.forEach(h => {
+    const value = holdingValueToTWD(h, accounts, rates);
+    const klass = getAssetClassForTicker(h.ticker, overrides);
+    if (klass === AssetClass.BOND) bondValue += value;
+    else stockValue += value;
+  });
+
+  const total = stockValue + bondValue + Math.max(cashBalanceTWD, 0);
+  if (total <= 0) return [];
+
+  const result: AssetClassAllocationItem[] = [];
+  if (stockValue > 0) {
+    result.push({
+      assetClass: AssetClass.EQUITY,
+      name: '股票',
+      value: stockValue,
+      ratio: (stockValue / total) * 100,
+      color: '#22c55e'
+    });
+  }
+  if (bondValue > 0) {
+    result.push({
+      assetClass: AssetClass.BOND,
+      name: '債券',
+      value: bondValue,
+      ratio: (bondValue / total) * 100,
+      color: '#3b82f6'
+    });
+  }
+  if (cashBalanceTWD > 0) {
+    result.push({
+      assetClass: AssetClass.CASH,
+      name: '現金',
+      value: cashBalanceTWD,
+      ratio: (cashBalanceTWD / total) * 100,
+      color: '#94a3b8'
+    });
+  }
+
+  return result;
+};
+
+export const calculateAnnualPerformance = (
+  chartData: ChartDataPoint[]
+): AnnualPerformanceItem[] => {
+  const items: AnnualPerformanceItem[] = [];
+
+  for (let i = 0; i < chartData.length; i++) {
+    const current = chartData[i];
+    const prev = i > 0 ? chartData[i - 1] : null;
+
+    const startAssets = prev ? prev.totalAssets : 0;
+    const endAssets = current.totalAssets;
+    const netInflow = current.cost - (prev ? prev.cost : 0);
+    const profit = endAssets - startAssets - netInflow;
+    const base = startAssets + netInflow;
+    const roi = base > 0 ? (profit / base) * 100 : 0;
+
+    let yearLabel = current.year;
+    const currentYear = new Date().getFullYear().toString();
+    if (yearLabel === currentYear) {
+      yearLabel = `${yearLabel} (至今日)`;
+    }
+
+    items.push({
+      year: yearLabel,
+      startAssets,
+      netInflow,
+      endAssets,
+      profit,
+      roi,
+      isRealData: current.isRealData
+    });
+  }
+
+  return items.reverse();
+};
+
+export const buildAttributionSeries = (
+  chartData: ChartDataPoint[],
+  cashFlows: CashFlow[],
+  transactions: Transaction[],
+  accounts: Account[],
+  rates: ExchangeRates
+): AttributionPoint[] => {
+  if (chartData.length === 0) return [];
+
+  const getCashFlowAmountTWD = (cf: CashFlow): number => {
+    if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
+    const account = accounts.find(a => a.id === cf.accountId);
+    const sourceCurrency = account?.currency ?? Currency.TWD;
+    const rate = (cf.exchangeRate && cf.exchangeRate > 0)
+      ? cf.exchangeRate
+      : currencyToTWDRate(sourceCurrency, rates);
+    return cf.amount * rate;
+  };
+
+  const incomeByYear: Record<string, number> = {};
+  cashFlows.forEach(cf => {
+    if (cf.type !== CashFlowType.INTEREST) return;
+    const year = String(new Date(cf.date).getFullYear());
+    incomeByYear[year] = (incomeByYear[year] || 0) + getCashFlowAmountTWD(cf);
+  });
+  transactions.forEach(tx => {
+    if (tx.type !== TransactionType.CASH_DIVIDEND) return;
+    const year = String(new Date(tx.date).getFullYear());
+    const nativeIncome = (tx.amount ?? (tx.price * tx.quantity)) - (tx.fees || 0);
+    const incomeTWD = transactionAmountNativeToTWD(nativeIncome, tx, accounts, rates);
+    incomeByYear[year] = (incomeByYear[year] || 0) + incomeTWD;
+  });
+
+  const sorted = [...chartData].sort((a, b) => Number(a.year) - Number(b.year));
+  const result: AttributionPoint[] = [];
+
+  for (let i = 0; i < sorted.length; i++) {
+    const current = sorted[i];
+    const prev = i > 0 ? sorted[i - 1] : null;
+    const startAssets = prev ? prev.totalAssets : 0;
+    const endAssets = current.totalAssets;
+    const deltaAssets = endAssets - startAssets;
+    const netInflow = current.cost - (prev ? prev.cost : 0);
+    const income = incomeByYear[current.year] || 0;
+    const marketPL = deltaAssets - netInflow - income;
+
+    const reconciledDiff = deltaAssets - (netInflow + income + marketPL);
+    const isConsistent = Math.abs(reconciledDiff) < 0.01;
+
+    result.push({
+      period: current.year,
+      startAssets,
+      endAssets,
+      deltaAssets,
+      netInflow,
+      income,
+      marketPL,
+      cumulativeCost: current.cost,
+      cumulativeProfit: current.profit,
+      isRealData: current.isRealData,
+      reconciledDiff,
+      isConsistent
+    });
+  }
+
+  return result;
+};
+
+const cashFlowAmountTWDForWaterfall = (
+  cf: CashFlow,
+  accounts: Account[],
+  rates: ExchangeRates
+): number => {
+  if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
+  const account = accounts.find(a => a.id === cf.accountId);
+  const sourceCurrency = account?.currency ?? Currency.TWD;
+  const rate = (cf.exchangeRate && cf.exchangeRate > 0)
+    ? cf.exchangeRate
+    : currencyToTWDRate(sourceCurrency, rates);
+  return cf.amount * rate;
+};
+
+const monthInQuarter = (monthIndex0: number, quarter: number): boolean => {
+  const m = monthIndex0 + 1;
+  const qStart = (quarter - 1) * 3 + 1;
+  const qEnd = quarter * 3;
+  return m >= qStart && m <= qEnd;
+};
+
+export const buildWaterfallYearRows = (
+  attribution: AttributionPoint[],
+  cashFlows: CashFlow[],
+  accounts: Account[],
+  rates: ExchangeRates
+): WaterfallPeriodRow[] => {
+  return attribution.map(row => {
+    const year = row.period;
+    let deposit = 0;
+    let withdraw = 0;
+    cashFlows.forEach(cf => {
+      if (String(new Date(cf.date).getFullYear()) !== year) return;
+      if (cf.type === CashFlowType.DEPOSIT) deposit += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+      else if (cf.type === CashFlowType.WITHDRAW) withdraw += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+    });
+    return {
+      period: year,
+      startAssets: row.startAssets,
+      endAssets: row.endAssets,
+      netInflow: row.netInflow,
+      income: row.income,
+      marketPL: row.marketPL,
+      deposit,
+      withdraw,
+      isRealData: row.isRealData,
+    };
+  });
+};
+
+/**
+ * 依季拆解：淨流入／配息為實際發生月分攤；市場損益為該年度歸因值均分至四季（因無季末資產快照）。
+ */
+export const buildWaterfallQuarterRows = (
+  chartData: ChartDataPoint[],
+  attribution: AttributionPoint[],
+  cashFlows: CashFlow[],
+  transactions: Transaction[],
+  accounts: Account[],
+  rates: ExchangeRates
+): WaterfallPeriodRow[] => {
+  if (chartData.length === 0 || attribution.length === 0) return [];
+
+  const attByYear: Record<string, AttributionPoint> = {};
+  attribution.forEach(a => {
+    attByYear[a.period] = a;
+  });
+
+  const sortedYears = [...chartData].sort((a, b) => Number(a.year) - Number(b.year));
+  const rows: WaterfallPeriodRow[] = [];
+
+  for (let yi = 0; yi < sortedYears.length; yi++) {
+    const yPoint = sortedYears[yi];
+    const yearStr = yPoint.year;
+    const att = attByYear[yearStr];
+    if (!att) continue;
+
+    const yearNum = Number(yearStr);
+    const yearStart = yi > 0 ? sortedYears[yi - 1].totalAssets : 0;
+    const plQuarter = att.marketPL / 4;
+    let running = yearStart;
+
+    for (let q = 1; q <= 4; q++) {
+      let deposit = 0;
+      let withdraw = 0;
+      let income = 0;
+
+      cashFlows.forEach(cf => {
+        const d = new Date(cf.date);
+        if (d.getFullYear() !== yearNum || !monthInQuarter(d.getMonth(), q)) return;
+        if (cf.type === CashFlowType.DEPOSIT) {
+          deposit += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+        } else if (cf.type === CashFlowType.WITHDRAW) {
+          withdraw += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+        } else if (cf.type === CashFlowType.INTEREST) {
+          income += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+        }
+      });
+
+      transactions.forEach(tx => {
+        if (tx.type !== TransactionType.CASH_DIVIDEND) return;
+        const d = new Date(tx.date);
+        if (d.getFullYear() !== yearNum || !monthInQuarter(d.getMonth(), q)) return;
+        const nativeIncome = (tx.amount ?? (tx.price * tx.quantity)) - (tx.fees || 0);
+        income += transactionAmountNativeToTWD(nativeIncome, tx, accounts, rates);
+      });
+
+      const netInflow = deposit - withdraw;
+      const marketPL = plQuarter;
+      const startAssets = running;
+      const endAssets = startAssets + netInflow + income + marketPL;
+      rows.push({
+        period: `${yearStr}-Q${q}`,
+        startAssets,
+        endAssets,
+        netInflow,
+        income,
+        marketPL,
+        deposit,
+        withdraw,
+        isRealData: yPoint.isRealData,
+      });
+      running = endAssets;
+    }
+  }
+
+  return rows;
+};
+
+export const calculateAccountPerformance = (
+  accounts: Account[],
+  holdings: Holding[],
+  cashFlows: CashFlow[],
+  transactions: Transaction[],
+  rates: ExchangeRates
+): AccountPerformance[] => {
+  const normalizeUsdTwdRate = (rate: number | undefined): number => {
+    if (!rate || !Number.isFinite(rate)) return 31.5;
+    return rate >= 10 && rate <= 100 ? rate : 31.5;
+  };
+
+  const getRateByCurrency = (currency: Currency): number => {
+    const rate = currencyToTWDRate(currency, rates);
+    if (currency === Currency.USD) return normalizeUsdTwdRate(rate);
+    if (rate > 0) return rate;
+    if (currency === Currency.TWD) return 1;
+    return 1;
+  };
+
+  const getCashFlowAmountTWD = (cf: CashFlow): number => {
+    if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
+
+    const sourceAccount = accounts.find(a => a.id === cf.accountId);
+    if (!sourceAccount) return cf.amount;
+
+    if (sourceAccount.currency === Currency.TWD) {
+      return cf.amount;
+    }
+
+    const sourceRate = getRateByCurrency(sourceAccount.currency);
+    const effectiveRate = (cf.exchangeRate && cf.exchangeRate > 0) ? cf.exchangeRate : sourceRate;
+    return cf.amount * effectiveRate;
+  };
+
+  return accounts.map(acc => {
+    const accountRate = getRateByCurrency(acc.currency);
+    const normalizedAccountRate = accountRate > 0 ? accountRate : 1;
+
+    const cashTWD = acc.balance * normalizedAccountRate;
+    const accountHoldings = holdings.filter(h => h.accountId === acc.id);
+    const stockValueTWD = accountHoldings.reduce((sum, h) => {
+      return sum + h.currentValue * normalizedAccountRate;
+    }, 0);
+    const holdingsCostTWD = accountHoldings.reduce((sum, h) => {
+      return sum + h.totalCost * normalizedAccountRate;
+    }, 0);
+    const unrealizedProfitTWD = stockValueTWD - holdingsCostTWD;
+    const stockValueNative = accountHoldings.reduce((sum, h) => sum + h.currentValue, 0);
+    const totalAssetsTWD = cashTWD + stockValueTWD;
+
+    let netInvestedTWD = 0;
+    
+    // 1. Process Cash Flows (Deposits / Withdrawals)
+    cashFlows.forEach(cf => {
+      const amountFlowTWD = getCashFlowAmountTWD(cf);
+
+      if (cf.accountId === acc.id) {
+        if (cf.type === CashFlowType.DEPOSIT) {
+          netInvestedTWD += amountFlowTWD;
+        } else if (cf.type === CashFlowType.WITHDRAW) {
+          netInvestedTWD -= amountFlowTWD;
+        } else if (cf.type === CashFlowType.TRANSFER) {
+          netInvestedTWD -= amountFlowTWD;
+        }
+      }
+      
+      if (cf.targetAccountId === acc.id && cf.type === CashFlowType.TRANSFER) {
+        // Transfer-in carries the same cost basis from source side in TWD.
+        netInvestedTWD += amountFlowTWD;
+      }
+    });
+
+    // 2. Stock transfer transactions are excluded from net invested.
+    // TRANSFER_IN / TRANSFER_OUT represent position migration, not external capital flows.
+    // Including them here would double-count cost basis and distort realized P/L.
+
+    let incomeTWD = 0;
+    transactions.forEach(tx => {
+      if (tx.accountId !== acc.id) return;
+      if (tx.type !== TransactionType.CASH_DIVIDEND) return;
+      let baseVal = tx.price * tx.quantity;
+      if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+      const incomeVal = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
+      incomeTWD += transactionAmountNativeToTWD(incomeVal, tx, accounts, rates);
+    });
+    cashFlows.forEach(cf => {
+      if (cf.accountId !== acc.id) return;
+      if (cf.type !== CashFlowType.INTEREST) return;
+      incomeTWD += getCashFlowAmountTWD(cf);
+    });
+
+    // 總損益與總覽「總資產 − 淨投入」一致；再投資/平均成本與券商「逐筆已實現」口徑常不同，
+    // 故已實現改為剩餘項，使 未實現 + 已實現 + 股利/利息 = 總損益。
+    const profitTWD = totalAssetsTWD - netInvestedTWD;
+    const realizedProfitTWD = profitTWD - unrealizedProfitTWD - incomeTWD;
+    const roi = netInvestedTWD > 0 ? (profitTWD / netInvestedTWD) * 100 : 0;
+
+    // 計算原始幣種數值（用於切換顯示）
+    // stockValueNative 已經是原始幣種（美金帳戶=美金，台幣帳戶=台幣，日幣帳戶=日幣）
+    const totalAssetsNative = totalAssetsTWD / normalizedAccountRate;
+    const marketValueNative = stockValueNative; // 已經是原始幣種
+    const cashBalanceNative = acc.balance; // 已經是原始幣種
+    const profitNative = profitTWD / normalizedAccountRate;
+    const netInvestedNative = netInvestedTWD / normalizedAccountRate;
+    const unrealizedProfitNative = unrealizedProfitTWD / normalizedAccountRate;
+    const realizedProfitNativeOut = realizedProfitTWD / normalizedAccountRate;
+    const incomeNative = incomeTWD / normalizedAccountRate;
+
+    return {
+      id: acc.id,
+      name: acc.name,
+      currency: acc.currency,
+      totalAssetsTWD,
+      marketValueTWD: stockValueTWD,
+      cashBalanceTWD: cashTWD,
+      profitTWD,
+      roi,
+      totalAssetsNative,
+      marketValueNative,
+      cashBalanceNative,
+      profitNative,
+      netInvestedNative,
+      unrealizedProfitTWD,
+      realizedProfitTWD,
+      incomeTWD,
+      unrealizedProfitNative,
+      realizedProfitNative: realizedProfitNativeOut,
+      incomeNative
+    };
+  });
+};
+
+export const calculateGenericXIRR = (flows: { amount: number, date: number }[]): number => {
+  flows.sort((a, b) => a.date - b.date);
+  if (flows.length < 2) return 0;
+  
+  const validFlows = flows.filter(f => Math.abs(f.amount) > 0.0001);
+  if (validFlows.length < 2) return 0;
+
+  const calculateSimpleAnnualizedROI = () => {
+     let totalInvested = 0;
+     let totalReturned = 0; 
+     let minTime = validFlows[0].date;
+     let maxTime = validFlows[validFlows.length-1].date;
+     
+     validFlows.forEach(f => {
+         if (f.amount < 0) totalInvested += Math.abs(f.amount);
+         else totalReturned += f.amount;
+     });
+     
+     if (totalInvested === 0) return 0;
+     const absoluteROI = (totalReturned - totalInvested) / totalInvested;
+     const years = Math.max((maxTime - minTime) / (365 * 24 * 60 * 60 * 1000), 0.1); 
+     
+     return (Math.pow(1 + absoluteROI, 1 / years) - 1) * 100;
+  };
+
+  if (validFlows[validFlows.length-1].date === validFlows[0].date) {
+      return 0;
+  }
+
+  let rate = 0.1; 
+  
+  for (let i = 0; i < 50; i++) {
+      let fValue = 0;
+      let fDerivative = 0;
+      const t0 = validFlows[0].date;
+
+      for (const flow of validFlows) {
+          const years = (flow.date - t0) / (365 * 24 * 60 * 60 * 1000);
+          const exp = Math.pow(1 + rate, years);
+          fValue += flow.amount / exp;
+          fDerivative -= (years * flow.amount) / (exp * (1 + rate));
+      }
+
+      if (Math.abs(fDerivative) < 1e-8) break;
+      const newRate = rate - fValue / fDerivative;
+      if (Math.abs(newRate - rate) < 1e-6) {
+          return newRate * 100;
+      }
+      rate = newRate;
+  }
+
+  return calculateSimpleAnnualizedROI();
+};
+
+export const calculateXIRR = (
+  cashFlows: CashFlow[],
+  accounts: Account[],
+  currentTotalValueTWD: number,
+  exchangeRate: number
+): number => {
+  const xirrFlows: { amount: number, date: number }[] = [];
+
+  cashFlows.forEach(cf => {
+    if (cf.type !== CashFlowType.DEPOSIT && cf.type !== CashFlowType.WITHDRAW) return;
+
+    let amountTWD = 0;
+    if (cf.amountTWD && cf.amountTWD > 0) {
+      amountTWD = cf.amountTWD;
+    } else {
+      const acc = accounts.find(a => a.id === cf.accountId);
+      const isUSD = acc?.currency === Currency.USD;
+      const rate = isUSD ? (cf.exchangeRate || exchangeRate) : 1;
+      amountTWD = cf.amount * rate;
+    }
+
+    if (cf.type === CashFlowType.DEPOSIT) {
+      xirrFlows.push({ amount: -amountTWD, date: new Date(cf.date).getTime() });
+    } else if (cf.type === CashFlowType.WITHDRAW) {
+      xirrFlows.push({ amount: amountTWD, date: new Date(cf.date).getTime() });
+    }
+  });
+
+  xirrFlows.push({ amount: currentTotalValueTWD, date: Date.now() });
+
+  return calculateGenericXIRR(xirrFlows);
+};
