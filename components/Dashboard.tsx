@@ -176,10 +176,12 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     const total = stockValue + bondValue;
     if (total <= 0) return [];
     const result: Array<{ name: string; value: number; ratio: number; color: string; assetClass: AssetClass }> = [];
-    if (stockValue > 0) result.push({ name: '股', value: stockValue, ratio: (stockValue / total) * 100, color: '#22c55e', assetClass: AssetClass.EQUITY });
-    if (bondValue > 0) result.push({ name: '債', value: bondValue, ratio: (bondValue / total) * 100, color: '#3b82f6', assetClass: AssetClass.BOND });
+    const eq = translations.dashboard.equityLabelShort;
+    const bd = translations.dashboard.bondLabelShort;
+    if (stockValue > 0) result.push({ name: eq, value: stockValue, ratio: (stockValue / total) * 100, color: '#22c55e', assetClass: AssetClass.EQUITY });
+    if (bondValue > 0) result.push({ name: bd, value: bondValue, ratio: (bondValue / total) * 100, color: '#3b82f6', assetClass: AssetClass.BOND });
     return result;
-  }, [holdings, rates, tickerClassOverrides, portfolioAccounts]);
+  }, [holdings, rates, tickerClassOverrides, portfolioAccounts, translations]);
 
   const costDetails = useMemo(() => {
     return cashFlows
@@ -679,7 +681,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
-          <p className="text-xs text-slate-500 mb-3">外圓：{translations.dashboard.marketDistribution} / 內圓：股債比例（不含現金）</p>
+          <p className="text-xs text-slate-500 mb-3">{translations.dashboard.allocationDonutSubtitle}</p>
           {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex]) ? (
             <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
               {activeOuterIndex !== undefined && marketDistribution[activeOuterIndex] ? (
@@ -702,7 +704,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
                     {stockBondAllocation[activeInnerIndex].name}
                   </span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-semibold">股債比例</span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-semibold">
+                    {translations.dashboard.stockBondRatioBadge}
+                  </span>
                   <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
                     {stockBondAllocation[activeInnerIndex].ratio.toFixed(1)}%
                   </span>
@@ -782,7 +786,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             </div>
             <div className="flex-1 w-full space-y-3">
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.marketDistribution}（外圓）</p>
+                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.legendMarketOuter}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {marketDistribution.map((item, index) => (
                     <div
@@ -804,7 +808,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">股債比例（內圓）</p>
+                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.legendStockBondInner}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {stockBondAllocation.map((item, index) => (
                     <div
@@ -828,15 +832,17 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
               {/* 股/債覆寫小表單：用來編輯 localStorage: assetClassOverrides */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-slate-700 mb-2">自訂股/債分類（覆寫）</p>
+                <p className="text-xs font-semibold text-slate-700 mb-2">{translations.dashboard.assetClassOverrideTitle}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">Ticker</label>
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                      {translations.dashboard.tickerSymbolLabel}
+                    </label>
                     <input
                       value={overrideTickerInput}
                       onChange={(e) => setOverrideTickerInput(e.target.value)}
                       list="ticker-suggestions"
-                      placeholder="例如：AGG / TLT / BND"
+                      placeholder={translations.dashboard.tickerPlaceholderExamples}
                       className="w-full bg-white border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     />
                     <datalist id="ticker-suggestions">
@@ -846,14 +852,16 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     </datalist>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">分類</label>
+                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                      {translations.dashboard.assetClassSelectLabel}
+                    </label>
                     <select
                       value={overrideAssetClass}
                       onChange={(e) => setOverrideAssetClass(e.target.value as AssetClass)}
                       className="w-full bg-white border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
-                      <option value={AssetClass.EQUITY}>股</option>
-                      <option value={AssetClass.BOND}>債</option>
+                      <option value={AssetClass.EQUITY}>{translations.dashboard.equityLabelShort}</option>
+                      <option value={AssetClass.BOND}>{translations.dashboard.bondLabelShort}</option>
                     </select>
                   </div>
                 </div>
@@ -863,29 +871,32 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     onClick={setOverrideForTicker}
                     className="flex-1 px-3 py-1.5 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700 transition"
                   >
-                    保存覆寫
+                    {translations.dashboard.saveAssetClassOverride}
                   </button>
                   <button
                     onClick={() => clearOverrideForTicker(overrideTickerInput)}
                     className="flex-1 px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-700 hover:bg-slate-100 transition"
                   >
-                    清除
+                    {translations.dashboard.clearTickerOverride}
                   </button>
                 </div>
 
                 {overrideChips.length > 0 && (
                   <div className="mt-3">
-                    <p className="text-[11px] text-slate-500 mb-1">目前覆寫</p>
+                    <p className="text-[11px] text-slate-500 mb-1">{translations.dashboard.currentOverridesHeading}</p>
                     <div className="flex flex-wrap gap-2">
                       {overrideChips.map(([tickerKey, assetClass]) => {
-                        const label = assetClass === AssetClass.BOND ? '債' : '股';
+                        const label =
+                          assetClass === AssetClass.BOND
+                            ? translations.dashboard.bondLabelShort
+                            : translations.dashboard.equityLabelShort;
                         return (
                           <button
                             key={tickerKey}
                             type="button"
                             onClick={() => clearOverrideForTicker(tickerKey)}
                             className="px-2 py-1 rounded bg-white border border-slate-200 hover:border-indigo-200 transition flex items-center gap-2"
-                            title="點擊移除覆寫"
+                            title={translations.dashboard.removeOverrideTitle}
                           >
                             <span className="text-xs font-mono text-slate-700">{tickerKey}</span>
                             <span className={`text-[11px] font-semibold ${assetClass === AssetClass.BOND ? 'text-blue-700' : 'text-emerald-700'}`}>
