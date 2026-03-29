@@ -11,7 +11,7 @@ import {
   Cell,
   Brush,
 } from 'recharts';
-import { WaterfallPeriodRow } from '../types';
+import { WaterfallPeriodRow } from '../portfolioTypes';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -38,15 +38,20 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
 
   const data = useMemo(() => {
-    return rows.map(r => ({
-      period: r.period,
-      segStart: toBase(r.startAssets),
-      segFlow: toBase(r.netInflow),
-      segIncome: toBase(r.income),
-      segPL: toBase(r.marketPL),
-      flowFill: r.netInflow >= 0 ? WF_COLOR_INFLOW_POS : WF_COLOR_INFLOW_NEG,
-      plFill: r.marketPL >= 0 ? WF_COLOR_PL_POS : WF_COLOR_PL_NEG,
-    }));
+    return rows.map(r => {
+      const flow = toBase(r.netInflow);
+      return {
+        period: r.period,
+        segStart: toBase(r.startAssets),
+        /** 拆成兩段固定 fill，避免堆疊 Bar 上 Cell 顏色被 Recharts 忽略 */
+        segFlowPos: flow >= 0 ? flow : 0,
+        segFlowNeg: flow < 0 ? flow : 0,
+        segIncome: toBase(r.income),
+        segPL: toBase(r.marketPL),
+        segFlowForTooltip: flow,
+        plFill: r.marketPL >= 0 ? WF_COLOR_PL_POS : WF_COLOR_PL_NEG,
+      };
+    });
   }, [rows, baseCurrency, rates]);
 
   if (rows.length === 0) {
@@ -89,35 +94,48 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             />
             <Tooltip
               contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0' }}
-              formatter={(value: number, name: string) => {
+              formatter={(value: number, name: string, item: { dataKey?: string | number; payload?: { segFlowForTooltip?: number } }) => {
+                const key = item.dataKey != null ? String(item.dataKey) : '';
+                if (key === 'segFlowPos' || key === 'segFlowNeg') {
+                  const v = item.payload?.segFlowForTooltip ?? value;
+                  return [formatCurrency(v, baseCurrency), tr.dashboard.annualNetInflow];
+                }
                 const label =
                   name === 'segStart'
                     ? tr.dashboard.startAssets
-                    : name === 'segFlow'
-                      ? tr.dashboard.annualNetInflow
-                      : name === 'segIncome'
-                        ? tr.waterfall.dividend
-                        : name === 'segPL'
-                          ? tr.waterfall.stockPL
-                          : name;
+                    : name === 'segIncome'
+                      ? tr.waterfall.dividend
+                      : name === 'segPL'
+                        ? tr.waterfall.stockPL
+                        : name;
                 return [formatCurrency(value, baseCurrency), label];
               }}
             />
             <Legend
               formatter={(value: string) => {
                 if (value === 'segStart') return tr.dashboard.startAssets;
-                if (value === 'segFlow') return tr.dashboard.annualNetInflow;
+                if (value === 'segFlowPos') return tr.dashboard.annualNetInflow;
                 if (value === 'segIncome') return tr.waterfall.dividend;
                 if (value === 'segPL') return tr.waterfall.stockPL;
                 return value;
               }}
             />
             <Bar dataKey="segStart" name="segStart" stackId="wf" fill={WF_COLOR_START} radius={[0, 0, 0, 0]} />
-            <Bar dataKey="segFlow" name="segFlow" stackId="wf" radius={[0, 0, 0, 0]}>
-              {data.map((entry, i) => (
-                <Cell key={`f-${i}`} fill={entry.flowFill} />
-              ))}
-            </Bar>
+            <Bar
+              dataKey="segFlowPos"
+              name="segFlowPos"
+              stackId="wf"
+              fill={WF_COLOR_INFLOW_POS}
+              radius={[0, 0, 0, 0]}
+            />
+            <Bar
+              dataKey="segFlowNeg"
+              name="segFlowNeg"
+              stackId="wf"
+              fill={WF_COLOR_INFLOW_NEG}
+              radius={[0, 0, 0, 0]}
+              legendType="none"
+            />
             <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar dataKey="segPL" name="segPL" stackId="wf" radius={[2, 2, 0, 0]}>
               {data.map((entry, i) => (
