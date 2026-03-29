@@ -1150,7 +1150,11 @@ export const calculateAccountPerformance = (
       }
 
       if (tx.type === TransactionType.DIVIDEND) {
-        // Stock dividend increases shares with zero realized P/L.
+        // 須與 calculateHoldings 一致：券商 DRIP / 再投資以「金額」買進股數，應增加成本；
+        // 否則賣出時分攤成本偏低、已實現損益偏高，與未實現加總對不上券商拆帳。
+        const divFallback = baseVal + (tx.fees || 0);
+        const divCost = normalizeTxAmountToAccountCurrency(tx, divFallback, baseVal);
+        pos.totalCost += divCost;
         pos.quantity += tx.quantity;
         posMap.set(key, pos);
         return;
