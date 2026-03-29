@@ -15,7 +15,8 @@ import {
   TransactionType,
   HistoricalData,
   BaseCurrency,
-  AttributionPoint
+  AttributionPoint,
+  WaterfallPeriodRow
 } from '../types';
 
 /** 匯率物件（X→TWD：1 X = N TWD） */
@@ -1083,6 +1084,135 @@ export const buildAttributionSeries = (
   }
 
   return result;
+};
+
+const cashFlowAmountTWDForWaterfall = (
+  cf: CashFlow,
+  accounts: Account[],
+  rates: ExchangeRates
+): number => {
+  if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
+  const account = accounts.find(a => a.id === cf.accountId);
+  const sourceCurrency = account?.currency ?? Currency.TWD;
+  const rate = (cf.exchangeRate && cf.exchangeRate > 0)
+    ? cf.exchangeRate
+    : currencyToTWDRate(sourceCurrency, rates);
+  return cf.amount * rate;
+};
+
+const monthInQuarter = (monthIndex0: number, quarter: number): boolean => {
+  const m = monthIndex0 + 1;
+  const qStart = (quarter - 1) * 3 + 1;
+  const qEnd = quarter * 3;
+  return m >= qStart && m <= qEnd;
+};
+
+export const buildWaterfallYearRows = (
+  attribution: AttributionPoint[],
+  cashFlows: CashFlow[],
+  accounts: Account[],
+  rates: ExchangeRates
+): WaterfallPeriodRow[] => {
+  return attribution.map(row => {
+    const year = row.period;
+    let deposit = 0;
+    let withdraw = 0;
+    cashFlows.forEach(cf => {
+      if (String(new Date(cf.date).getFullYear()) !== year) return;
+      if (cf.type === CashFlowType.DEPOSIT) deposit += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+      else if (cf.type === CashFlowType.WITHDRAW) withdraw += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+    });
+    return {
+      period: year,
+      startAssets: row.startAssets,
+      endAssets: row.endAssets,
+      netInflow: row.netInflow,
+      income: row.income,
+      marketPL: row.marketPL,
+      deposit,
+      withdraw,
+      isRealData: row.isRealData,
+    };
+  });
+};
+
+/**
+ * 依季拆解：淨流入／配息為實際發生月分攤；市場損益為該年度歸因值均分至四季（因無季末資產快照）。
+ */
+export const buildWaterfallQuarterRows = (
+  chartData: ChartDataPoint[],
+  attribution: AttributionPoint[],
+  cashFlows: CashFlow[],
+  transactions: Transaction[],
+  accounts: Account[],
+  rates: ExchangeRates
+): WaterfallPeriodRow[] => {
+  if (chartData.length === 0 || attribution.length === 0) return [];
+
+  const attByYear: Record<string, AttributionPoint> = {};
+  attribution.forEach(a => {
+    attByYear[a.period] = a;
+  });
+
+  const sortedYears = [...chartData].sort((a, b) => Number(a.year) - Number(b.year));
+  const rows: WaterfallPeriodRow[] = [];
+
+  for (let yi = 0; yi < sortedYears.length; yi++) {
+    const yPoint = sortedYears[yi];
+    const yearStr = yPoint.year;
+    const att = attByYear[yearStr];
+    if (!att) continue;
+
+    const yearNum = Number(yearStr);
+    const yearStart = yi > 0 ? sortedYears[yi - 1].totalAssets : 0;
+    const plQuarter = att.marketPL / 4;
+    let running = yearStart;
+
+    for (let q = 1; q <= 4; q++) {
+      let deposit = 0;
+      let withdraw = 0;
+      let income = 0;
+
+      cashFlows.forEach(cf => {
+        const d = new Date(cf.date);
+        if (d.getFullYear() !== yearNum || !monthInQuarter(d.getMonth(), q)) return;
+        if (cf.type === CashFlowType.DEPOSIT) {
+          deposit += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+        } else if (cf.type === CashFlowType.WITHDRAW) {
+          withdraw += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+        } else if (cf.type === CashFlowType.INTEREST) {
+          income += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+        }
+      });
+
+      transactions.forEach(tx => {
+        if (tx.type !== TransactionType.CASH_DIVIDEND) return;
+        const d = new Date(tx.date);
+        if (d.getFullYear() !== yearNum || !monthInQuarter(d.getMonth(), q)) return;
+        const nativeIncome = (tx.amount ?? (tx.price * tx.quantity)) - (tx.fees || 0);
+        income += transactionAmountNativeToTWD(nativeIncome, tx, accounts, rates);
+      });
+
+      const netInflow = deposit - withdraw;
+      const marketPL = plQuarter;
+      const startAssets = running;
+      const endAssets = startAssets + netInflow + income + marketPL;
+      rows.push({
+        period: `${yearStr}-Q${q}`,
+        startAssets,
+        endAssets,
+        netInflow,
+        income,
+        marketPL,
+        deposit,
+        withdraw,
+        isRealData: yPoint.isRealData,
+      });
+      running = endAssets;
+    }
+  }
+
+  return rows;
 };
 
 export const calculateAccountPerformance = (
