@@ -11,6 +11,11 @@ import MarketPerformanceChart from './MarketPerformanceChart';
 import CashFlowWaterfall from './CashFlowWaterfall';
 import DividendHeatmap from './DividendHeatmap';
 import { t, translate } from '../utils/i18n';
+import {
+  ALLOCATION_INNER_BOND_COLOR,
+  ALLOCATION_INNER_EQUITY_COLOR,
+  ALLOCATION_MARKET_COLORS,
+} from '../utils/allocationDonutColors';
 
 interface Props {
   onUpdateHistorical?: () => void;
@@ -109,21 +114,49 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const marketMeta = useMemo(() => {
     const isZh = language === 'zh-TW' || language === 'zh-CN';
     return {
-      [Market.TW]: { name: isZh ? '台股' : 'Taiwan', color: '#3b82f6', flag: '🇹🇼' },
-      [Market.US]: { name: isZh ? '美股' : 'US', color: '#22c55e', flag: '🇺🇸' },
-      [Market.UK]: { name: language === 'zh-TW' ? '英國股' : language === 'zh-CN' ? '英国股' : 'UK', color: '#a855f7', flag: '🇬🇧' },
-      [Market.JP]: { name: isZh ? '日本股' : 'Japan', color: '#ef4444', flag: '🇯🇵' },
-      [Market.CN]: { name: language === 'zh-TW' ? '中國滬' : language === 'zh-CN' ? '中国沪' : 'China', color: '#f59e0b', flag: '🇨🇳' },
-      [Market.SZ]: { name: language === 'zh-TW' ? '中國深' : language === 'zh-CN' ? '中国深' : 'Shenzhen', color: '#d97706', flag: '🇨🇳' },
-      [Market.IN]: { name: isZh ? '印度' : 'India', color: '#14b8a6', flag: '🇮🇳' },
-      [Market.CA]: { name: isZh ? '加拿大' : 'Canada', color: '#f43f5e', flag: '🇨🇦' },
-      [Market.FR]: { name: language === 'zh-TW' ? '法國' : language === 'zh-CN' ? '法国股' : 'France', color: '#6366f1', flag: '🇫🇷' },
-      [Market.HK]: { name: isZh ? '香港' : 'HK', color: '#0ea5e9', flag: '🇭🇰' },
-      [Market.KR]: { name: language === 'zh-TW' ? '韓國' : language === 'zh-CN' ? '韩国' : 'Korea', color: '#ea580c', flag: '🇰🇷' },
-      [Market.DE]: { name: language === 'zh-TW' ? '德國' : language === 'zh-CN' ? '德国' : 'Germany', color: '#ca8a04', flag: '🇩🇪' },
-      [Market.AU]: { name: isZh ? '澳洲' : 'Australia', color: '#65a30d', flag: '🇦🇺' },
-      [Market.SA]: { name: language === 'zh-TW' ? '沙烏地' : language === 'zh-CN' ? '沙特' : 'Saudi', color: '#047857', flag: '🇸🇦' },
-      [Market.BR]: { name: isZh ? '巴西' : 'Brazil', color: '#0891b2', flag: '🇧🇷' },
+      [Market.TW]: { name: isZh ? '台股' : 'Taiwan', color: ALLOCATION_MARKET_COLORS[Market.TW], flag: '🇹🇼' },
+      [Market.US]: { name: isZh ? '美股' : 'US', color: ALLOCATION_MARKET_COLORS[Market.US], flag: '🇺🇸' },
+      [Market.UK]: {
+        name: language === 'zh-TW' ? '英國股' : language === 'zh-CN' ? '英国股' : 'UK',
+        color: ALLOCATION_MARKET_COLORS[Market.UK],
+        flag: '🇬🇧',
+      },
+      [Market.JP]: { name: isZh ? '日本股' : 'Japan', color: ALLOCATION_MARKET_COLORS[Market.JP], flag: '🇯🇵' },
+      [Market.CN]: {
+        name: language === 'zh-TW' ? '中國滬' : language === 'zh-CN' ? '中国沪' : 'China',
+        color: ALLOCATION_MARKET_COLORS[Market.CN],
+        flag: '🇨🇳',
+      },
+      [Market.SZ]: {
+        name: language === 'zh-TW' ? '中國深' : language === 'zh-CN' ? '中国深' : 'Shenzhen',
+        color: ALLOCATION_MARKET_COLORS[Market.SZ],
+        flag: '🇨🇳',
+      },
+      [Market.IN]: { name: isZh ? '印度' : 'India', color: ALLOCATION_MARKET_COLORS[Market.IN], flag: '🇮🇳' },
+      [Market.CA]: { name: isZh ? '加拿大' : 'Canada', color: ALLOCATION_MARKET_COLORS[Market.CA], flag: '🇨🇦' },
+      [Market.FR]: {
+        name: language === 'zh-TW' ? '法國' : language === 'zh-CN' ? '法国股' : 'France',
+        color: ALLOCATION_MARKET_COLORS[Market.FR],
+        flag: '🇫🇷',
+      },
+      [Market.HK]: { name: isZh ? '香港' : 'HK', color: ALLOCATION_MARKET_COLORS[Market.HK], flag: '🇭🇰' },
+      [Market.KR]: {
+        name: language === 'zh-TW' ? '韓國' : language === 'zh-CN' ? '韩国' : 'Korea',
+        color: ALLOCATION_MARKET_COLORS[Market.KR],
+        flag: '🇰🇷',
+      },
+      [Market.DE]: {
+        name: language === 'zh-TW' ? '德國' : language === 'zh-CN' ? '德国' : 'Germany',
+        color: ALLOCATION_MARKET_COLORS[Market.DE],
+        flag: '🇩🇪',
+      },
+      [Market.AU]: { name: isZh ? '澳洲' : 'Australia', color: ALLOCATION_MARKET_COLORS[Market.AU], flag: '🇦🇺' },
+      [Market.SA]: {
+        name: language === 'zh-TW' ? '沙烏地' : language === 'zh-CN' ? '沙特' : 'Saudi',
+        color: ALLOCATION_MARKET_COLORS[Market.SA],
+        flag: '🇸🇦',
+      },
+      [Market.BR]: { name: isZh ? '巴西' : 'Brazil', color: ALLOCATION_MARKET_COLORS[Market.BR], flag: '🇧🇷' },
     } as Record<Market, { name: string; color: string; flag: string }>;
   }, [language]);
 
@@ -178,8 +211,22 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     const result: Array<{ name: string; value: number; ratio: number; color: string; assetClass: AssetClass }> = [];
     const eq = translations.dashboard.equityLabelShort;
     const bd = translations.dashboard.bondLabelShort;
-    if (stockValue > 0) result.push({ name: eq, value: stockValue, ratio: (stockValue / total) * 100, color: '#22c55e', assetClass: AssetClass.EQUITY });
-    if (bondValue > 0) result.push({ name: bd, value: bondValue, ratio: (bondValue / total) * 100, color: '#3b82f6', assetClass: AssetClass.BOND });
+    if (stockValue > 0)
+      result.push({
+        name: eq,
+        value: stockValue,
+        ratio: (stockValue / total) * 100,
+        color: ALLOCATION_INNER_EQUITY_COLOR,
+        assetClass: AssetClass.EQUITY,
+      });
+    if (bondValue > 0)
+      result.push({
+        name: bd,
+        value: bondValue,
+        ratio: (bondValue / total) * 100,
+        color: ALLOCATION_INNER_BOND_COLOR,
+        assetClass: AssetClass.BOND,
+      });
     return result;
   }, [holdings, rates, tickerClassOverrides, portfolioAccounts, translations]);
 
