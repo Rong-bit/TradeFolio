@@ -1,0 +1,330 @@
+
+/** 基準顯示幣別（儀表板總額等用此幣顯示） */
+export type BaseCurrency = 'TWD' | 'USD' | 'JPY' | 'EUR' | 'GBP' | 'HKD' | 'KRW' | 'CAD' | 'INR' | 'CNY' | 'AUD' | 'SAR' | 'BRL';
+
+export const BASE_CURRENCIES: BaseCurrency[] = ['TWD', 'USD', 'JPY', 'EUR', 'GBP', 'HKD', 'KRW', 'CAD', 'INR', 'CNY', 'AUD', 'SAR', 'BRL'];
+
+export enum Market {
+  US = 'US',
+  TW = 'TW',
+  UK = 'UK',
+  JP = 'JP',
+  CN = 'CN',
+  SZ = 'SZ',
+  IN = 'IN',
+  CA = 'CA',
+  FR = 'FR',
+  HK = 'HK',
+  KR = 'KR',
+  DE = 'DE',
+  AU = 'AU',
+  SA = 'SA',
+  BR = 'BR'
+}
+
+export enum Currency {
+  TWD = 'TWD',
+  USD = 'USD',
+  JPY = 'JPY',
+  HKD = 'HKD',
+  SGD = 'SGD',
+  CNY = 'CNY',
+  INR = 'INR',
+  KRW = 'KRW',
+  THB = 'THB',
+  MYR = 'MYR',
+  IDR = 'IDR',
+  VND = 'VND',
+  PHP = 'PHP',
+  EUR = 'EUR',
+  GBP = 'GBP',
+  CHF = 'CHF',
+  SEK = 'SEK',
+  NOK = 'NOK',
+  DKK = 'DKK',
+  AUD = 'AUD',
+  CAD = 'CAD',
+  NZD = 'NZD',
+  ZAR = 'ZAR',
+  BRL = 'BRL',
+  MXN = 'MXN',
+  SAR = 'SAR'
+}
+
+export enum TransactionType {
+  BUY = 'BUY',
+  SELL = 'SELL',
+  DIVIDEND = 'DIVIDEND', // +shares; DRIP 再投資時應填單價/股數/金額，與 BUY 同樣增加成本（見 calculateHoldings）
+  CASH_DIVIDEND = 'CASH_DIVIDEND', // Cash payout
+  TRANSFER_IN = 'TRANSFER_IN', // Stock Transfer In
+  TRANSFER_OUT = 'TRANSFER_OUT' // Stock Transfer Out
+}
+
+export enum CashFlowType {
+  DEPOSIT = 'DEPOSIT', // Import: Salary, Savings -> Account
+  WITHDRAW = 'WITHDRAW', // Export: Account -> Living expenses
+  TRANSFER = 'TRANSFER', // Internal: Account A -> Account B
+  INTEREST = 'INTEREST' // Interest income
+}
+
+export enum CashFlowCategory {
+  INVESTMENT = 'INVESTMENT', // 投資
+  EDUCATION = 'EDUCATION', // 教育資金
+  TRAVEL = 'TRAVEL', // 旅遊
+  LIVING = 'LIVING', // 生活費
+  EMERGENCY = 'EMERGENCY', // 緊急預備金
+  OTHER = 'OTHER' // 其他
+}
+
+export interface Account {
+  id: string;
+  name: string;
+  currency: Currency;
+  isSubBrokerage: boolean; // For USD accounts in TW brokers
+  balance: number; // Cash balance
+}
+
+export interface CashFlow {
+  id: string;
+  date: string;
+  type: CashFlowType;
+  amount: number; // Native currency amount (e.g., USD for USD account)
+  amountTWD?: number; // Exact TWD value involved (for cost basis accuracy)
+  fee?: number; // Fee involved in the transaction (e.g. wire fee)
+  accountId: string; // Source account (or Target for Deposit)
+  targetAccountId?: string; // Only for Transfer
+  exchangeRate?: number; // If transferring between currencies
+  note?: string;
+  category?: CashFlowCategory; // 資金用途類別
+}
+
+export interface Transaction {
+  id: string;
+  date: string; // ISO Date string
+  ticker: string;
+  market: Market;
+  type: TransactionType;
+  price: number;
+  quantity: number;
+  fees: number;
+  accountId: string;
+  note?: string;
+  amount?: number;
+  category?: CashFlowCategory; // 股票用途類別
+}
+
+export interface Holding {
+  ticker: string;
+  market: Market;
+  quantity: number;
+  avgCost: number;
+  totalCost: number;
+  currentPrice: number;
+  currentValue: number;
+  unrealizedPL: number;
+  unrealizedPLPercent: number;
+  accountId: string;
+  // New fields for Asset Allocation Table
+  weight: number; // % of Total Portfolio (Invested + Cash)
+  annualizedReturn: number; // CAGR %
+  dailyChange?: number; // Price change amount
+  dailyChangePercent?: number; // Price change %
+  firstBuyDate?: string; // Helper for ROI calc
+  category?: CashFlowCategory; // 股票用途類別
+}
+
+export interface PortfolioSummary {
+  totalCostTWD: number;
+  totalValueTWD: number;
+  totalPLTWD: number;
+  totalPLPercent: number;
+  cashBalanceTWD: number; // Total cash across accounts converted to TWD
+  netInvestedTWD: number; // Total cash deposits - withdrawals
+  annualizedReturn: number; // CAGR
+  exchangeRateUsdToTwd: number;
+  jpyExchangeRate?: number; // JPY to TWD exchange rate (optional)
+  eurExchangeRate?: number; // EUR to TWD (1 EUR = N TWD)
+  gbpExchangeRate?: number; // GBP to TWD (1 GBP = N TWD)
+  hkdExchangeRate?: number; // HKD to TWD (1 HKD = N TWD)
+  krwExchangeRate?: number; // KRW to TWD (1 KRW = N TWD)
+  cnyExchangeRate?: number; // CNY to TWD (1 CNY = N TWD)
+  inrExchangeRate?: number; // INR to TWD (1 INR = N TWD)
+  cadExchangeRate?: number; // CAD to TWD (1 CAD = N TWD)
+  audExchangeRate?: number; // AUD to TWD (1 AUD = N TWD)
+  sarExchangeRate?: number; // SAR to TWD (1 SAR = N TWD)
+  brlExchangeRate?: number; // BRL to TWD (1 BRL = N TWD)
+  // Detailed fields
+  accumulatedCashDividendsTWD: number;
+  accumulatedStockDividendsTWD: number;
+  avgExchangeRate: number;
+}
+
+export interface ChartDataPoint {
+  year: string;
+  cost: number; // Purple: Cumulative Invested Cost (Principal)
+  profit: number; // New: Cumulative Profit/Loss (Assets - Cost)
+  totalAssets: number; // Green: Simulated Historical Value
+  estTotalAssets: number; // Blue: Projected/Target curve
+  assetCostRatio: number; // Red: Ratio (plotted on separate axis usually, or normalized)
+  isRealData?: boolean; // New: Indicates if this point uses real historical prices
+}
+
+export interface AssetAllocationItem {
+  name: string; // Ticker or "Cash" or "Others"
+  value: number; // TWD Value
+  ratio: number; // Percentage 0-100
+  color: string;
+}
+
+export enum AssetClass {
+  EQUITY = 'EQUITY',
+  BOND = 'BOND',
+  CASH = 'CASH',
+  OTHER = 'OTHER'
+}
+
+export interface AssetClassAllocationItem {
+  assetClass: AssetClass;
+  name: string;
+  value: number;
+  ratio: number;
+  color: string;
+}
+
+export interface AnnualPerformanceItem {
+  year: string;
+  startAssets: number;
+  netInflow: number;
+  endAssets: number;
+  profit: number;
+  roi: number;
+  isRealData?: boolean;
+}
+
+export interface AttributionPoint {
+  period: string;
+  startAssets: number;
+  endAssets: number;
+  deltaAssets: number;
+  netInflow: number;
+  income: number;
+  marketPL: number;
+  cumulativeCost: number;
+  cumulativeProfit: number;
+  isRealData?: boolean;
+  reconciledDiff: number;
+  isConsistent: boolean;
+}
+
+/** 資金流瀑布圖單一期間（金額為 TWD） */
+export interface WaterfallPeriodRow {
+  period: string;
+  startAssets: number;
+  endAssets: number;
+  netInflow: number;
+  income: number;
+  marketPL: number;
+  deposit: number;
+  withdraw: number;
+  isRealData?: boolean;
+}
+
+export interface AccountPerformance {
+  id: string;
+  name: string;
+  currency: Currency;
+  totalAssetsTWD: number;
+  marketValueTWD: number;
+  cashBalanceTWD: number;
+  profitTWD: number;
+  roi: number;
+  // 原始幣種數值（用於切換顯示）
+  totalAssetsNative?: number;
+  marketValueNative?: number;
+  cashBalanceNative?: number;
+  profitNative?: number;
+  netInvestedNative?: number;
+  unrealizedProfitTWD?: number;
+  realizedProfitTWD?: number;
+  incomeTWD?: number;
+  unrealizedProfitNative?: number;
+  realizedProfitNative?: number;
+  incomeNative?: number;
+}
+
+// New Interface for Historical Data Storage
+export interface HistoricalData {
+  [year: string]: {
+    prices: Record<string, number>; // Ticker -> Price on Dec 31
+    exchangeRate: number; // USD to TWD on Dec 31
+    jpyExchangeRate?: number; // JPY to TWD on Dec 31 (optional)
+    eurExchangeRate?: number; // EUR to TWD on Dec 31 (optional)
+    gbpExchangeRate?: number; // GBP to TWD on Dec 31 (optional)
+    hkdExchangeRate?: number; // HKD to TWD on Dec 31 (optional)
+    krwExchangeRate?: number; // KRW to TWD on Dec 31 (optional)
+    cnyExchangeRate?: number; // CNY to TWD on Dec 31 (optional)
+    cadExchangeRate?: number; // CAD to TWD on Dec 31 (optional)
+    audExchangeRate?: number; // AUD to TWD on Dec 31 (optional)
+  };
+}
+
+// 資產配置模擬相關類型
+export interface AssetSimulationItem {
+  id: string;
+  ticker: string;
+  market: Market;
+  name?: string; // 可選的資產名稱
+  annualizedReturn: number; // 年化報酬率 (%)
+  allocation: number; // 配置比例 (%)
+}
+
+export interface SimulationResult {
+  initialAmount: number; // 初始投資金額
+  years: number; // 投資年數
+  finalValue: number; // 最終價值
+  totalReturn: number; // 總報酬
+  totalReturnPercent: number; // 總報酬率 (%)
+  annualizedReturn: number; // 組合年化報酬率 (%)
+  yearlyProjections: YearlyProjection[]; // 年度預測
+  regularInvestment?: {
+    amount: number; // 定期定額金額
+    frequency: 'monthly' | 'quarterly' | 'yearly'; // 投入頻率
+    totalInvested: number; // 總投入金額（包含初始和定期定額）
+  };
+}
+
+export interface YearlyProjection {
+  year: number;
+  value: number; // 該年度末的價值
+  return: number; // 該年度的報酬
+  returnPercent: number; // 該年度的報酬率 (%)
+  regularInvestment?: number; // 該年度的定期定額投入
+  cumulativeInvestment?: number; // 累積總投入（包含初始和定期定額）
+}
+
+// 用於交易記錄和資金流動記錄的統一型別
+export interface CombinedRecord {
+  id: string;
+  date: string;
+  accountId: string;
+  type: 'TRANSACTION' | 'CASHFLOW';
+  subType: TransactionType | CashFlowType | 'TRANSFER_IN';
+  ticker: string;
+  market: Market | '';
+  price: number;
+  quantity: number;
+  amount: number;
+  fees: number;
+  description: string;
+  originalRecord: Transaction | CashFlow;
+  balance?: number;
+  balanceChange?: number;
+  // 僅用於 CASHFLOW 的欄位
+  targetAccountId?: string;
+  sourceAccountId?: string;
+  exchangeRate?: number;
+  isSourceRecord?: boolean;
+  isTargetRecord?: boolean;
+}
+
+
