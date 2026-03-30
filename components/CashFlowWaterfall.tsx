@@ -10,6 +10,7 @@ import {
   Legend,
   Cell,
   Brush,
+  TooltipProps,
 } from 'recharts';
 import { WaterfallPeriodRow } from '../portfolioTypes';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
@@ -29,6 +30,17 @@ const WF_COLOR_INFLOW_NEG = '#f97316';
 const WF_COLOR_DIVIDEND = '#eab308';
 const WF_COLOR_PL_POS = '#10b981';
 const WF_COLOR_PL_NEG = '#ef4444';
+
+type WfDatum = {
+  period: string;
+  segStart: number;
+  segFlowPos: number;
+  segFlowNeg: number;
+  segIncome: number;
+  segPL: number;
+  segFlowForTooltip: number;
+  plFill: string;
+};
 
 const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
   const { baseCurrency, rates } = useMarket();
@@ -53,6 +65,56 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
       };
     });
   }, [rows, baseCurrency, rates]);
+
+  const waterfallTooltipContent = React.useCallback(
+    ({ active, payload, label, contentStyle }: TooltipProps<number, string>) => {
+      if (!active || !payload?.length) return null;
+      const row = payload[0]?.payload as WfDatum | undefined;
+      if (!row) return null;
+
+      const flow = row.segFlowForTooltip;
+      const inflowColor =
+        flow > 0 ? WF_COLOR_INFLOW_POS : flow < 0 ? WF_COLOR_INFLOW_NEG : '#64748b';
+
+      const item = (key: string, color: string, name: string, value: number) => (
+        <li
+          key={key}
+          className="recharts-tooltip-item"
+          style={{ display: 'block', paddingTop: 4, paddingBottom: 4, color, margin: 0 }}
+        >
+          <span className="recharts-tooltip-item-name">{name}</span>
+          <span className="recharts-tooltip-item-separator"> : </span>
+          <span className="recharts-tooltip-item-value">{formatCurrency(value, baseCurrency)}</span>
+        </li>
+      );
+
+      return (
+        <div
+          className="recharts-default-tooltip"
+          style={{
+            margin: 0,
+            padding: 10,
+            backgroundColor: '#fff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 8,
+            whiteSpace: 'nowrap',
+            ...contentStyle,
+          }}
+        >
+          <p className="recharts-tooltip-label" style={{ margin: 0 }}>
+            {label}
+          </p>
+          <ul className="recharts-tooltip-item-list" style={{ padding: 0, margin: 0, listStyle: 'none' }}>
+            {item('start', WF_COLOR_START, tr.dashboard.startAssets, row.segStart)}
+            {item('flow', inflowColor, tr.dashboard.annualNetInflow, flow)}
+            {item('income', WF_COLOR_DIVIDEND, tr.waterfall.dividend, row.segIncome)}
+            {item('pl', row.plFill, tr.waterfall.stockPL, row.segPL)}
+          </ul>
+        </div>
+      );
+    },
+    [baseCurrency, tr]
+  );
 
   if (rows.length === 0) {
     return (
@@ -94,22 +156,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             />
             <Tooltip
               contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0' }}
-              formatter={(value: number, name: string, item: { dataKey?: string | number; payload?: { segFlowForTooltip?: number } }) => {
-                const key = item.dataKey != null ? String(item.dataKey) : '';
-                if (key === 'segFlowPos' || key === 'segFlowNeg') {
-                  const v = item.payload?.segFlowForTooltip ?? value;
-                  return [formatCurrency(v, baseCurrency), tr.dashboard.annualNetInflow];
-                }
-                const label =
-                  name === 'segStart'
-                    ? tr.dashboard.startAssets
-                    : name === 'segIncome'
-                      ? tr.waterfall.dividend
-                      : name === 'segPL'
-                        ? tr.waterfall.stockPL
-                        : name;
-                return [formatCurrency(value, baseCurrency), label];
-              }}
+              content={waterfallTooltipContent}
             />
             <Legend
               formatter={(value: string) => {
