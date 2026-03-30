@@ -30,6 +30,7 @@ import BatchUpdateMarketModal from './components/BatchUpdateMarketModal';
 import AssetAllocationSimulator from './components/AssetAllocationSimulator';
 import DarkModeToggle from './components/DarkModeToggle';
 import { fetchCurrentPrices } from './services/yahooFinanceService';
+import { autoSyncMissingHistoricalData, findYearsNeedingAutoHistoricalSync } from './utils/autoHistoricalSync';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
 import { Language, getLanguage, setLanguage as saveLanguage, t, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
 import { PortfolioContext } from './contexts/PortfolioContext';
@@ -287,6 +288,60 @@ const App: React.FC = () => {
     enabled: isAuthenticated && baseHoldings.length > 0,
     refreshOnVisible: true,
   });
+
+  const yearsNeedingHistoricalAuto = useMemo(
+    () =>
+      !isAuthenticated || isGuest || !userPrefix
+        ? []
+        : findYearsNeedingAutoHistoricalSync(transactions, cashFlows, accounts, historicalData),
+    [isAuthenticated, isGuest, userPrefix, transactions, cashFlows, accounts, historicalData]
+  );
+
+  /** 從未存過快照的過去年度，登入後自動向 Yahoo 補年終股價／匯率（與彈窗「一鍵抓取」同源）。localStorage tf_disable_auto_historical=1 可關閉 */
+  useEffect(() => {
+    if (!isAuthenticated || isGuest || !userPrefix) return;
+    if (yearsNeedingHistoricalAuto.length === 0) return;
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('tf_disable_auto_historical') === '1') return;
+    } catch {
+      /* ignore */
+    }
+
+    let cancelled = false;
+    const delayMs = 2800;
+    const timerId = window.setTimeout(() => {
+      if (cancelled) return;
+      void (async () => {
+        try {
+          const { data, didUpdate } = await autoSyncMissingHistoricalData(
+            transactions,
+            cashFlows,
+            accounts,
+            historicalData
+          );
+          if (cancelled || !didUpdate) return;
+          saveHistoricalData(data);
+        } catch (e) {
+          console.warn('[autoHistorical]', e);
+        }
+      })();
+    }, delayMs);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timerId);
+    };
+  }, [
+    isAuthenticated,
+    isGuest,
+    userPrefix,
+    transactions,
+    cashFlows,
+    accounts,
+    historicalData,
+    saveHistoricalData,
+    yearsNeedingHistoricalAuto.length,
+  ]);
 
   const chartData = useMemo(() => generateAdvancedChartData(
     transactions, cashFlows, accounts,
