@@ -39,30 +39,34 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
   const [activeOuterIndex, setActiveOuterIndex] = useState<number | undefined>(undefined);
-  /** 雙層 Pie 間隙與扇形 padding 會觸發連續 mouseLeave；延遲清除可避免上方標籤閃爍 */
-  const outerHoverClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const innerHoverClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const ALLOCATION_DONUT_HOVER_CLEAR_MS = 120;
+  /**
+   * 資產配置區：雙層 Pie、圖例 grid 的 gap、扇形 padding 都會觸發連續 leave。
+   * 改為只在「整塊互動區」外 pointerleave 時延遲清除；區內移動（含跨圖例格線）不會清狀態。
+   */
+  const allocationHoverClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ALLOCATION_DONUT_HOVER_CLEAR_MS = 220;
 
-  const clearOuterHoverTimer = useCallback(() => {
-    if (outerHoverClearTimerRef.current != null) {
-      clearTimeout(outerHoverClearTimerRef.current);
-      outerHoverClearTimerRef.current = null;
+  const cancelAllocationHoverClear = useCallback(() => {
+    if (allocationHoverClearTimerRef.current != null) {
+      clearTimeout(allocationHoverClearTimerRef.current);
+      allocationHoverClearTimerRef.current = null;
     }
   }, []);
-  const clearInnerHoverTimer = useCallback(() => {
-    if (innerHoverClearTimerRef.current != null) {
-      clearTimeout(innerHoverClearTimerRef.current);
-      innerHoverClearTimerRef.current = null;
-    }
-  }, []);
+
+  const scheduleAllocationHoverClear = useCallback(() => {
+    cancelAllocationHoverClear();
+    allocationHoverClearTimerRef.current = setTimeout(() => {
+      setActiveOuterIndex(undefined);
+      setActiveInnerIndex(undefined);
+      allocationHoverClearTimerRef.current = null;
+    }, ALLOCATION_DONUT_HOVER_CLEAR_MS);
+  }, [cancelAllocationHoverClear]);
 
   useEffect(
     () => () => {
-      clearOuterHoverTimer();
-      clearInnerHoverTimer();
+      cancelAllocationHoverClear();
     },
-    [clearOuterHoverTimer, clearInnerHoverTimer]
+    [cancelAllocationHoverClear]
   );
   const [tickerClassOverrides, setTickerClassOverrides] = useState<Record<string, AssetClass>>({});
   // 股/債覆寫用：寫入 localStorage：assetClassOverrides
@@ -761,6 +765,11 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
           <p className="text-xs text-slate-500 mb-3">{translations.dashboard.allocationDonutSubtitle}</p>
+          <div
+            className="allocation-donut-hover-zone"
+            onPointerEnter={cancelAllocationHoverClear}
+            onPointerLeave={scheduleAllocationHoverClear}
+          >
           {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex]) ? (
             <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
               {activeOuterIndex !== undefined && marketDistribution[activeOuterIndex] ? (
@@ -811,17 +820,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       dataKey="value"
                       nameKey="name"
                       onMouseEnter={(_: any, index: number) => {
-                        clearOuterHoverTimer();
-                        clearInnerHoverTimer();
+                        cancelAllocationHoverClear();
                         setActiveOuterIndex(index);
                         setActiveInnerIndex(undefined);
-                      }}
-                      onMouseLeave={() => {
-                        clearOuterHoverTimer();
-                        outerHoverClearTimerRef.current = setTimeout(() => {
-                          setActiveOuterIndex(undefined);
-                          outerHoverClearTimerRef.current = null;
-                        }, ALLOCATION_DONUT_HOVER_CLEAR_MS);
                       }}
                     >
                       {marketDistribution.map((entry, index) => (
@@ -843,17 +844,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       dataKey="value"
                       nameKey="name"
                       onMouseEnter={(_: any, index: number) => {
-                        clearOuterHoverTimer();
-                        clearInnerHoverTimer();
+                        cancelAllocationHoverClear();
                         setActiveInnerIndex(index);
                         setActiveOuterIndex(undefined);
-                      }}
-                      onMouseLeave={() => {
-                        clearInnerHoverTimer();
-                        innerHoverClearTimerRef.current = setTimeout(() => {
-                          setActiveInnerIndex(undefined);
-                          innerHoverClearTimerRef.current = null;
-                        }, ALLOCATION_DONUT_HOVER_CLEAR_MS);
                       }}
                     >
                       {stockBondAllocation.map((entry, index) => (
@@ -898,15 +891,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                         activeOuterIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
                       }`}
                       onMouseEnter={() => {
-                        clearOuterHoverTimer();
-                        clearInnerHoverTimer();
+                        cancelAllocationHoverClear();
                         setActiveOuterIndex(index);
                         setActiveInnerIndex(undefined);
-                      }}
-                      onMouseLeave={() => {
-                        clearOuterHoverTimer();
-                        clearInnerHoverTimer();
-                        setActiveOuterIndex(undefined);
                       }}
                     >
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
@@ -926,15 +913,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                         activeInnerIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
                       }`}
                       onMouseEnter={() => {
-                        clearOuterHoverTimer();
-                        clearInnerHoverTimer();
+                        cancelAllocationHoverClear();
                         setActiveInnerIndex(index);
                         setActiveOuterIndex(undefined);
-                      }}
-                      onMouseLeave={() => {
-                        clearOuterHoverTimer();
-                        clearInnerHoverTimer();
-                        setActiveInnerIndex(undefined);
                       }}
                     >
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
@@ -1026,6 +1007,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 )}
               </div>
             </div>
+          </div>
           </div>
         </div>
       )}
