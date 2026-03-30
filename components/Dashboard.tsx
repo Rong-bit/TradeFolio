@@ -21,6 +21,9 @@ interface Props {
   onUpdateHistorical?: () => void;
 }
 
+/** 設為 true 可重新顯示儀表板「年度績效表」區塊（暫時隱藏，未刪除程式） */
+const SHOW_ANNUAL_PERFORMANCE_TABLE = false;
+
 const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const { summary, holdings, chartData, annualPerformance,
     accountPerformance, cashFlows, transactions, accounts: portfolioAccounts, computedAccounts,
@@ -1016,8 +1019,8 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       {!isGuest && <MarketPerformanceChart />}
       {!isGuest && <DividendHeatmap />}
 
-      {/* Annual Performance Table */}
-      {!isGuest && annualPerformance.length > 0 && (
+      {/* Annual Performance Table（顯示與否見 SHOW_ANNUAL_PERFORMANCE_TABLE） */}
+      {SHOW_ANNUAL_PERFORMANCE_TABLE && !isGuest && annualPerformance.length > 0 && (
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
               <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.annualPerformance}</h3>
