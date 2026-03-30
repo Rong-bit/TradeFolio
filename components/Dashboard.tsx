@@ -187,14 +187,21 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
 
     const totalMarketValue = Object.values(marketValues).reduce((sum, val) => sum + val, 0);
     
-    return Object.entries(marketValues).map(([market, value]) => ({
-      market: market as Market,
-      value,
-      ratio: totalMarketValue > 0 ? (value / totalMarketValue) * 100 : 0,
-      color: marketMeta[market as Market].color,
-      label: marketMeta[market as Market].name,
-      flag: marketMeta[market as Market].flag,
-    })).filter(item => item.value > 0);
+    return Object.entries(marketValues)
+      .map(([market, value]) => {
+        const m = marketMeta[market as Market];
+        return {
+          market: market as Market,
+          value,
+          ratio: totalMarketValue > 0 ? (value / totalMarketValue) * 100 : 0,
+          color: m.color,
+          label: m.name,
+          flag: m.flag,
+          /** Recharts Pie 預設 nameKey="name"；缺此欄位時 tooltip 會顯示資料索引 0、1、2 */
+          name: `${m.flag} ${m.name}`,
+        };
+      })
+      .filter(item => item.value > 0);
     }, [holdings, rates, marketMeta, portfolioAccounts]);
 
   const stockBondAllocation = useMemo(() => {
@@ -777,6 +784,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       outerRadius={102}
                       paddingAngle={1.5}
                       dataKey="value"
+                      nameKey="name"
                       onMouseEnter={(_: any, index: number) => {
                         setActiveOuterIndex(index);
                         setActiveInnerIndex(undefined);
@@ -800,6 +808,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       outerRadius={66}
                       paddingAngle={2}
                       dataKey="value"
+                      nameKey="name"
                       onMouseEnter={(_: any, index: number) => {
                         setActiveInnerIndex(index);
                         setActiveOuterIndex(undefined);
@@ -819,7 +828,13 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       formatter={(value: number, name: string, props: any) => {
                         const payload = props?.payload;
                         const ratio = typeof payload?.ratio === 'number' ? ` (${payload.ratio.toFixed(1)}%)` : '';
-                        return [formatCurrency(toBase(value), baseCurrency), `${name}${ratio}`];
+                        const labelText =
+                          typeof payload?.name === 'string' && payload.name.length > 0
+                            ? payload.name
+                            : payload?.flag != null && payload?.label != null
+                              ? `${payload.flag} ${payload.label}`
+                              : name;
+                        return [formatCurrency(toBase(value), baseCurrency), `${labelText}${ratio}`];
                       }}
                       contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px", backgroundColor: "#ffffff", color: "#1e293b" }}
                     />
