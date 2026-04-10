@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market, AssetClass } from '../portfolioTypes';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildWaterfallQuarterRows, buildQuarterlyTrendData, getAssetClassForTicker } from '../utils/calculations';
+import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildQuarterlyTrendData, getAssetClassForTicker } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -38,7 +38,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const [showCostDetailModal, setShowCostDetailModal] = useState(false);
   const [showAccountInUSD, setShowAccountInUSD] = useState(false); 
   const [showAnnualInUSD, setShowAnnualInUSD] = useState(false);
-  const [mainChartTab, setMainChartTab] = useState<'cumulative' | 'year' | 'quarter'>('cumulative');
+  const [mainChartTab, setMainChartTab] = useState<'cumulative' | 'year'>('cumulative');
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
   const [activeOuterIndex, setActiveOuterIndex] = useState<number | undefined>(undefined);
@@ -358,11 +358,6 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     () => buildWaterfallYearRows(attributionSeries, cashFlows, portfolioAccounts, rates),
     [attributionSeries, cashFlows, portfolioAccounts, rates]
   );
-  const waterfallQuarterRows = useMemo(
-    () => buildWaterfallQuarterRows(chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates),
-    [chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates]
-  );
-
   return (
     <div className="space-y-6">
       {/* ① Summary Cards — enhanced with trend arrows + sparkline */}
@@ -547,7 +542,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         )}
       </div>
 
-      {/* 主圖：累積損益（按季顯示）／按年／按季（資金流瀑布） */}
+      {/* 主圖：累積損益（按季）／按年資金流瀑布 */}
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-3">
@@ -563,7 +558,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
               <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 self-end sm:self-center">
-                {(['cumulative', 'year', 'quarter'] as const).map(tab => (
+                {(['cumulative', 'year'] as const).map(tab => (
                   <button
                     key={tab}
                     type="button"
@@ -576,9 +571,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                   >
                     {tab === 'cumulative'
                       ? translations.dashboard.chartLabels.accumulatedPL
-                      : tab === 'year'
-                        ? translations.waterfall.byYear
-                        : translations.waterfall.byQuarter}
+                      : translations.waterfall.byYear}
                   </button>
                 ))}
               </div>
@@ -768,10 +761,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 </div>
               </>
             ) : (
-              <CashFlowWaterfall
-                hideHeader
-                rows={mainChartTab === 'year' ? waterfallYearRows : waterfallQuarterRows}
-              />
+              <CashFlowWaterfall hideHeader rows={waterfallYearRows} />
             )}
           </div>
         </div>
