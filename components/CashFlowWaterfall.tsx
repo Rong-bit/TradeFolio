@@ -166,8 +166,8 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
                 return value;
               }}
             />
-            <Bar dataKey="segPLPos" name="segPLPos" stackId="pl" fill={WF_COLOR_PL_POS} radius={[2, 2, 0, 0]} />
-            <Bar dataKey="segPLNeg" name="segPLNeg" stackId="pl" fill={WF_COLOR_PL_NEG} radius={[0, 0, 2, 2]} legendType="none" />
+            <Bar dataKey="segPLPos" name="segPLPos" stackId="wf" fill={WF_COLOR_PL_POS} radius={[2, 2, 0, 0]} />
+            <Bar dataKey="segPLNeg" name="segPLNeg" stackId="wf" fill={WF_COLOR_PL_NEG} radius={[0, 0, 2, 2]} legendType="none" />
             <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar
               dataKey="segFlowPos"
