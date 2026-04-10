@@ -1221,6 +1221,7 @@ export const buildWaterfallQuarterRows = (
  * - 資產（totalAssets）：優先讀 historicalData["YYYY-Q1"] 季末快照，沒有則線性插值
  * - 累積損益（profit）：totalAssets - cost
  * - isRealData：有季末快照的期間為 true，插值估算為 false
+ * - 當前日曆年只產出至「目前季度」為止（例如 4 月僅 Q1、Q2），最後一季接 chartData 即時總資產
  */
 export const buildQuarterlyTrendData = (
   chartData: ChartDataPoint[],
@@ -1266,6 +1267,11 @@ export const buildQuarterlyTrendData = (
     .map(d => Number(d.year));
 
   if (sortedYears.length === 0) return [];
+
+  const buildDate = new Date();
+  const calendarYear = buildDate.getFullYear();
+  const calendarMonth = buildDate.getMonth() + 1;
+  const currentQuarter = Math.min(4, Math.floor((calendarMonth - 1) / 3) + 1);
 
   /** 用季末快照計算持倉市值（TWD） */
   const calcAssetsFromSnapshot = (
@@ -1335,7 +1341,11 @@ export const buildQuarterlyTrendData = (
     const prevYearEst = yi > 0 ? (estByYear.get(sortedYears[yi - 1]) ?? 0) : 0;
     const yearEndEst = estByYear.get(yearNum) ?? 0;
 
-    for (let q = 1; q <= 4; q++) {
+    if (yearNum > calendarYear) continue;
+
+    const lastQuarterThisYear = yearNum < calendarYear ? 4 : currentQuarter;
+
+    for (let q = 1; q <= lastQuarterThisYear; q++) {
       const qStart = (q - 1) * 3 + 1;
       const qEnd = q * 3;
 
@@ -1351,7 +1361,7 @@ export const buildQuarterlyTrendData = (
       let totalAssets: number;
       let isRealData: boolean;
 
-      if (q === 4) {
+      if (q === lastQuarterThisYear) {
         totalAssets = yearEndAssets;
         isRealData = yearIsReal;
       } else {
