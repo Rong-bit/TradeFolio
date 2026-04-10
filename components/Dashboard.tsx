@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market, AssetClass } from '../portfolioTypes';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildQuarterlyTrendData, getAssetClassForTicker } from '../utils/calculations';
+import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, AssetClass } from '../portfolioTypes';
+import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildQuarterlyTrendData, getAssetClassForTicker, calculateAssetAllocation } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -11,11 +11,7 @@ import MarketPerformanceChart from './MarketPerformanceChart';
 import CashFlowWaterfall from './CashFlowWaterfall';
 import DividendHeatmap from './DividendHeatmap';
 import { t, translate } from '../utils/i18n';
-import {
-  ALLOCATION_INNER_BOND_COLOR,
-  ALLOCATION_INNER_EQUITY_COLOR,
-  ALLOCATION_MARKET_COLORS,
-} from '../utils/allocationDonutColors';
+import { ALLOCATION_INNER_BOND_COLOR, ALLOCATION_INNER_EQUITY_COLOR } from '../utils/allocationDonutColors';
 
 interface Props {
   onUpdateHistorical?: () => void;
@@ -143,98 +139,10 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     });
   };
 
-  const marketMeta = useMemo(() => {
-    const isZh = language === 'zh-TW' || language === 'zh-CN';
-    return {
-      [Market.TW]: { name: isZh ? '台股' : 'Taiwan', color: ALLOCATION_MARKET_COLORS[Market.TW], flag: '🇹🇼' },
-      [Market.US]: { name: isZh ? '美股' : 'US', color: ALLOCATION_MARKET_COLORS[Market.US], flag: '🇺🇸' },
-      [Market.UK]: {
-        name: language === 'zh-TW' ? '英國股' : language === 'zh-CN' ? '英国股' : 'UK',
-        color: ALLOCATION_MARKET_COLORS[Market.UK],
-        flag: '🇬🇧',
-      },
-      [Market.JP]: { name: isZh ? '日本股' : 'Japan', color: ALLOCATION_MARKET_COLORS[Market.JP], flag: '🇯🇵' },
-      [Market.CN]: {
-        name: language === 'zh-TW' ? '中國滬' : language === 'zh-CN' ? '中国沪' : 'China',
-        color: ALLOCATION_MARKET_COLORS[Market.CN],
-        flag: '🇨🇳',
-      },
-      [Market.SZ]: {
-        name: language === 'zh-TW' ? '中國深' : language === 'zh-CN' ? '中国深' : 'Shenzhen',
-        color: ALLOCATION_MARKET_COLORS[Market.SZ],
-        flag: '🇨🇳',
-      },
-      [Market.IN]: { name: isZh ? '印度' : 'India', color: ALLOCATION_MARKET_COLORS[Market.IN], flag: '🇮🇳' },
-      [Market.CA]: { name: isZh ? '加拿大' : 'Canada', color: ALLOCATION_MARKET_COLORS[Market.CA], flag: '🇨🇦' },
-      [Market.FR]: {
-        name: language === 'zh-TW' ? '法國' : language === 'zh-CN' ? '法国股' : 'France',
-        color: ALLOCATION_MARKET_COLORS[Market.FR],
-        flag: '🇫🇷',
-      },
-      [Market.HK]: { name: isZh ? '香港' : 'HK', color: ALLOCATION_MARKET_COLORS[Market.HK], flag: '🇭🇰' },
-      [Market.KR]: {
-        name: language === 'zh-TW' ? '韓國' : language === 'zh-CN' ? '韩国' : 'Korea',
-        color: ALLOCATION_MARKET_COLORS[Market.KR],
-        flag: '🇰🇷',
-      },
-      [Market.DE]: {
-        name: language === 'zh-TW' ? '德國' : language === 'zh-CN' ? '德国' : 'Germany',
-        color: ALLOCATION_MARKET_COLORS[Market.DE],
-        flag: '🇩🇪',
-      },
-      [Market.AU]: { name: isZh ? '澳洲' : 'Australia', color: ALLOCATION_MARKET_COLORS[Market.AU], flag: '🇦🇺' },
-      [Market.SA]: {
-        name: language === 'zh-TW' ? '沙烏地' : language === 'zh-CN' ? '沙特' : 'Saudi',
-        color: ALLOCATION_MARKET_COLORS[Market.SA],
-        flag: '🇸🇦',
-      },
-      [Market.BR]: { name: isZh ? '巴西' : 'Brazil', color: ALLOCATION_MARKET_COLORS[Market.BR], flag: '🇧🇷' },
-    } as Record<Market, { name: string; color: string; flag: string }>;
-  }, [language]);
-
-  // 計算市場分布比例
-  const marketDistribution = useMemo(() => {
-    const marketValues: Record<Market, number> = {
-      [Market.TW]: 0,
-      [Market.US]: 0,
-      [Market.UK]: 0,
-      [Market.JP]: 0,
-      [Market.CN]: 0,
-      [Market.SZ]: 0,
-      [Market.IN]: 0,
-      [Market.CA]: 0,
-      [Market.FR]: 0,
-      [Market.HK]: 0,
-      [Market.KR]: 0,
-      [Market.DE]: 0,
-      [Market.AU]: 0,
-      [Market.SA]: 0,
-      [Market.BR]: 0,
-    };
-
-    holdings.forEach((h: Holding) => {
-      const valTwd = holdingValueToTWD(h, portfolioAccounts, rates);
-      marketValues[h.market] = (marketValues[h.market] || 0) + valTwd;
-    });
-
-    const totalMarketValue = Object.values(marketValues).reduce((sum, val) => sum + val, 0);
-    
-    return Object.entries(marketValues)
-      .map(([market, value]) => {
-        const m = marketMeta[market as Market];
-        return {
-          market: market as Market,
-          value,
-          ratio: totalMarketValue > 0 ? (value / totalMarketValue) * 100 : 0,
-          color: m.color,
-          label: m.name,
-          flag: m.flag,
-          /** Recharts Pie 預設 nameKey="name"；缺此欄位時 tooltip 會顯示資料索引 0、1、2 */
-          name: `${m.flag} ${m.name}`,
-        };
-      })
-      .filter(item => item.value > 0);
-    }, [holdings, rates, marketMeta, portfolioAccounts]);
+  /** 外圈：依 ticker 合併持倉市值占比（不含現金；同一標的不同帳戶會加總） */
+  const tickerAllocationOuter = useMemo(() => {
+    return calculateAssetAllocation(holdings, 0, rates, portfolioAccounts).filter(item => item.value > 0);
+  }, [holdings, rates, portfolioAccounts]);
 
   const stockBondAllocation = useMemo(() => {
     let stockValue = 0;
@@ -767,7 +675,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         </div>
       )}
 
-      {/* Combined Market + Stock/Bond Dual Donut */}
+      {/* 個股／ETF 外圈 + 股債內圈 */}
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
@@ -777,20 +685,20 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             onPointerEnter={cancelAllocationHoverClear}
             onPointerLeave={scheduleAllocationHoverClear}
           >
-          {(activeOuterIndex !== undefined && marketDistribution[activeOuterIndex]) || (activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex]) ? (
+          {(activeOuterIndex !== undefined && tickerAllocationOuter[activeOuterIndex]) || (activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex]) ? (
             <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-              {activeOuterIndex !== undefined && marketDistribution[activeOuterIndex] ? (
+              {activeOuterIndex !== undefined && tickerAllocationOuter[activeOuterIndex] ? (
                 <>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: marketDistribution[activeOuterIndex].color }} />
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {marketDistribution[activeOuterIndex].flag} {marketDistribution[activeOuterIndex].label}
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: tickerAllocationOuter[activeOuterIndex].color }} />
+                  <span className="font-semibold font-mono text-slate-900 dark:text-slate-100">
+                    {tickerAllocationOuter[activeOuterIndex].name}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-semibold">{translations.dashboard.marketDistribution}</span>
                   <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
-                    {marketDistribution[activeOuterIndex].ratio.toFixed(1)}%
+                    {tickerAllocationOuter[activeOuterIndex].ratio.toFixed(1)}%
                   </span>
                   <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
-                    {formatCurrency(toBase(marketDistribution[activeOuterIndex].value), baseCurrency)}
+                    {formatCurrency(toBase(tickerAllocationOuter[activeOuterIndex].value), baseCurrency)}
                   </span>
                 </>
               ) : activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex] ? (
@@ -814,11 +722,11 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
           ) : null}
           <div className="w-full flex flex-col lg:flex-row items-center gap-6">
             <div className="w-full max-w-sm h-72">
-              {isMounted && (stockBondAllocation.length > 0 || marketDistribution.length > 0) ? (
+              {isMounted && (stockBondAllocation.length > 0 || tickerAllocationOuter.length > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={marketDistribution}
+                      data={tickerAllocationOuter}
                       cx="50%"
                       cy="50%"
                       innerRadius={72}
@@ -832,9 +740,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                         setActiveInnerIndex(undefined);
                       }}
                     >
-                      {marketDistribution.map((entry, index) => (
+                      {tickerAllocationOuter.map((entry, index) => (
                         <Cell
-                          key={`outer-${entry.market}`}
+                          key={`outer-${entry.name}-${index}`}
                           fill={entry.color}
                           opacity={activeOuterIndex === undefined || activeOuterIndex === index ? 1 : 0.4}
                           style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
@@ -870,11 +778,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                         const payload = props?.payload;
                         const ratio = typeof payload?.ratio === 'number' ? ` (${payload.ratio.toFixed(1)}%)` : '';
                         const labelText =
-                          typeof payload?.name === 'string' && payload.name.length > 0
-                            ? payload.name
-                            : payload?.flag != null && payload?.label != null
-                              ? `${payload.flag} ${payload.label}`
-                              : name;
+                          typeof payload?.name === 'string' && payload.name.length > 0 ? payload.name : name;
                         return [formatCurrency(toBase(value), baseCurrency), `${labelText}${ratio}`];
                       }}
                       contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px", backgroundColor: "#ffffff", color: "#1e293b" }}
@@ -891,9 +795,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               <div>
                 <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.legendMarketOuter}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {marketDistribution.map((item, index) => (
+                  {tickerAllocationOuter.map((item, index) => (
                     <div
-                      key={item.market}
+                      key={`${item.name}-${index}`}
                       className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
                         activeOuterIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
                       }`}
@@ -904,7 +808,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       }}
                     >
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.flag} {item.label}</span>
+                      <span className="text-sm sm:text-xs font-semibold flex-1 font-mono text-slate-900 dark:text-slate-100">{item.name}</span>
                       <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
                     </div>
                   ))}
