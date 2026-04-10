@@ -102,9 +102,9 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             {label}
           </p>
           <ul className="recharts-tooltip-item-list" style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-            {item('flow', inflowColor, tr.dashboard.annualNetInflow, flow)}
-            {item('income', WF_COLOR_DIVIDEND, tr.waterfall.dividend, row.segIncome)}
             {item('pl', row.plFill, tr.waterfall.stockPL, row.segPL)}
+            {item('income', WF_COLOR_DIVIDEND, tr.waterfall.dividend, row.segIncome)}
+            {item('flow', inflowColor, tr.dashboard.annualNetInflow, flow)}
           </ul>
         </div>
       );
@@ -162,6 +162,12 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
                 return value;
               }}
             />
+            <Bar dataKey="segPL" name="segPL" stackId="wf" radius={[2, 2, 0, 0]}>
+              {data.map((entry, i) => (
+                <Cell key={`p-${i}`} fill={entry.plFill} />
+              ))}
+            </Bar>
+            <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar
               dataKey="segFlowPos"
               name="segFlowPos"
@@ -177,12 +183,6 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
               radius={[0, 0, 0, 0]}
               legendType="none"
             />
-            <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
-            <Bar dataKey="segPL" name="segPL" stackId="wf" radius={[2, 2, 0, 0]}>
-              {data.map((entry, i) => (
-                <Cell key={`p-${i}`} fill={entry.plFill} />
-              ))}
-            </Bar>
             {data.length > 8 && (
               <Brush dataKey="period" height={24} stroke="#94a3b8" travellerWidth={8} />
             )}
