@@ -8,7 +8,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-  Cell,
   Brush,
   TooltipProps,
 } from 'recharts';
@@ -32,12 +31,13 @@ const WF_COLOR_PL_NEG = '#ef4444';
 
 type WfDatum = {
   period: string;
+  segPLPos: number;
+  segPLNeg: number;
   segFlowPos: number;
   segFlowNeg: number;
   segIncome: number;
-  segPL: number;
+  segPLForTooltip: number;
   segFlowForTooltip: number;
-  plFill: string;
 };
 
 const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
@@ -50,15 +50,17 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
   const data = useMemo(() => {
     return rows.map(r => {
       const flow = toBase(r.netInflow);
+      const pl = toBase(r.marketPL);
       return {
         period: r.period,
+        segPLPos: pl >= 0 ? pl : 0,
+        segPLNeg: pl < 0 ? pl : 0,
         /** 拆成兩段固定 fill，避免堆疊 Bar 上 Cell 顏色被 Recharts 忽略 */
         segFlowPos: flow >= 0 ? flow : 0,
         segFlowNeg: flow < 0 ? flow : 0,
         segIncome: toBase(r.income),
-        segPL: toBase(r.marketPL),
+        segPLForTooltip: pl,
         segFlowForTooltip: flow,
-        plFill: r.marketPL >= 0 ? WF_COLOR_PL_POS : WF_COLOR_PL_NEG,
       };
     });
   }, [rows, baseCurrency, rates]);
@@ -102,7 +104,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             {label}
           </p>
           <ul className="recharts-tooltip-item-list" style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-            {item('pl', row.plFill, tr.waterfall.stockPL, row.segPL)}
+            {item('pl', row.segPLForTooltip >= 0 ? WF_COLOR_PL_POS : WF_COLOR_PL_NEG, tr.waterfall.stockPL, row.segPLForTooltip)}
             {item('income', WF_COLOR_DIVIDEND, tr.waterfall.dividend, row.segIncome)}
             {item('flow', inflowColor, tr.dashboard.annualNetInflow, flow)}
           </ul>
@@ -156,17 +158,14 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             />
             <Legend
               formatter={(value: string) => {
+                if (value === 'segPLPos') return tr.waterfall.stockPL;
                 if (value === 'segFlowPos') return tr.dashboard.annualNetInflow;
                 if (value === 'segIncome') return tr.waterfall.dividend;
-                if (value === 'segPL') return tr.waterfall.stockPL;
                 return value;
               }}
             />
-            <Bar dataKey="segPL" name="segPL" stackId="wf" radius={[2, 2, 0, 0]}>
-              {data.map((entry, i) => (
-                <Cell key={`p-${i}`} fill={entry.plFill} />
-              ))}
-            </Bar>
+            <Bar dataKey="segPLPos" name="segPLPos" stackId="wf" fill={WF_COLOR_PL_POS} radius={[2, 2, 0, 0]} />
+            <Bar dataKey="segPLNeg" name="segPLNeg" stackId="wf" fill={WF_COLOR_PL_NEG} radius={[0, 0, 2, 2]} legendType="none" />
             <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar
               dataKey="segFlowPos"
