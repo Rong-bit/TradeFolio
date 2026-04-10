@@ -24,7 +24,6 @@ interface Props {
   hideHeader?: boolean;
 }
 
-const WF_COLOR_START = '#94a3b8';
 const WF_COLOR_INFLOW_POS = '#3b82f6';
 const WF_COLOR_INFLOW_NEG = '#f97316';
 const WF_COLOR_DIVIDEND = '#eab308';
@@ -33,7 +32,6 @@ const WF_COLOR_PL_NEG = '#ef4444';
 
 type WfDatum = {
   period: string;
-  segStart: number;
   segFlowPos: number;
   segFlowNeg: number;
   segIncome: number;
@@ -54,7 +52,6 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
       const flow = toBase(r.netInflow);
       return {
         period: r.period,
-        segStart: toBase(r.startAssets),
         /** 拆成兩段固定 fill，避免堆疊 Bar 上 Cell 顏色被 Recharts 忽略 */
         segFlowPos: flow >= 0 ? flow : 0,
         segFlowNeg: flow < 0 ? flow : 0,
@@ -105,7 +102,6 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             {label}
           </p>
           <ul className="recharts-tooltip-item-list" style={{ padding: 0, margin: 0, listStyle: 'none' }}>
-            {item('start', WF_COLOR_START, tr.dashboard.startAssets, row.segStart)}
             {item('flow', inflowColor, tr.dashboard.annualNetInflow, flow)}
             {item('income', WF_COLOR_DIVIDEND, tr.waterfall.dividend, row.segIncome)}
             {item('pl', row.plFill, tr.waterfall.stockPL, row.segPL)}
@@ -160,14 +156,12 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             />
             <Legend
               formatter={(value: string) => {
-                if (value === 'segStart') return tr.dashboard.startAssets;
                 if (value === 'segFlowPos') return tr.dashboard.annualNetInflow;
                 if (value === 'segIncome') return tr.waterfall.dividend;
                 if (value === 'segPL') return tr.waterfall.stockPL;
                 return value;
               }}
             />
-            <Bar dataKey="segStart" name="segStart" stackId="wf" fill={WF_COLOR_START} radius={[0, 0, 0, 0]} />
             <Bar
               dataKey="segFlowPos"
               name="segFlowPos"
@@ -198,16 +192,6 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
 
       <div className="mt-3 border-t border-slate-200 dark:border-slate-600 pt-2.5 space-y-2 text-[11px] leading-snug text-slate-600 dark:text-slate-400">
         <div className="flex flex-wrap gap-x-5 gap-y-2">
-          <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
-            <span
-              className="w-3 h-3 rounded-sm shrink-0 mt-0.5 ring-1 ring-slate-200/80 dark:ring-slate-600"
-              style={{ backgroundColor: WF_COLOR_START }}
-            />
-            <span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.dashboard.startAssets}</span>
-              <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintStart}</span>
-            </span>
-          </span>
           <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
             <span className="inline-flex gap-0.5 shrink-0 mt-0.5">
               <span
