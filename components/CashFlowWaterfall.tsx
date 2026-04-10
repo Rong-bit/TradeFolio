@@ -133,7 +133,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
       )}
       <div className="w-full h-[300px] md:h-[450px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 16, left: 4, bottom: 56 }}>
+          <BarChart data={data} margin={{ top: 10, right: 16, left: 4, bottom: 56 }} stackOffset="sign">
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:stroke-slate-700" />
             <XAxis
               dataKey="period"
@@ -166,7 +166,6 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
                 return value;
               }}
             />
-            <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar
               dataKey="segFlowPos"
               name="segFlowPos"
@@ -174,6 +173,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
               fill={WF_COLOR_INFLOW_POS}
               radius={[0, 0, 0, 0]}
             />
+            <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar
               dataKey="segFlowNeg"
               name="segFlowNeg"
