@@ -502,6 +502,93 @@ export const fetchHistoricalYearEndData = async (
   };
 };
 
+/** 季末日期：Q1=3/31, Q2=6/30, Q3=9/30, Q4=12/31 */
+const QUARTER_END: Record<number, { month: number; day: number }> = {
+  1: { month: 2, day: 31 },  // Date.UTC month 0-based → month=2 → March
+  2: { month: 5, day: 30 },
+  3: { month: 8, day: 30 },
+  4: { month: 11, day: 31 },
+};
+
+/**
+ * 抓指定年份 Q1~Q3 季末股價（Q4 已由 fetchHistoricalYearEndData 處理）。
+ * 回傳 { "2023-Q1": { prices, exchangeRate, ... }, ... }
+ */
+export const fetchHistoricalQuarterEndData = async (
+  year: number,
+  tickers: string[],
+  markets?: YahooMarket[],
+  quarters: (1 | 2 | 3)[] = [1, 2, 3],
+): Promise<Record<string, {
+  prices: Record<string, number>;
+  exchangeRate: number;
+  jpyExchangeRate?: number;
+  eurExchangeRate?: number;
+  gbpExchangeRate?: number;
+  hkdExchangeRate?: number;
+  krwExchangeRate?: number;
+  cnyExchangeRate?: number;
+  cadExchangeRate?: number;
+  audExchangeRate?: number;
+}>> => {
+  const neededRates = neededCurrencies(markets ?? []);
+  const result: Record<string, any> = {};
+
+  for (const q of quarters) {
+    const { month, day } = QUARTER_END[q];
+    const endTs   = Math.floor(Date.UTC(year, month, day, 23, 59, 59) / 1000);
+    const startTs = Math.floor(Date.UTC(year, month - 1, 1, 0, 0, 0) / 1000); // 前一個月初開始抓
+
+    const [priceList, ...rateResults] = await Promise.all([
+      Promise.all(tickers.map(async (ticker, i) => {
+        const sym = toYahoo(ticker, markets?.[i]);
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?period1=${startTs}&period2=${endTs}&interval=1d`;
+        const resp = await tryFetch(url);
+        const { closes } = extractOhlcv(resp?.json ?? null);
+        for (let j = closes.length - 1; j >= 0; j--) {
+          if (closes[j] != null && closes[j]! > 0) return closes[j];
+        }
+        return null;
+      })),
+      ...neededRates.map(currency => fetchHistoricalRate(currency, year)),
+    ]);
+
+    const rateMap: Record<string, number> = {};
+    neededRates.forEach((currency, i) => {
+      const v = rateResults[i] as number | undefined;
+      if (v != null && v > 0) rateMap[currency] = v;
+    });
+
+    const prices: Record<string, number> = {};
+    tickers.forEach((ticker, i) => {
+      const p = (priceList as (number | null)[])[i];
+      if (p != null && p > 0) {
+        prices[ticker] = p;
+        const clean = ticker.replace(/^TPE:/i, '');
+        if (clean !== ticker) prices[clean] = p;
+      }
+    });
+
+    result[`${year}-Q${q}`] = {
+      prices,
+      exchangeRate:    rateMap['USD'] ?? 31.5,
+      jpyExchangeRate: rateMap['JPY'],
+      eurExchangeRate: rateMap['EUR'],
+      gbpExchangeRate: rateMap['GBP'],
+      hkdExchangeRate: rateMap['HKD'],
+      krwExchangeRate: rateMap['KRW'],
+      cnyExchangeRate: rateMap['CNY'],
+      cadExchangeRate: rateMap['CAD'],
+      audExchangeRate: rateMap['AUD'],
+    };
+
+    // 季之間間隔，避免 rate limit
+    if (q < Math.max(...quarters)) await new Promise(r => setTimeout(r, 400));
+  }
+
+  return result;
+};
+
 export const fetchAnnualizedReturn = async (
   ticker: string,
   market?: YahooMarket,
