@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { HistoricalData, Market } from '../types';
 import { getPortfolioStateAtDate } from '../utils/calculations';
-import { fetchHistoricalYearEndData } from '../services/yahooFinanceService';
+import { fetchHistoricalYearEndData, fetchHistoricalQuarterEndData } from '../services/yahooFinanceService';
 
 interface Props {
   onSave: (data: HistoricalData) => void;
@@ -242,7 +242,9 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
           return 'US';
       };
 
-      // 逐年抓取，避免同時大量請求
+      const pickRate = (current: number | undefined, fetched: number | undefined) =>
+          (forceRefresh || !current || current === 0) && fetched && fetched > 0 ? fetched : current;
+
       let accumulated: HistoricalData = { ...localData };
 
       for (let i = 0; i < years.length; i++) {
@@ -250,80 +252,123 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
           setBatchProgress({ current: i + 1, total: years.length, year: y });
 
           try {
+              // ── 年底股價 ──────────────────────────────────────────────
               const yearEndDate = new Date(`${y}-12-31`);
-              const { holdings } = getPortfolioStateAtDate(yearEndDate, transactions, cashFlows, accounts);
-              const yearTickers = Object.keys(holdings)
-                  .filter(k => holdings[k] > 0.000001)
-                  .map(k => {
-                      const [market, ticker] = k.split('-');
-                      return { market, ticker };
+              const { holdings: yearEndHoldings } = getPortfolioStateAtDate(yearEndDate, transactions, cashFlows, accounts);
+              const yearTickers = Object.keys(yearEndHoldings)
+                  .filter(k => yearEndHoldings[k] > 0.000001)
+                  .map(k => { const [market, ticker] = k.split('-'); return { market, ticker }; });
+
+              if (yearTickers.length > 0) {
+                  const prevYearData = accumulated[y] || { prices: {}, exchangeRate: 0 };
+                  const toQuery = forceRefresh ? yearTickers : yearTickers.filter(t => {
+                      const clean = t.ticker.replace(/\(BAK\)/gi, '');
+                      const display = t.market === Market.TW && !clean.includes('TPE:') ? `TPE:${clean}` : clean;
+                      const val = prevYearData.prices[display] ?? prevYearData.prices[clean] ?? prevYearData.prices[t.ticker];
+                      return val === undefined || val === null || val === 0;
                   });
+                  const rateNeedsUpdate = forceRefresh || !prevYearData.exchangeRate || prevYearData.exchangeRate === 0 || prevYearData.exchangeRate === 30;
 
-              if (yearTickers.length === 0) continue;
+                  if (toQuery.length > 0 || rateNeedsUpdate) {
+                      const queryTickers = (toQuery.length > 0 ? toQuery : [yearTickers[0]]).map(t => {
+                          const clean = t.ticker.replace(/\(BAK\)/gi, '');
+                          return t.market === Market.TW && !clean.includes('TPE:') ? `TPE:${clean}` : clean;
+                      });
+                      const queryMarkets = (toQuery.length > 0 ? toQuery : [yearTickers[0]]).map(t => toMarketCode(t.market as Market));
+                      const result = await fetchHistoricalYearEndData(y, queryTickers, queryMarkets);
 
-              const prevYearData = accumulated[y] || { prices: {}, exchangeRate: 0 };
-
-              // 決定要查哪些 ticker（forceRefresh 時全部，否則只補缺漏）
-              const toQuery = forceRefresh ? yearTickers : yearTickers.filter(t => {
-                  const clean = t.ticker.replace(/\(BAK\)/gi, '');
-                  const display = t.market === Market.TW && !clean.includes('TPE:') ? `TPE:${clean}` : clean;
-                  const val = prevYearData.prices[display] ?? prevYearData.prices[clean] ?? prevYearData.prices[t.ticker];
-                  return val === undefined || val === null || val === 0;
-              });
-
-              const rateNeedsUpdate = forceRefresh || !prevYearData.exchangeRate || prevYearData.exchangeRate === 0 || prevYearData.exchangeRate === 30;
-
-              if (toQuery.length === 0 && !rateNeedsUpdate) continue;
-
-              const queryTickers = (toQuery.length > 0 ? toQuery : [yearTickers[0]]).map(t => {
-                  const clean = t.ticker.replace(/\(BAK\)/gi, '');
-                  return t.market === Market.TW && !clean.includes('TPE:') ? `TPE:${clean}` : clean;
-              });
-              const queryMarkets = (toQuery.length > 0 ? toQuery : [yearTickers[0]]).map(t => toMarketCode(t.market as Market));
-
-              const result = await fetchHistoricalYearEndData(y, queryTickers, queryMarkets);
-
-              const pickRate = (current: number | undefined, fetched: number | undefined) =>
-                  (forceRefresh || !current || current === 0) && fetched && fetched > 0 ? fetched : current;
-
-              const shouldUpdateRate = forceRefresh || !prevYearData.exchangeRate || prevYearData.exchangeRate === 0 || prevYearData.exchangeRate === 30;
-              const newRate = shouldUpdateRate ? (result.exchangeRate || 30) : prevYearData.exchangeRate;
-
-              const mergedPrices = { ...prevYearData.prices };
-              Object.entries(result.prices).forEach(([key, price]) => {
-                  mergedPrices[key] = price;
-                  if (key.startsWith('TPE:')) mergedPrices[key.replace(/^TPE:/i, '')] = price;
-                  else if (key.match(/^\d{4}$/)) mergedPrices[`TPE:${key}`] = price;
-              });
-
-              accumulated = {
-                  ...accumulated,
-                  [y]: {
-                      ...prevYearData,
-                      prices: mergedPrices,
-                      exchangeRate: newRate,
-                      jpyExchangeRate: pickRate(prevYearData.jpyExchangeRate, result.jpyExchangeRate),
-                      eurExchangeRate: pickRate(prevYearData.eurExchangeRate, result.eurExchangeRate),
-                      gbpExchangeRate: pickRate(prevYearData.gbpExchangeRate, result.gbpExchangeRate),
-                      hkdExchangeRate: pickRate(prevYearData.hkdExchangeRate, result.hkdExchangeRate),
-                      krwExchangeRate: pickRate(prevYearData.krwExchangeRate, result.krwExchangeRate),
-                      cnyExchangeRate: pickRate(prevYearData.cnyExchangeRate, result.cnyExchangeRate),
-                      cadExchangeRate: pickRate(prevYearData.cadExchangeRate, result.cadExchangeRate),
-                      audExchangeRate: pickRate(prevYearData.audExchangeRate, result.audExchangeRate),
+                      const newRate = rateNeedsUpdate ? (result.exchangeRate || 30) : prevYearData.exchangeRate;
+                      const mergedPrices = { ...prevYearData.prices };
+                      Object.entries(result.prices).forEach(([key, price]) => {
+                          mergedPrices[key] = price;
+                          if (key.startsWith('TPE:')) mergedPrices[key.replace(/^TPE:/i, '')] = price;
+                          else if (key.match(/^\d{4}$/)) mergedPrices[`TPE:${key}`] = price;
+                      });
+                      accumulated = {
+                          ...accumulated,
+                          [y]: {
+                              ...prevYearData,
+                              prices: mergedPrices,
+                              exchangeRate: newRate,
+                              jpyExchangeRate: pickRate(prevYearData.jpyExchangeRate, result.jpyExchangeRate),
+                              eurExchangeRate: pickRate(prevYearData.eurExchangeRate, result.eurExchangeRate),
+                              gbpExchangeRate: pickRate(prevYearData.gbpExchangeRate, result.gbpExchangeRate),
+                              hkdExchangeRate: pickRate(prevYearData.hkdExchangeRate, result.hkdExchangeRate),
+                              krwExchangeRate: pickRate(prevYearData.krwExchangeRate, result.krwExchangeRate),
+                              cnyExchangeRate: pickRate(prevYearData.cnyExchangeRate, result.cnyExchangeRate),
+                              cadExchangeRate: pickRate(prevYearData.cadExchangeRate, result.cadExchangeRate),
+                              audExchangeRate: pickRate(prevYearData.audExchangeRate, result.audExchangeRate),
+                          }
+                      };
                   }
-              };
+              }
+
+              // ── Q1~Q3 季末股價 ────────────────────────────────────────
+              // 各季用該季末的持倉，確保持倉正確（例如 Q1 賣掉的股票不會出現在 Q2）
+              const quartersToFetch = ([1, 2, 3] as (1|2|3)[]).filter(q => {
+                  if (forceRefresh) return true;
+                  const snap = accumulated[`${y}-Q${q}`];
+                  return !snap || Object.keys(snap.prices).length === 0;
+              });
+
+              if (quartersToFetch.length > 0) {
+                  // 取各季持倉的聯集作為查詢標的
+                  const allQTickers = new Map<string, string>(); // key -> market
+                  for (const q of quartersToFetch) {
+                      const qMonth = q * 3;
+                      const qDay = q === 1 || q === 3 ? 31 : 30;
+                      const qDate = new Date(`${y}-${String(qMonth).padStart(2,'0')}-${qDay}`);
+                      const { holdings: qHoldings } = getPortfolioStateAtDate(qDate, transactions, cashFlows, accounts);
+                      Object.keys(qHoldings).filter(k => qHoldings[k] > 0.000001).forEach(k => {
+                          const [market, ticker] = k.split('-');
+                          const clean = ticker.replace(/\(BAK\)/gi, '');
+                          const display = market === Market.TW && !clean.includes('TPE:') ? `TPE:${clean}` : clean;
+                          allQTickers.set(display, market);
+                      });
+                  }
+                  const queryTickers = Array.from(allQTickers.keys());
+                  const queryMarkets = queryTickers.map(t => toMarketCode(allQTickers.get(t) as Market));
+
+                  if (queryTickers.length > 0) {
+                      const quarterResults = await fetchHistoricalQuarterEndData(y, queryTickers, queryMarkets, quartersToFetch);
+                      Object.entries(quarterResults).forEach(([key, result]) => {
+                          const prevSnap = accumulated[key] || { prices: {}, exchangeRate: 0 };
+                          const mergedPrices = { ...prevSnap.prices };
+                          Object.entries(result.prices).forEach(([ticker, price]) => {
+                              mergedPrices[ticker] = price;
+                              if (ticker.startsWith('TPE:')) mergedPrices[ticker.replace(/^TPE:/i, '')] = price;
+                              else if (ticker.match(/^\d{4}$/)) mergedPrices[`TPE:${ticker}`] = price;
+                          });
+                          accumulated = {
+                              ...accumulated,
+                              [key]: {
+                                  prices: mergedPrices,
+                                  exchangeRate: (forceRefresh || !prevSnap.exchangeRate || prevSnap.exchangeRate === 0)
+                                      ? (result.exchangeRate || 31.5) : prevSnap.exchangeRate,
+                                  jpyExchangeRate: pickRate(prevSnap.jpyExchangeRate, result.jpyExchangeRate),
+                                  eurExchangeRate: pickRate(prevSnap.eurExchangeRate, result.eurExchangeRate),
+                                  gbpExchangeRate: pickRate(prevSnap.gbpExchangeRate, result.gbpExchangeRate),
+                                  hkdExchangeRate: pickRate(prevSnap.hkdExchangeRate, result.hkdExchangeRate),
+                                  krwExchangeRate: pickRate(prevSnap.krwExchangeRate, result.krwExchangeRate),
+                                  cnyExchangeRate: pickRate(prevSnap.cnyExchangeRate, result.cnyExchangeRate),
+                                  cadExchangeRate: pickRate(prevSnap.cadExchangeRate, result.cadExchangeRate),
+                                  audExchangeRate: pickRate(prevSnap.audExchangeRate, result.audExchangeRate),
+                              }
+                          };
+                      });
+                  }
+              }
           } catch (e) {
               console.warn(`${y} 年抓取失敗，跳過`, e);
           }
 
-          // 每年之間稍微等待，避免 API rate limit
-          if (i < years.length - 1) await new Promise(r => setTimeout(r, 500));
+          if (i < years.length - 1) await new Promise(r => setTimeout(r, 600));
       }
 
       setLocalData(accumulated);
       setBatchProgress(null);
       setLoading(false);
-      alert(`所有年度抓取完成！共處理 ${years.length} 個年度。`);
+      alert(`所有年度抓取完成！共處理 ${years.length} 個年度（含年底 + Q1~Q3 季末）。`);
   };
 
   const handleSave = () => {
@@ -373,7 +418,9 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                          className={`px-4 py-2 rounded shadow text-sm font-bold text-white transition flex items-center gap-2
                            ${loading ? 'bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                        >
-                           {batchProgress ? `⏳ 抓取中 ${batchProgress.current}/${batchProgress.total}（${batchProgress.year} 年）` : '🚀 一鍵抓取所有年度'}
+                           {batchProgress
+                               ? `⏳ 抓取中 ${batchProgress.current}/${batchProgress.total}（${batchProgress.year} 年）`
+                               : '🚀 一鍵抓取所有年度'}
                        </button>
                    </div>
                    <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
@@ -479,8 +526,9 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
            <div className="text-xs p-3 rounded" style={{ backgroundColor: "#fefce8", color: "#78716c", border: "1px solid #fef08a" }}>
                💡 說明：
                <ul className="list-disc pl-5 mt-1 space-y-1">
-                   <li>AI 僅會自動補齊<strong style={{ color: "#1e293b" }}>數值為 0</strong> 的缺漏資料，已存在的數據不會被覆蓋。</li>
-                   <li>若匯率為預設值 (30)，AI 會嘗試更新；若您已手動設定其他匯率，則不會被覆蓋。</li>
+                   <li>「🤖 補齊本年度」：僅補齊<strong style={{ color: "#1e293b" }}>數值為 0</strong> 的缺漏資料，已存在的數據不會被覆蓋。</li>
+                   <li>「🚀 一鍵抓取」：同時抓取<strong style={{ color: "#1e293b" }}>年底（12/31）+ Q1~Q3 季末（3/31、6/30、9/30）</strong>股價，讓累積損益圖可按季顯示真實數據。</li>
+                   <li>勾選「強制重新抓取」可覆蓋已有數據。</li>
                </ul>
            </div>
         </div>

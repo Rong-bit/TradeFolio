@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, Market, AssetClass } from '../portfolioTypes';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildWaterfallQuarterRows, getAssetClassForTicker } from '../utils/calculations';
+import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildWaterfallQuarterRows, buildQuarterlyTrendData, getAssetClassForTicker } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -28,7 +28,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const { summary, holdings, chartData, annualPerformance,
     accountPerformance, cashFlows, transactions, accounts: portfolioAccounts, computedAccounts,
     updatePrice: onUpdatePrice, handleAutoUpdatePrices: onAutoUpdate,
-    refreshIntervalMs } = usePortfolio();
+    refreshIntervalMs, historicalData } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { language, isGuest } = useUI();
   const accounts = computedAccounts;
@@ -341,6 +341,17 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     }));
   }, [attributionSeries, chartData, toBase]);
 
+  const quarterlyTrendData = useMemo(() => {
+    return buildQuarterlyTrendData(chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData).map(item => ({
+      year: item.period,
+      cost: toBase(item.cost),
+      profit: toBase(item.profit),
+      totalAssets: toBase(item.totalAssets),
+      estTotalAssets: 0,
+      isRealData: item.isRealData,
+    }));
+  }, [chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData, toBase]);
+
   const hasAttributionMismatch = attributionSeries.some(item => !item.isConsistent);
 
   const waterfallYearRows = useMemo(
@@ -536,7 +547,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         )}
       </div>
 
-      {/* 主圖：累積損益（資產與成本趨勢）／按年／按季（資金流瀑布） */}
+      {/* 主圖：累積損益（按季顯示）／按年／按季（資金流瀑布） */}
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-3">
@@ -586,10 +597,10 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             {mainChartTab === 'cumulative' ? (
               <>
                 <div className="w-full h-[300px] md:h-[450px]">
-                  {isMounted && trendChartData.length > 0 ? (
+                  {isMounted && quarterlyTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
-                        data={trendChartData}
+                        data={quarterlyTrendData}
                         margin={{ top: 10, right: 30, left: 10, bottom: 60 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -703,7 +714,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                           stackId="a"
                           barSize={30}
                         >
-                          {trendChartData.map((entry, index: number) => (
+                          {quarterlyTrendData.map((entry, index: number) => (
                             <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? '#10b981' : '#ef4444'} />
                           ))}
                         </Bar>
@@ -741,7 +752,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     <div className="h-full flex items-center justify-center text-slate-400">
                       {!isMounted
                         ? translations.dashboard.chartLoading
-                        : trendChartData.length === 0
+                        : quarterlyTrendData.length === 0
                           ? translations.dashboard.noChartData
                           : translations.dashboard.chartLoading}
                     </div>
@@ -752,6 +763,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     資料對帳提醒：部分年度「資產變化」與「淨流入 + 收益 + 市場損益」存在微小差異，請檢查匯率或歷史估值來源。
                   </div>
                 )}
+                <div className="mt-2 text-xs text-slate-400">
+                  ✅ 有季末快照（Yahoo 真實數據）　⚠️ 線性插值估算（請至歷史股價校正 → 一鍵抓取補充）
+                </div>
               </>
             ) : (
               <CashFlowWaterfall
