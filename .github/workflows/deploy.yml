@@ -39,6 +39,7 @@ jobs:
         run: npm run build
         env:
           API_KEY: ${{ secrets.API_KEY }}
+          VITE_YAHOO_PROXY_URL: ${{ vars.VITE_YAHOO_PROXY_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
