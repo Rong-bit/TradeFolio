@@ -10,6 +10,7 @@ import {
   Legend,
   Brush,
   TooltipProps,
+  ReferenceLine,
 } from 'recharts';
 import { WaterfallPeriodRow } from '../portfolioTypes';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
@@ -152,6 +153,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
                 return val.toFixed(0);
               }}
             />
+            <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="4 3" />
             <Tooltip
               contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0' }}
               content={waterfallTooltipContent}
@@ -164,8 +166,8 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
                 return value;
               }}
             />
-            <Bar dataKey="segPLPos" name="segPLPos" stackId="wf" fill={WF_COLOR_PL_POS} radius={[2, 2, 0, 0]} />
-            <Bar dataKey="segPLNeg" name="segPLNeg" stackId="wf" fill={WF_COLOR_PL_NEG} radius={[0, 0, 2, 2]} legendType="none" />
+            <Bar dataKey="segPLPos" name="segPLPos" stackId="wf" fill={WF_COLOR_PL_POS} radius={[2, 2, 0, 0]} minPointSize={2} />
+            <Bar dataKey="segPLNeg" name="segPLNeg" stackId="wf" fill={WF_COLOR_PL_NEG} radius={[0, 0, 2, 2]} legendType="none" minPointSize={3} />
             <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar
               dataKey="segFlowPos"
