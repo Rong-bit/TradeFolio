@@ -347,7 +347,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
       cost: toBase(item.cost),
       profit: toBase(item.profit),
       totalAssets: toBase(item.totalAssets),
-      estTotalAssets: 0,
+      estTotalAssets: toBase(item.estTotalAssets),
       isRealData: item.isRealData,
     }));
   }, [chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData, toBase]);
