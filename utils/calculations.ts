@@ -1215,6 +1215,181 @@ export const buildWaterfallQuarterRows = (
   return rows;
 };
 
+/**
+ * 將年度 attributionSeries 拆成季度趨勢點，供累積損益圖按季顯示。
+ * - 累積成本（cost）：依現金流真實累加，精確到該季末
+ * - 資產（totalAssets）：優先讀 historicalData["YYYY-Q1"] 季末快照，沒有則線性插值
+ * - 累積損益（profit）：totalAssets - cost
+ * - isRealData：有季末快照的期間為 true，插值估算為 false
+ */
+export const buildQuarterlyTrendData = (
+  chartData: ChartDataPoint[],
+  attribution: AttributionPoint[],
+  cashFlows: CashFlow[],
+  transactions: Transaction[],
+  accounts: Account[],
+  rates: ExchangeRates,
+  historicalData?: HistoricalData,
+): Array<{
+  period: string;
+  cost: number;
+  profit: number;
+  totalAssets: number;
+  isRealData: boolean;
+}> => {
+  if (chartData.length === 0 || attribution.length === 0) return [];
+
+  const getCashFlowAmountTWD = (cf: CashFlow): number => {
+    if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
+    const account = accounts.find(a => a.id === cf.accountId);
+    const sourceCurrency = account?.currency ?? Currency.TWD;
+    const rate = (cf.exchangeRate && cf.exchangeRate > 0)
+      ? cf.exchangeRate
+      : currencyToTWDRate(sourceCurrency, rates);
+    return cf.amount * rate;
+  };
+
+  // 建立年底資產快照 map
+  const assetsByYear = new Map<number, number>();
+  const isRealByYear = new Map<number, boolean>();
+  chartData.forEach(d => {
+    assetsByYear.set(Number(d.year), d.totalAssets);
+    isRealByYear.set(Number(d.year), !!d.isRealData);
+  });
+
+  const sortedYears = [...chartData]
+    .sort((a, b) => Number(a.year) - Number(b.year))
+    .map(d => Number(d.year));
+
+  if (sortedYears.length === 0) return [];
+
+  /** 用季末快照計算持倉市值（TWD） */
+  const calcAssetsFromSnapshot = (
+    yearNum: number,
+    q: number,
+    snapRates: ExchangeRates
+  ): number | null => {
+    const key = `${yearNum}-Q${q}`;
+    const snap = historicalData?.[key];
+    if (!snap || Object.keys(snap.prices).length === 0) return null;
+
+    // 季末日期（Q1=3/31, Q2=6/30, Q3=9/30）
+    const qEndMonth = q * 3;
+    const qEndDay = q === 1 || q === 3 ? 31 : 30;
+    const snapDate = new Date(`${yearNum}-${String(qEndMonth).padStart(2,'0')}-${qEndDay}`);
+    const { accountHoldings, cashBalances } = getPortfolioStateAtDate(snapDate, transactions, cashFlows, accounts);
+
+    let stockValueTWD = 0;
+    accountHoldings.forEach(({ accountId, market, ticker, quantity: qty }) => {
+      if (qty <= 0.000001) return;
+      const cleanTicker = ticker.replace(/\(BAK\)/gi, '').trim();
+      let price = 0;
+      if (snap.prices[ticker]) price = snap.prices[ticker];
+      else if (market === Market.TW) {
+        if (cleanTicker.startsWith('TPE:')) {
+          const withoutPrefix = cleanTicker.replace(/^TPE:/i, '');
+          price = snap.prices[cleanTicker] || snap.prices[withoutPrefix] || 0;
+        } else {
+          price = snap.prices[`TPE:${cleanTicker}`] || snap.prices[cleanTicker] || 0;
+        }
+      } else {
+        price = snap.prices[cleanTicker] || 0;
+      }
+      if (price <= 0) return;
+      const nativeValue = market === Market.TW ? Math.round(qty * price) : qty * price;
+      const acc = accounts.find(a => a.id === accountId);
+      const valuationCurrency = acc?.currency ?? marketToCurrency(market);
+      stockValueTWD += nativeValueInAccountCurrencyToTWD(nativeValue, valuationCurrency, snapRates);
+    });
+
+    let cashValueTWD = 0;
+    Object.entries(cashBalances).forEach(([accId, bal]) => {
+      const acc = accounts.find(a => a.id === accId);
+      if (acc) cashValueTWD += bal * currencyToTWDRate(acc.currency, snapRates);
+    });
+
+    return stockValueTWD + cashValueTWD;
+  };
+
+  let cumulativeCostTWD = 0;
+
+  const result: Array<{
+    period: string;
+    cost: number;
+    profit: number;
+    totalAssets: number;
+    isRealData: boolean;
+  }> = [];
+
+  for (let yi = 0; yi < sortedYears.length; yi++) {
+    const yearNum = sortedYears[yi];
+    const yearStr = String(yearNum);
+    const prevYearAssets = yi > 0 ? (assetsByYear.get(sortedYears[yi - 1]) ?? 0) : 0;
+    const yearEndAssets = assetsByYear.get(yearNum) ?? 0;
+    const yearIsReal = isRealByYear.get(yearNum) ?? false;
+
+    for (let q = 1; q <= 4; q++) {
+      const qStart = (q - 1) * 3 + 1;
+      const qEnd = q * 3;
+
+      cashFlows.forEach(cf => {
+        const d = new Date(cf.date);
+        if (d.getFullYear() !== yearNum) return;
+        const m = d.getMonth() + 1;
+        if (m < qStart || m > qEnd) return;
+        if (cf.type === CashFlowType.DEPOSIT) cumulativeCostTWD += getCashFlowAmountTWD(cf);
+        else if (cf.type === CashFlowType.WITHDRAW) cumulativeCostTWD -= getCashFlowAmountTWD(cf);
+      });
+
+      let totalAssets: number;
+      let isRealData: boolean;
+
+      if (q === 4) {
+        totalAssets = yearEndAssets;
+        isRealData = yearIsReal;
+      } else {
+        // 嘗試用季末快照計算真實資產
+        const snap = historicalData?.[`${yearStr}-Q${q}`];
+        const snapRates: ExchangeRates = snap ? {
+          exchangeRateUsdToTwd: snap.exchangeRate ?? rates.exchangeRateUsdToTwd,
+          jpyExchangeRate: snap.jpyExchangeRate ?? rates.jpyExchangeRate,
+          eurExchangeRate: snap.eurExchangeRate ?? rates.eurExchangeRate,
+          gbpExchangeRate: snap.gbpExchangeRate ?? rates.gbpExchangeRate,
+          hkdExchangeRate: snap.hkdExchangeRate ?? rates.hkdExchangeRate,
+          krwExchangeRate: snap.krwExchangeRate ?? rates.krwExchangeRate,
+          cnyExchangeRate: snap.cnyExchangeRate ?? rates.cnyExchangeRate,
+          cadExchangeRate: snap.cadExchangeRate ?? rates.cadExchangeRate,
+          audExchangeRate: snap.audExchangeRate ?? rates.audExchangeRate,
+          inrExchangeRate: rates.inrExchangeRate,
+          sarExchangeRate: rates.sarExchangeRate,
+          brlExchangeRate: rates.brlExchangeRate,
+        } : rates;
+
+        const realAssets = snap ? calcAssetsFromSnapshot(yearNum, q, snapRates) : null;
+
+        if (realAssets !== null && realAssets > 0) {
+          totalAssets = realAssets;
+          isRealData = true;
+        } else {
+          // 退回線性插值
+          totalAssets = prevYearAssets + (yearEndAssets - prevYearAssets) * (q / 4);
+          isRealData = false;
+        }
+      }
+
+      result.push({
+        period: `${yearStr}-Q${q}`,
+        cost: cumulativeCostTWD,
+        profit: totalAssets - cumulativeCostTWD,
+        totalAssets,
+        isRealData,
+      });
+    }
+  }
+
+  return result;
+};
+
 export const calculateAccountPerformance = (
   accounts: Account[],
   holdings: Holding[],
