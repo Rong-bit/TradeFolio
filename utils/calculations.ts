@@ -1235,6 +1235,8 @@ export const buildQuarterlyTrendData = (
   cost: number;
   profit: number;
   totalAssets: number;
+  /** 與 generateAdvancedChartData 年終 8% 參考一致，季內線性插值 */
+  estTotalAssets: number;
   isRealData: boolean;
 }> => {
   if (chartData.length === 0 || attribution.length === 0) return [];
@@ -1252,9 +1254,11 @@ export const buildQuarterlyTrendData = (
   // 建立年底資產快照 map
   const assetsByYear = new Map<number, number>();
   const isRealByYear = new Map<number, boolean>();
+  const estByYear = new Map<number, number>();
   chartData.forEach(d => {
     assetsByYear.set(Number(d.year), d.totalAssets);
     isRealByYear.set(Number(d.year), !!d.isRealData);
+    estByYear.set(Number(d.year), d.estTotalAssets);
   });
 
   const sortedYears = [...chartData]
@@ -1318,6 +1322,7 @@ export const buildQuarterlyTrendData = (
     cost: number;
     profit: number;
     totalAssets: number;
+    estTotalAssets: number;
     isRealData: boolean;
   }> = [];
 
@@ -1327,6 +1332,8 @@ export const buildQuarterlyTrendData = (
     const prevYearAssets = yi > 0 ? (assetsByYear.get(sortedYears[yi - 1]) ?? 0) : 0;
     const yearEndAssets = assetsByYear.get(yearNum) ?? 0;
     const yearIsReal = isRealByYear.get(yearNum) ?? false;
+    const prevYearEst = yi > 0 ? (estByYear.get(sortedYears[yi - 1]) ?? 0) : 0;
+    const yearEndEst = estByYear.get(yearNum) ?? 0;
 
     for (let q = 1; q <= 4; q++) {
       const qStart = (q - 1) * 3 + 1;
@@ -1377,11 +1384,14 @@ export const buildQuarterlyTrendData = (
         }
       }
 
+      const estTotalAssets = prevYearEst + (yearEndEst - prevYearEst) * (q / 4);
+
       result.push({
         period: `${yearStr}-Q${q}`,
         cost: cumulativeCostTWD,
         profit: totalAssets - cumulativeCostTWD,
         totalAssets,
+        estTotalAssets,
         isRealData,
       });
     }
