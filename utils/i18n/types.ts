@@ -49,6 +49,8 @@ export interface Translations {
     search: string;
     logoutConfirm: string;
     upgrade: string;
+    /** 頁尾：交易資料僅存本地、隱私說明 */
+    footerLocalDataPrivacy: string;
   };
   // 導航
   nav: {

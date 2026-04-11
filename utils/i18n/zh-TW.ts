@@ -27,6 +27,7 @@ export const zhTW: Translations = {
     search: '搜尋',
     logoutConfirm: '確定要登出系統嗎？',
     upgrade: '申請開通',
+    footerLocalDataPrivacy: '此應用程式所有交易數據皆儲存於本地端，保障您的隱私安全。',
   },
   nav: {
     dashboard: '儀表板',

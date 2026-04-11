@@ -4,7 +4,7 @@ import { en } from './en';
 export const hi: Translations = {
   ...en,
   baseCurrency: { TWD: 'ताइवान डॉलर', USD: 'अमेरिकी डॉलर', JPY: 'जापानी येन', EUR: 'यूरो', GBP: 'ब्रिटिश पाउंड', HKD: 'हाँगकाँग डॉलर', KRW: 'कोरियाई वॉन', CAD: 'कैनेडियन डॉलर', INR: 'भारतीय रुपया', CNY: 'चीनी युआन', AUD: 'ऑस्ट्रेलियाई डॉलर', SAR: 'सऊदी रियाल', BRL: 'ब्राज़ीलियाई रियाल' },
-  common: { ...en.common, confirm: 'पुष्टि', cancel: 'रद्द', delete: 'हटाएं', edit: 'संपादित', save: 'सहेजें', close: 'बंद', loading: 'लोड हो रहा...', search: 'खोज', logoutConfirm: 'लॉग आउट करें?', upgrade: 'अपग्रेड' },
+  common: { ...en.common, confirm: 'पुष्टि', cancel: 'रद्द', delete: 'हटाएं', edit: 'संपादित', save: 'सहेजें', close: 'बंद', loading: 'लोड हो रहा...', search: 'खोज', logoutConfirm: 'लॉग आउट करें?', upgrade: 'अपग्रेड', footerLocalDataPrivacy: 'आपकी गोपनीयता के लिए सभी लेनदेन डेटा केवल आपके डिवाइस पर संग्रहीत होता है।' },
   nav: { dashboard: 'डैशबोर्ड', history: 'इतिहास', funds: 'निधि', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'सिम्युलेटर', help: 'सहायता', logout: 'लॉग आउट' },
   pages: { ...en.pages, dashboard: 'पोर्टफोलियो', history: 'लेनदेन और नकदी प्रवाह', funds: 'निधि प्रबंधन', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'आवंटन सिम्युलेटर', help: 'सेटिंग और बैकअप' },
   login: { title: 'TradeView लॉगिन', subtitle: 'ताइवान और US स्टॉक पोर्टफोलियो', email: 'ईमेल', password: 'पासवर्ड', login: 'लॉग इन', privacy: 'गोपनीयता', privacyDesc: 'डेटा लोकल संग्रहीत। कोई निजी डेटा एकत्र नहीं।', riskDisclaimer: 'चेतावनी', riskDisclaimerDesc: 'निवेश में जोखिम है।' },

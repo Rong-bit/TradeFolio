@@ -27,6 +27,8 @@ export const ja: Translations = {
     search: '検索',
     logoutConfirm: 'ログアウトしますか？',
     upgrade: 'アップグレード',
+    footerLocalDataPrivacy:
+      '取引データはすべて端末に保存され、プライバシーを保護します。',
   },
   nav: {
     dashboard: 'ダッシュボード',

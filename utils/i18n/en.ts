@@ -27,6 +27,8 @@ export const en: Translations = {
     search: 'Search',
     logoutConfirm: 'Are you sure you want to logout?',
     upgrade: 'Upgrade',
+    footerLocalDataPrivacy:
+      'All transaction data is stored locally on your device to protect your privacy.',
   },
   nav: {
     dashboard: 'Dashboard',

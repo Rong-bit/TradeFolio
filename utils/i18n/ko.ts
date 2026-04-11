@@ -27,6 +27,8 @@ export const ko: Translations = {
     search: '검색',
     logoutConfirm: '로그아웃 하시겠습니까?',
     upgrade: '업그레이드',
+    footerLocalDataPrivacy:
+      '모든 거래 데이터는 기기에만 저장되어 개인정보를 보호합니다.',
   },
   nav: {
     dashboard: '대시보드',

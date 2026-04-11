@@ -4,7 +4,7 @@ import { en } from './en';
 export const ar: Translations = {
   ...en,
   baseCurrency: { ...en.baseCurrency, TWD: 'دولار تايواني', USD: 'دولار أمريكي', JPY: 'ين ياباني', EUR: 'يورو', GBP: 'جنيه إسترليني', HKD: 'دولار هونغ كونغ', KRW: 'وون كوري', CAD: 'دولار كندي', INR: 'روبية هندية', CNY: 'يوان صيني', AUD: 'دولار أسترالي', SAR: 'ريال سعودي', BRL: 'ريال برازيلي' },
-  common: { ...en.common, confirm: 'تأكيد', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', save: 'حفظ', close: 'إغلاق', loading: 'جاري التحميل...', search: 'بحث', logoutConfirm: 'تسجيل الخروج؟', upgrade: 'ترقية' },
+  common: { ...en.common, confirm: 'تأكيد', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', save: 'حفظ', close: 'إغلاق', loading: 'جاري التحميل...', search: 'بحث', logoutConfirm: 'تسجيل الخروج؟', upgrade: 'ترقية', footerLocalDataPrivacy: 'تُخزَّن جميع بيانات المعاملات محلياً على جهازك لحماية خصوصيتك.' },
   nav: { dashboard: 'لوحة التحكم', history: 'السجل', funds: 'الأموال', accounts: 'الحسابات', rebalance: 'إعادة التوازن', simulator: 'المحاكي', help: 'النظام', logout: 'تسجيل الخروج' },
   pages: { ...en.pages, dashboard: 'لوحة المحفظة', history: 'السجل (المعاملات والتدفق)', funds: 'إدارة الأموال', accounts: 'إدارة الحسابات', rebalance: 'إعادة التوازن', simulator: 'محاكي التخصيص', help: 'النظام والنسخ' },
   login: { title: 'تسجيل الدخول TradeView', subtitle: 'محفظة أسهم تايوان والولايات المتحدة', email: 'البريد', password: 'كلمة المرور', login: 'دخول', privacy: 'الخصوصية', privacyDesc: 'البيانات مخزنة محلياً. لا جمع للبيانات الشخصية.', riskDisclaimer: 'إخلاء المسؤولية', riskDisclaimerDesc: 'الاستثمار ينطوي على مخاطر.' },
