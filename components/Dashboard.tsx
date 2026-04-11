@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, AssetClass } from '../portfolioTypes';
 import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildQuarterlyTrendData, getAssetClassForTicker, calculateAssetAllocation } from '../utils/calculations';
@@ -485,7 +486,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               )}
             </div>
             <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 shrink-0">
-              <div className="flex items-center gap-2 self-end sm:self-center">
+              <div className="inline-flex items-center gap-0 self-end sm:self-center">
                 <button
                   type="button"
                   onClick={() => setMainChartTab('cumulative')}
@@ -964,29 +965,31 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
               <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.annualPerformance}</h3>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
-                <button
-                  type="button"
-                  onClick={() => setShowAnnualInUSD(false)}
-                  className={`px-3 py-1.5 text-sm rounded transition ${
-                    !showAnnualInUSD
-                      ? 'bg-indigo-600 text-white font-medium'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
-                  }`}
-                >
-                  {baseCurrency}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAnnualInUSD(true)}
-                  className={`px-3 py-1.5 text-sm rounded transition ${
-                    showAnnualInUSD
-                      ? 'bg-indigo-600 text-white font-medium'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
-                  }`}
-                >
-                  {translations.dashboard.usd}
-                </button>
+                <span className="text-sm text-slate-600 shrink-0">{translations.dashboard.displayCurrency}:</span>
+                <div className="inline-flex items-center gap-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowAnnualInUSD(false)}
+                    className={`px-3 py-1.5 text-sm rounded transition ${
+                      !showAnnualInUSD
+                        ? 'bg-indigo-600 text-white font-medium'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                    }`}
+                  >
+                    {baseCurrency}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAnnualInUSD(true)}
+                    className={`px-3 py-1.5 text-sm rounded transition ${
+                      showAnnualInUSD
+                        ? 'bg-indigo-600 text-white font-medium'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                    }`}
+                  >
+                    {translations.dashboard.usd}
+                  </button>
+                </div>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -1056,29 +1059,31 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
           <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.brokerageAccounts}</h3>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
-            <button
-              type="button"
-              onClick={() => setShowAccountInUSD(false)}
-              className={`px-3 py-1.5 text-sm rounded transition ${
-                !showAccountInUSD
-                  ? 'bg-indigo-600 text-white font-medium'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
-              }`}
-            >
-              {baseCurrency}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAccountInUSD(true)}
-              className={`px-3 py-1.5 text-sm rounded transition ${
-                showAccountInUSD
-                  ? 'bg-indigo-600 text-white font-medium'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
-              }`}
-            >
-              {translations.dashboard.usd}
-            </button>
+            <span className="text-sm text-slate-600 shrink-0">{translations.dashboard.displayCurrency}:</span>
+            <div className="inline-flex items-center gap-0">
+              <button
+                type="button"
+                onClick={() => setShowAccountInUSD(false)}
+                className={`px-3 py-1.5 text-sm rounded transition ${
+                  !showAccountInUSD
+                    ? 'bg-indigo-600 text-white font-medium'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                }`}
+              >
+                {baseCurrency}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAccountInUSD(true)}
+                className={`px-3 py-1.5 text-sm rounded transition ${
+                  showAccountInUSD
+                    ? 'bg-indigo-600 text-white font-medium'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                }`}
+              >
+                {translations.dashboard.usd}
+              </button>
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">
