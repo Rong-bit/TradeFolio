@@ -16,7 +16,8 @@ import {
   HistoricalData,
   BaseCurrency,
   AttributionPoint,
-  WaterfallPeriodRow
+  WaterfallPeriodRow,
+  CombinedRecord
 } from '../types';
 
 /** 匯率物件（X→TWD：1 X = N TWD） */
@@ -380,68 +381,174 @@ export const getTransferTargetAmount = (
   return amount / exchangeRate;  // 兩方皆非 USD：匯率 (target/source) = 1 target = X source，故 目標 = 來源 / 匯率
 };
 
-export const calculateAccountBalances = (accounts: Account[], cashFlows: CashFlow[], transactions: Transaction[]): Account[] => {
-    const balMap: Record<string, number> = {};
-    accounts.forEach(a => balMap[a.id] = 0); 
-    
-    cashFlows.forEach(cf => {
-      if (cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.INTEREST) {
-        balMap[cf.accountId] = (balMap[cf.accountId] || 0) + cf.amount;
-      } else if (cf.type === CashFlowType.WITHDRAW) {
-        balMap[cf.accountId] = (balMap[cf.accountId] || 0) - cf.amount;
-      } else if (cf.type === CashFlowType.TRANSFER) {
-        const sourceAcc = accounts.find(a => a.id === cf.accountId);
-        // 內部轉帳：從來源帳戶扣除金額和手續費
-        let feeAmount = cf.fee || 0;
-        // 如果手續費是 TWD 但來源帳戶不是 TWD，需要轉換
-        if (feeAmount > 0 && sourceAcc && sourceAcc.currency !== Currency.TWD) {
-          // 使用轉帳匯率轉換手續費（如果有的話，且匯率不是 1）
-          // 匯率為 1 表示同幣種轉帳，此時手續費應該已經是帳戶幣種
-          if (cf.exchangeRate && cf.exchangeRate > 0 && cf.exchangeRate !== 1) {
-            if (sourceAcc.currency === Currency.USD) {
-              // TWD 手續費轉換為 USD：feeTWD / exchangeRate (exchangeRate 是 TWD/USD)
-              feeAmount = feeAmount / cf.exchangeRate;
-            } else if (sourceAcc.currency === Currency.JPY) {
-              // TWD 手續費轉換為 JPY：feeTWD / exchangeRate (exchangeRate 是 TWD/JPY)
-              feeAmount = feeAmount / cf.exchangeRate;
-            }
-          }
-          // 如果匯率是 1 或不存在（同幣種轉帳），假設手續費已經是帳戶幣種（保持原值）
-        }
-        balMap[cf.accountId] = (balMap[cf.accountId] || 0) - cf.amount - feeAmount;
-        if (cf.targetAccountId) {
-             const targetAcc = accounts.find(a => a.id === cf.targetAccountId);
-             if (sourceAcc && targetAcc) {
-                const inAmount = getTransferTargetAmount(sourceAcc.currency, targetAcc.currency, cf.amount, cf.exchangeRate);
-                balMap[cf.targetAccountId!] = (balMap[cf.targetAccountId!] || 0) + inAmount;
-             }
-        }
+/**
+ * 與「歷史記錄」頁合併列表相同的入帳順序、金額欄位與每筆餘額四捨五入至分；
+ * 證券戶列表的 balance 應與此一致，避免與交易紀錄餘額欄差 0.0x（例如轉帳手續費只在一側入帳、或台股 floor 與顯示金額不一致）。
+ */
+export function buildLedgerState(
+  transactions: Transaction[],
+  cashFlows: CashFlow[],
+  accounts: Account[]
+): { combinedRecordsSorted: CombinedRecord[]; finalBalancesByAccountId: Record<string, number> } {
+  const txR: CombinedRecord[] = transactions.map(tx => {
+    let amt = tx.amount ?? 0;
+    if (!tx.amount) {
+      if (tx.type === TransactionType.BUY || tx.type === TransactionType.TRANSFER_OUT) {
+        amt = tx.price * tx.quantity + (tx.fees || 0);
+      } else if (tx.type === TransactionType.SELL) {
+        amt = tx.price * tx.quantity - (tx.fees || 0);
+      } else {
+        amt = tx.price * tx.quantity;
       }
+    }
+    return {
+      id: tx.id,
+      date: tx.date,
+      accountId: tx.accountId,
+      type: 'TRANSACTION' as const,
+      subType: tx.type,
+      ticker: tx.ticker,
+      market: tx.market,
+      price: tx.price,
+      quantity: tx.quantity,
+      amount: amt,
+      fees: tx.fees || 0,
+      description: `${tx.market}-${tx.ticker}`,
+      originalRecord: tx,
+    };
+  });
+
+  const cfR: CombinedRecord[] = [];
+  cashFlows.forEach(cf => {
+    cfR.push({
+      id: cf.id,
+      date: cf.date,
+      accountId: cf.accountId,
+      type: 'CASHFLOW' as const,
+      subType: cf.type,
+      ticker: '',
+      market: '',
+      price: 0,
+      quantity: 0,
+      amount: cf.amount,
+      fees: 0,
+      description: cf.note || cf.type,
+      originalRecord: cf,
+      targetAccountId: cf.targetAccountId,
+      exchangeRate: cf.exchangeRate,
+      isSourceRecord: true,
     });
+    if (cf.type === CashFlowType.TRANSFER && cf.targetAccountId) {
+      const sA = accounts.find(a => a.id === cf.accountId);
+      const tA = accounts.find(a => a.id === cf.targetAccountId);
+      const tAmt =
+        sA && tA ? getTransferTargetAmount(sA.currency, tA.currency, cf.amount, cf.exchangeRate) : cf.amount;
+      cfR.push({
+        id: `${cf.id}-target`,
+        date: cf.date,
+        accountId: cf.targetAccountId,
+        type: 'CASHFLOW' as const,
+        subType: 'TRANSFER_IN',
+        ticker: '',
+        market: '',
+        price: 0,
+        quantity: 0,
+        amount: tAmt,
+        fees: 0,
+        description: `轉入自 ${accounts.find(a => a.id === cf.accountId)?.name || '未知帳戶'}`,
+        originalRecord: cf,
+        sourceAccountId: cf.accountId,
+        exchangeRate: cf.exchangeRate,
+        isTargetRecord: true,
+      });
+    }
+  });
 
-    transactions.forEach(tx => {
-       let baseVal = tx.price * tx.quantity;
-       if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+  const dOrd = (r: CombinedRecord) => {
+    if (r.type === 'CASHFLOW') {
+      if (r.subType === CashFlowType.WITHDRAW || r.subType === CashFlowType.TRANSFER) return 1;
+      if (r.subType === CashFlowType.INTEREST) return 3;
+      return 5;
+    }
+    if (r.subType === TransactionType.BUY) return 2;
+    if (r.subType === TransactionType.CASH_DIVIDEND || r.subType === TransactionType.DIVIDEND) return 3;
+    if (r.subType === TransactionType.SELL) return 4;
+    return 6;
+  };
 
-       const cost = tx.amount !== undefined ? tx.amount : (baseVal + (tx.fees || 0));
-       
-       if (tx.type === TransactionType.BUY) {
-         balMap[tx.accountId] = (balMap[tx.accountId] || 0) - cost;
-       } else if (tx.type === TransactionType.SELL) {
-         const proceeds = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
-         balMap[tx.accountId] = (balMap[tx.accountId] || 0) + proceeds;
-       } else if (tx.type === TransactionType.CASH_DIVIDEND) {
-         const divAmt = tx.amount !== undefined ? tx.amount : ((tx.price * tx.quantity) - (tx.fees || 0));
-         balMap[tx.accountId] = (balMap[tx.accountId] || 0) + divAmt;
-       } else if (tx.type === TransactionType.TRANSFER_OUT) {
-         balMap[tx.accountId] = (balMap[tx.accountId] || 0) - (tx.fees || 0);
-       } else if (tx.type === TransactionType.TRANSFER_IN) {
-         balMap[tx.accountId] = (balMap[tx.accountId] || 0) - (tx.fees || 0);
-       }
-    });
+  const sorted = [...txR, ...cfR].sort((a, b) => {
+    const dA = new Date(a.date).getTime();
+    const dB = new Date(b.date).getTime();
+    if (dA !== dB) return dB - dA;
+    const oA = dOrd(a);
+    const oB = dOrd(b);
+    if (oA !== oB) return oA - oB;
+    return parseInt(a.id.match(/\d+/)?.[0] ?? '0', 10) - parseInt(b.id.match(/\d+/)?.[0] ?? '0', 10);
+  });
 
-    return accounts.map(a => ({ ...a, balance: balMap[a.id] || 0 }));
+  const cOrd = (r: CombinedRecord) => {
+    if (r.type === 'CASHFLOW') {
+      if (r.subType === CashFlowType.DEPOSIT || r.subType === 'TRANSFER_IN') return 1;
+      if (r.subType === CashFlowType.INTEREST) return 2;
+      return 5;
+    }
+    if (r.subType === TransactionType.CASH_DIVIDEND || r.subType === TransactionType.DIVIDEND) return 2;
+    if (r.subType === TransactionType.SELL) return 3;
+    if (r.subType === TransactionType.BUY) return 4;
+    return 6;
+  };
+
+  const calcBC = (r: CombinedRecord): number => {
+    if (r.type === 'TRANSACTION') {
+      const tx = r.originalRecord as Transaction;
+      if (tx.type === TransactionType.BUY) return -r.amount;
+      if (tx.type === TransactionType.SELL) return r.amount;
+      if (tx.type === TransactionType.CASH_DIVIDEND) return r.amount;
+      if (tx.type === TransactionType.DIVIDEND) return 0;
+      return -r.fees;
+    }
+    if (r.subType === CashFlowType.DEPOSIT) return r.amount;
+    if (r.subType === CashFlowType.WITHDRAW) return -r.amount;
+    if (r.subType === CashFlowType.TRANSFER) return -r.amount;
+    if (r.subType === 'TRANSFER_IN') return r.amount;
+    if (r.subType === CashFlowType.INTEREST) return r.amount;
+    return 0;
+  };
+
+  const tOrd = [...sorted].sort((a, b) => {
+    const dA = new Date(a.date).getTime();
+    const dB = new Date(b.date).getTime();
+    if (dA !== dB) return dA - dB;
+    const oA = cOrd(a);
+    const oB = cOrd(b);
+    if (oA !== oB) return oA - oB;
+    return parseInt(b.id.match(/\d+/)?.[0] ?? '0', 10) - parseInt(a.id.match(/\d+/)?.[0] ?? '0', 10);
+  });
+
+  const aB: Record<string, number> = {};
+  accounts.forEach(a => {
+    aB[a.id] = 0;
+  });
+  const bM = new Map<string, number>();
+
+  tOrd.forEach(r => {
+    aB[r.accountId] = Math.round((aB[r.accountId] + calcBC(r)) * 100) / 100;
+    bM.set(r.id, aB[r.accountId]);
+  });
+
+  const combinedRecordsSorted = sorted.map(r => ({
+    ...r,
+    balance: bM.get(r.id) ?? 0,
+    balanceChange: calcBC(r),
+  }));
+
+  return { combinedRecordsSorted, finalBalancesByAccountId: aB };
 }
+
+export const calculateAccountBalances = (accounts: Account[], cashFlows: CashFlow[], transactions: Transaction[]): Account[] => {
+  const { finalBalancesByAccountId } = buildLedgerState(transactions, cashFlows, accounts);
+  return accounts.map(a => ({ ...a, balance: finalBalancesByAccountId[a.id] ?? 0 }));
+};
 
 /** 年底/某日持倉（依帳戶拆開，供正確依證券戶幣別換匯） */
 export interface AccountScopedHolding {
