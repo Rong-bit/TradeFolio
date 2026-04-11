@@ -410,7 +410,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                          className={`px-4 py-2 rounded shadow text-sm font-bold text-white transition flex items-center gap-2
                            ${loading ? 'bg-slate-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                        >
-                           {loading && !batchProgress ? 'AI 搜尋中...' : '🤖 補齊本年度'}
+                           {loading && !batchProgress ? 'AI 搜尋中...' : `🤖 補齊 ${selectedYear} 年底缺漏`}
                        </button>
                        <button
                          onClick={handleBatchFetch}
@@ -526,7 +526,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
            <div className="text-xs p-3 rounded" style={{ backgroundColor: "#fefce8", color: "#78716c", border: "1px solid #fef08a" }}>
                💡 說明：
                <ul className="list-disc pl-5 mt-1 space-y-1">
-                   <li>「🤖 補齊本年度」：僅補齊<strong style={{ color: "#1e293b" }}>數值為 0</strong> 的缺漏資料，已存在的數據不會被覆蓋。</li>
+                   <li>第一顆按鈕會顯示為「🤖 補齊 {selectedYear} 年底缺漏」：針對<strong style={{ color: "#1e293b" }}>下拉選單目前選定的年份</strong>，僅抓取該年<strong style={{ color: "#1e293b" }}>12/31 年底</strong>股價／匯率；只補<strong style={{ color: "#1e293b" }}>數值為 0</strong> 或未填的欄位，已填數據不會被覆蓋。</li>
                    <li>「🚀 一鍵抓取」：同時抓取<strong style={{ color: "#1e293b" }}>年底（12/31）+ Q1~Q3 季末（3/31、6/30、9/30）</strong>股價，讓累積損益圖可按季顯示真實數據。</li>
                    <li>勾選「強制重新抓取」可覆蓋已有數據。</li>
                </ul>
