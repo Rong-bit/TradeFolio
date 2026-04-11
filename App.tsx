@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Transaction, Holding, PortfolioSummary, Market, Account, CashFlow,
-  TransactionType, CashFlowType, Currency, HistoricalData, CombinedRecord,
+  TransactionType, CashFlowType, Currency, HistoricalData,
   BaseCurrency, BASE_CURRENCIES
 } from './types';
 import { useLocalStorageDebouncedSimple } from './hooks/useLocalStorageDebounced';
@@ -12,9 +12,9 @@ import { useExchangeRates, ExchangeRateState } from './hooks/useExchangeRates';
 import { usePortfolioData } from './hooks/usePortfolioData';
 import { useAutoRefresh } from './hooks/useAutoRefresh';
 import {
-  calculateHoldings, calculateAccountBalances, generateAdvancedChartData,
+  calculateHoldings, calculateAccountBalances, buildLedgerState, generateAdvancedChartData,
   calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance,
-  calculateXIRR, getDisplayRateForBaseCurrency, getTransferTargetAmount, ExchangeRates,
+  calculateXIRR, getDisplayRateForBaseCurrency, ExchangeRates,
   currencyToTWDRate, holdingValueToTWD, transactionAmountNativeToTWD
 } from './utils/calculations';
 import TransactionForm from './components/TransactionForm';
@@ -361,42 +361,7 @@ const App: React.FC = () => {
 
   // ─── Combined Records & Filters ─────────────────────────────
 
-  const combinedRecords = useMemo(() => {
-    const txR: CombinedRecord[] = transactions.map((tx: Transaction) => {
-      let amt = tx.amount ?? 0;
-      if (!tx.amount) {
-        if (tx.type===TransactionType.BUY||tx.type===TransactionType.TRANSFER_OUT) amt=tx.price*tx.quantity+(tx.fees||0);
-        else if (tx.type===TransactionType.SELL) amt=tx.price*tx.quantity-(tx.fees||0);
-        else amt=tx.price*tx.quantity;
-      }
-      return {
-        id: tx.id, date: tx.date, accountId: tx.accountId,
-        type: 'TRANSACTION' as const, subType: tx.type,
-        ticker: tx.ticker, market: tx.market,
-        price: tx.price, quantity: tx.quantity, amount: amt,
-        fees: tx.fees || 0,
-        description: `${tx.market}-${tx.ticker}`,
-        originalRecord: tx,
-      };
-    });
-    const cfR: CombinedRecord[] = [];
-    cashFlows.forEach((cf: CashFlow) => {
-      cfR.push({ id:cf.id, date:cf.date, accountId:cf.accountId, type:'CASHFLOW' as const, subType:cf.type, ticker:'', market:'', price:0, quantity:0, amount:cf.amount, fees:0, description:cf.note||cf.type, originalRecord:cf, targetAccountId:cf.targetAccountId, exchangeRate:cf.exchangeRate, isSourceRecord:true });
-      if (cf.type==='TRANSFER' && cf.targetAccountId) {
-        const sA = accounts.find(a=>a.id===cf.accountId), tA = accounts.find(a=>a.id===cf.targetAccountId);
-        const tAmt = sA&&tA ? getTransferTargetAmount(sA.currency,tA.currency,cf.amount,cf.exchangeRate) : cf.amount;
-        cfR.push({ id:`${cf.id}-target`, date:cf.date, accountId:cf.targetAccountId!, type:'CASHFLOW' as const, subType:'TRANSFER_IN' as const, ticker:'', market:'', price:0, quantity:0, amount:tAmt, fees:0, description:`轉入自 ${accounts.find(a=>a.id===cf.accountId)?.name||'未知帳戶'}`, originalRecord:cf, sourceAccountId:cf.accountId, exchangeRate:cf.exchangeRate, isTargetRecord:true });
-      }
-    });
-    const dOrd = (r: CombinedRecord) => { if (r.type==='CASHFLOW') { if(r.subType==='WITHDRAW'||r.subType==='TRANSFER') return 1; if(r.subType==='INTEREST') return 3; return 5; } if(r.subType==='BUY') return 2; if(r.subType==='CASH_DIVIDEND'||r.subType==='DIVIDEND') return 3; if(r.subType==='SELL') return 4; return 6; };
-    const sorted = [...txR,...cfR].sort((a,b) => { const dA=new Date(a.date).getTime(),dB=new Date(b.date).getTime(); if(dA!==dB) return dB-dA; const oA=dOrd(a),oB=dOrd(b); if(oA!==oB) return oA-oB; return parseInt(a.id.match(/\d+/)?.[0]??'0')-parseInt(b.id.match(/\d+/)?.[0]??'0'); });
-    const cOrd = (r: CombinedRecord) => { if(r.type==='CASHFLOW') { if(r.subType==='DEPOSIT'||r.subType==='TRANSFER_IN') return 1; if(r.subType==='INTEREST') return 2; return 5; } if(r.subType==='CASH_DIVIDEND'||r.subType==='DIVIDEND') return 2; if(r.subType==='SELL') return 3; if(r.subType==='BUY') return 4; return 6; };
-    const calcBC = (r: CombinedRecord) => { if(r.type==='TRANSACTION') { const tx=r.originalRecord as Transaction; if(tx.type===TransactionType.BUY) return -r.amount; if(tx.type===TransactionType.SELL) return r.amount; if(tx.type===TransactionType.CASH_DIVIDEND) return r.amount; if(tx.type===TransactionType.DIVIDEND) return 0; return -r.fees; } if(r.subType==='DEPOSIT') return r.amount; if(r.subType==='WITHDRAW') return -r.amount; if(r.subType==='TRANSFER') return -r.amount; if(r.subType==='TRANSFER_IN') return r.amount; if(r.subType==='INTEREST') return r.amount; return 0; };
-    const tOrd = [...sorted].sort((a,b) => { const dA=new Date(a.date).getTime(),dB=new Date(b.date).getTime(); if(dA!==dB) return dA-dB; const oA=cOrd(a),oB=cOrd(b); return oA!==oB ? oA-oB : parseInt(b.id.match(/\d+/)?.[0]??'0')-parseInt(a.id.match(/\d+/)?.[0]??'0'); });
-    const aB: Record<string,number> = {}; const bM = new Map<string,number>();
-    tOrd.forEach(r => { if(!(r.accountId in aB)) aB[r.accountId]=0; aB[r.accountId]=Math.round((aB[r.accountId]+calcBC(r))*100)/100; bM.set(r.id, aB[r.accountId]); });
-    return sorted.map(r => ({ ...r, balance:bM.get(r.id)??0, balanceChange:calcBC(r) }));
-  }, [transactions, cashFlows, accounts]);
+  const combinedRecords = useMemo(() => buildLedgerState(transactions, cashFlows, accounts).combinedRecordsSorted, [transactions, cashFlows, accounts]);
 
   const filteredRecords = useMemo(() => combinedRecords.filter(r => {
     if (filterAccount && r.accountId!==filterAccount) return false;
