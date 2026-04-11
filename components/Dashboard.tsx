@@ -961,28 +961,24 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
                 <button
+                  type="button"
                   onClick={() => setShowAnnualInUSD(false)}
                   className={`px-3 py-1.5 text-sm rounded transition ${
-                    !showAnnualInUSD 
-                      ? 'bg-indigo-600 text-white font-medium' 
-                      : ''
+                    !showAnnualInUSD
+                      ? 'bg-indigo-600 text-white font-medium'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
                   }`}
-                  style={!showAnnualInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
-                  onMouseEnter={e=>{ if(!showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
-                  onMouseLeave={e=>{ if(!showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
                 >
                   {baseCurrency}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowAnnualInUSD(true)}
                   className={`px-3 py-1.5 text-sm rounded transition ${
-                    showAnnualInUSD 
-                      ? 'bg-indigo-600 text-white font-medium' 
-                      : ''
+                    showAnnualInUSD
+                      ? 'bg-indigo-600 text-white font-medium'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
                   }`}
-                  style={showAnnualInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
-                  onMouseEnter={e=>{ if(showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
-                  onMouseLeave={e=>{ if(showAnnualInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
                 >
                   {translations.dashboard.usd}
                 </button>
@@ -1057,28 +1053,24 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
           <div className="flex items-center gap-2">
             <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
             <button
+              type="button"
               onClick={() => setShowAccountInUSD(false)}
               className={`px-3 py-1.5 text-sm rounded transition ${
-                !showAccountInUSD 
-                  ? 'bg-indigo-600 text-white font-medium' 
-                  : ''
+                !showAccountInUSD
+                  ? 'bg-indigo-600 text-white font-medium'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
               }`}
-              style={!showAccountInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
-              onMouseEnter={e=>{ if(!showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
-              onMouseLeave={e=>{ if(!showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
             >
               {baseCurrency}
             </button>
             <button
+              type="button"
               onClick={() => setShowAccountInUSD(true)}
               className={`px-3 py-1.5 text-sm rounded transition ${
-                showAccountInUSD 
-                  ? 'bg-indigo-600 text-white font-medium' 
-                  : ''
+                showAccountInUSD
+                  ? 'bg-indigo-600 text-white font-medium'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
               }`}
-              style={showAccountInUSD ? {} : { backgroundColor: '#f1f5f9', color: '#475569' }}
-              onMouseEnter={e=>{ if(showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#475569':'#e2e8f0') }}
-              onMouseLeave={e=>{ if(showAccountInUSD) (e.currentTarget.style.backgroundColor=isDarkMode?'#334155':'#f1f5f9') }}
             >
               {translations.dashboard.usd}
             </button>
