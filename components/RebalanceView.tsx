@@ -7,6 +7,12 @@ import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 
+/** 與儀表板相同：雙鈕一體式膠囊 */
+const SEGMENT_PILL_CLASS =
+  'inline-flex overflow-hidden rounded-lg border border-slate-200 shadow-sm dark:border-slate-600';
+const SEGMENT_BTN_CLASS =
+  'px-3 py-1.5 text-sm rounded-none transition whitespace-nowrap focus:outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400/90';
+
 interface Props {}
 
 const RebalanceView: React.FC<Props> = () => {
@@ -307,27 +313,31 @@ const RebalanceView: React.FC<Props> = () => {
              <div className="flex items-center gap-4">
                {/* 貨幣切換開關 */}
                <div className="flex items-center gap-2">
-                 <span className="text-sm text-slate-600">{translations.dashboard.displayCurrency}:</span>
-                 <button
-                   onClick={() => setShowInUSD(false)}
-                   className={`px-3 py-1.5 text-sm rounded transition ${
-                     !showInUSD 
-                       ? 'bg-indigo-600 text-white font-medium' 
-                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                   }`}
-                 >
-                   {baseCurrency}
-                 </button>
-                 <button
-                   onClick={() => setShowInUSD(true)}
-                   className={`px-3 py-1.5 text-sm rounded transition ${
-                     showInUSD 
-                       ? 'bg-indigo-600 text-white font-medium' 
-                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                   }`}
-                 >
-                   {translations.dashboard.usd}
-                 </button>
+                 <span className="text-sm text-slate-600 shrink-0">{translations.dashboard.displayCurrency}:</span>
+                 <div className={SEGMENT_PILL_CLASS}>
+                   <button
+                     type="button"
+                     onClick={() => setShowInUSD(false)}
+                     className={`${SEGMENT_BTN_CLASS} ${
+                       !showInUSD
+                         ? 'bg-indigo-600 text-white font-medium'
+                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                     }`}
+                   >
+                     {baseCurrency}
+                   </button>
+                   <button
+                     type="button"
+                     onClick={() => setShowInUSD(true)}
+                     className={`${SEGMENT_BTN_CLASS} ${
+                       showInUSD
+                         ? 'bg-indigo-600 text-white font-medium'
+                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                     }`}
+                   >
+                     {translations.dashboard.usd}
+                   </button>
+                 </div>
                </div>
                <button 
                   onClick={handleResetToCurrent}
