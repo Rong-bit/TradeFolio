@@ -34,6 +34,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
   const [showCostDetailModal, setShowCostDetailModal] = useState(false);
   const [showAccountInUSD, setShowAccountInUSD] = useState(false); 
   const [showAnnualInUSD, setShowAnnualInUSD] = useState(false);
+  const [showMainChartInUSD, setShowMainChartInUSD] = useState(false);
   const [mainChartTab, setMainChartTab] = useState<'cumulative' | 'year'>('cumulative');
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
@@ -264,16 +265,47 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     }));
   }, [attributionSeries, chartData, toBase]);
 
-  const quarterlyTrendData = useMemo(() => {
-    return buildQuarterlyTrendData(chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData).map(item => ({
-      year: item.period,
-      cost: toBase(item.cost),
-      profit: toBase(item.profit),
-      totalAssets: toBase(item.totalAssets),
-      estTotalAssets: toBase(item.estTotalAssets),
-      isRealData: item.isRealData,
-    }));
-  }, [chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData, toBase]);
+  const quarterlyTrendTwd = useMemo(
+    () =>
+      buildQuarterlyTrendData(
+        chartData,
+        attributionSeries,
+        cashFlows,
+        transactions,
+        portfolioAccounts,
+        rates,
+        historicalData
+      ),
+    [chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData]
+  );
+
+  const mainChartDisplayCurrency = showMainChartInUSD ? 'USD' : baseCurrency;
+  const usdExMain = summary.exchangeRateUsdToTwd;
+
+  const quarterlyDisplayData = useMemo(() => {
+    const canUsd = showMainChartInUSD && usdExMain && usdExMain > 0;
+    const div = canUsd ? usdExMain : 1;
+    return quarterlyTrendTwd.map(item => {
+      if (canUsd) {
+        return {
+          year: item.period,
+          cost: item.cost / div,
+          profit: item.profit / div,
+          totalAssets: item.totalAssets / div,
+          estTotalAssets: item.estTotalAssets / div,
+          isRealData: item.isRealData,
+        };
+      }
+      return {
+        year: item.period,
+        cost: toBase(item.cost),
+        profit: toBase(item.profit),
+        totalAssets: toBase(item.totalAssets),
+        estTotalAssets: toBase(item.estTotalAssets),
+        isRealData: item.isRealData,
+      };
+    });
+  }, [quarterlyTrendTwd, showMainChartInUSD, usdExMain, toBase]);
 
   const hasAttributionMismatch = attributionSeries.some(item => !item.isConsistent);
 
@@ -485,7 +517,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 </>
               )}
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 shrink-0">
               <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 self-end sm:self-center">
                 {(['cumulative', 'year'] as const).map(tab => (
                   <button
@@ -504,6 +536,31 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                   </button>
                 ))}
               </div>
+              <div className="flex items-center gap-2 self-end sm:self-center">
+                <span className="text-sm text-slate-600 whitespace-nowrap">{translations.dashboard.displayCurrency}:</span>
+                <button
+                  type="button"
+                  onClick={() => setShowMainChartInUSD(false)}
+                  className={`px-3 py-1.5 text-sm rounded transition ${
+                    !showMainChartInUSD
+                      ? 'bg-indigo-600 text-white font-medium'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                  }`}
+                >
+                  {baseCurrency}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowMainChartInUSD(true)}
+                  className={`px-3 py-1.5 text-sm rounded transition ${
+                    showMainChartInUSD
+                      ? 'bg-indigo-600 text-white font-medium'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                  }`}
+                >
+                  {translations.dashboard.usd}
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={onUpdateHistorical}
@@ -519,10 +576,10 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
             {mainChartTab === 'cumulative' ? (
               <>
                 <div className="w-full h-[300px] md:h-[450px]">
-                  {isMounted && quarterlyTrendData.length > 0 ? (
+                  {isMounted && quarterlyDisplayData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
-                        data={quarterlyTrendData}
+                        data={quarterlyDisplayData}
                         margin={{ top: 10, right: 30, left: 10, bottom: 60 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -558,10 +615,10 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                               suffix = translations.dashboard.chartLabels.estimated;
 
                             if (name.includes(translations.dashboard.chartLabels.accumulatedPL)) {
-                              return [formatCurrency(value, baseCurrency), translations.dashboard.chartLabels.accumulatedPL];
+                              return [formatCurrency(value, mainChartDisplayCurrency), translations.dashboard.chartLabels.accumulatedPL];
                             }
 
-                            return [formatCurrency(value, baseCurrency), name + suffix];
+                            return [formatCurrency(value, mainChartDisplayCurrency), name + suffix];
                           }}
                         />
                         <Legend
@@ -636,7 +693,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                           stackId="a"
                           barSize={30}
                         >
-                          {quarterlyTrendData.map((entry, index: number) => (
+                          {quarterlyDisplayData.map((entry, index: number) => (
                             <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? '#10b981' : '#ef4444'} />
                           ))}
                         </Bar>
@@ -674,7 +731,7 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     <div className="h-full flex items-center justify-center text-slate-400">
                       {!isMounted
                         ? translations.dashboard.chartLoading
-                        : quarterlyTrendData.length === 0
+                        : quarterlyDisplayData.length === 0
                           ? translations.dashboard.noChartData
                           : translations.dashboard.chartLoading}
                     </div>
@@ -691,7 +748,12 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 </div>
               </>
             ) : (
-              <CashFlowWaterfall hideHeader rows={waterfallYearRows} />
+              <CashFlowWaterfall
+                hideHeader
+                rows={waterfallYearRows}
+                displayInUSD={showMainChartInUSD}
+                usdToTwdRate={summary.exchangeRateUsdToTwd}
+              />
             )}
           </div>
         </div>
