@@ -12,6 +12,7 @@ import {
   valueInBaseCurrency,
   nativeValueInAccountCurrencyToTWD,
   valuationCurrencyForHolding,
+  formatCurrency,
 } from '../utils/calculations';
 import { t } from '../utils/i18n';
 
@@ -103,6 +104,7 @@ const MarketPerformanceChart: React.FC = () => {
           {(['cumulativeReturn', 'weight', 'value'] as Metric[]).map(m => (
             <button
               key={m}
+              type="button"
               onClick={() => setMetric(m)}
               className={`px-3 py-1.5 transition ${metric === m ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
             >
@@ -134,18 +136,45 @@ const MarketPerformanceChart: React.FC = () => {
       </div>
 
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {data.slice(0, 4).map(d => (
-          <div key={d.market} className="rounded-lg p-3 bg-slate-50 border border-slate-100 flex items-center gap-2.5">
-            <span className="text-xl">{d.flag}</span>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-700">{d.market}</div>
-              <div className="text-sm font-bold tabular-nums" style={{ color: d.cumulativeReturn >= 0 ? '#10b981' : '#ef4444' }}>
-                {d.cumulativeReturn >= 0 ? '+' : ''}{d.cumulativeReturn.toFixed(1)}%
+        {data.slice(0, 4).map(d => {
+          const retColor = d.cumulativeReturn >= 0 ? 'text-emerald-600' : 'text-rose-600';
+          const retSign = d.cumulativeReturn >= 0 ? '+' : '';
+          const retStr = `${retSign}${d.cumulativeReturn.toFixed(1)}%`;
+          const weightStr = `${d.weight.toFixed(1)}% ${tr.marketChart.ratio}`;
+
+          return (
+            <div key={d.market} className="rounded-lg p-3 bg-slate-50 border border-slate-100 flex items-center gap-2.5">
+              <span className="text-xl">{d.flag}</span>
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-slate-700">{d.market}</div>
+                {metric === 'cumulativeReturn' && (
+                  <>
+                    <div className={`text-sm font-bold tabular-nums ${retColor}`}>{retStr}</div>
+                    <div className="text-[10px] text-slate-400">{weightStr}</div>
+                  </>
+                )}
+                {metric === 'weight' && (
+                  <>
+                    <div className="text-sm font-bold tabular-nums text-slate-800">{weightStr}</div>
+                    <div className={`text-[10px] tabular-nums ${retColor}`}>
+                      {tr.marketChart.cumulativeReturn} {retStr}
+                    </div>
+                  </>
+                )}
+                {metric === 'value' && (
+                  <>
+                    <div className="text-sm font-bold tabular-nums text-slate-800">{formatCurrency(d.value, baseCurrency)}</div>
+                    <div className="text-[10px] text-slate-400 flex flex-wrap gap-x-1 items-baseline">
+                      <span>{weightStr}</span>
+                      <span className="text-slate-300">·</span>
+                      <span className={retColor}>{retStr}</span>
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="text-[10px] text-slate-400">{d.weight.toFixed(1)}% {tr.marketChart.ratio}</div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
