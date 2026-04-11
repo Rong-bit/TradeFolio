@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, AssetClass } from '../portfolioTypes';
 import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildQuarterlyTrendData, getAssetClassForTicker, calculateAssetAllocation } from '../utils/calculations';
@@ -485,24 +484,30 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                 </>
               )}
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
-              <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 self-end sm:self-center">
-                {(['cumulative', 'year'] as const).map(tab => (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setMainChartTab(tab)}
-                    className={`px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold rounded-md transition whitespace-nowrap ${
-                      mainChartTab === tab
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    {tab === 'cumulative'
-                      ? translations.dashboard.chartLabels.accumulatedPL
-                      : translations.waterfall.byYear}
-                  </button>
-                ))}
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 self-end sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => setMainChartTab('cumulative')}
+                  className={`px-3 py-1.5 text-sm rounded transition whitespace-nowrap ${
+                    mainChartTab === 'cumulative'
+                      ? 'bg-indigo-600 text-white font-medium'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                  }`}
+                >
+                  {translations.dashboard.chartLabels.accumulatedPL}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMainChartTab('year')}
+                  className={`px-3 py-1.5 text-sm rounded transition whitespace-nowrap ${
+                    mainChartTab === 'year'
+                      ? 'bg-indigo-600 text-white font-medium'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                  }`}
+                >
+                  {translations.waterfall.byYear}
+                </button>
               </div>
               <button
                 type="button"
