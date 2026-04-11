@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart,
   Bar,
@@ -22,10 +22,6 @@ interface Props {
   rows: WaterfallPeriodRow[];
   /** 與外層標題合併顯示時隱藏內建標題 */
   hideHeader?: boolean;
-  /** 與儀表板年度績效／證券戶相同：true 時以美金（TWD ÷ 匯率）顯示 */
-  displayInUSD?: boolean;
-  /** 1 USD = N TWD，與 summary.exchangeRateUsdToTwd 相同 */
-  usdToTwdRate?: number;
 }
 
 const WF_COLOR_INFLOW_POS = '#3b82f6';
@@ -45,28 +41,17 @@ type WfDatum = {
   segFlowForTooltip: number;
 };
 
-const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader, displayInUSD, usdToTwdRate }) => {
+const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
   const { baseCurrency, rates } = useMarket();
   const { language } = useUI();
   const tr = t(language);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
 
-  const convert = useCallback(
-    (v: number) => {
-      if (displayInUSD && usdToTwdRate && usdToTwdRate > 0) return v / usdToTwdRate;
-      return toBase(v);
-    },
-    [displayInUSD, usdToTwdRate, toBase]
-  );
-
-  const displayCurrency =
-    displayInUSD && usdToTwdRate && usdToTwdRate > 0 ? 'USD' : baseCurrency;
-
   const data = useMemo(() => {
     return rows.map(r => {
-      const flow = convert(r.netInflow);
-      const pl = convert(r.marketPL);
+      const flow = toBase(r.netInflow);
+      const pl = toBase(r.marketPL);
       return {
         period: r.period,
         segPLPos: pl >= 0 ? pl : 0,
@@ -74,12 +59,12 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader, displayInUSD, us
         /** 拆成兩段固定 fill，避免堆疊 Bar 上 Cell 顏色被 Recharts 忽略 */
         segFlowPos: flow >= 0 ? flow : 0,
         segFlowNeg: flow < 0 ? flow : 0,
-        segIncome: convert(r.income),
+        segIncome: toBase(r.income),
         segPLForTooltip: pl,
         segFlowForTooltip: flow,
       };
     });
-  }, [rows, convert]);
+  }, [rows, baseCurrency, rates]);
 
   const waterfallTooltipContent = React.useCallback(
     ({ active, payload, label, contentStyle }: TooltipProps<number, string>) => {
@@ -102,7 +87,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader, displayInUSD, us
         >
           <span className="recharts-tooltip-item-name">{name}</span>
           <span className="recharts-tooltip-item-separator"> : </span>
-          <span className="recharts-tooltip-item-value">{formatCurrency(value, displayCurrency)}</span>
+          <span className="recharts-tooltip-item-value">{formatCurrency(value, baseCurrency)}</span>
         </li>
       );
 
@@ -130,7 +115,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader, displayInUSD, us
         </div>
       );
     },
-    [displayCurrency, tr]
+    [baseCurrency, tr]
   );
 
   if (rows.length === 0) {
