@@ -622,7 +622,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <footer className="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800"><div className="max-w-7xl mx-auto px-4 text-center"><p className="text-sm">© 2025 TradeView. Designed & Developed by <span className="text-indigo-400 font-bold">Jun-rong, Huang</span></p><p className="text-[10px] mt-2 text-slate-500">此應用程式所有交易數據皆儲存於本地端，保障您的隱私安全。</p></div></footer>
+      <footer className="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800"><div className="max-w-7xl mx-auto px-4 text-center"><p className="text-sm">© 2025 TradeView. Designed & Developed by <span className="text-indigo-400 font-bold">Jun-rong, Huang</span></p><p className="text-[10px] mt-2 text-slate-500">{t(language).common.footerLocalDataPrivacy}</p></div></footer>
 
       {isFormOpen&&<TransactionForm onAdd={addTransaction} onUpdate={handleUpdateTransaction} editingTransaction={transactionToEdit} onClose={()=>{setIsFormOpen(false);setTransactionToEdit(null);}} />}
       {isImportOpen&&<BatchImportModal onImport={addBatchTransactions} onClose={()=>setIsImportOpen(false)} />}
