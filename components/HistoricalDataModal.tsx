@@ -1,9 +1,14 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { usePortfolio } from '../contexts/PortfolioContext';
+import { useUI } from '../contexts/UIContext';
+import { t } from '../utils/i18n';
 import { HistoricalData, Market } from '../types';
 import { getPortfolioStateAtDate } from '../utils/calculations';
 import { fetchHistoricalYearEndData, fetchHistoricalQuarterEndData } from '../services/yahooFinanceService';
+
+const applyVars = (template: string, vars: Record<string, string | number>) =>
+  template.replace(/\{(\w+)\}/g, (m, key) => (key in vars ? String(vars[key]) : m));
 
 interface Props {
   onSave: (data: HistoricalData) => void;
@@ -12,6 +17,8 @@ interface Props {
 
 const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
   const { transactions, cashFlows, accounts, historicalData } = usePortfolio();
+  const { language } = useUI();
+  const tr = t(language).historicalModal;
   // Identify available years from data
   const years = useMemo(() => {
     const allYears = new Set([
@@ -100,7 +107,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
       const rateNeedsUpdate = forceRefresh || !currentYearData.exchangeRate || currentYearData.exchangeRate === 0 || currentYearData.exchangeRate === 30;
 
       if (missingTickers.length === 0 && !rateNeedsUpdate) {
-          alert('所有持股與匯率皆已有數據，無須 AI 更新。\n若需強制重新抓取，請勾選「強制重新抓取」。');
+          alert(tr.alertNoUpdateNeeded);
           return;
       }
 
@@ -146,7 +153,12 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
           // 檢查是否有成功取得數據
           const successCount = Object.keys(result.prices).length;
           if (successCount === 0 && missingTickers.length > 0) {
-              alert(`無法取得 ${missingTickers.length} 筆股票的歷史股價，請檢查網路連線或稍後再試。\n\n查詢的代號：${queryTickers.join(', ')}`);
+              alert(
+                  applyVars(tr.alertFetchFailed, {
+                      count: missingTickers.length,
+                      tickers: queryTickers.join(', '),
+                  }),
+              );
           } else if (successCount < missingTickers.length) {
               const failedTickers = missingTickers.filter(t => {
                   const displayTicker = t.market === Market.TW && !t.ticker.includes('TPE:') ? `TPE:${t.ticker}` : t.ticker;
@@ -212,7 +224,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
               };
           });
       } catch (e) {
-          alert('AI 更新失敗，請稍後再試');
+          alert(tr.alertAiError);
       } finally {
           setLoading(false);
       }
@@ -359,7 +371,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                   }
               }
           } catch (e) {
-              console.warn(`${y} 年抓取失敗，跳過`, e);
+              console.warn('Historical fetch failed for year', y, e);
           }
 
           if (i < years.length - 1) await new Promise(r => setTimeout(r, 600));
@@ -368,7 +380,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
       setLocalData(accumulated);
       setBatchProgress(null);
       setLoading(false);
-      alert(`所有年度抓取完成！共處理 ${years.length} 個年度（含年底 + Q1~Q3 季末）。`);
+      alert(applyVars(tr.alertAllComplete, { count: years.length }));
   };
 
   const handleSave = () => {
@@ -383,7 +395,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
       <div className="rounded-xl shadow-2xl w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden" style={{ backgroundColor: "#ffffff", color: "#1e293b" }}>
         <div className="bg-slate-900 p-4 flex justify-between items-center shrink-0">
           <h2 className="text-white font-bold text-lg flex items-center gap-2">
-            <span>🕰️</span> 歷史股價校正 (Time Machine)
+            <span>🕰️</span> {tr.title}
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">&times;</button>
         </div>
@@ -391,14 +403,16 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
         <div className="p-6 flex-1 overflow-y-auto space-y-6">
            <div className="flex gap-4 items-center bg-slate-50 p-4 rounded-lg border border-slate-200">
                <div>
-                   <label className="block text-xs font-bold text-slate-500 mb-1">選擇年份</label>
+                   <label className="block text-xs font-bold text-slate-500 mb-1">{tr.selectYearLabel}</label>
                    <select 
                      value={selectedYear} 
                      onChange={(e) => setSelectedYear(Number(e.target.value))}
                      className="border border-slate-300 rounded p-2 text-sm font-bold min-w-[100px] text-slate-800 bg-white"
                    >
-                       {years.map(y => <option key={y} value={y}>{y} 年</option>)}
-                       {years.length === 0 && <option disabled>無歷史資料</option>}
+                       {years.map(y => (
+                         <option key={y} value={y}>{applyVars(tr.yearOption, { year: y })}</option>
+                       ))}
+                       {years.length === 0 && <option disabled>{tr.noHistoryYears}</option>}
                    </select>
                </div>
                
@@ -410,7 +424,9 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                          className={`px-4 py-2 rounded shadow text-sm font-bold text-white transition flex items-center gap-2
                            ${loading ? 'bg-slate-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                        >
-                           {loading && !batchProgress ? 'AI 搜尋中...' : `🤖 補齊 ${selectedYear} 年底缺漏`}
+                           {loading && !batchProgress
+                             ? tr.aiSearching
+                             : applyVars(tr.fillYearEndButton, { year: selectedYear })}
                        </button>
                        <button
                          onClick={handleBatchFetch}
@@ -419,8 +435,12 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                            ${loading ? 'bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                        >
                            {batchProgress
-                               ? `⏳ 抓取中 ${batchProgress.current}/${batchProgress.total}（${batchProgress.year} 年）`
-                               : '🚀 一鍵抓取所有年度'}
+                               ? applyVars(tr.batchProgress, {
+                                   current: batchProgress.current,
+                                   total: batchProgress.total,
+                                   year: batchProgress.year,
+                                 })
+                               : tr.batchFetchAll}
                        </button>
                    </div>
                    <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
@@ -430,7 +450,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                          onChange={e => setForceRefresh(e.target.checked)}
                          className="rounded"
                        />
-                       強制重新抓取（覆蓋已有數據）
+                       {tr.forceRefresh}
                    </label>
                    {batchProgress && (
                        <div className="w-full bg-slate-200 rounded-full h-1.5 mt-1">
@@ -445,9 +465,11 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
 
            <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: "#ffffff" }}>
                <div className="p-4 border-b flex justify-between items-center" style={{ backgroundColor: "#f1f5f9" }}>
-                   <h3 className="font-bold" style={{ color: "#334155" }}>{selectedYear} 年底數據</h3>
+                   <h3 className="font-bold" style={{ color: "#334155" }}>
+                     {applyVars(tr.yearEndDataTitle, { year: selectedYear })}
+                   </h3>
                    <div className="flex items-center gap-2">
-                       <label className="text-sm" style={{ color: "#475569" }}>匯率 (USD/TWD):</label>
+                       <label className="text-sm" style={{ color: "#475569" }}>{tr.exchangeRateLabel}</label>
                        <input 
                          type="number" 
                          step="0.1"
@@ -461,14 +483,16 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                <table className="min-w-full text-sm text-left">
                    <thead style={{ backgroundColor: "#f8fafc", color: "#64748b" }}>
                        <tr>
-                           <th className="px-4 py-2">市場</th>
-                           <th className="px-4 py-2">代號</th>
-                           <th className="px-4 py-2 text-right">收盤價 ({selectedYear}/12/31)</th>
+                           <th className="px-4 py-2">{tr.colMarket}</th>
+                           <th className="px-4 py-2">{tr.colTicker}</th>
+                           <th className="px-4 py-2 text-right">
+                             {applyVars(tr.colClosePrice, { year: selectedYear })}
+                           </th>
                        </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-100">
                        {activeTickers.length === 0 ? (
-                           <tr><td colSpan={3} className="p-8 text-center text-slate-400">該年份無持股</td></tr>
+                           <tr><td colSpan={3} className="p-8 text-center text-slate-400">{tr.noHoldingsThisYear}</td></tr>
                        ) : (
                            activeTickers.map(t => {
                                // 移除 (BAK) 後綴以進行比對（與過濾邏輯保持一致）
@@ -512,7 +536,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                                              value={val}
                                              onChange={(e) => handlePriceChange(priceKey, e.target.value)}
                                              className="w-32 border rounded p-1 text-right focus:ring-2 focus:ring-accent" style={{ color: "#1e293b", backgroundColor: hasData ? "#f0fdf4" : "#ffffff", borderColor: hasData ? "#bbf7d0" : "#cbd5e1" }}
-                                             placeholder="輸入股價"
+                                             placeholder={tr.pricePlaceholder}
                                            />
                                        </td>
                                    </tr>
@@ -524,18 +548,18 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
            </div>
            
            <div className="text-xs p-3 rounded" style={{ backgroundColor: "#fefce8", color: "#78716c", border: "1px solid #fef08a" }}>
-               💡 說明：
+               {tr.hintTitle}
                <ul className="list-disc pl-5 mt-1 space-y-1">
-                   <li>第一顆按鈕會顯示為「🤖 補齊 {selectedYear} 年底缺漏」：針對<strong style={{ color: "#1e293b" }}>下拉選單目前選定的年份</strong>，僅抓取該年<strong style={{ color: "#1e293b" }}>12/31 年底</strong>股價／匯率；只補<strong style={{ color: "#1e293b" }}>數值為 0</strong> 或未填的欄位，已填數據不會被覆蓋。</li>
-                   <li>「🚀 一鍵抓取」：同時抓取<strong style={{ color: "#1e293b" }}>年底（12/31）+ Q1~Q3 季末（3/31、6/30、9/30）</strong>股價，讓累積損益圖可按季顯示真實數據。</li>
-                   <li>勾選「強制重新抓取」可覆蓋已有數據。</li>
+                   <li>{applyVars(tr.hintBullet1, { year: selectedYear })}</li>
+                   <li>{tr.hintBullet2}</li>
+                   <li>{tr.hintBullet3}</li>
                </ul>
            </div>
         </div>
 
         <div className="p-4 flex justify-end gap-3 shrink-0" style={{ borderTop: "1px solid #e2e8f0", backgroundColor: "#f8fafc" }}>
-          <button onClick={onClose} className="px-6 py-2 border rounded-lg transition" style={{ borderColor: "#cbd5e1", color: "#334155", backgroundColor: "#ffffff" }}>取消</button>
-          <button onClick={handleSave} className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-lg">儲存並更新圖表</button>
+          <button onClick={onClose} className="px-6 py-2 border rounded-lg transition" style={{ borderColor: "#cbd5e1", color: "#334155", backgroundColor: "#ffffff" }}>{tr.cancel}</button>
+          <button onClick={handleSave} className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-lg">{tr.saveUpdateChart}</button>
         </div>
       </div>
     </div>

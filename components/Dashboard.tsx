@@ -390,14 +390,20 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
           {/* ① Progress bar showing return vs 8% target */}
           <div className="mt-2">
             <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
-              <span>0%</span><span className="text-slate-500">目標 8%</span><span>20%+</span>
+              <span>0%</span>
+              <span className="text-slate-500">{translations.dashboard.annualizedReturnTarget8}</span>
+              <span>20%+</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 relative">
               <div
                 className="h-full rounded-full bg-blue-500 transition-all duration-1000"
                 style={{ width: `${Math.min(Math.max((summary.annualizedReturn / 20) * 100, 0), 100)}%` }}
               />
-              <div className="absolute top-0 h-full w-px bg-slate-400" style={{ left: '40%' }} title="目標 8%" />
+              <div
+                className="absolute top-0 h-full w-px bg-slate-400"
+                style={{ left: '40%' }}
+                title={translations.dashboard.annualizedReturnTarget8}
+              />
             </div>
           </div>
           <p className="text-[10px] text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(toBase(summary.netInvestedTWD * 1.08), baseCurrency)}</p>
@@ -679,8 +685,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                     資料對帳提醒：部分年度「資產變化」與「淨流入 + 收益 + 市場損益」存在微小差異，請檢查匯率或歷史估值來源。
                   </div>
                 )}
-                <div className="mt-2 text-xs text-slate-400">
-                  ✅ 有季末快照（Yahoo 真實數據）　⚠️ 線性插值估算（請至歷史股價校正 → 一鍵抓取補充）
+                <div className="mt-2 text-xs text-slate-400 flex flex-wrap gap-x-2 gap-y-1 items-baseline">
+                  <span>{translations.dashboard.chartLegendQuarterSnapshot}</span>
+                  <span>{translations.dashboard.chartLegendLinearInterpolation}</span>
                 </div>
               </>
             ) : (
