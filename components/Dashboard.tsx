@@ -139,10 +139,25 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
     });
   };
 
-  /** 外圈：依 ticker 合併持倉市值占比（不含現金；同一標的不同帳戶會加總） */
+  /** 外圈：依 ticker 合併持倉市值占比（不含現金；同一標的不同帳戶會加總）。
+   * 排序與內圈「股票→債券」一致：先所有股票類標的、再債券類，同類內依市值大→小，使內外圈同類別落在相近圓心角。 */
   const tickerAllocationOuter = useMemo(() => {
-    return calculateAssetAllocation(holdings, 0, rates, portfolioAccounts).filter(item => item.value > 0);
-  }, [holdings, rates, portfolioAccounts]);
+    const items = calculateAssetAllocation(holdings, 0, rates, portfolioAccounts).filter(item => item.value > 0);
+    const equity: typeof items = [];
+    const bond: typeof items = [];
+    const other: typeof items = [];
+    for (const item of items) {
+      const ac = getAssetClassForTicker(item.name, tickerClassOverrides);
+      if (ac === AssetClass.BOND) bond.push(item);
+      else if (ac === AssetClass.EQUITY) equity.push(item);
+      else other.push(item);
+    }
+    const byValueDesc = (a: (typeof items)[0], b: (typeof items)[0]) => b.value - a.value;
+    equity.sort(byValueDesc);
+    bond.sort(byValueDesc);
+    other.sort(byValueDesc);
+    return [...equity, ...bond, ...other];
+  }, [holdings, rates, portfolioAccounts, tickerClassOverrides]);
 
   const stockBondAllocation = useMemo(() => {
     let stockValue = 0;
@@ -731,6 +746,8 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       cy="50%"
                       innerRadius={72}
                       outerRadius={102}
+                      startAngle={90}
+                      endAngle={-270}
                       paddingAngle={1.5}
                       dataKey="value"
                       nameKey="name"
@@ -755,7 +772,9 @@ const Dashboard: React.FC<Props> = ({ onUpdateHistorical }) => {
                       cy="50%"
                       innerRadius={36}
                       outerRadius={72}
-                      paddingAngle={2}
+                      startAngle={90}
+                      endAngle={-270}
+                      paddingAngle={1.5}
                       dataKey="value"
                       nameKey="name"
                       onMouseEnter={(_: any, index: number) => {
