@@ -115,8 +115,8 @@ zhCN.dashboard = {
 };
 zhCN.marketChart = {
   title: '各市场绩效比较',
-  subtitle: '按市场分组，显示年化报酬率与资产占比',
-  annualizedReturn: '年化报酬率',
+  subtitle: '按市场分组，显示累积报酬率与资产占比',
+  cumulativeReturn: '累积报酬率',
   weight: '占比',
   value: '市值',
   noData: '尚无持仓资料',

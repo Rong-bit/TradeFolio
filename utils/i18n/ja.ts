@@ -172,8 +172,8 @@ export const ja: Translations = {
   },
   marketChart: {
     title: '市場別パフォーマンス',
-    subtitle: '市場別の年率リターンとポートフォリオ比率',
-    annualizedReturn: '年率リターン',
+    subtitle: '市場別の累積リターンとポートフォリオ比率',
+    cumulativeReturn: '累積リターン',
     weight: '比率',
     value: '時価',
     noData: '保有銘柄データなし',

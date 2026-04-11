@@ -116,8 +116,8 @@ export const ar: Translations = {
   },
   marketChart: {
     title: 'أداء الأسواق',
-    subtitle: 'العائد السنوي والوزن مجمّع حسب السوق',
-    annualizedReturn: 'العائد السنوي',
+    subtitle: 'العائد التراكمي والوزن حسب السوق',
+    cumulativeReturn: 'العائد التراكمي',
     weight: 'الوزن',
     value: 'القيمة',
     noData: 'لا توجد بيانات',

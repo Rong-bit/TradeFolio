@@ -172,8 +172,8 @@ export const zhTW: Translations = {
   },
   marketChart: {
     title: '各市場績效比較',
-    subtitle: '按市場分組，顯示年化報酬率與資產佔比',
-    annualizedReturn: '年化報酬率',
+    subtitle: '按市場分組，顯示累積報酬率與資產佔比',
+    cumulativeReturn: '累積報酬率',
     weight: '佔比',
     value: '市值',
     noData: '尚無持倉資料',

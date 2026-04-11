@@ -172,8 +172,8 @@ export const ko: Translations = {
   },
   marketChart: {
     title: '시장별 성과 비교',
-    subtitle: '시장별 연환산 수익률 및 포트폴리오 비중',
-    annualizedReturn: '연환산 수익률',
+    subtitle: '시장별 누적 수익률 및 포트폴리오 비중',
+    cumulativeReturn: '누적 수익률',
     weight: '비중',
     value: '시가',
     noData: '보유 종목 데이터 없음',

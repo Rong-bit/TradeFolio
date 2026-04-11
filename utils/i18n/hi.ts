@@ -116,8 +116,8 @@ export const hi: Translations = {
   },
   marketChart: {
     title: 'बाज़ार प्रदर्शन',
-    subtitle: 'बाज़ार के अनुसार वार्षिक रिटर्न और भार',
-    annualizedReturn: 'वार्षिक रिटर्न',
+    subtitle: 'बाज़ार के अनुसार संचित रिटर्न और भार',
+    cumulativeReturn: 'संचित रिटर्न',
     weight: 'भार',
     value: 'मूल्य',
     noData: 'कोई होल्डिंग डेटा नहीं',

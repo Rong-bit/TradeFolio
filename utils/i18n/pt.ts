@@ -108,8 +108,8 @@ export const pt: Translations = {
   },
   marketChart: {
     title: 'Desempenho por Mercado',
-    subtitle: 'Retorno anualizado e peso por mercado',
-    annualizedReturn: 'Retorno Anual.',
+    subtitle: 'Retorno acumulado e peso por mercado',
+    cumulativeReturn: 'Retorno acumulado',
     weight: 'Peso',
     value: 'Valor',
     noData: 'Sem posições',

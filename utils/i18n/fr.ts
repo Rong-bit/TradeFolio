@@ -108,8 +108,8 @@ export const fr: Translations = {
   },
   marketChart: {
     title: 'Performance par Marché',
-    subtitle: 'Rendement annualisé et pondération par marché',
-    annualizedReturn: 'Rend. Annualisé',
+    subtitle: 'Rendement cumulé et pondération par marché',
+    cumulativeReturn: 'Rendement cumulé',
     weight: 'Pondération',
     value: 'Valeur',
     noData: 'Aucune position',

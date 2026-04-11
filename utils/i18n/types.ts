@@ -202,7 +202,8 @@ export interface Translations {
   marketChart: {
     title: string;
     subtitle: string;
-    annualizedReturn: string;
+    /** 各市場加總：以 TWD 合計 (市值−成本)/成本，非年化 */
+    cumulativeReturn: string;
     weight: string;
     value: string;
     noData: string;

@@ -107,8 +107,8 @@ export const de: Translations = {
   },
   marketChart: {
     title: 'Marktleistungsvergleich',
-    subtitle: 'Nach Markt gruppiert – annualisierte Rendite und Gewichtung',
-    annualizedReturn: 'Ann. Rendite',
+    subtitle: 'Nach Markt gruppiert – kumulierte Rendite und Gewichtung',
+    cumulativeReturn: 'Kumulierte Rendite',
     weight: 'Gewichtung',
     value: 'Marktwert',
     noData: 'Keine Positionen',

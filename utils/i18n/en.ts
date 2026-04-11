@@ -173,8 +173,8 @@ export const en: Translations = {
   },
   marketChart: {
     title: 'Market Performance',
-    subtitle: 'Grouped by market — annualized return & portfolio weight',
-    annualizedReturn: 'Ann. Return',
+    subtitle: 'Grouped by market — cumulative return & portfolio weight',
+    cumulativeReturn: 'Cumulative Return',
     weight: 'Weight',
     value: 'Value',
     noData: 'No holdings data',
