@@ -70,6 +70,7 @@ export const hi: Translations = {
     detailedDisplay: 'विस्तृत (खाता द्वारा)',
     aiUpdatePrices: 'AI द्वारा कीमत और विनिमय दर अपडेट',
     estimatedGrowth8: 'अनुमानित 8% वृद्धि',
+    annualizedReturnTarget8: 'लक्ष्य 8%',
     chartLoading: 'चार्ट लोड हो रहा है...',
     noChartData: 'कृपया पहले फंड जमा और लेनदेन जोड़ें',
     noHoldings: 'कोई होल्डिंग नहीं',
@@ -112,6 +113,9 @@ export const hi: Translations = {
     viewCalculationDetails: 'विवरण देखें',
     riskWarning: 'निवेश जोखिम चेतावनी',
     riskWarningDesc: 'निवेश में जोखिम होता है। अतीत का प्रदर्शन भविष्य के परिणामों की गारंटी नहीं देता है।',
+    chartLegendQuarterSnapshot: '✅ तिमाही-अंत स्नैपशॉट (Yahoo वास्तविक डेटा)',
+    chartLegendLinearInterpolation:
+      '⚠️ रैखिक इंटरपोलेशन — अनुपलब्ध डेटा के लिए ऐतिहासिक मूल्य खोलें',
     notInvestmentAdvice: 'निवेश सलाह नहीं।' 
   },
   marketChart: {
@@ -616,5 +620,37 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     confirmImport: 'आयात की पुष्टि करें',
     noFileSelected: 'कोई फ़ाइल चयनित नहीं',
     selectFile: 'फ़ाइल चुनें',
+  },
+  historicalModal: {
+    title: 'ऐतिहासिक कीमतें (Time Machine)',
+    selectYearLabel: 'वर्ष',
+    yearOption: '{year}',
+    noHistoryYears: 'कोई वर्ष नहीं',
+    fillYearEndButton: '🤖 {year} वर्षांत भरें',
+    aiSearching: 'लोड हो रहा...',
+    batchProgress: '⏳ {current}/{total} ({year})',
+    batchFetchAll: '🚀 सभी वर्ष लाएँ',
+    forceRefresh: 'फिर से लाएँ (मौजूदा अधिलेखित)',
+    yearEndDataTitle: '{year} वर्षांत डेटा',
+    exchangeRateLabel: 'दर (USD/TWD):',
+    colMarket: 'बाज़ार',
+    colTicker: 'टिकर',
+    colClosePrice: 'बंद ({year}/12/31)',
+    noHoldingsThisYear: 'इस वर्ष कोई होल्डिंग नहीं',
+    pricePlaceholder: 'कीमत दर्ज करें',
+    hintTitle: '💡 नोट:',
+    hintBullet1:
+      'पहला बटन (🤖 {year} वर्षांत भरें): ड्रॉपडाउन वर्ष; केवल 31 दिसंबर बंद भाव/दर; 0 या खाली भरता है, भरे मान नहीं बदलता।',
+    hintBullet2:
+      '🚀 सभी वर्ष: 31/12 के साथ Q1–Q3 तिमाही अंत (31/03, 30/06, 30/09) वास्तविक तिमाही चार्ट के लिए।',
+    hintBullet3: '«फिर से लाएँ» चुनकर मौजूदा डेटा अधिलेखित करें।',
+    cancel: 'रद्द',
+    saveUpdateChart: 'सहेजें और चार्ट अपडेट करें',
+    alertAllComplete: 'पूर्ण। {count} वर्ष संसाधित (वर्षांत + Q1–Q3)।',
+    alertNoUpdateNeeded:
+      'सभी डेटा पहले से भरा है।\nअधिलेखित करने के लिए «फिर से लाएँ» चुनें।',
+    alertFetchFailed:
+      '{count} प्रतीक(ों) की ऐतिहासिक कीमतें नहीं मिलीं। कनेक्शन जांचें।\n\nप्रतीक: {tickers}',
+    alertAiError: 'अपडेट विफल। बाद में पुनः प्रयास करें।',
   },
 };

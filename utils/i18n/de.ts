@@ -69,6 +69,7 @@ export const de: Translations = {
     detailedDisplay: 'Detailliert (Nach Konto)',
     aiUpdatePrices: 'KI aktualisiert Kurse & Wechselkurse',
     estimatedGrowth8: 'Geschätztes Wachstum 8%',
+    annualizedReturnTarget8: 'Ziel 8 %',
     chartLoading: 'Diagramm wird geladen...',
     noChartData: 'Bitte fügen Sie zuerst Einzahlungen und Transaktionen hinzu',
     noHoldings: 'Keine Positionen',
@@ -104,6 +105,9 @@ export const de: Translations = {
     viewCalculationDetails: 'Details anzeigen',
     riskWarning: 'Risikowarnung',
     riskWarningDesc: 'Investitionen bergen Risiken. Die vergangene Leistung garantiert keine zukünftigen Ergebnisse.',
+    chartLegendQuarterSnapshot: '✅ Quartalsende-Snapshot (Yahoo-Daten)',
+    chartLegendLinearInterpolation:
+      '⚠️ Lineare Interpolation — unter „Historische Kurse“ fehlende Daten abrufen',
   },
   marketChart: {
     title: 'Marktleistungsvergleich',
@@ -599,5 +603,37 @@ A: Aktienübertragungen erfordern die Erstellung von zwei Transaktionsaufzeichnu
     errorParseFailed: 'Daten können nicht analysiert werden. {count} Zeilen haben Formatfehler, bitte überprüfen.',
     errorParseFailedCount: '',
     errorParseError: 'Analysefehler: {error}. Bitte Datenformat überprüfen.',
+  },
+  historicalModal: {
+    title: 'Historische Kurse (Time Machine)',
+    selectYearLabel: 'Jahr wählen',
+    yearOption: '{year}',
+    noHistoryYears: 'Keine Jahresdaten',
+    fillYearEndButton: '🤖 {year} Jahresende ergänzen',
+    aiSearching: 'Wird geladen...',
+    batchProgress: '⏳ {current}/{total} ({year})',
+    batchFetchAll: '🚀 Alle Jahre abrufen',
+    forceRefresh: 'Neu abrufen (vorhandene überschreiben)',
+    yearEndDataTitle: 'Daten Jahresende {year}',
+    exchangeRateLabel: 'Kurs (USD/TWD):',
+    colMarket: 'Markt',
+    colTicker: 'Symbol',
+    colClosePrice: 'Schlusskurs ({year}/12/31)',
+    noHoldingsThisYear: 'Keine Positionen in diesem Jahr',
+    pricePlaceholder: 'Kurs eingeben',
+    hintTitle: '💡 Hinweise:',
+    hintBullet1:
+      'Erster Button (🤖 {year} Jahresende ergänzen): nur 31.12.-Schlusskurse/-kurs für das gewählte Jahr; füllt nur 0 oder leere Felder, überschreibt keine vorhandenen Werte.',
+    hintBullet2:
+      '🚀 Alle Jahre: 31.12. plus Quartalsenden Q1–Q3 (31.03., 30.06., 30.09.) für echte Quartalsdaten in der Kumulativ-Chart.',
+    hintBullet3: '„Neu abrufen“ aktiviert Überschreiben vorhandener Werte.',
+    cancel: 'Abbrechen',
+    saveUpdateChart: 'Speichern & Diagramme aktualisieren',
+    alertAllComplete: 'Fertig. {count} Jahr(e) verarbeitet (Jahresende + Q1–Q3).',
+    alertNoUpdateNeeded:
+      'Alle Kurse sind bereits gesetzt.\nZum Überschreiben „Neu abrufen“ aktivieren.',
+    alertFetchFailed:
+      'Historische Kurse für {count} Symbol(e) konnten nicht geladen werden. Verbindung prüfen.\n\nSymbole: {tickers}',
+    alertAiError: 'Aktualisierung fehlgeschlagen. Bitte später erneut versuchen.',
   },
 };

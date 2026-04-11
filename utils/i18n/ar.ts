@@ -70,6 +70,7 @@ export const ar: Translations = {
     detailedDisplay: 'مفصل (حسب الحساب)',
     aiUpdatePrices: 'تحديث الأسعار وسعر الصرف (AI)',
     estimatedGrowth8: 'نمو متوقع 8%',
+    annualizedReturnTarget8: 'هدف 8٪',
     chartLoading: 'جاري تحميل الرسم البياني...',
     noChartData: 'يرجى إضافة الإيداعات والمعاملات أولاً',
     noHoldings: 'لا توجد مراكز',
@@ -112,6 +113,9 @@ export const ar: Translations = {
     viewCalculationDetails: 'عرض التفاصيل',
     riskWarning: 'تحذير مخاطر الاستثمار',
     riskWarningDesc: 'الاستثمار ينطوي على مخاطر. الأداء السابق لا يضمن النتائج المستقبلية.',
+    chartLegendQuarterSnapshot: '✅ لقطة نهاية الربع (بيانات Yahoo)',
+    chartLegendLinearInterpolation:
+      '⚠️ استيفاء خطي — افتح الأسعار التاريخية لجلب البيانات الناقصة',
     notInvestmentAdvice: 'ليس نصيحة استثمارية.' 
   },
   marketChart: {
@@ -616,5 +620,37 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     confirmImport: 'تأكيد الاستيراد',
     noFileSelected: 'لم يتم اختيار ملف',
     selectFile: 'اختر ملف',
+  },
+  historicalModal: {
+    title: 'الأسعار التاريخية (Time Machine)',
+    selectYearLabel: 'السنة',
+    yearOption: '{year}',
+    noHistoryYears: 'لا توجد سنوات',
+    fillYearEndButton: '🤖 إكمال نهاية {year}',
+    aiSearching: 'جاري التحميل...',
+    batchProgress: '⏳ {current}/{total} ({year})',
+    batchFetchAll: '🚀 جلب كل السنوات',
+    forceRefresh: 'إعادة الجلب بالقوة (استبدال)',
+    yearEndDataTitle: 'بيانات نهاية {year}',
+    exchangeRateLabel: 'السعر (USD/TWD):',
+    colMarket: 'السوق',
+    colTicker: 'الرمز',
+    colClosePrice: 'الإغلاق ({year}/12/31)',
+    noHoldingsThisYear: 'لا توجد مراكز لهذه السنة',
+    pricePlaceholder: 'أدخل السعر',
+    hintTitle: '💡 ملاحظات:',
+    hintBullet1:
+      'الزر الأول (🤖 إكمال نهاية {year}): السنة من القائمة؛ جلب 31 ديسمبر فقط؛ يملأ الأصفار أو الفراغات دون استبدال القيم الموجودة.',
+    hintBullet2:
+      '🚀 جلب الكل: 31/12 مع نهايات الأرباع Q1–Q3 (31/03، 30/06، 30/09) لرسوم بيانية فصلية حقيقية.',
+    hintBullet3: 'فعّل «إعادة الجلب بالقوة» لاستبدال البيانات الحالية.',
+    cancel: 'إلغاء',
+    saveUpdateChart: 'حفظ وتحديث المخططات',
+    alertAllComplete: 'تم. عُالجت {count} سنة (نهاية السنة + Q1–Q3).',
+    alertNoUpdateNeeded:
+      'جميع البيانات مكتملة.\nفعّل «إعادة الجلب بالقوة» للاستبدال.',
+    alertFetchFailed:
+      'تعذر جلب أسعار تاريخية لـ {count} رمز(ات). تحقق من الاتصال.\n\nالرموز: {tickers}',
+    alertAiError: 'فشل التحديث. حاول لاحقاً.',
   },
 };

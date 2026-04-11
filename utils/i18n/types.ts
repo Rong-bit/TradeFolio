@@ -154,6 +154,8 @@ export interface Translations {
     detailedDisplay: string;
     aiUpdatePrices: string;
     estimatedGrowth8: string;
+    /** 年化報酬進度條中央標記（對照 8% 目標） */
+    annualizedReturnTarget8: string;
     chartLoading: string;
     noChartData: string;
     noHoldings: string;
@@ -196,6 +198,10 @@ export interface Translations {
     viewCalculationDetails: string;
     riskWarning: string;
     riskWarningDesc: string;
+    /** 累積損益圖下方：季末有 Yahoo 真實快照 */
+    chartLegendQuarterSnapshot: string;
+    /** 累積損益圖下方：線性插值／請至歷史股價補齊 */
+    chartLegendLinearInterpolation: string;
     notInvestmentAdvice: string;
   };
   // 各市場績效圖
@@ -677,6 +683,43 @@ export interface Translations {
     errorParseFailed: string;
     errorParseFailedCount: string;
     errorParseError: string;
+  };
+  /** 歷史股價校正彈窗（Time Machine） */
+  historicalModal: {
+    title: string;
+    selectYearLabel: string;
+    /** 下拉選項，{year} */
+    yearOption: string;
+    noHistoryYears: string;
+    /** 按鈕文案，{year} */
+    fillYearEndButton: string;
+    aiSearching: string;
+    /** {current} {total} {year} */
+    batchProgress: string;
+    batchFetchAll: string;
+    forceRefresh: string;
+    /** {year} */
+    yearEndDataTitle: string;
+    exchangeRateLabel: string;
+    colMarket: string;
+    colTicker: string;
+    /** {year} */
+    colClosePrice: string;
+    noHoldingsThisYear: string;
+    pricePlaceholder: string;
+    hintTitle: string;
+    /** {year} */
+    hintBullet1: string;
+    hintBullet2: string;
+    hintBullet3: string;
+    cancel: string;
+    saveUpdateChart: string;
+    /** {count} */
+    alertAllComplete: string;
+    alertNoUpdateNeeded: string;
+    /** {count} {tickers} */
+    alertFetchFailed: string;
+    alertAiError: string;
   };
 }
 

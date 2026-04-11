@@ -70,6 +70,7 @@ export const fr: Translations = {
     detailedDisplay: 'Détaillé (Par Compte)',
     aiUpdatePrices: 'IA Mettre à Jour les Prix et Taux de Change',
     estimatedGrowth8: 'Est. Croissance 8%',
+    annualizedReturnTarget8: 'Objectif 8 %',
     chartLoading: 'Chargement du graphique...',
     noChartData: 'Veuillez d\'abord ajouter des dépôts de fonds et des transactions',
     noHoldings: 'Aucune position',
@@ -105,6 +106,9 @@ export const fr: Translations = {
     viewCalculationDetails: 'Voir les Détails',
     riskWarning: 'Avertissement de Risque',
     riskWarningDesc: 'Les investissements comportent des risques. Les performances passées ne garantissent pas les résultats futurs.',
+    chartLegendQuarterSnapshot: '✅ Snapshot fin de trimestre (données Yahoo)',
+    chartLegendLinearInterpolation:
+      '⚠️ Interpolation linéaire — ouvrez Prix historiques pour récupérer les données manquantes',
   },
   marketChart: {
     title: 'Performance par Marché',
@@ -627,5 +631,37 @@ R : Les transferts d'actions nécessitent la création de deux enregistrements d
     errorParseFailed: 'Impossible d\'analyser les données. {count} lignes ont des erreurs de format, veuillez vérifier.',
     errorParseFailedCount: '',
     errorParseError: 'Erreur d\'analyse: {error}. Veuillez vérifier le format des données.',
+  },
+  historicalModal: {
+    title: 'Prix historiques (Time Machine)',
+    selectYearLabel: 'Année',
+    yearOption: '{year}',
+    noHistoryYears: 'Aucune année',
+    fillYearEndButton: '🤖 Compléter fin {year}',
+    aiSearching: 'Chargement...',
+    batchProgress: '⏳ {current}/{total} ({year})',
+    batchFetchAll: '🚀 Tout récupérer',
+    forceRefresh: 'Forcer la mise à jour (écraser)',
+    yearEndDataTitle: 'Données fin {year}',
+    exchangeRateLabel: 'Taux (USD/TWD) :',
+    colMarket: 'Marché',
+    colTicker: 'Symbole',
+    colClosePrice: 'Clôture ({year}/12/31)',
+    noHoldingsThisYear: 'Aucune position cette année',
+    pricePlaceholder: 'Saisir le cours',
+    hintTitle: '💡 Remarques :',
+    hintBullet1:
+      'Premier bouton (🤖 Compléter fin {year}) : année du menu ; cours/taux du 31/12 uniquement ; remplit 0 ou vides sans écraser.',
+    hintBullet2:
+      '🚀 Tout récupérer : 31/12 + fins de trimestre T1–T3 (31/03, 30/06, 30/09) pour des graphiques trimestriels réels.',
+    hintBullet3: 'Cochez « Forcer la mise à jour » pour écraser les données existantes.',
+    cancel: 'Annuler',
+    saveUpdateChart: 'Enregistrer et mettre à jour',
+    alertAllComplete: 'Terminé. {count} année(s) traitée(s) (fin d’année + T1–T3).',
+    alertNoUpdateNeeded:
+      'Toutes les données sont déjà renseignées.\nCochez « Forcer la mise à jour » pour écraser.',
+    alertFetchFailed:
+      'Impossible de récupérer {count} cours historiques. Vérifiez la connexion.\n\nSymboles : {tickers}',
+    alertAiError: 'Échec de la mise à jour. Réessayez plus tard.',
   },
 };

@@ -126,6 +126,7 @@ export const zhTW: Translations = {
     detailedDisplay: '明細顯示 (依帳戶)',
     aiUpdatePrices: 'AI 聯網更新股價 & 匯率',
     estimatedGrowth8: '預估 8% 成長',
+    annualizedReturnTarget8: '目標 8%',
     chartLoading: '圖表載入中...',
     noChartData: '請先新增資金匯入與交易紀錄',
     noHoldings: '無持倉',
@@ -168,6 +169,8 @@ export const zhTW: Translations = {
     viewCalculationDetails: '查看計算明細',
     riskWarning: '投資風險警告',
     riskWarningDesc: '投資有風險，過往績效不代表未來表現。',
+    chartLegendQuarterSnapshot: '✅ 有季末快照（Yahoo 真實數據）',
+    chartLegendLinearInterpolation: '⚠️ 線性插值估算（請至歷史股價校正 → 一鍵抓取補充）',
     notInvestmentAdvice: '本應用程式不提供投資建議，所有分析結果僅供參考。',
   },
   marketChart: {
@@ -735,6 +738,38 @@ A: 股票轉移需要建立兩筆交易記錄：
     errorParseFailed: '無法解析資料。共 {count} 筆資料格式錯誤，請檢查。',
     errorParseFailedCount: '',
     errorParseError: '解析發生錯誤：{error}。請檢查資料格式。',
+  },
+  historicalModal: {
+    title: '歷史股價校正 (Time Machine)',
+    selectYearLabel: '選擇年份',
+    yearOption: '{year} 年',
+    noHistoryYears: '無歷史資料',
+    fillYearEndButton: '🤖 補齊 {year} 年底缺漏',
+    aiSearching: 'AI 搜尋中...',
+    batchProgress: '⏳ 抓取中 {current}/{total}（{year} 年）',
+    batchFetchAll: '🚀 一鍵抓取所有年度',
+    forceRefresh: '強制重新抓取（覆蓋已有數據）',
+    yearEndDataTitle: '{year} 年底數據',
+    exchangeRateLabel: '匯率 (USD/TWD):',
+    colMarket: '市場',
+    colTicker: '代號',
+    colClosePrice: '收盤價 ({year}/12/31)',
+    noHoldingsThisYear: '該年份無持股',
+    pricePlaceholder: '輸入股價',
+    hintTitle: '💡 說明：',
+    hintBullet1:
+      '第一顆按鈕（文案含「🤖 補齊 {year} 年底缺漏」）：針對下拉選單目前選定的年份，僅抓取該年 12/31 年底股價／匯率；只補數值為 0 或未填的欄位，已填數據不會被覆蓋。',
+    hintBullet2:
+      '「🚀 一鍵抓取」：同時抓取年底（12/31）+ Q1～Q3 季末（3/31、6/30、9/30）股價，讓累積損益圖可按季顯示真實數據。',
+    hintBullet3: '勾選「強制重新抓取」可覆蓋已有數據。',
+    cancel: '取消',
+    saveUpdateChart: '儲存並更新圖表',
+    alertAllComplete: '所有年度抓取完成！共處理 {count} 個年度（含年底 + Q1~Q3 季末）。',
+    alertNoUpdateNeeded:
+      '所有持股與匯率皆已有數據，無須 AI 更新。\n若需強制重新抓取，請勾選「強制重新抓取」。',
+    alertFetchFailed:
+      '無法取得 {count} 筆股票的歷史股價，請檢查網路連線或稍後再試。\n\n查詢的代號：{tickers}',
+    alertAiError: 'AI 更新失敗，請稍後再試',
   },
 };
 

@@ -126,6 +126,7 @@ export const ko: Translations = {
     detailedDisplay: '상세(계좌별)',
     aiUpdatePrices: 'AI 주가·환율 업데이트',
     estimatedGrowth8: '8% 성장 예상',
+    annualizedReturnTarget8: '목표 8%',
     chartLoading: '차트 로딩 중...',
     noChartData: '자금 입금과 거래를 추가하세요',
     noHoldings: '보유 없음',
@@ -168,6 +169,9 @@ export const ko: Translations = {
     viewCalculationDetails: '계산 상세',
     riskWarning: '투자 위험 경고',
     riskWarningDesc: '투자에는 위험이 따릅니다. 과거 실적은 미래 결과를 보장하지 않습니다.',
+    chartLegendQuarterSnapshot: '✅ 분기 말 스냅샷 있음(Yahoo 실제 데이터)',
+    chartLegendLinearInterpolation:
+      '⚠️ 선형 보간 추정 — 「역사적 주가 보정」에서 누락분 일괄 가져오기',
     notInvestmentAdvice: '투자 조언이 아닙니다. 결과는 참고 정보입니다.',
   },
   marketChart: {
@@ -734,5 +738,37 @@ A: 주식 이전에는 두 개의 거래 기록을 생성해야 합니다:
     errorParseFailed: '데이터를 분석할 수 없습니다. {count} 줄에 형식 오류가 있습니다. 확인하세요.',
     errorParseFailedCount: '',
     errorParseError: '분석 오류: {error}. 데이터 형식을 확인하세요.',
+  },
+  historicalModal: {
+    title: '역사적 주가 보정 (Time Machine)',
+    selectYearLabel: '연도 선택',
+    yearOption: '{year}년',
+    noHistoryYears: '기록된 연도 없음',
+    fillYearEndButton: '🤖 {year} 연말 누락 보완',
+    aiSearching: '가져오는 중...',
+    batchProgress: '⏳ 가져오는 중 {current}/{total} ({year}년)',
+    batchFetchAll: '🚀 모든 연도 일괄 가져오기',
+    forceRefresh: '강제 다시 가져오기(기존 덮어쓰기)',
+    yearEndDataTitle: '{year} 연말 데이터',
+    exchangeRateLabel: '환율 (USD/TWD):',
+    colMarket: '시장',
+    colTicker: '심볼',
+    colClosePrice: '종가 ({year}/12/31)',
+    noHoldingsThisYear: '해당 연도 보유 없음',
+    pricePlaceholder: '주가 입력',
+    hintTitle: '💡 안내:',
+    hintBullet1:
+      '첫 번째 버튼(「🤖 {year} 연말 누락 보완」 표시): 드롭다운에서 고른 연도의 12/31 종가·환율만 가져옵니다. 0 또는 빈 칸만 채우며, 이미 입력된 값은 덮어쓰지 않습니다.',
+    hintBullet2:
+      '「🚀 모든 연도 일괄 가져오기」: 연말(12/31)과 Q1~Q3 분기말(3/31, 6/30, 9/30)을 함께 가져와 누적 손익 차트에 분기 실데이터를 쓸 수 있습니다.',
+    hintBullet3: '「강제 다시 가져오기」를 선택하면 기존 데이터를 덮어씁니다.',
+    cancel: '취소',
+    saveUpdateChart: '저장 후 차트 갱신',
+    alertAllComplete: '모든 연도 가져오기가 완료되었습니다. {count}개 연도를 처리했습니다(연말 + Q1~Q3).',
+    alertNoUpdateNeeded:
+      '보유 종목과 환율이 모두 채워져 있습니다.\n덮어쓰려면 「강제 다시 가져오기」를 선택하세요.',
+    alertFetchFailed:
+      '{count}개 종목의 역사적 주가를 가져오지 못했습니다. 네트워크를 확인 후 다시 시도하세요.\n\n심볼: {tickers}',
+    alertAiError: '업데이트에 실패했습니다. 잠시 후 다시 시도하세요.',
   },
 };

@@ -126,6 +126,7 @@ export const ja: Translations = {
     detailedDisplay: '明細（口座別）',
     aiUpdatePrices: 'AIで株価・為替更新',
     estimatedGrowth8: '8%成長見込み',
+    annualizedReturnTarget8: '目標 8%',
     chartLoading: 'チャート読込中...',
     noChartData: '資金入金と取引を追加してください',
     noHoldings: '保有なし',
@@ -168,6 +169,9 @@ export const ja: Translations = {
     viewCalculationDetails: '計算詳細',
     riskWarning: '投資リスク警告',
     riskWarningDesc: '投資にはリスクがあります。過去の実績は将来の結果を保証するものではありません。',
+    chartLegendQuarterSnapshot: '✅ 四半期末スナップショットあり（Yahoo 実データ）',
+    chartLegendLinearInterpolation:
+      '⚠️ 線形補間の推定 — 「履歴株価補正」で未取得分を一括取得してください',
     notInvestmentAdvice: '投資アドバイスではありません。結果は参考情報です。',
   },
   marketChart: {
@@ -734,5 +738,37 @@ A: 株式転送には2つの取引記録を作成する必要があります：
     errorParseFailed: 'データを解析できません。{count} 行にフォーマットエラーがあります。確認してください。',
     errorParseFailedCount: '',
     errorParseError: '解析エラー：{error}。データ形式を確認してください。',
+  },
+  historicalModal: {
+    title: '履歴株価補正 (Time Machine)',
+    selectYearLabel: '年を選択',
+    yearOption: '{year} 年',
+    noHistoryYears: '履歴なし',
+    fillYearEndButton: '🤖 {year} 年末の欠損を補完',
+    aiSearching: '取得中...',
+    batchProgress: '⏳ 取得中 {current}/{total}（{year} 年）',
+    batchFetchAll: '🚀 全年度を一括取得',
+    forceRefresh: '強制再取得（既存を上書き）',
+    yearEndDataTitle: '{year} 年末データ',
+    exchangeRateLabel: '為替 (USD/TWD):',
+    colMarket: '市場',
+    colTicker: '銘柄',
+    colClosePrice: '終値 ({year}/12/31)',
+    noHoldingsThisYear: 'この年は保有なし',
+    pricePlaceholder: '株価を入力',
+    hintTitle: '💡 説明：',
+    hintBullet1:
+      '1つ目のボタン（「🤖 {year} 年末の欠損を補完」と表示）：ドロップダウンで選んだ年の 12/31 終値・為替のみ取得。0 または未入力のみ補い、入力済みは上書きしません。',
+    hintBullet2:
+      '「🚀 全年度を一括取得」：年末（12/31）に加え Q1～Q3 期末（3/31・6/30・9/30）も取得し、累積損益チャートを四半期ベースの実データにできます。',
+    hintBullet3: '「強制再取得」にチェックすると既存データを上書きできます。',
+    cancel: 'キャンセル',
+    saveUpdateChart: '保存してチャート更新',
+    alertAllComplete: '全年度の取得が完了しました。{count} 年分を処理しました（年末 + Q1～Q3）。',
+    alertNoUpdateNeeded:
+      '保有銘柄と為替はすべて入力済みです。\n上書きする場合は「強制再取得」にチェックしてください。',
+    alertFetchFailed:
+      '{count} 件の履歴株価を取得できませんでした。通信を確認のうえ再試行してください。\n\n銘柄：{tickers}',
+    alertAiError: '更新に失敗しました。しばらくしてから再試行してください。',
   },
 };

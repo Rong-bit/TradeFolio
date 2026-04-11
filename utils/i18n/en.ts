@@ -127,6 +127,7 @@ export const en: Translations = {
     detailedDisplay: 'Detailed (By Account)',
     aiUpdatePrices: 'AI Update Prices & Exchange Rates',
     estimatedGrowth8: 'Est. 8% Growth',
+    annualizedReturnTarget8: 'Target 8%',
     chartLoading: 'Loading chart...',
     noChartData: 'Please add fund deposits and transactions first',
     noHoldings: 'No holdings',
@@ -169,6 +170,9 @@ export const en: Translations = {
     viewCalculationDetails: 'View Details',
     riskWarning: 'Investment Risk Warning',
     riskWarningDesc: 'Investments involve risks. Past performance does not guarantee future results.',
+    chartLegendQuarterSnapshot: '✅ Quarter-end snapshot (Yahoo market data)',
+    chartLegendLinearInterpolation:
+      '⚠️ Linear interpolation — open Historical Prices to fetch missing data',
     notInvestmentAdvice: 'This application does not provide investment advice. All analysis results are for reference only.',
   },
   marketChart: {
@@ -737,5 +741,37 @@ A: Stock transfers require creating two transaction records:
     errorParseFailed: 'Unable to parse data. {count} lines have format errors, please check.',
     errorParseFailedCount: '',
     errorParseError: 'Parse error: {error}. Please check data format.',
+  },
+  historicalModal: {
+    title: 'Historical Prices (Time Machine)',
+    selectYearLabel: 'Year',
+    yearOption: '{year}',
+    noHistoryYears: 'No historical years',
+    fillYearEndButton: '🤖 Fill {year} year-end gaps',
+    aiSearching: 'Fetching...',
+    batchProgress: '⏳ Fetching {current}/{total} ({year})',
+    batchFetchAll: '🚀 Fetch all years',
+    forceRefresh: 'Force re-fetch (overwrite existing)',
+    yearEndDataTitle: '{year} year-end data',
+    exchangeRateLabel: 'Rate (USD/TWD):',
+    colMarket: 'Market',
+    colTicker: 'Symbol',
+    colClosePrice: 'Close ({year}/12/31)',
+    noHoldingsThisYear: 'No holdings for this year',
+    pricePlaceholder: 'Enter price',
+    hintTitle: '💡 Notes:',
+    hintBullet1:
+      'First button (shows 🤖 Fill {year} year-end gaps): uses the year in the dropdown; fetches only Dec 31 closing prices/rates; fills zeros or empty fields only; does not overwrite filled values.',
+    hintBullet2:
+      '🚀 Fetch all: Dec 31 plus Q1–Q3 quarter-ends (Mar 31, Jun 30, Sep 30) so the cumulative P/L chart can use real quarterly data.',
+    hintBullet3: 'Check “Force re-fetch” to overwrite existing values.',
+    cancel: 'Cancel',
+    saveUpdateChart: 'Save & update charts',
+    alertAllComplete: 'Done. Processed {count} year(s) (year-end + Q1–Q3).',
+    alertNoUpdateNeeded:
+      'All holdings and rate already have data.\nCheck “Force re-fetch” to overwrite.',
+    alertFetchFailed:
+      'Could not fetch historical prices for {count} symbol(s). Check your connection and try again.\n\nSymbols: {tickers}',
+    alertAiError: 'Update failed. Please try again later.',
   },
 };

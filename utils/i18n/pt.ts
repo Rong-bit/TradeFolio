@@ -70,6 +70,7 @@ export const pt: Translations = {
     detailedDisplay: 'Detalhado (Por Conta)',
     aiUpdatePrices: 'AI Atualizar Preços e Taxas de Câmbio',
     estimatedGrowth8: 'Est. Crescimento de 8%',
+    annualizedReturnTarget8: 'Meta 8%',
     chartLoading: 'Carregando gráfico...',
     noChartData: 'Por favor, adicione depósitos de fundos e transações primeiro',
     noHoldings: 'Sem posições',
@@ -105,6 +106,9 @@ export const pt: Translations = {
     viewCalculationDetails: 'Ver Detalhes',
     riskWarning: 'Aviso de Risco',
     riskWarningDesc: 'Investimentos envolvem riscos. O desempenho passado não garante resultados futuros.',
+    chartLegendQuarterSnapshot: '✅ Snapshot fim de trimestre (dados Yahoo)',
+    chartLegendLinearInterpolation:
+      '⚠️ Interpolação linear — abra Preços históricos para obter dados em falta',
   },
   marketChart: {
     title: 'Desempenho por Mercado',
@@ -591,6 +595,38 @@ R: As transferências de ações requerem a criação de dois registos de transa
     confirmImport: 'Confirmar importação',
     noFileSelected: 'Nenhum arquivo selecionado',
     selectFile: 'Selecionar arquivo',
+  },
+  historicalModal: {
+    title: 'Preços históricos (Time Machine)',
+    selectYearLabel: 'Ano',
+    yearOption: '{year}',
+    noHistoryYears: 'Sem anos',
+    fillYearEndButton: '🤖 Preencher fim de {year}',
+    aiSearching: 'A carregar...',
+    batchProgress: '⏳ {current}/{total} ({year})',
+    batchFetchAll: '🚀 Obter todos os anos',
+    forceRefresh: 'Forçar nova obtenção (substituir)',
+    yearEndDataTitle: 'Dados fim de {year}',
+    exchangeRateLabel: 'Taxa (USD/TWD):',
+    colMarket: 'Mercado',
+    colTicker: 'Símbolo',
+    colClosePrice: 'Fecho ({year}/12/31)',
+    noHoldingsThisYear: 'Sem posições neste ano',
+    pricePlaceholder: 'Introduzir preço',
+    hintTitle: '💡 Notas:',
+    hintBullet1:
+      'Primeiro botão (🤖 Preencher fim de {year}): ano selecionado; apenas 31/12; preenche zeros ou vazios sem substituir valores.',
+    hintBullet2:
+      '🚀 Obter tudo: 31/12 + fins de trimestre T1–T3 (31/03, 30/06, 30/09) para gráficos trimestrais reais.',
+    hintBullet3: 'Marque « Forçar nova obtenção » para substituir dados existentes.',
+    cancel: 'Cancelar',
+    saveUpdateChart: 'Guardar e atualizar gráficos',
+    alertAllComplete: 'Concluído. {count} ano(s) processado(s) (fim de ano + T1–T3).',
+    alertNoUpdateNeeded:
+      'Todos os dados já estão preenchidos.\nMarque « Forçar nova obtenção » para substituir.',
+    alertFetchFailed:
+      'Não foi possível obter {count} preço(s) histórico(s). Verifique a ligação.\n\nSímbolos: {tickers}',
+    alertAiError: 'Falha na atualização. Tente mais tarde.',
   },
 };
 

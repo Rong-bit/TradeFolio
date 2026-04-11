@@ -69,6 +69,7 @@ zhCN.dashboard = {
   detailedDisplay: '明细显示 (依账户)',
   aiUpdatePrices: 'AI 联网更新股价 & 汇率',
   estimatedGrowth8: '预估 8% 成长',
+  annualizedReturnTarget8: '目标 8%',
   chartLoading: '图表加载中...',
   noChartData: '请先新增资金汇入与交易纪录',
   noHoldings: '无持仓',
@@ -111,6 +112,8 @@ zhCN.dashboard = {
   viewCalculationDetails: '查看计算明细',
   riskWarning: '投资风险警告',
   riskWarningDesc: '投资有风险，过往绩效不代表未来表现。',
+  chartLegendQuarterSnapshot: '✅ 有季末快照（Yahoo 真实数据）',
+  chartLegendLinearInterpolation: '⚠️ 线性插值估算（请至历史股价校正 → 一键抓取补充）',
   notInvestmentAdvice: '本应用程式不提供投资建议，所有分析结果仅供参考。',
 };
 zhCN.marketChart = {
@@ -510,6 +513,38 @@ zhCN.batchImportModal = {
   errorParseFailed: '无法解析数据。共 {count} 笔数据格式错误，请检查。',
   errorParseFailedCount: '',
   errorParseError: '解析发生错误：{error}。请检查数据格式。',
+};
+zhCN.historicalModal = {
+  title: '历史股价校正 (Time Machine)',
+  selectYearLabel: '选择年份',
+  yearOption: '{year} 年',
+  noHistoryYears: '无历史资料',
+  fillYearEndButton: '🤖 补齐 {year} 年底缺漏',
+  aiSearching: 'AI 搜寻中...',
+  batchProgress: '⏳ 抓取中 {current}/{total}（{year} 年）',
+  batchFetchAll: '🚀 一键抓取所有年度',
+  forceRefresh: '强制重新抓取（覆盖已有数据）',
+  yearEndDataTitle: '{year} 年底数据',
+  exchangeRateLabel: '汇率 (USD/TWD):',
+  colMarket: '市场',
+  colTicker: '代号',
+  colClosePrice: '收盘价 ({year}/12/31)',
+  noHoldingsThisYear: '该年份无持股',
+  pricePlaceholder: '输入股价',
+  hintTitle: '💡 说明：',
+  hintBullet1:
+    '第一颗按钮（文案含「🤖 补齐 {year} 年底缺漏」）：针对下拉菜单目前选定的年份，仅抓取该年 12/31 年底股价／汇率；只补数值为 0 或未填的字段，已填数据不会被覆盖。',
+  hintBullet2:
+    '「🚀 一键抓取」：同时抓取年底（12/31）+ Q1～Q3 季末（3/31、6/30、9/30）股价，让累积损益图可按季显示真实数据。',
+  hintBullet3: '勾选「强制重新抓取」可覆盖已有数据。',
+  cancel: '取消',
+  saveUpdateChart: '保存并更新图表',
+  alertAllComplete: '所有年度抓取完成！共处理 {count} 个年度（含年底 + Q1~Q3 季末）。',
+  alertNoUpdateNeeded:
+    '所有持股与汇率皆已有数据，无须 AI 更新。\n若需强制重新抓取，请勾选「强制重新抓取」。',
+  alertFetchFailed:
+    '无法取得 {count} 只股票的历史股价，请检查网络连接或稍后再试。\n\n查询的代号：{tickers}',
+  alertAiError: 'AI 更新失败，请稍后再试',
 };
 
 export { zhCN };
