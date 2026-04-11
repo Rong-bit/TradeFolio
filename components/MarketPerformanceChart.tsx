@@ -7,7 +7,12 @@ import { Holding } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { holdingValueToTWD, valueInBaseCurrency } from '../utils/calculations';
+import {
+  holdingValueToTWD,
+  valueInBaseCurrency,
+  nativeValueInAccountCurrencyToTWD,
+  valuationCurrencyForHolding,
+} from '../utils/calculations';
 import { t } from '../utils/i18n';
 
 const MARKET_FLAGS: Record<string, string> = {
@@ -23,53 +28,56 @@ const MARKET_COLORS: Record<string, string> = {
   AU: '#84cc16', SA: '#10b981', BR: '#06b6d4',
 };
 
-type Metric = 'annualizedReturn' | 'weight' | 'value';
+type Metric = 'cumulativeReturn' | 'weight' | 'value';
 
 const MarketPerformanceChart: React.FC = () => {
   const { holdings, accounts } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { language, isGuest } = useUI();
   const tr = t(language);
-  const [metric, setMetric] = useState<Metric>('annualizedReturn');
+  const [metric, setMetric] = useState<Metric>('cumulativeReturn');
 
   const data = useMemo(() => {
-    const map: Record<string, { totalValue: number; weightedReturn: number; count: number }> = {};
+    const map: Record<string, { totalValueTwd: number; totalCostTwd: number; count: number }> = {};
     holdings.forEach((h: Holding) => {
       const m = h.market as string;
       const valTwd = holdingValueToTWD(h, accounts, rates);
-      if (!map[m]) map[m] = { totalValue: 0, weightedReturn: 0, count: 0 };
-      map[m].totalValue += valTwd;
-      map[m].weightedReturn += h.annualizedReturn * valTwd;
+      const ccy = valuationCurrencyForHolding(h, accounts);
+      const costTwd = nativeValueInAccountCurrencyToTWD(h.totalCost, ccy, rates);
+      if (!map[m]) map[m] = { totalValueTwd: 0, totalCostTwd: 0, count: 0 };
+      map[m].totalValueTwd += valTwd;
+      map[m].totalCostTwd += costTwd;
       map[m].count++;
     });
-    const totalPortfolio = Object.values(map).reduce((s, v) => s + v.totalValue, 0);
+    const totalPortfolio = Object.values(map).reduce((s, v) => s + v.totalValueTwd, 0);
     return Object.entries(map)
       .map(([market, v]) => ({
         market,
         flag: MARKET_FLAGS[market] ?? '🌐',
         label: `${MARKET_FLAGS[market] ?? ''} ${market}`,
-        annualizedReturn: v.totalValue > 0 ? v.weightedReturn / v.totalValue : 0,
-        weight: totalPortfolio > 0 ? (v.totalValue / totalPortfolio) * 100 : 0,
-        value: valueInBaseCurrency(v.totalValue, baseCurrency, rates),
+        cumulativeReturn:
+          v.totalCostTwd > 0 ? ((v.totalValueTwd - v.totalCostTwd) / v.totalCostTwd) * 100 : 0,
+        weight: totalPortfolio > 0 ? (v.totalValueTwd / totalPortfolio) * 100 : 0,
+        value: valueInBaseCurrency(v.totalValueTwd, baseCurrency, rates),
         count: v.count,
       }))
       .filter(d => d.value > 0)
       .sort((a, b) => {
-        if (metric === 'annualizedReturn') return b.annualizedReturn - a.annualizedReturn;
+        if (metric === 'cumulativeReturn') return b.cumulativeReturn - a.cumulativeReturn;
         if (metric === 'weight') return b.weight - a.weight;
         return b.value - a.value;
       });
   }, [holdings, accounts, rates, baseCurrency, metric]);
 
   const formatValue = (v: number) => {
-    if (metric === 'annualizedReturn' || metric === 'weight') return `${v.toFixed(1)}%`;
+    if (metric === 'cumulativeReturn' || metric === 'weight') return `${v.toFixed(1)}%`;
     if (Math.abs(v) >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
     if (Math.abs(v) >= 1_000) return `${(v / 1_000).toFixed(0)}k`;
     return v.toFixed(0);
   };
 
   const metricLabels: Record<Metric, string> = {
-    annualizedReturn: tr.marketChart.annualizedReturn,
+    cumulativeReturn: tr.marketChart.cumulativeReturn,
     weight: tr.marketChart.weight,
     value: `${tr.marketChart.value} (${baseCurrency})`,
   };
@@ -92,7 +100,7 @@ const MarketPerformanceChart: React.FC = () => {
           <p className="text-xs text-slate-400 mt-0.5">{tr.marketChart.subtitle}</p>
         </div>
         <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs font-medium">
-          {(['annualizedReturn', 'weight', 'value'] as Metric[]).map(m => (
+          {(['cumulativeReturn', 'weight', 'value'] as Metric[]).map(m => (
             <button
               key={m}
               onClick={() => setMetric(m)}
@@ -131,8 +139,8 @@ const MarketPerformanceChart: React.FC = () => {
             <span className="text-xl">{d.flag}</span>
             <div className="min-w-0">
               <div className="text-xs font-bold text-slate-700">{d.market}</div>
-              <div className="text-sm font-bold tabular-nums" style={{ color: d.annualizedReturn >= 0 ? '#10b981' : '#ef4444' }}>
-                {d.annualizedReturn >= 0 ? '+' : ''}{d.annualizedReturn.toFixed(1)}%
+              <div className="text-sm font-bold tabular-nums" style={{ color: d.cumulativeReturn >= 0 ? '#10b981' : '#ef4444' }}>
+                {d.cumulativeReturn >= 0 ? '+' : ''}{d.cumulativeReturn.toFixed(1)}%
               </div>
               <div className="text-[10px] text-slate-400">{d.weight.toFixed(1)}% {tr.marketChart.ratio}</div>
             </div>
