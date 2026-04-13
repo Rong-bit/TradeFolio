@@ -271,8 +271,16 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   }, [attributionSeries, chartData, toBase]);
 
   const quarterlyTrendData = useMemo(() => {
+    const formatQuarterLabel = (period: string): string => {
+      const quarterMatch = period.match(/^(\d{4})-Q([1-4])$/);
+      if (quarterMatch) return `${quarterMatch[1]}Q${quarterMatch[2]}`;
+      const nowMatch = period.match(/^(\d{4})-NOW$/);
+      if (nowMatch) return `${nowMatch[1]}至今`;
+      return period;
+    };
+
     return buildQuarterlyTrendData(chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData).map(item => ({
-      year: item.period,
+      year: formatQuarterLabel(item.period),
       cost: toBase(item.cost),
       profit: toBase(item.profit),
       totalAssets: toBase(item.totalAssets),
