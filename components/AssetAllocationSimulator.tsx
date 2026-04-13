@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { fetchAnnualizedReturn } from '../services/yahooFinanceService';
 import { t, translate } from '../utils/i18n';
+import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -429,7 +430,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                   setInitialAmount(numValue);
                 }
               }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
               min="0"
               step="1000"
               placeholder="0"
@@ -484,7 +485,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                   setYears(numValue);
                 }
               }}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
               min="1"
               max="50"
               placeholder="10"
@@ -533,7 +534,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                     setRegularInvestment(numValue);
                   }
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
                 min="0"
                 step="1000"
                 placeholder="0"
@@ -547,7 +548,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
               <select
                 value={regularFrequency}
                 onChange={(e) => setRegularFrequency(e.target.value as 'monthly' | 'quarterly' | 'yearly')}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
                 disabled={regularInvestment === 0}
               >
                 <option value="monthly">{translations.simulator.monthly}</option>
@@ -653,14 +654,14 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                       value={row.ticker}
                       onChange={(e) => updateInputRow(row.id, 'ticker', e.target.value)}
                       placeholder={translations.simulator.tickerPlaceholder}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
                     />
                   </td>
                   <td className="px-3 py-2">
                     <select
                       value={row.market}
                       onChange={(e) => updateInputRow(row.id, 'market', e.target.value as Market)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
                     >
                       <option value={Market.TW}>{translations.simulator.marketTW}</option>
                       <option value={Market.US}>{translations.simulator.marketUS}</option>
@@ -685,7 +686,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                         type="number"
                         value={row.annualReturn}
                         onChange={(e) => updateInputRow(row.id, 'annualReturn', parseFloat(e.target.value) || 0)}
-                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className={`flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
                         step="0.1"
                         min="0"
                         max="100"
@@ -743,7 +744,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                           updateInputRow(row.id, 'allocation', numValue);
                         }
                       }}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
                       step="0.1"
                       min="0"
                       max="100"
@@ -822,7 +823,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                           type="number"
                           value={asset.annualizedReturn}
                           onChange={(e) => updateAsset(asset.id, 'annualizedReturn', parseFloat(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 border border-slate-300 rounded text-right focus:ring-2 focus:ring-blue-500"
+                          className={`w-20 px-2 py-1 border border-slate-300 rounded text-right focus:ring-2 focus:ring-blue-500 ${FORM_FIELD_THEME}`}
                           step="0.1"
                         />
                       </td>
@@ -862,7 +863,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                               updateAsset(asset.id, 'allocation', numValue);
                             }
                           }}
-                          className="w-20 px-2 py-1 border border-slate-300 rounded text-right focus:ring-2 focus:ring-blue-500"
+                          className={`w-20 px-2 py-1 border border-slate-300 rounded text-right focus:ring-2 focus:ring-blue-500 ${FORM_FIELD_THEME}`}
                           step="0.1"
                           min="0"
                           max="100"
