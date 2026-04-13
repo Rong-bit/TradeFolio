@@ -221,9 +221,7 @@ const HoldingsTable: React.FC<Props> = () => {
 
         <td className="px-3 py-2 sticky left-14 bg-white z-10 font-bold text-slate-700">{h.ticker}</td>
 
-        <td
-          className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-300 text-xs sm:text-sm"
-        >
+        <td className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-100 text-xs sm:text-sm">
           {(() => {
             const num = h.quantity;
             if (num % 1 === 0) {
@@ -238,7 +236,7 @@ const HoldingsTable: React.FC<Props> = () => {
            <div
             className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-white dark:group-hover:bg-slate-600"
            >
-             <span className="text-slate-500 dark:text-slate-300 text-xs">$</span>
+             <span className="text-slate-500 dark:text-slate-200 text-xs">$</span>
              <input
               type="number"
               className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
@@ -292,10 +290,7 @@ const HoldingsTable: React.FC<Props> = () => {
           </div>
         </td>
 
-        <td
-          className="px-3 py-2 text-right font-medium"
-          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
-        >
+        <td className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-100">
           {formatCurrency(h.totalCost, currency)}
         </td>
 
@@ -332,10 +327,7 @@ const HoldingsTable: React.FC<Props> = () => {
           )}
         </td>
 
-        <td
-          className="px-3 py-2 text-right text-xs"
-          style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
-        >
+        <td className="px-3 py-2 text-right text-xs text-slate-600 dark:text-slate-100">
            {new Intl.NumberFormat('zh-TW', {
               style: 'currency',
               currency: currency,
