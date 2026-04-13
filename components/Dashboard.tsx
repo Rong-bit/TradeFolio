@@ -275,7 +275,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       const quarterMatch = period.match(/^(\d{4})-Q([1-4])$/);
       if (quarterMatch) return `${quarterMatch[1]}Q${quarterMatch[2]}`;
       const nowMatch = period.match(/^(\d{4})-NOW$/);
-      if (nowMatch) return `${nowMatch[1]}至今`;
+      if (nowMatch) return `${nowMatch[1]}${translations.dashboard.chartLabels.toDate}`;
       return period;
     };
 
