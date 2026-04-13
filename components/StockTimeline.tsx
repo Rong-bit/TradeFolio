@@ -190,14 +190,14 @@ const StockTimeline: React.FC = () => {
             <input
               type="text" value={search} onChange={e => setSearch(e.target.value)}
               placeholder="搜尋代號..."
-              className="pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg w-32 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className="pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg w-32 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
             />
           </div>
 
           {/* 市場 */}
           <select
             value={filterMarket} onChange={e => setFilterMarket(e.target.value)}
-            className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
           >
             {markets.map(m => <option key={m} value={m}>{m === 'ALL' ? '全部市場' : m}</option>)}
           </select>
@@ -217,7 +217,7 @@ const StockTimeline: React.FC = () => {
           {/* 排序 */}
           <select
             value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
-            className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 ml-auto"
+            className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-300 ml-auto dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
           >
             <option value="firstDate">依首次買入</option>
             <option value="ticker">依代號</option>
