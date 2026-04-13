@@ -736,10 +736,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     {tickerAllocationOuter[activeOuterIndex].name}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-semibold">{translations.dashboard.marketDistribution}</span>
-                  <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
+                  <span className="text-sm ml-auto text-slate-900 dark:text-slate-200 tabular-nums">
                     {tickerAllocationOuter[activeOuterIndex].ratio.toFixed(1)}%
                   </span>
-                  <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
+                  <span className="font-mono font-bold text-slate-900 dark:text-slate-200">
                     {formatCurrency(toBase(tickerAllocationOuter[activeOuterIndex].value), baseCurrency)}
                   </span>
                 </>
@@ -752,10 +752,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-semibold">
                     {translations.dashboard.stockBondRatioBadge}
                   </span>
-                  <span className="text-sm ml-auto text-slate-600 dark:text-slate-400 tabular-nums">
+                  <span className="text-sm ml-auto text-slate-900 dark:text-slate-200 tabular-nums">
                     {stockBondAllocation[activeInnerIndex].ratio.toFixed(1)}%
                   </span>
-                  <span className="font-mono font-bold text-slate-600 dark:text-slate-400">
+                  <span className="font-mono font-bold text-slate-900 dark:text-slate-200">
                     {formatCurrency(toBase(stockBondAllocation[activeInnerIndex].value), baseCurrency)}
                   </span>
                 </>
@@ -855,7 +855,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     >
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                       <span className="text-sm sm:text-xs font-semibold flex-1 font-mono text-slate-900 dark:text-slate-100">{item.name}</span>
-                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
+                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
                     </div>
                   ))}
                 </div>
@@ -877,7 +877,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     >
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                       <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.name}</span>
-                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-600 dark:text-slate-400">{item.ratio.toFixed(1)}%</span>
+                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
                     </div>
                   ))}
                 </div>
