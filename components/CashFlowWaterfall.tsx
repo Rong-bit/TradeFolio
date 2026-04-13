@@ -68,7 +68,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
         segPLPosDefault: shouldSwapFlowAndPL ? 0 : (pl >= 0 ? pl : 0),
         segPLNeg: pl < 0 ? pl : 0,
         /** 拆成兩段固定 fill，避免堆疊 Bar 上 Cell 顏色被 Recharts 忽略 */
-        segFlowPosDefault: shouldSwapFlowAndPL || shouldSwapFlowAndIncome ? 0 : flowPos,
+        segFlowPosDefault: shouldSwapFlowAndPL ? 0 : flowPos,
         segFlowPosSwapped: shouldSwapFlowAndPL ? flowPos : 0,
         segFlowNeg: flowNeg,
         segIncomeDefault: shouldSwapFlowAndIncome ? 0 : income,
