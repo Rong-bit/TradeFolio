@@ -190,7 +190,13 @@ const HoldingsTable: React.FC<Props> = () => {
     return (
       <tr
         key={uniqueKey}
-        className={`transition-colors group ${isDetailedMode ? 'bg-slate-50/30' : ''}`}
+        className={`transition-colors group ${
+          isDetailedMode
+            ? isDarkMode
+              ? 'bg-slate-800/50'
+              : 'bg-slate-50/30'
+            : ''
+        }`}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#f8fafc';
         }}
@@ -198,7 +204,7 @@ const HoldingsTable: React.FC<Props> = () => {
           e.currentTarget.style.backgroundColor = '';
         }}
       >
-        <td className="px-3 py-2 sticky left-0 bg-white dark:bg-slate-800 z-10">
+        <td className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800 border-r border-transparent dark:border-slate-700/80">
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
             h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' :
             h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' :
@@ -219,7 +225,7 @@ const HoldingsTable: React.FC<Props> = () => {
           </span>
         </td>
 
-        <td className="px-3 py-2 sticky left-14 bg-white dark:bg-slate-800 z-10 font-bold text-slate-700 dark:text-slate-100">{h.ticker}</td>
+        <td className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100 border-r border-slate-200 dark:border-slate-700/80">
 
         <td className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-100 text-xs sm:text-sm">
           {(() => {
@@ -234,7 +240,7 @@ const HoldingsTable: React.FC<Props> = () => {
 
         <td className="px-3 py-2 text-right">
            <div
-            className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-white dark:group-hover:bg-slate-600"
+            className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-100 dark:group-hover:bg-slate-600"
            >
              <span className="text-slate-500 dark:text-slate-200 text-xs">$</span>
              <input
@@ -340,9 +346,9 @@ const HoldingsTable: React.FC<Props> = () => {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow overflow-hidden border border-slate-100">
-      <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center flex-wrap gap-2 bg-slate-50">
-        <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden border border-slate-100 dark:border-slate-700">
+      <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2 bg-slate-50 dark:bg-slate-800">
+        <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
@@ -350,7 +356,7 @@ const HoldingsTable: React.FC<Props> = () => {
         </h3>
         <div className="flex items-center gap-2">
           {/* 切換顯示模式按鈕 */}
-          <div className="flex items-center gap-1 bg-white rounded-lg border border-slate-200 p-1">
+          <div className="flex items-center gap-1 bg-white dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 p-1">
             <button
               onClick={() => setDisplayMode('merged')}
               className={`px-3 py-1.5 rounded text-xs font-medium transition ${
@@ -385,8 +391,8 @@ const HoldingsTable: React.FC<Props> = () => {
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-xs uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
-              <th className="px-3 py-2 sticky left-0 bg-white dark:bg-slate-800 z-10">{translations.holdings.market}</th>
-              <th className="px-3 py-2 sticky left-14 bg-white dark:bg-slate-800 z-10">{translations.holdings.ticker}</th>
+              <th className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800 border-r border-transparent dark:border-slate-700/80">{translations.holdings.market}</th>
+              <th className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700/80">{translations.holdings.ticker}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.currentPrice}</th>
               <th
