@@ -1393,7 +1393,8 @@ export const buildQuarterlyTrendData = (
   const buildDate = new Date();
   const calendarYear = buildDate.getFullYear();
   const calendarMonth = buildDate.getMonth() + 1;
-  const currentQuarter = Math.min(4, Math.floor((calendarMonth - 1) / 3) + 1);
+  // 只顯示「已結束」季度：例如 4 月僅顯示到 Q1，不提前顯示 Q2
+  const completedQuarter = Math.floor((calendarMonth - 1) / 3);
 
   /** 用季末快照計算持倉市值（TWD） */
   const calcAssetsFromSnapshot = (
@@ -1465,7 +1466,7 @@ export const buildQuarterlyTrendData = (
 
     if (yearNum > calendarYear) continue;
 
-    const lastQuarterThisYear = yearNum < calendarYear ? 4 : currentQuarter;
+    const lastQuarterThisYear = yearNum < calendarYear ? 4 : completedQuarter;
 
     for (let q = 1; q <= lastQuarterThisYear; q++) {
       const qStart = (q - 1) * 3 + 1;
@@ -1525,6 +1526,31 @@ export const buildQuarterlyTrendData = (
         totalAssets,
         estTotalAssets,
         isRealData,
+      });
+    }
+
+    // 若當年前季度尚未全部結束，補一筆「至今」資料點（例如 2026-Now）
+    if (yearNum === calendarYear && completedQuarter < 4) {
+      let cumulativeCostToDate = cumulativeCostTWD;
+      cashFlows.forEach(cf => {
+        const d = new Date(cf.date);
+        if (d.getFullYear() !== yearNum) return;
+        const month = d.getMonth() + 1;
+        const day = d.getDate();
+        const isInCurrentIncompleteWindow = month > completedQuarter * 3;
+        const isNotFutureInThisMonth = month < calendarMonth || (month === calendarMonth && day <= buildDate.getDate());
+        if (!isInCurrentIncompleteWindow || !isNotFutureInThisMonth) return;
+        if (cf.type === CashFlowType.DEPOSIT) cumulativeCostToDate += getCashFlowAmountTWD(cf);
+        else if (cf.type === CashFlowType.WITHDRAW) cumulativeCostToDate -= getCashFlowAmountTWD(cf);
+      });
+
+      result.push({
+        period: `${yearStr}-NOW`,
+        cost: cumulativeCostToDate,
+        profit: yearEndAssets - cumulativeCostToDate,
+        totalAssets: yearEndAssets,
+        estTotalAssets: yearEndEst,
+        isRealData: yearIsReal,
       });
     }
   }
