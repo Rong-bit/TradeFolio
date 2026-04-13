@@ -281,25 +281,25 @@ const HistoryView: React.FC<Props> = ({
               }
 
               return (
-                <tr key={`${record.type}-${record.id}`} className="hover:bg-slate-50">
-                  <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-slate-600 text-xs sm:text-sm">
+                <tr key={`${record.type}-${record.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                  <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-slate-600 dark:text-slate-300 text-xs sm:text-sm">
                     {record.date}
                   </td>
-                  <td className="px-2 sm:px-3 py-2 text-slate-500 text-[10px] sm:text-xs hidden sm:table-cell">
+                  <td className="px-2 sm:px-3 py-2 text-slate-500 dark:text-slate-400 text-[10px] sm:text-xs hidden sm:table-cell">
                     {accName}
                   </td>
-                  <td className="px-2 sm:px-3 py-2 font-semibold text-slate-700 text-xs sm:text-sm">
+                  <td className="px-2 sm:px-3 py-2 font-semibold text-slate-700 dark:text-slate-100 text-xs sm:text-sm">
                     {record.type === 'TRANSACTION' ? (
                       <div className="flex flex-col">
                         <span>
-                          <span className="text-[10px] sm:text-xs text-slate-400 mr-1">{record.market}</span>
+                          <span className="text-[10px] sm:text-xs text-slate-400 dark:text-slate-500 mr-1">{record.market}</span>
                           {record.ticker}
                         </span>
-                        <span className="text-[10px] text-slate-400 sm:hidden">{accName}</span>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 sm:hidden">{accName}</span>
                       </div>
                     ) : (
                       <div className="flex flex-col">
-                        <span className="text-slate-600">{record.description}</span>
+                        <span className="text-slate-600 dark:text-slate-300">{record.description}</span>
                         {tAN && record.subType === 'TRANSFER' && (
                           <span className="text-[10px] text-slate-400">→ {tAN}</span>
                         )}
@@ -312,20 +312,20 @@ const HistoryView: React.FC<Props> = ({
                   <td className="px-2 sm:px-3 py-2 hidden md:table-cell">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${bc}`}>{dt}</span>
                   </td>
-                  <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">
+                  <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 dark:text-slate-300 text-xs">
                     {record.type === 'TRANSACTION'
                       ? formatNumber(record.price)
                       : record.type === 'CASHFLOW' && record.exchangeRate
                         ? record.exchangeRate
                         : '-'}
                   </td>
-                  <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">
+                  <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 dark:text-slate-300 text-xs">
                     {record.type === 'TRANSACTION' ? formatNumber(record.quantity) : '-'}
                   </td>
-                  <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 text-xs">
+                  <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 dark:text-slate-300 text-xs">
                     {record.type === 'TRANSACTION' && record.fees > 0 ? formatNumber(record.fees) : '-'}
                   </td>
-                  <td className="px-2 sm:px-3 py-2 text-right font-bold font-mono text-slate-700 text-xs sm:text-sm">
+                  <td className="px-2 sm:px-3 py-2 text-right font-bold font-mono text-slate-700 dark:text-slate-100 text-xs sm:text-sm">
                     {formatAmount(record.amount)}
                     <div className="md:hidden mt-0.5">
                       <span className={`text-[10px] font-normal ${nBal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
