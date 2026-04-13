@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Market, Transaction, TransactionType, Holding, Account } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { t } from '../utils/i18n';
+import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 import { marketToCurrency } from '../utils/calculations';
@@ -418,7 +419,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               <input 
                 type="date" name="date" required
                 value={formData.date} onChange={handleChange}
-                className="mt-1 w-full border border-slate-300 rounded-md p-2 focus:ring-accent focus:border-accent"
+                className={`mt-1 w-full border border-slate-300 rounded-md p-2 focus:ring-accent focus:border-accent ${FORM_FIELD_THEME}`}
               />
             </div>
              <div>
@@ -426,7 +427,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               <select 
                 name="accountId" required
                 value={formData.accountId} onChange={handleChange}
-                className="mt-1 w-full border border-slate-300 rounded-md p-2"
+                className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
               >
                 {accounts.map(a => (
                   <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
@@ -441,7 +442,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               <select 
                 name="market" 
                 value={formData.market} onChange={handleChange}
-                className="mt-1 w-full border border-slate-300 rounded-md p-2"
+                className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
               >
                 <option value={Market.TW}>{tf.marketTW}</option>
                 <option value={Market.US}>{tf.marketUS}</option>
@@ -472,7 +473,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               <select
                 value={formData.priceCurrency}
                 onChange={e => setFormData(prev => ({ ...prev, priceCurrency: e.target.value }))}
-                className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none"
+                className={`mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none ${FORM_FIELD_THEME}`}
               >
                 {getPriceCurrencyOptions(formData.market).map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -485,7 +486,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               <input 
                 type="text" name="ticker" required placeholder={tf.tickerPlaceholder}
                 value={formData.ticker} onChange={handleChange}
-                className="mt-1 w-full border border-slate-300 rounded-md p-2 uppercase"
+                className={`mt-1 w-full border border-slate-300 rounded-md p-2 uppercase ${FORM_FIELD_THEME}`}
               />
             </div>
           </div>
@@ -496,7 +497,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               <select 
                 name="type" 
                 value={formData.type} onChange={handleChange}
-                className="mt-1 w-full border border-slate-300 rounded-md p-2"
+                className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
               >
                 <option value={TransactionType.BUY}>{tf.typeBuy}</option>
                 <option value={TransactionType.SELL}>{tf.typeSell}</option>
@@ -512,7 +513,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 type="number" name="price" required step="any" min="0"
                 value={formData.price} onChange={handleChange}
                 placeholder={formData.type === TransactionType.CASH_DIVIDEND ? tf.placeholderQuantity : tf.placeholderPrice}
-                className="mt-1 w-full border border-slate-300 rounded-md p-2"
+                className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
               />
             </div>
           </div>
@@ -527,7 +528,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 value={formData.type === TransactionType.CASH_DIVIDEND ? '1' : formData.quantity}
                 onChange={handleChange}
                 disabled={formData.type === TransactionType.CASH_DIVIDEND}
-                className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${formData.type === TransactionType.CASH_DIVIDEND ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME} ${formData.type === TransactionType.CASH_DIVIDEND ? 'bg-slate-100 cursor-not-allowed dark:bg-slate-700' : ''}`}
               />
             </div>
              <div>
@@ -535,7 +536,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               <input 
                 type="number" name="fees" step="0.01" min="0"
                 value={formData.fees} onChange={handleChange}
-                className="mt-1 w-full border border-slate-300 rounded-md p-2"
+                className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
               />
             </div>
           </div>
@@ -545,7 +546,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
             <input 
               type="text" name="note"
               value={formData.note} onChange={handleChange}
-              className="mt-1 w-full border border-slate-300 rounded-md p-2"
+              className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
             />
           </div>
 

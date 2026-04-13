@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { Transaction, Market } from '../types';
+import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 
 interface Props {
   onUpdate: (updates: { id: string; market: Market }[]) => void;
@@ -55,7 +56,7 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
               value={ticker}
               onChange={(e) => setTicker(e.target.value)}
               placeholder="例如：VWRA"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm ${FORM_FIELD_THEME}`}
             />
           </div>
 
@@ -67,7 +68,7 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
             <select
               value={newMarket}
               onChange={(e) => setNewMarket(e.target.value as Market)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm ${FORM_FIELD_THEME}`}
             >
               <option value={Market.US}>美股 (US)</option>
               <option value={Market.TW}>台股 (TW)</option>

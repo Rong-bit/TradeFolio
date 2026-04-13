@@ -4,6 +4,7 @@ import { Account, Currency, BASE_CURRENCIES } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from '../utils/calculations';
 import { t, translate } from '../utils/i18n';
+import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 
@@ -139,7 +140,7 @@ const AccountManager: React.FC<Props> = () => {
               required
               value={name}
               onChange={handleNameChange}
-              className="mt-1 block w-full border border-slate-300 rounded-md p-2"
+              className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
               placeholder={translations.accounts.accountNamePlaceholder}
             />
           </div>
@@ -148,7 +149,7 @@ const AccountManager: React.FC<Props> = () => {
             <select 
               value={currency}
               onChange={(e) => setCurrency(e.target.value as Currency)}
-              className="mt-1 block w-full border border-slate-300 rounded-md p-2"
+              className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
             >
               {accountCurrencies.map(c => (
                 <option key={c} value={c}>{getCurrencyLabel(c)}</option>
@@ -255,7 +256,7 @@ const AccountManager: React.FC<Props> = () => {
                   required
                   value={name}
                   onChange={handleNameChange}
-                  className="w-full border border-slate-300 rounded-md p-2"
+                  className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
                   placeholder={translations.accounts.accountNamePlaceholder}
                 />
               </div>
@@ -265,7 +266,7 @@ const AccountManager: React.FC<Props> = () => {
                   <select 
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value as Currency)}
-                    className="w-full border border-slate-300 rounded-md p-2"
+                    className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
                   >
                     {accountCurrencies.map(c => (
                       <option key={c} value={c}>{getCurrencyLabel(c)}</option>
@@ -279,7 +280,7 @@ const AccountManager: React.FC<Props> = () => {
                     step="0.01"
                     value={balance}
                     onChange={(e) => setBalance(e.target.value)}
-                    className="w-full border border-slate-300 rounded-md p-2"
+                    className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
                     placeholder="0"
                   />
                 </div>

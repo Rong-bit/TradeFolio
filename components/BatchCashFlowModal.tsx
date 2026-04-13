@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Account, CashFlow, CashFlowType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
+import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 
 interface Props {
   onImport: (flows: CashFlow[]) => void;
@@ -218,7 +219,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
                     <div key={name} className="flex flex-col gap-1">
                       <label className="text-xs font-bold text-slate-500">檔案名稱: <span className="text-slate-800">{name}</span></label>
                       <select 
-                        className={`text-sm border rounded p-2 ${!accountMapping[name] ? 'border-red-400 bg-red-50' : 'border-slate-300'}`}
+                        className={`text-sm border rounded p-2 ${FORM_FIELD_THEME} ${!accountMapping[name] ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : 'border-slate-300'}`}
                         value={accountMapping[name] || ''}
                         onChange={e => setAccountMapping(prev => ({...prev, [name]: e.target.value}))}
                       >
