@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
+import { marketToCurrency } from '../utils/calculations';
 
 interface Props {
   onAdd: (tx: Transaction) => void;
@@ -193,7 +194,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   };
 
   const getPriceCurrencyOptions = (market: Market): { value: string; label: string }[] => {
-    const base = getCurrency(market);
+    const base = marketToCurrency(market);
     const opts: { value: string; label: string }[] = [{ value: '', label: `預設（${base}）` }];
     if (market === Market.UK) {
       opts.push({ value: 'GBP', label: 'GBP（英鎊）' });
