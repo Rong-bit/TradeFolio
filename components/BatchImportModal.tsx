@@ -897,8 +897,8 @@ const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
         <div className="p-6 flex-1 overflow-y-auto space-y-6">
           
           {/* Account Selection */}
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-             <label className="block text-sm font-bold text-slate-700 mb-2">{tr.selectAccount}</label>
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200 dark:border-slate-600">
+             <label className="block text-sm font-bold text-slate-700 dark:text-slate-100 mb-2">{tr.selectAccount}</label>
              
              {accounts.length === 0 ? (
                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -916,7 +916,7 @@ const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
                     setSelectedAccountId(e.target.value);
                     setPreviewData(prev => prev.map(t => ({...t, accountId: e.target.value})));
                   }}
-                  className="w-full md:w-1/2 border border-slate-300 rounded p-2"
+                  className="w-full md:w-1/2 border border-slate-300 rounded p-2 bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
                >
                  <option value="">{tr.selectAccountPlaceholder}</option>
                  {accounts.map(a => (
