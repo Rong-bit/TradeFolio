@@ -203,7 +203,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
               radius={[0, 0, 0, 0]}
               legendType="none"
             />
-            <Bar dataKey="segPLNeg" name="segPLNeg" stackId="wf" fill={WF_COLOR_PL_NEG} radius={[0, 0, 2, 2]} legendType="none" />
+            <Bar dataKey="segPLNeg" name="segPLNeg" stackId="wf" fill={WF_COLOR_PL_NEG} radius={[2, 2, 0, 0]} legendType="none" />
             {data.length > 8 && (
               <Brush dataKey="period" height={24} stroke="#94a3b8" travellerWidth={8} />
             )}
