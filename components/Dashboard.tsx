@@ -577,7 +577,14 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           }}
                         />
                         <Tooltip
-                          contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                          contentStyle={{
+                            backgroundColor: isDarkMode ? '#0f172a' : '#fff',
+                            borderRadius: '8px',
+                            border: isDarkMode ? '1px solid #334155' : '1px solid #e2e8f0',
+                            color: isDarkMode ? '#f1f5f9' : '#0f172a',
+                          }}
+                          labelStyle={{ color: isDarkMode ? '#f1f5f9' : '#0f172a', fontWeight: 700 }}
+                          itemStyle={{ color: isDarkMode ? '#e2e8f0' : '#334155' }}
                           formatter={(value: number, name: string, props: any) => {
                             const isReal = props.payload.isRealData;
                             let suffix = '';
