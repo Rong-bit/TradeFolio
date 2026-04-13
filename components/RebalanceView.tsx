@@ -385,7 +385,7 @@ const RebalanceView: React.FC<Props> = () => {
                 const displayDiffVal = showInUSD ? row.diffValTwd / summary.exchangeRateUsdToTwd : toBase(row.diffValTwd);
                 
                 return (
-                  <tr key={row.mergedKey} className={`hover:bg-slate-50 ${!isEnabled ? 'opacity-50' : ''}`}>
+                  <tr key={row.mergedKey} className={`hover:bg-slate-50 dark:hover:bg-slate-700/40 ${!isEnabled ? 'opacity-50' : ''}`}>
                     <td className="px-3 py-2 text-center">
                       <input
                         type="checkbox"
@@ -394,7 +394,7 @@ const RebalanceView: React.FC<Props> = () => {
                         className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                       />
                     </td>
-                    <td className="px-3 py-2 font-semibold text-slate-700">
+                    <td className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">
                       <div className="flex items-center">
                         <span className={`text-xs px-1.5 py-0.5 rounded mr-2 ${
                           row.market === Market.US ? 'bg-blue-100 text-blue-800' : 
@@ -415,16 +415,16 @@ const RebalanceView: React.FC<Props> = () => {
                         }`}>
                           {row.market}
                         </span>
-                        <span>{row.ticker}</span>
+                        <span className="text-slate-800 dark:text-slate-100">{row.ticker}</span>
                         {accountInfo && (
                           <span className="ml-2 text-xs text-slate-500">{accountInfo}</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-right text-slate-500">
+                    <td className="px-3 py-2 text-right text-slate-500 dark:text-slate-300">
                       {row.currentPrice.toFixed(2)}
                     </td>
-                    <td className="px-3 py-2 text-right font-mono">
+                    <td className="px-3 py-2 text-right font-mono text-slate-800 dark:text-slate-100">
                       {formatCurrency(displayVal, displayCurrency)}
                     </td>
                     <td className="px-3 py-2 text-right text-slate-500">
