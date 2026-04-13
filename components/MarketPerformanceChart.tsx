@@ -16,10 +16,10 @@ import {
 } from '../utils/calculations';
 import { t } from '../utils/i18n';
 
-const MARKET_FLAGS: Record<string, string> = {
-  US: '🇺🇸', TW: '🇹🇼', JP: '🇯🇵', UK: '🇬🇧', CN: '🇨🇳',
-  SZ: '🇨🇳', IN: '🇮🇳', CA: '🇨🇦', FR: '🇫🇷', HK: '🇭🇰',
-  KR: '🇰🇷', DE: '🇩🇪', AU: '🇦🇺', SA: '🇸🇦', BR: '🇧🇷',
+const MARKET_TO_COUNTRY_CODE: Record<string, string> = {
+  US: 'us', TW: 'tw', JP: 'jp', UK: 'gb', CN: 'cn',
+  SZ: 'cn', IN: 'in', CA: 'ca', FR: 'fr', HK: 'hk',
+  KR: 'kr', DE: 'de', AU: 'au', SA: 'sa', BR: 'br',
 };
 
 const MARKET_COLORS: Record<string, string> = {
@@ -54,8 +54,8 @@ const MarketPerformanceChart: React.FC = () => {
     return Object.entries(map)
       .map(([market, v]) => ({
         market,
-        flag: MARKET_FLAGS[market] ?? '🌐',
-        label: `${MARKET_FLAGS[market] ?? ''} ${market}`,
+        countryCode: MARKET_TO_COUNTRY_CODE[market] ?? '',
+        label: market,
         cumulativeReturn:
           v.totalCostTwd > 0 ? ((v.totalValueTwd - v.totalCostTwd) / v.totalCostTwd) * 100 : 0,
         weight: totalPortfolio > 0 ? (v.totalValueTwd / totalPortfolio) * 100 : 0,
@@ -144,7 +144,21 @@ const MarketPerformanceChart: React.FC = () => {
 
           return (
             <div key={d.market} className="rounded-lg p-3 bg-slate-50 border border-slate-100 flex items-center gap-2.5">
-              <span className="text-xl">{d.flag}</span>
+              {d.countryCode ? (
+                <img
+                  src={`https://flagcdn.com/w40/${d.countryCode}.png`}
+                  srcSet={`https://flagcdn.com/w40/${d.countryCode}.png 1x, https://flagcdn.com/w80/${d.countryCode}.png 2x`}
+                  width={20}
+                  height={15}
+                  loading="lazy"
+                  alt={`${d.market} flag`}
+                  className="rounded-sm border border-slate-200 object-cover shrink-0"
+                />
+              ) : (
+                <span className="inline-flex w-5 h-4 items-center justify-center rounded-sm border border-slate-200 text-[10px] text-slate-500 bg-white shrink-0">
+                  {d.market}
+                </span>
+              )}
               <div className="min-w-0">
                 <div className="text-xs font-bold text-slate-700">{d.market}</div>
                 {metric === 'cumulativeReturn' && (
