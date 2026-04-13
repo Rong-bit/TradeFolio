@@ -267,7 +267,7 @@ const StockTimeline: React.FC = () => {
               <div key={lane.key}>
                 {/* 主列 */}
                 <div
-                  className="flex items-center px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors"
+                  className="flex items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/40 cursor-pointer transition-colors"
                   onClick={() => setExpandedKey(isExpanded ? null : lane.key)}
                 >
                   {/* 標的標籤 */}
@@ -275,7 +275,7 @@ const StockTimeline: React.FC = () => {
                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded text-white ${cfg}`}>
                       {lane.market}
                     </span>
-                    <span className="font-bold text-slate-800 text-sm truncate">{lane.ticker}</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{lane.ticker}</span>
                     {lane.isHolding && (
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" title="持有中" />
                     )}
