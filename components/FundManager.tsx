@@ -535,55 +535,55 @@ const FundManager: React.FC<Props> = () => {
       {/* 確認對話框 */}
       {showConfirmDialog && pendingCashFlow && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="bg-slate-900 p-4">
               <h3 className="text-white font-bold text-lg">{ff.confirmTitle}</h3>
             </div>
             <div className="p-6 space-y-3">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-sm text-yellow-800 font-medium">{ff.confirmMessage}</p>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/40 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 dark:text-yellow-100 font-medium">{ff.confirmMessage}</p>
               </div>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{ff.dateLabel}</span>
-                  <span className="font-medium">{pendingCashFlow.date}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-300">{ff.dateLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{pendingCashFlow.date}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{ff.typeLabel}</span>
-                  <span className="font-medium">{getTypeName(pendingCashFlow.type)}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-300">{ff.typeLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{getTypeName(pendingCashFlow.type)}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{ff.accountLabel}</span>
-                  <span className="font-medium">{accounts.find(a => a.id === pendingCashFlow.accountId)?.name || pendingCashFlow.accountId} ({accounts.find(a => a.id === pendingCashFlow.accountId)?.currency || ''})</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-300">{ff.accountLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{accounts.find(a => a.id === pendingCashFlow.accountId)?.name || pendingCashFlow.accountId} ({accounts.find(a => a.id === pendingCashFlow.accountId)?.currency || ''})</span>
                 </div>
                 {pendingCashFlow.targetAccountId && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{ff.targetAccountLabel}</span>
-                    <span className="font-medium">{accounts.find(a => a.id === pendingCashFlow.targetAccountId)?.name || pendingCashFlow.targetAccountId} ({accounts.find(a => a.id === pendingCashFlow.targetAccountId)?.currency || ''})</span>
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-300">{ff.targetAccountLabel}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{accounts.find(a => a.id === pendingCashFlow.targetAccountId)?.name || pendingCashFlow.targetAccountId} ({accounts.find(a => a.id === pendingCashFlow.targetAccountId)?.currency || ''})</span>
                   </div>
                 )}
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{ff.amountLabel}</span>
-                  <span className="font-medium">
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-300">{ff.amountLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
                     {pendingCashFlow.amount.toLocaleString()} {accounts.find(a => a.id === pendingCashFlow.accountId)?.currency || ''}
                   </span>
                 </div>
                 {pendingCashFlow.exchangeRate && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{ff.exchangeRateLabel}</span>
-                    <span className="font-medium">{pendingCashFlow.exchangeRate}</span>
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-300">{ff.exchangeRateLabel}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{pendingCashFlow.exchangeRate}</span>
                   </div>
                 )}
                 {pendingCashFlow.fee && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{ff.feesLabel}</span>
-                    <span className="font-medium">{pendingCashFlow.fee.toLocaleString()} {baseCurrency}</span>
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-300">{ff.feesLabel}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{pendingCashFlow.fee.toLocaleString()} {baseCurrency}</span>
                   </div>
                 )}
                 {pendingCashFlow.note && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{ff.noteLabel}</span>
-                    <span className="font-medium text-right max-w-[60%]">{pendingCashFlow.note}</span>
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-300">{ff.noteLabel}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100 text-right max-w-[60%]">{pendingCashFlow.note}</span>
                   </div>
                 )}
                 {pendingCashFlow.amountTWD != null && (
