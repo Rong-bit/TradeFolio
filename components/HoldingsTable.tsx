@@ -198,7 +198,7 @@ const HoldingsTable: React.FC<Props> = () => {
           e.currentTarget.style.backgroundColor = '';
         }}
       >
-        <td className="px-3 py-2 sticky left-0 bg-white z-10">
+        <td className="px-3 py-2 sticky left-0 bg-white dark:bg-slate-800 z-10">
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
             h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' :
             h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' :
@@ -219,7 +219,7 @@ const HoldingsTable: React.FC<Props> = () => {
           </span>
         </td>
 
-        <td className="px-3 py-2 sticky left-14 bg-white z-10 font-bold text-slate-700">{h.ticker}</td>
+        <td className="px-3 py-2 sticky left-14 bg-white dark:bg-slate-800 z-10 font-bold text-slate-700 dark:text-slate-100">{h.ticker}</td>
 
         <td className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-100 text-xs sm:text-sm">
           {(() => {
@@ -383,10 +383,10 @@ const HoldingsTable: React.FC<Props> = () => {
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm text-left">
           {/* ⑤ Sortable headers */}
-          <thead className="bg-white text-slate-500 text-xs uppercase font-bold tracking-wider border-b border-slate-100">
+          <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-xs uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
-              <th className="px-3 py-2 sticky left-0 bg-white z-10">{translations.holdings.market}</th>
-              <th className="px-3 py-2 sticky left-14 bg-white z-10">{translations.holdings.ticker}</th>
+              <th className="px-3 py-2 sticky left-0 bg-white dark:bg-slate-800 z-10">{translations.holdings.market}</th>
+              <th className="px-3 py-2 sticky left-14 bg-white dark:bg-slate-800 z-10">{translations.holdings.ticker}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.currentPrice}</th>
               <th
@@ -413,7 +413,7 @@ const HoldingsTable: React.FC<Props> = () => {
               <th className="px-3 py-2 text-right">{translations.holdings.avgPrice}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50 bg-white">
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800">
             {displayMode === 'merged' ? (
               // 合併顯示模式
               sortedMergedHoldings.length === 0 ? (
