@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ChartDataPoint, Account, CashFlow, CashFlowType, Currency, Holding, AssetClass } from '../portfolioTypes';
+import { Account, CashFlow, CashFlowType, Currency, Holding, AssetClass } from '../portfolioTypes';
 import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildQuarterlyTrendData, getAssetClassForTicker, calculateAssetAllocation } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';

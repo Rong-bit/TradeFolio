@@ -29,7 +29,8 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     quantity: '',
     fees: '0',
     accountId: accounts[0]?.id || '',
-    note: ''
+    note: '',
+    priceCurrency: ''
   });
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -47,7 +48,8 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         quantity: editingTransaction.quantity.toString(),
         fees: editingTransaction.fees.toString(),
         accountId: editingTransaction.accountId,
-        note: editingTransaction.note || ''
+        note: editingTransaction.note || '',
+        priceCurrency: editingTransaction.priceCurrency || ''
       });
     } else {
       // 重置為預設值
@@ -60,7 +62,8 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         quantity: '',
         fees: '0',
         accountId: accounts[0]?.id || '',
-        note: ''
+        note: '',
+        priceCurrency: ''
       });
     }
   }, [editingTransaction, accounts]);
@@ -141,6 +144,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
       fees: fees,
       accountId: formData.accountId,
       note: formData.note,
+      priceCurrency: formData.priceCurrency || undefined,
       amount: finalAmount // 儲存計算後的總金額
     };
     
@@ -186,6 +190,22 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   const getAccountCurrencyCode = (accountId: string): string => {
     const a = accounts.find((x: Account) => x.id === accountId);
     return a ? String(a.currency) : 'TWD';
+  };
+
+  const getPriceCurrencyOptions = (market: Market): { value: string; label: string }[] => {
+    const base = getCurrency(market);
+    const opts: { value: string; label: string }[] = [{ value: '', label: `預設（${base}）` }];
+    if (market === Market.UK) {
+      opts.push({ value: 'GBP', label: 'GBP（英鎊）' });
+      opts.push({ value: 'USD', label: 'USD（美元 ETF，如 VWRA）' });
+    } else if (market === Market.DE || market === Market.FR) {
+      opts.push({ value: 'EUR', label: 'EUR（歐元）' });
+      opts.push({ value: 'USD', label: 'USD（美元計價 ETF）' });
+    } else if (market === Market.AU || market === Market.CA) {
+      opts.push({ value: base, label: base });
+      opts.push({ value: 'USD', label: 'USD（美元計價 ETF）' });
+    }
+    return opts;
   };
 
   // 從 holdings 中根據 ticker 查找對應的市場
@@ -439,6 +459,26 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 <option value={Market.BR}>{tf.marketBR}</option>
               </select>
             </div>
+
+          {(formData.market === Market.UK || formData.market === Market.DE ||
+            formData.market === Market.FR || formData.market === Market.AU ||
+            formData.market === Market.CA) && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700">
+                報價幣別
+                <span className="ml-1 text-xs text-slate-400">（選填，覆蓋預設）</span>
+              </label>
+              <select
+                value={formData.priceCurrency}
+                onChange={e => setFormData(prev => ({ ...prev, priceCurrency: e.target.value }))}
+                className="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none"
+              >
+                {getPriceCurrencyOptions(formData.market).map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
             <div>
               <label className="block text-sm font-medium text-slate-700">{tf.ticker}</label>
               <input 

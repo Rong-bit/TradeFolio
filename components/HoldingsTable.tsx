@@ -109,8 +109,8 @@ const HoldingsTable: React.FC<Props> = () => {
   // ⑤ Apply sort to mergedHoldings
   const sortedMergedHoldings = useMemo(() => {
     return [...mergedHoldings].sort((a, b) => {
-      const av = (a as any)[sortKey] ?? 0;
-      const bv = (b as any)[sortKey] ?? 0;
+      const av = (a[sortKey as keyof typeof a] as number) ?? 0;
+      const bv = (b[sortKey as keyof typeof b] as number) ?? 0;
       return sortAsc ? av - bv : bv - av;
     });
   }, [mergedHoldings, sortKey, sortAsc]);
