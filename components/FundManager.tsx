@@ -471,18 +471,18 @@ const FundManager: React.FC<Props> = () => {
                    }
 
                    return (
-                     <tr key={cf.id} className="hover:bg-slate-50">
-                       <td className="px-2 sm:px-3 py-2 text-slate-600 whitespace-nowrap">{cf.date}</td>
+                     <tr key={cf.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                       <td className="px-2 sm:px-3 py-2 text-slate-600 dark:text-slate-300 whitespace-nowrap">{cf.date}</td>
 
-                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-800">
+                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-800 dark:text-slate-100">
                          {formatCurrency(cf.amount, accountCurrency)}
                        </td>
 
-                       <td className="px-2 sm:px-3 py-2 text-right text-slate-500 hidden sm:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right text-slate-500 dark:text-slate-300 hidden sm:table-cell">
                          {cf.exchangeRate != null && cf.exchangeRate > 0 ? cf.exchangeRate : '-'}
                        </td>
 
-                       <td className="px-2 sm:px-3 py-2 text-right text-slate-400 hidden sm:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right text-slate-400 dark:text-slate-500 hidden sm:table-cell">
                          {displayFee == null || displayFee === '-' || displayFee === '' ? '-' : String(displayFee)}
                        </td>
 
@@ -490,14 +490,14 @@ const FundManager: React.FC<Props> = () => {
                          {formatCurrency(toBase(displayTotalTWD), baseCurrency)}
                        </td>
 
-                       <td className="px-2 sm:px-3 py-2 text-slate-700 whitespace-nowrap text-xs sm:text-sm">
+                       <td className="px-2 sm:px-3 py-2 text-slate-700 dark:text-slate-100 whitespace-nowrap text-xs sm:text-sm">
                          <div className="flex flex-col">
                            <span>{accountName}</span>
-                           {cf.type === CashFlowType.TRANSFER && targetName && <span className="text-slate-400 text-xs">→ {targetName}</span>}
+                           {cf.type === CashFlowType.TRANSFER && targetName && <span className="text-slate-400 dark:text-slate-500 text-xs">→ {targetName}</span>}
                          </div>
                        </td>
 
-                       <td className="px-2 sm:px-3 py-2 text-slate-600 hidden sm:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-slate-600 dark:text-slate-300 hidden sm:table-cell">
                          <div className="flex flex-col gap-1">
                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold 
                               ${cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.INTEREST ? 'bg-green-100 text-green-700' : 
@@ -505,7 +505,7 @@ const FundManager: React.FC<Props> = () => {
                              {getTypeName(cf.type)}
                            </span>
                            {cf.note && (
-                             <span className="text-xs text-slate-500">{cf.note.replace(/\(手續費:.*?\)/, '').trim()}</span>
+                             <span className="text-xs text-slate-500 dark:text-slate-400">{cf.note.replace(/\(手續費:.*?\)/, '').trim()}</span>
                            )}
                          </div>
                        </td>
