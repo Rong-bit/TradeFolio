@@ -226,6 +226,8 @@ const HoldingsTable: React.FC<Props> = () => {
         </td>
 
         <td className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100 border-r border-slate-200 dark:border-slate-700/80">
+          {h.ticker}
+        </td>
 
         <td className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-100 text-xs sm:text-sm">
           {(() => {
