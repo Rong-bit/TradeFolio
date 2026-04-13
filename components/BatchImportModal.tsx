@@ -951,7 +951,7 @@ const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
                   <span className="text-xs text-slate-500">{tr.pasteFormat}</span>
                 </label>
                 <textarea 
-                  className="w-full h-40 border border-slate-300 rounded-lg p-3 font-mono text-xs focus:ring-2 focus:ring-accent outline-none"
+                  className="w-full h-40 border border-slate-300 rounded-lg p-3 font-mono text-xs bg-white text-slate-900 focus:ring-2 focus:ring-accent outline-none dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
                   placeholder={`2022/3/30	買	VT	103.23	1.00	0.00\n2025/2/11	轉移	VT	93.41	-167.73	0.00`}
                   value={inputText}
                   onChange={handleTextChange}
