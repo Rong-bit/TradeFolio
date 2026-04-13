@@ -622,7 +622,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
           <p className="mb-1">
             {translations.simulator.cagrFormulaDesc}
           </p>
-          <p className="font-mono bg-white px-2 py-1 rounded mb-1 text-blue-900">
+          <p className="font-mono bg-blue-100 px-2 py-1 rounded mb-1 text-blue-900 dark:bg-slate-700 dark:text-blue-100">
             {translations.simulator.cagrFormula}
           </p>
           <p className="mb-1">
