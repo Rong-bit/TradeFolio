@@ -58,8 +58,22 @@ export function marketToCurrency(market: Market | string): Currency {
 export function marketValueToTWD(
   valueNative: number,
   market: Market | string,
-  rates: ExchangeRates
+  rates: ExchangeRates,
+  priceCurrency?: string
 ): number {
+  if (priceCurrency) {
+    const cur = priceCurrency.toUpperCase();
+    if (cur === 'GBX') return (valueNative / 100) * currencyToTWDRate(Currency.GBP, rates);
+    const currencyMap: Record<string, Currency> = {
+      USD: Currency.USD, GBP: Currency.GBP, EUR: Currency.EUR,
+      JPY: Currency.JPY, HKD: Currency.HKD, KRW: Currency.KRW,
+      CNY: Currency.CNY, INR: Currency.INR, CAD: Currency.CAD,
+      AUD: Currency.AUD, SAR: Currency.SAR, BRL: Currency.BRL,
+      TWD: Currency.TWD,
+    };
+    const c = currencyMap[cur];
+    if (c) return valueNative * currencyToTWDRate(c, rates);
+  }
   return valueNative * currencyToTWDRate(marketToCurrency(market), rates);
 }
 
@@ -240,7 +254,8 @@ export const calculateHoldings = (
          accountId: tx.accountId,
          weight: 0,
          annualizedReturn: 0,
-         firstBuyDate: tx.date
+         firstBuyDate: tx.date,
+         priceCurrency: tx.priceCurrency,
        });
      }
      
@@ -748,9 +763,9 @@ export const generateAdvancedChartData = (
           const histEurRate = historicalData[yearKey].eurExchangeRate || eurExchangeRate;
           const histHkdRate = historicalData[yearKey].hkdExchangeRate || hkdExchangeRate;
           const histKrwRate = historicalData[yearKey].krwExchangeRate || krwExchangeRate;
-          const histCnyRate = (historicalData[yearKey] as any).cnyExchangeRate || cnyExchangeRate;
-          const histCadRate = (historicalData[yearKey] as any).cadExchangeRate || cadExchangeRate;
-          const histAudRate = (historicalData[yearKey] as any).audExchangeRate || audExchangeRate;
+          const histCnyRate = historicalData[yearKey].cnyExchangeRate || cnyExchangeRate;
+          const histCadRate = historicalData[yearKey].cadExchangeRate || cadExchangeRate;
+          const histAudRate = historicalData[yearKey].audExchangeRate || audExchangeRate;
           const histRates: ExchangeRates = {
             exchangeRateUsdToTwd: histRate,
             jpyExchangeRate: histJpyRate,
