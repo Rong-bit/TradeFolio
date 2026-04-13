@@ -545,10 +545,16 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         data={quarterlyTrendData}
                         margin={{ top: 10, right: 30, left: 10, bottom: 60 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke={isDarkMode ? '#334155' : '#f1f5f9'}
+                        />
                         <XAxis
                           dataKey="year"
-                          stroke="#64748b"
+                          stroke={isDarkMode ? '#cbd5e1' : '#64748b'}
+                          tick={{ fill: isDarkMode ? '#cbd5e1' : '#64748b', fontSize: 10 }}
+                          axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
+                          tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           fontSize={10}
                           className="text-xs"
                           padding={{ left: 10, right: 10 }}
@@ -558,7 +564,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         />
                         <YAxis
                           yAxisId="left"
-                          stroke="#64748b"
+                          stroke={isDarkMode ? '#cbd5e1' : '#64748b'}
+                          tick={{ fill: isDarkMode ? '#cbd5e1' : '#64748b', fontSize: 10 }}
+                          axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
+                          tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           fontSize={10}
                           className="text-xs"
                           tickFormatter={(val: number) => {
@@ -586,6 +595,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         />
                         <Legend
                           iconSize={0}
+                          wrapperStyle={{ color: isDarkMode ? '#cbd5e1' : '#334155' }}
                           formatter={(value: string, entry: any) => {
                             if (value.includes(translations.dashboard.chartLabels.accumulatedPL)) {
                               return (
@@ -635,7 +645,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                                     marginRight: '4px',
                                   }}
                                 />
-                                <span className="text-slate-700 font-medium">{value}</span>
+                                <span className="text-slate-700 dark:text-slate-200 font-medium">{value}</span>
                               </span>
                             );
                           }}
@@ -681,8 +691,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         <Brush
                           dataKey="year"
                           height={28}
-                          stroke="#94a3b8"
-                          fill="#f1f5f9"
+                          stroke={isDarkMode ? '#64748b' : '#94a3b8'}
+                          fill={isDarkMode ? '#1e293b' : '#f1f5f9'}
                           travellerWidth={8}
                           startIndex={0}
                           style={{ fontSize: '10px' }}
@@ -705,7 +715,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     資料對帳提醒：部分年度「資產變化」與「淨流入 + 收益 + 市場損益」存在微小差異，請檢查匯率或歷史估值來源。
                   </div>
                 )}
-                <div className="mt-2 text-xs text-slate-400 flex flex-wrap gap-x-2 gap-y-1 items-baseline">
+                <div className="mt-2 text-xs text-slate-400 dark:text-slate-300 flex flex-wrap gap-x-2 gap-y-1 items-baseline">
                   <span>{translations.dashboard.chartLegendQuarterSnapshot}</span>
                   <span>{translations.dashboard.chartLegendLinearInterpolation}</span>
                 </div>
