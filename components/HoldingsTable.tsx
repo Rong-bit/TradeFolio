@@ -204,7 +204,7 @@ const HoldingsTable: React.FC<Props> = () => {
           e.currentTarget.style.backgroundColor = '';
         }}
       >
-        <td className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800 border-r border-transparent dark:border-slate-700/80">
+        <td className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
             h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' :
             h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' :
@@ -225,7 +225,7 @@ const HoldingsTable: React.FC<Props> = () => {
           </span>
         </td>
 
-        <td className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100 border-r border-slate-200 dark:border-slate-700/80">
+        <td className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100">
           {h.ticker}
         </td>
 
@@ -393,8 +393,8 @@ const HoldingsTable: React.FC<Props> = () => {
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-xs uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
-              <th className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800 border-r border-transparent dark:border-slate-700/80">{translations.holdings.market}</th>
-              <th className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700/80">{translations.holdings.ticker}</th>
+              <th className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">{translations.holdings.market}</th>
+              <th className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800">{translations.holdings.ticker}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.currentPrice}</th>
               <th
