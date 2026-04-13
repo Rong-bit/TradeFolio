@@ -111,6 +111,7 @@ export interface Transaction {
   note?: string;
   amount?: number;
   category?: CashFlowCategory; // 股票用途類別
+  priceCurrency?: string; // 報價幣別（覆蓋 market 推斷，例如 USD、GBP）
 }
 
 export interface Holding {
@@ -131,6 +132,7 @@ export interface Holding {
   dailyChangePercent?: number; // Price change %
   firstBuyDate?: string; // Helper for ROI calc
   category?: CashFlowCategory; // 股票用途類別
+  priceCurrency?: string; // 報價幣別（覆蓋 market 推斷）
 }
 
 export interface PortfolioSummary {
