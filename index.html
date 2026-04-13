@@ -67,6 +67,14 @@
       .recharts-brush-slide { fill: #e2e8f0 !important; }
       .dark .recharts-brush-texts text { fill: #94a3b8 !important; }
       .dark .recharts-brush-slide { fill: #334155 !important; }
+      /* Date input calendar icon contrast */
+      input[type="date"]::-webkit-calendar-picker-indicator {
+        opacity: 0.85;
+      }
+      .dark input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1) brightness(1.15);
+        opacity: 0.95;
+      }
     </style>
     <script>
       (function() {
