@@ -38,7 +38,8 @@ type WfDatum = {
   segFlowPosDefault: number;
   segFlowPosSwapped: number;
   segFlowNeg: number;
-  segIncome: number;
+  segIncomeDefault: number;
+  segIncomeSwapped: number;
   segPLForTooltip: number;
   segFlowForTooltip: number;
 };
@@ -54,9 +55,11 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
     return rows.map(r => {
       const flow = toBase(r.netInflow);
       const pl = toBase(r.marketPL);
+      const income = toBase(r.income);
       const flowPos = flow >= 0 ? flow : 0;
       const flowNeg = flow < 0 ? flow : 0;
       const shouldSwapFlowAndPL = pl > 0;
+      const shouldSwapFlowAndIncome = pl < 0;
 
       return {
         period: r.period,
@@ -65,10 +68,11 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
         segPLPosDefault: shouldSwapFlowAndPL ? 0 : (pl >= 0 ? pl : 0),
         segPLNeg: pl < 0 ? pl : 0,
         /** 拆成兩段固定 fill，避免堆疊 Bar 上 Cell 顏色被 Recharts 忽略 */
-        segFlowPosDefault: shouldSwapFlowAndPL ? 0 : flowPos,
+        segFlowPosDefault: shouldSwapFlowAndPL || shouldSwapFlowAndIncome ? 0 : flowPos,
         segFlowPosSwapped: shouldSwapFlowAndPL ? flowPos : 0,
         segFlowNeg: flowNeg,
-        segIncome: toBase(r.income),
+        segIncomeDefault: shouldSwapFlowAndIncome ? 0 : income,
+        segIncomeSwapped: shouldSwapFlowAndIncome ? income : 0,
         segPLForTooltip: pl,
         segFlowForTooltip: flow,
       };
@@ -82,7 +86,8 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
       if (!row) return null;
 
       const flow = row.segFlowForTooltip;
-      const annualPLWithIncome = row.segPLForTooltip + row.segIncome;
+      const income = row.segIncomeDefault + row.segIncomeSwapped;
+      const annualPLWithIncome = row.segPLForTooltip + income;
       const inflowColor =
         flow > 0 ? WF_COLOR_INFLOW_POS : flow < 0 ? WF_COLOR_INFLOW_NEG : '#64748b';
       const annualPLColor =
@@ -119,7 +124,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
           <ul className="recharts-tooltip-item-list" style={{ padding: 0, margin: 0, listStyle: 'none' }}>
             {item('flow', inflowColor, tr.dashboard.annualNetInflow, flow)}
             {item('annual-pl', annualPLColor, tr.dashboard.annualProfit, annualPLWithIncome)}
-            {item('income', WF_COLOR_DIVIDEND, `（含${tr.waterfall.dividend}）`, row.segIncome)}
+            {item('income', WF_COLOR_DIVIDEND, `（含${tr.waterfall.dividend}）`, income)}
           </ul>
         </div>
       );
@@ -174,19 +179,12 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
               formatter={(value: string) => {
                 if (value === 'segPLPosSwapped' || value === 'segPLPosDefault') return tr.waterfall.stockPL;
                 if (value === 'segFlowPosDefault' || value === 'segFlowPosSwapped') return tr.dashboard.annualNetInflow;
-                if (value === 'segIncome') return tr.waterfall.dividend;
+                if (value === 'segIncomeDefault' || value === 'segIncomeSwapped') return tr.waterfall.dividend;
                 return value;
               }}
             />
-            <Bar
-              dataKey="segFlowPosDefault"
-              name="segFlowPosDefault"
-              stackId="wf"
-              fill={WF_COLOR_INFLOW_POS}
-              radius={[0, 0, 0, 0]}
-            />
             <Bar dataKey="segPLPosSwapped" name="segPLPosSwapped" stackId="wf" fill={WF_COLOR_PL_POS} radius={[0, 0, 0, 0]} />
-            <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
+            <Bar dataKey="segIncomeSwapped" name="segIncomeSwapped" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar
               dataKey="segFlowPosSwapped"
               name="segFlowPosSwapped"
@@ -194,6 +192,15 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
               fill={WF_COLOR_INFLOW_POS}
               radius={[2, 2, 0, 0]}
             />
+            <Bar
+              dataKey="segFlowPosDefault"
+              name="segFlowPosDefault"
+              stackId="wf"
+              fill={WF_COLOR_INFLOW_POS}
+              radius={[0, 0, 0, 0]}
+              legendType="none"
+            />
+            <Bar dataKey="segIncomeDefault" name="segIncomeDefault" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar dataKey="segPLPosDefault" name="segPLPosDefault" stackId="wf" fill={WF_COLOR_PL_POS} radius={[2, 2, 0, 0]} />
             <Bar
               dataKey="segFlowNeg"
