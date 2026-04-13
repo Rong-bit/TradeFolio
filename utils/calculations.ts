@@ -1484,7 +1484,8 @@ export const buildQuarterlyTrendData = (
       let totalAssets: number;
       let isRealData: boolean;
 
-      if (q === lastQuarterThisYear) {
+      // 過去年份的 Q4 直接用年度收盤資產；其餘季度（含當年已結束季度）先嘗試季末快照
+      if (yearNum < calendarYear && q === 4) {
         totalAssets = yearEndAssets;
         isRealData = yearIsReal;
       } else {
@@ -1511,7 +1512,7 @@ export const buildQuarterlyTrendData = (
           totalAssets = realAssets;
           isRealData = true;
         } else {
-          // 退回線性插值
+          // 沒有快照時退回線性插值（Q1/Q2/Q3 不再直接套用「今年至今」資產）
           totalAssets = prevYearAssets + (yearEndAssets - prevYearAssets) * (q / 4);
           isRealData = false;
         }
