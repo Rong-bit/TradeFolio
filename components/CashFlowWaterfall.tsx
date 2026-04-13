@@ -48,6 +48,9 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
   const { baseCurrency, rates } = useMarket();
   const { language } = useUI();
   const tr = t(language);
+  const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  const axisTextColor = isDarkMode ? '#cbd5e1' : '#64748b';
+  const axisLineColor = isDarkMode ? '#64748b' : '#94a3b8';
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
 
@@ -154,7 +157,10 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:stroke-slate-700" />
             <XAxis
               dataKey="period"
-              stroke="#64748b"
+              stroke={axisTextColor}
+              tick={{ fill: axisTextColor }}
+              axisLine={{ stroke: axisLineColor }}
+              tickLine={{ stroke: axisLineColor }}
               fontSize={10}
               angle={-40}
               textAnchor="end"
@@ -162,7 +168,10 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
               interval={0}
             />
             <YAxis
-              stroke="#64748b"
+              stroke={axisTextColor}
+              tick={{ fill: axisTextColor }}
+              axisLine={{ stroke: axisLineColor }}
+              tickLine={{ stroke: axisLineColor }}
               fontSize={10}
               tickFormatter={(val: number) => {
                 if (Math.abs(val) >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
@@ -176,6 +185,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
               content={waterfallTooltipContent}
             />
             <Legend
+              wrapperStyle={{ color: axisTextColor }}
               formatter={(value: string) => {
                 if (value === 'segPLPosSwapped' || value === 'segPLPosDefault') return tr.waterfall.stockPL;
                 if (value === 'segFlowPosDefault' || value === 'segFlowPosSwapped') return tr.dashboard.annualNetInflow;
