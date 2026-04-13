@@ -325,7 +325,7 @@ const FundManager: React.FC<Props> = () => {
                <select 
                   value={filterAccount} 
                   onChange={e => setFilterAccount(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
                >
                   <option value="">{t(language).funds.allAccounts}</option>
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -340,7 +340,7 @@ const FundManager: React.FC<Props> = () => {
                <select 
                   value={filterType} 
                   onChange={e => setFilterType(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
                >
                   <option value="">{t(language).funds.allTypes}</option>
                   <option value={CashFlowType.DEPOSIT}>{t(language).funds.deposit}</option>
@@ -359,7 +359,7 @@ const FundManager: React.FC<Props> = () => {
                   type="date" 
                   value={filterDateFrom} 
                   onChange={e => setFilterDateFrom(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600" 
                />
              </div>
 
@@ -372,7 +372,7 @@ const FundManager: React.FC<Props> = () => {
                   type="date" 
                   value={filterDateTo} 
                   onChange={e => setFilterDateTo(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" 
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600" 
                />
              </div>
           </div>
