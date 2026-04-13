@@ -621,7 +621,7 @@ const FundManager: React.FC<Props> = () => {
       {/* 4. Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
              <div className="bg-slate-900 p-3 sm:p-4 flex justify-between items-center shrink-0">
                 <h2 className="text-white font-bold text-base sm:text-lg">{editingCashFlow ? ff.editFundRecord : ff.addFundRecord}</h2>
                 <button onClick={() => {
@@ -634,12 +634,12 @@ const FundManager: React.FC<Props> = () => {
                 <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700">{ff.date}</label>
-                      <input type="date" required value={date} onChange={e => setDate(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2"/>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{ff.date}</label>
+                      <input type="date" required value={date} onChange={e => setDate(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}/>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700">{ff.type}</label>
-                      <select value={type} onChange={e => setType(e.target.value as CashFlowType)} className="mt-1 w-full border border-slate-300 rounded p-2">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{ff.type}</label>
+                      <select value={type} onChange={e => setType(e.target.value as CashFlowType)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}>
                         <option value={CashFlowType.DEPOSIT}>{ff.typeDeposit}</option>
                         <option value={CashFlowType.WITHDRAW}>{ff.typeWithdraw}</option>
                         <option value={CashFlowType.TRANSFER}>{ff.typeTransfer}</option>
@@ -647,24 +647,24 @@ const FundManager: React.FC<Props> = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
                         {type === CashFlowType.TRANSFER ? ff.sourceAccount : ff.account}
                       </label>
-                      <select value={accountId} onChange={e => setAccountId(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2">
+                      <select value={accountId} onChange={e => setAccountId(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}>
                         {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700">{ff.amount} ({selectedAccount?.currency || 'TWD'})</label>
-                      <input type="number" required min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2"/>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{ff.amount} ({selectedAccount?.currency || 'TWD'})</label>
+                      <input type="number" required min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}/>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-slate-50 p-3 sm:p-4 rounded border border-slate-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-slate-50 dark:bg-slate-700/40 p-3 sm:p-4 rounded border border-slate-100 dark:border-slate-600">
                      {type === CashFlowType.TRANSFER && (
                          <div className="sm:col-span-2">
-                           <label className="block text-sm font-medium text-slate-700">{ff.targetAccount}</label>
-                           <select required value={targetAccountId} onChange={e => setTargetAccountId(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2 bg-white">
+                           <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{ff.targetAccount}</label>
+                           <select required value={targetAccountId} onChange={e => setTargetAccountId(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}>
                               <option value="">{ff.selectAccount}</option>
                               {accounts.filter(a => a.id !== accountId).map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
                            </select>
@@ -674,7 +674,7 @@ const FundManager: React.FC<Props> = () => {
                      {/* Dynamic Fields based on Account Type & Action */}
                      {showExchangeRateInput ? (
                        <div>
-                         <label className="block text-sm font-medium text-slate-700">
+                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
                             {transferRateLabel ?? (selectedAccount?.currency === Currency.USD ? ff.exchangeRateUsdTwd : selectedAccount?.currency === Currency.JPY ? ff.exchangeRateJPY : ff.exchangeRate)}
                             {isCrossCurrencyTransfer && <span className="text-xs text-blue-600 ml-1">{ff.crossCurrencyTransfer}</span>}
                             {!isTransfer && selectedAccount?.currency === Currency.USD && <span className="text-xs text-green-600 ml-1">{ff.usdConversion}</span>}
@@ -689,7 +689,7 @@ const FundManager: React.FC<Props> = () => {
                            } 
                            value={exchangeRate} 
                            onChange={e => setExchangeRate(e.target.value)} 
-                           className="mt-1 w-full border border-slate-300 rounded p-2"
+                           className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
                            required
                          />
                        </div>
@@ -704,14 +704,14 @@ const FundManager: React.FC<Props> = () => {
                      )}
 
                      <div>
-                        <label className="block text-sm font-medium text-slate-700">{translate('fundForm.fees', language, { currency: baseCurrency })} <span className="text-xs text-slate-400 font-normal">{ff.feesNote}</span></label>
-                        <input type="number" step="1" placeholder="0" value={fee} onChange={e => setFee(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2"/>
+                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{translate('fundForm.fees', language, { currency: baseCurrency })} <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">{ff.feesNote}</span></label>
+                       <input type="number" step="1" placeholder="0" value={fee} onChange={e => setFee(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}/>
                      </div>
                   </div>
 
                   <div>
-                     <label className="block text-sm font-medium text-slate-700">{ff.note}</label>
-                     <input type="text" value={note} onChange={e => setNote(e.target.value)} className="mt-1 w-full border border-slate-300 rounded p-2"/>
+                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{ff.note}</label>
+                     <input type="text" value={note} onChange={e => setNote(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}/>
                   </div>
 
                   <div className="pt-3 sm:pt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -721,7 +721,7 @@ const FundManager: React.FC<Props> = () => {
                         setIsFormOpen(false);
                         setEditingCashFlow(null);
                       }}
-                      className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50 text-sm sm:text-base"
+                      className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 text-sm sm:text-base"
                     >
                       {ff.cancel}
                     </button>
