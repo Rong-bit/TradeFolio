@@ -95,6 +95,7 @@ zhCN.dashboard = {
     accumulatedPL: '累积损益',
     estimatedAssets: '预估总资产 (8%)',
     totalAssets: '总资产',
+    toDate: '至今',
     realData: ' (真实股价)',
     estimated: ' (估算)',
     profit: '盈利',

@@ -96,6 +96,7 @@ export const hi: Translations = {
       accumulatedPL: 'संचित लाभ/हानि',
       estimatedAssets: 'अनुमानित कुल संपत्ति (8%)',
       totalAssets: 'कुल संपत्ति',
+      toDate: ' अब तक',
       realData: ' (वास्तविक मूल्य)',
       estimated: ' (अनुमानित)',
       profit: 'लाभ',

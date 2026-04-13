@@ -183,6 +183,7 @@ export interface Translations {
       accumulatedPL: string;
       estimatedAssets: string;
       totalAssets: string;
+      toDate: string;
       realData: string;
       estimated: string;
       profit: string;

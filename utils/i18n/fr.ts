@@ -91,6 +91,7 @@ export const fr: Translations = {
       accumulatedPL: 'Gain/Perte Accumulé',
       estimatedAssets: 'Est. Actifs Totaux (8%)',
       totalAssets: 'Actifs Totaux',
+      toDate: ' à ce jour',
       realData: ' (Prix Réel)',
       estimated: ' (Estimé)',
       profit: 'Gain',

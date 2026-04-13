@@ -90,6 +90,7 @@ export const de: Translations = {
       accumulatedPL: 'Kumuliertes Gewinn/Verlust',
       estimatedAssets: 'Geschätzte Gesamtvermögen (8%)',
       totalAssets: 'Gesamtvermögen',
+      toDate: ' bis heute',
       realData: ' (Echter Preis)',
       estimated: ' (Geschätzt)',
       profit: 'Gewinn',

@@ -96,6 +96,7 @@ export const ar: Translations = {
       accumulatedPL: 'الربح/الخسارة المتراكم',
       estimatedAssets: 'إجمالي الأصول المتوقع (8%)',
       totalAssets: 'إجمالي الأصول',
+      toDate: ' حتى الآن',
       realData: ' (السعر الحقيقي)',
       estimated: ' (متوقع)',
       profit: 'ربح',

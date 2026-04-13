@@ -153,6 +153,7 @@ export const zhTW: Translations = {
       accumulatedPL: '累積損益',
       estimatedAssets: '預估總資產 (8%)',
       totalAssets: '總資產',
+      toDate: '至今',
       realData: ' (真實股價)',
       estimated: ' (估算)',
       profit: '盈利',

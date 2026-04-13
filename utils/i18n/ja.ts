@@ -154,6 +154,7 @@ export const ja: Translations = {
       accumulatedPL: '累積損益',
       estimatedAssets: '予測総資産(8%)',
       totalAssets: '総資産',
+      toDate: '現在',
       realData: '(実価)',
       estimated: '(予測)',
       profit: '利益',

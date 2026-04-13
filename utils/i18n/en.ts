@@ -155,6 +155,7 @@ export const en: Translations = {
       accumulatedPL: 'Accumulated P/L',
       estimatedAssets: 'Est. Total Assets (8%)',
       totalAssets: 'Total Assets',
+      toDate: ' to date',
       realData: ' (Real Price)',
       estimated: ' (Estimated)',
       profit: 'Profit',

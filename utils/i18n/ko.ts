@@ -154,6 +154,7 @@ export const ko: Translations = {
       accumulatedPL: '누적 손익',
       estimatedAssets: '예상 총 자산(8%)',
       totalAssets: '총 자산',
+      toDate: '현재',
       realData: '(실가)',
       estimated: '(예상)',
       profit: '이익',
