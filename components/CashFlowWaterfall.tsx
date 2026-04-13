@@ -32,9 +32,11 @@ const WF_COLOR_PL_NEG = '#ef4444';
 
 type WfDatum = {
   period: string;
-  segPLPos: number;
+  segPLPosSwapped: number;
+  segPLPosDefault: number;
   segPLNeg: number;
-  segFlowPos: number;
+  segFlowPosDefault: number;
+  segFlowPosSwapped: number;
   segFlowNeg: number;
   segIncome: number;
   segPLForTooltip: number;
@@ -52,13 +54,20 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
     return rows.map(r => {
       const flow = toBase(r.netInflow);
       const pl = toBase(r.marketPL);
+      const flowPos = flow >= 0 ? flow : 0;
+      const flowNeg = flow < 0 ? flow : 0;
+      const shouldSwapFlowAndPL = pl > 0;
+
       return {
         period: r.period,
-        segPLPos: pl >= 0 ? pl : 0,
+        // 股票盈虧為正時，與年度淨投入在正向堆疊中上下互換；虧損時維持原順序
+        segPLPosSwapped: shouldSwapFlowAndPL ? pl : 0,
+        segPLPosDefault: shouldSwapFlowAndPL ? 0 : (pl >= 0 ? pl : 0),
         segPLNeg: pl < 0 ? pl : 0,
         /** 拆成兩段固定 fill，避免堆疊 Bar 上 Cell 顏色被 Recharts 忽略 */
-        segFlowPos: flow >= 0 ? flow : 0,
-        segFlowNeg: flow < 0 ? flow : 0,
+        segFlowPosDefault: shouldSwapFlowAndPL ? 0 : flowPos,
+        segFlowPosSwapped: shouldSwapFlowAndPL ? flowPos : 0,
+        segFlowNeg: flowNeg,
         segIncome: toBase(r.income),
         segPLForTooltip: pl,
         segFlowForTooltip: flow,
@@ -163,20 +172,29 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             />
             <Legend
               formatter={(value: string) => {
-                if (value === 'segPLPos') return tr.waterfall.stockPL;
-                if (value === 'segFlowPos') return tr.dashboard.annualNetInflow;
+                if (value === 'segPLPosSwapped' || value === 'segPLPosDefault') return tr.waterfall.stockPL;
+                if (value === 'segFlowPosDefault' || value === 'segFlowPosSwapped') return tr.dashboard.annualNetInflow;
                 if (value === 'segIncome') return tr.waterfall.dividend;
                 return value;
               }}
             />
             <Bar
-              dataKey="segFlowPos"
-              name="segFlowPos"
+              dataKey="segFlowPosDefault"
+              name="segFlowPosDefault"
               stackId="wf"
               fill={WF_COLOR_INFLOW_POS}
               radius={[0, 0, 0, 0]}
             />
+            <Bar dataKey="segPLPosSwapped" name="segPLPosSwapped" stackId="wf" fill={WF_COLOR_PL_POS} radius={[0, 0, 0, 0]} />
             <Bar dataKey="segIncome" name="segIncome" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
+            <Bar
+              dataKey="segFlowPosSwapped"
+              name="segFlowPosSwapped"
+              stackId="wf"
+              fill={WF_COLOR_INFLOW_POS}
+              radius={[2, 2, 0, 0]}
+            />
+            <Bar dataKey="segPLPosDefault" name="segPLPosDefault" stackId="wf" fill={WF_COLOR_PL_POS} radius={[2, 2, 0, 0]} />
             <Bar
               dataKey="segFlowNeg"
               name="segFlowNeg"
@@ -185,7 +203,6 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
               radius={[0, 0, 0, 0]}
               legendType="none"
             />
-            <Bar dataKey="segPLPos" name="segPLPos" stackId="wf" fill={WF_COLOR_PL_POS} radius={[2, 2, 0, 0]} />
             <Bar dataKey="segPLNeg" name="segPLNeg" stackId="wf" fill={WF_COLOR_PL_NEG} radius={[0, 0, 2, 2]} legendType="none" />
             {data.length > 8 && (
               <Brush dataKey="period" height={24} stroke="#94a3b8" travellerWidth={8} />
