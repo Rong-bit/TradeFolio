@@ -928,16 +928,16 @@ const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
 
           {/* Tabs */}
           <div>
-            <div className="flex border-b border-slate-200 mb-4">
+            <div className="flex border-b border-slate-200 dark:border-slate-600 mb-4">
               <button 
                 onClick={() => setActiveTab('paste')}
-                className={`px-4 py-2 text-sm font-medium ${activeTab === 'paste' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`px-4 py-2 text-sm font-medium ${activeTab === 'paste' ? 'border-b-2 border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
               >
                 {tr.tabPaste}
               </button>
               <button 
                 onClick={() => setActiveTab('file')}
-                className={`px-4 py-2 text-sm font-medium ${activeTab === 'file' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`px-4 py-2 text-sm font-medium ${activeTab === 'file' ? 'border-b-2 border-slate-900 dark:border-slate-100 text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
               >
                 {tr.tabUpload}
               </button>
