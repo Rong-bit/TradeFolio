@@ -155,7 +155,7 @@ const HistoryView: React.FC<Props> = ({
               value={filterTicker}
               onChange={e => setFilterTicker(e.target.value)}
               placeholder="例如: 0050, AAPL"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
             />
           </div>
           <div>
@@ -166,7 +166,7 @@ const HistoryView: React.FC<Props> = ({
               type="date"
               value={filterDateFrom}
               onChange={e => setFilterDateFrom(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
             />
           </div>
           <div>
@@ -177,7 +177,7 @@ const HistoryView: React.FC<Props> = ({
               type="date"
               value={filterDateTo}
               onChange={e => setFilterDateTo(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
             />
           </div>
         </div>
