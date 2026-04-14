@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 import { t } from '../utils/i18n';
@@ -19,19 +19,33 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
   const { transactions, cashFlows, accounts, historicalData } = usePortfolio();
   const { language } = useUI();
   const tr = t(language).historicalModal;
-  // Identify available years from data
+  const currentYear = new Date().getFullYear();
+  const completedQuarter = Math.floor((new Date().getMonth()) / 3) as 0 | 1 | 2 | 3;
+
+  // Identify available years from data（含當年，便於查看 Q1~Q3）
   const years = useMemo(() => {
     const allYears = new Set([
         ...transactions.map(t => new Date(t.date).getFullYear()),
         ...cashFlows.map(c => new Date(c.date).getFullYear())
     ]);
-    const currentYear = new Date().getFullYear();
-    // Filter out current year and future years
-    return Array.from(allYears).filter(y => y < currentYear).sort((a, b) => b - a);
-  }, [transactions, cashFlows]);
+    allYears.add(currentYear);
+    return Array.from(allYears).filter(y => y <= currentYear).sort((a, b) => b - a);
+  }, [transactions, cashFlows, currentYear]);
 
-  const [selectedYear, setSelectedYear] = useState<number>(years[0] || new Date().getFullYear() - 1);
+  const [selectedYear, setSelectedYear] = useState<number>(years[0] || currentYear);
   const [selectedQuarter, setSelectedQuarter] = useState<1 | 2 | 3 | 4>(4);
+  const availableQuarters = useMemo(() => {
+    if (selectedYear < currentYear) return [1, 2, 3, 4] as const;
+    const maxQuarter = Math.max(1, completedQuarter) as 1 | 2 | 3 | 4;
+    return ([1, 2, 3, 4] as const).filter(q => q <= maxQuarter);
+  }, [selectedYear, currentYear, completedQuarter]);
+
+  useEffect(() => {
+    if (!availableQuarters.includes(selectedQuarter)) {
+      setSelectedQuarter(availableQuarters[availableQuarters.length - 1] as 1 | 2 | 3 | 4);
+    }
+  }, [availableQuarters, selectedQuarter]);
+
   const [localData, setLocalData] = useState<HistoricalData>(historicalData);
   const [loading, setLoading] = useState(false);
   const [forceRefresh, setForceRefresh] = useState(false);
@@ -242,9 +256,10 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
   };
 
   const handleBatchFetch = async () => {
-      if (years.length === 0) return;
+      const historicalYears = years.filter(y => y < currentYear);
+      if (historicalYears.length === 0) return;
       setLoading(true);
-      setBatchProgress({ current: 0, total: years.length, year: years[0] });
+      setBatchProgress({ current: 0, total: historicalYears.length, year: historicalYears[0] });
 
       type MarketCode = 'US' | 'TW' | 'UK' | 'JP' | 'CN' | 'SZ' | 'IN' | 'CA' | 'FR' | 'HK' | 'KR' | 'DE' | 'AU' | 'SA' | 'BR';
       const toMarketCode = (m: Market): MarketCode => {
@@ -270,8 +285,8 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
 
       let accumulated: HistoricalData = { ...localData };
 
-      for (let i = 0; i < years.length; i++) {
-          const y = years[i];
+      for (let i = 0; i < historicalYears.length; i++) {
+          const y = historicalYears[i];
           setBatchProgress({ current: i + 1, total: years.length, year: y });
 
           try {
@@ -385,13 +400,13 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
               console.warn('Historical fetch failed for year', y, e);
           }
 
-          if (i < years.length - 1) await new Promise(r => setTimeout(r, 600));
+          if (i < historicalYears.length - 1) await new Promise(r => setTimeout(r, 600));
       }
 
       setLocalData(accumulated);
       setBatchProgress(null);
       setLoading(false);
-      alert(applyVars(tr.alertAllComplete, { count: years.length }));
+      alert(applyVars(tr.alertAllComplete, { count: historicalYears.length }));
   };
 
   const handleSave = () => {
@@ -431,10 +446,9 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                      onChange={(e) => setSelectedQuarter(Number(e.target.value) as 1 | 2 | 3 | 4)}
                      className="border border-slate-300 rounded p-2 text-sm font-bold min-w-[90px] text-slate-800 bg-white"
                    >
-                     <option value={1}>Q1</option>
-                     <option value={2}>Q2</option>
-                     <option value={3}>Q3</option>
-                     <option value={4}>Q4</option>
+                     {availableQuarters.map(q => (
+                       <option key={q} value={q}>{`Q${q}`}</option>
+                     ))}
                    </select>
                    </div>
                </div>
