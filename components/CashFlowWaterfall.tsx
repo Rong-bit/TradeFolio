@@ -121,7 +121,10 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
             ...contentStyle,
           }}
         >
-          <p className="recharts-tooltip-label" style={{ margin: 0 }}>
+          <p
+            className="recharts-tooltip-label"
+            style={{ margin: 0, color: isDarkMode ? '#f8fafc' : '#0f172a', fontWeight: 700 }}
+          >
             {label}
           </p>
           <ul className="recharts-tooltip-item-list" style={{ padding: 0, margin: 0, listStyle: 'none' }}>
@@ -132,7 +135,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
         </div>
       );
     },
-    [baseCurrency, tr]
+    [baseCurrency, tr, isDarkMode]
   );
 
   if (rows.length === 0) {
