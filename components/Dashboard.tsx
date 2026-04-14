@@ -591,11 +591,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                               const plColor = value >= 0 ? '#10b981' : '#ef4444';
                               return [
                                 <span style={{ color: plColor, fontWeight: 700 }}>
-                                  {formatCurrency(value, baseCurrency)}
-                                </span>,
-                                <span style={{ color: plColor, fontWeight: 700 }}>
-                                  {translations.dashboard.chartLabels.accumulatedPL}
+                                  {translations.dashboard.chartLabels.accumulatedPL}：{formatCurrency(value, baseCurrency)}
                                 </span>
+                                ,
+                                ''
                               ];
                             }
 
