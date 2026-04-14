@@ -5,7 +5,7 @@ import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, hol
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, Brush, AreaChart, Area } from 'recharts';
+import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, Brush, AreaChart, Area, Rectangle } from 'recharts';
 import HoldingsTable from './HoldingsTable';
 import MarketPerformanceChart from './MarketPerformanceChart';
 import CashFlowWaterfall from './CashFlowWaterfall';
@@ -662,15 +662,14 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         <Bar
                           yAxisId="left"
                           dataKey="profit"
-                          fill="#000"
                           name={translations.dashboard.chartLabels.barName}
                           stackId="a"
                           barSize={30}
-                        >
-                          {quarterlyTrendData.map((entry, index: number) => (
-                            <Cell key={`cell-${index}`} fill={entry.profit >= 0 ? '#10b981' : '#ef4444'} />
-                          ))}
-                        </Bar>
+                          shape={(props: any) => {
+                            const barFill = props?.payload?.profit >= 0 ? '#10b981' : '#ef4444';
+                            return <Rectangle {...props} fill={barFill} />;
+                          }}
+                        />
                         <Line
                           yAxisId="left"
                           type="monotone"
