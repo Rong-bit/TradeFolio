@@ -203,6 +203,7 @@ export const zhTW: Translations = {
     legendHintInflow: '期內匯入減匯出。藍色＝淨流入，橘色＝淨流出。',
     legendHintDividend: '該期入帳的現金股息與利息。',
     legendHintPL: '資產變動扣除淨投入與配息後之部分，近似市場損益；綠色為正、紅色為負。',
+    includingLabel: '（含{item}）',
   },
   dividendHeatmap: {
     title: '股息收入熱力圖',

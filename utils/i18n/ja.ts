@@ -205,6 +205,7 @@ export const ja: Translations = {
     legendHintInflow: '期間内の入金−出金。青＝純流入、オレンジ＝純流出。',
     legendHintDividend: '当期計上の現金配当と利子。',
     legendHintPL: '資産変動から純流入・配当を除いた部分（市場損益に近似）。緑＝プラス、赤＝マイナス。',
+    includingLabel: '（{item}を含む）',
   },
   dividendHeatmap: {
     title: '配当収入ヒートマップ',

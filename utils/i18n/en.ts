@@ -206,6 +206,7 @@ export const en: Translations = {
     legendHintInflow: 'Deposits minus withdrawals in the period. Blue = net inflow, orange = net outflow.',
     legendHintDividend: 'Cash dividends and interest credited in the period.',
     legendHintPL: 'Change in assets after net inflow and income; approx. market P&L. Green = gain, red = loss.',
+    includingLabel: '(incl. {item})',
   },
   dividendHeatmap: {
     title: 'Dividend Heatmap',

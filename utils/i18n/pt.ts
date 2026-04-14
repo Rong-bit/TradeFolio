@@ -139,6 +139,7 @@ export const pt: Translations = {
     legendHintInflow: 'Depósitos menos levantamentos no período. Azul = entrada líquida, laranja = saída líquida.',
     legendHintDividend: 'Dividendos em numerário e juros creditados no período.',
     legendHintPL: 'Variação do ativo após fluxo líquido e rendimentos; P&L de mercado aproximado. Verde = ganho, vermelho = perda.',
+    includingLabel: '(inclui {item})',
   },
   dividendHeatmap: {
     title: 'Mapa de Calor de Dividendos',

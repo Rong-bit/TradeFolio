@@ -139,6 +139,7 @@ export const fr: Translations = {
     legendHintInflow: 'Dépôts moins retraits sur la période. Bleu = flux net entrant, orange = sortant.',
     legendHintDividend: 'Dividendes en espèces et intérêts crédités sur la période.',
     legendHintPL: 'Variation d’actifs hors flux net et revenus ; P&L de marché approximatif. Vert = gain, rouge = perte.',
+    includingLabel: '(incl. {item})',
   },
   dividendHeatmap: {
     title: 'Carte Thermique Dividendes',

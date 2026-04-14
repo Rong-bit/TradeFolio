@@ -147,6 +147,7 @@ export const hi: Translations = {
     legendHintInflow: 'अवधि में जमा − निकासी। नीला = शुद्ध प्रवाह, नारंगी = शुद्ध निकास।',
     legendHintDividend: 'अवधि में जमा लाभांश और ब्याज।',
     legendHintPL: 'शुद्ध प्रवाह और आय के बाद संपत्ति परिवर्तन; अनुमानित बाज़ार लाभ/हानि। हरा = लाभ, लाल = हानि।',
+    includingLabel: '({item} सहित)',
   },
   dividendHeatmap: {
     title: 'लाभांश हीटमैप',

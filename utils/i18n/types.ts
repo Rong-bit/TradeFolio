@@ -239,6 +239,7 @@ export interface Translations {
     legendHintInflow: string;
     legendHintDividend: string;
     legendHintPL: string;
+    includingLabel: string;
   };
   // 股息熱力圖
   dividendHeatmap: {

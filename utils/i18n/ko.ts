@@ -205,6 +205,7 @@ export const ko: Translations = {
     legendHintInflow: '기간 내 입금−출금. 파랑＝순유입, 주황＝순유출.',
     legendHintDividend: '해당 기간에 반영된 현금 배당과 이자.',
     legendHintPL: '자산 변동에서 순유입·배당을 제외한 부분(시장 손익에 근접). 녹＝이익, 적＝손실.',
+    includingLabel: '({item} 포함)',
   },
   dividendHeatmap: {
     title: '배당 수입 히트맵',

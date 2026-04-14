@@ -145,6 +145,7 @@ zhCN.waterfall = {
   legendHintInflow: '期内汇入减汇出。蓝色＝净流入，橙色＝净流出。',
   legendHintDividend: '该期入账的现金股息与利息。',
   legendHintPL: '资产变动扣除净投入与配息后的部分，近似市场损益；绿色为正、红色为负。',
+  includingLabel: '（含{item}）',
 };
 zhCN.dividendHeatmap = {
   title: '股息收入热力图',

@@ -138,6 +138,7 @@ export const de: Translations = {
     legendHintInflow: 'Einzahlungen minus Auszahlungen. Blau = Nettozufluss, Orange = Nettoabfluss.',
     legendHintDividend: 'Bardividenden und Zinsen in der Periode.',
     legendHintPL: 'Vermögensänderung abzüglich Nettozufluss und Erträge; näherungsweise Markt-G/V. Grün = Gewinn, Rot = Verlust.',
+    includingLabel: '(inkl. {item})',
   },
   dividendHeatmap: {
     title: 'Dividenden-Heatmap',

@@ -147,6 +147,7 @@ export const ar: Translations = {
     legendHintInflow: 'الإيداعات ناقص السحوبات خلال الفترة. أزرق = صافي تدفق داخل، برتقالي = صافي خروج.',
     legendHintDividend: 'أرباح نقدية وفوائد تُسجَّل في الفترة.',
     legendHintPL: 'تغيّر الأصول بعد صافي التدفق والدخل؛ تقريباً ربح/خسارة السوق. أخضر = ربح، أحمر = خسارة.',
+    includingLabel: '(بما في ذلك {item})',
   },
   dividendHeatmap: {
     title: 'خريطة حرارة الأرباح',
