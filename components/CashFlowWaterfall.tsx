@@ -123,7 +123,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
         >
           <p
             className="recharts-tooltip-label"
-            style={{ margin: 0, color: isDarkMode ? '#f8fafc' : '#0f172a', fontWeight: 700 }}
+            style={{ margin: 0, color: '#0f172a', fontWeight: 700 }}
           >
             {label}
           </p>
