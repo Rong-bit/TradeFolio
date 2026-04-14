@@ -588,11 +588,14 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                               suffix = translations.dashboard.chartLabels.estimated;
 
                             if (name.includes(translations.dashboard.chartLabels.accumulatedPL)) {
+                              const plColor = value >= 0 ? '#10b981' : '#ef4444';
                               return [
-                                <span style={{ color: value >= 0 ? '#10b981' : '#ef4444', fontWeight: 700 }}>
+                                <span style={{ color: plColor, fontWeight: 700 }}>
                                   {formatCurrency(value, baseCurrency)}
                                 </span>,
-                                translations.dashboard.chartLabels.accumulatedPL
+                                <span style={{ color: plColor, fontWeight: 700 }}>
+                                  {translations.dashboard.chartLabels.accumulatedPL}
+                                </span>
                               ];
                             }
 
