@@ -594,7 +594,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                                 <span style={{ color: plColor, fontWeight: 700 }}>
                                   {formatCurrency(value, baseCurrency)}
                                 </span>,
-                                `${translations.dashboard.chartLabels.accumulatedPL}：`
+                                <span style={{ color: plColor, fontWeight: 700 }}>
+                                  {translations.dashboard.chartLabels.accumulatedPL}：
+                                </span>
                               ];
                             }
 
