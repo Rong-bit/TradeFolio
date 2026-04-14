@@ -31,33 +31,41 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
   }, [transactions, cashFlows]);
 
   const [selectedYear, setSelectedYear] = useState<number>(years[0] || new Date().getFullYear() - 1);
+  const [selectedQuarter, setSelectedQuarter] = useState<1 | 2 | 3 | 4>(4);
   const [localData, setLocalData] = useState<HistoricalData>(historicalData);
   const [loading, setLoading] = useState(false);
   const [forceRefresh, setForceRefresh] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; year: number } | null>(null);
 
-  // Determine tickers for selected year
+  const selectedPeriodKey = selectedQuarter === 4 ? String(selectedYear) : `${selectedYear}-Q${selectedQuarter}`;
+  const selectedPeriodDate = useMemo(() => {
+    const month = selectedQuarter * 3;
+    const day = selectedQuarter === 1 || selectedQuarter === 3 ? 31 : 30;
+    return new Date(`${selectedYear}-${String(month).padStart(2, '0')}-${day}`);
+  }, [selectedYear, selectedQuarter]);
+  const selectedPeriodDateLabel = `${selectedYear}/${String(selectedQuarter * 3).padStart(2, '0')}/${selectedQuarter === 1 || selectedQuarter === 3 ? '31' : '30'}`;
+
+  // Determine tickers for selected period
   const activeTickers = useMemo(() => {
-      const yearEndDate = new Date(`${selectedYear}-12-31`);
-      const { holdings } = getPortfolioStateAtDate(yearEndDate, transactions, cashFlows, accounts);
+      const { holdings } = getPortfolioStateAtDate(selectedPeriodDate, transactions, cashFlows, accounts);
       return Object.keys(holdings).filter(k => holdings[k] > 0.000001).map(k => {
           const [market, ticker] = k.split('-');
           return { market, ticker };
       });
-  }, [selectedYear, transactions, cashFlows, accounts]);
+  }, [selectedPeriodDate, transactions, cashFlows, accounts]);
 
   // Handle data updates
   const handlePriceChange = (ticker: string, value: string) => {
       const num = parseFloat(value);
       setLocalData(prev => ({
           ...prev,
-          [selectedYear]: {
-              ...prev[selectedYear],
+          [selectedPeriodKey]: {
+              ...prev[selectedPeriodKey],
               prices: {
-                  ...prev[selectedYear]?.prices,
+                  ...prev[selectedPeriodKey]?.prices,
                   [ticker]: isNaN(num) ? 0 : num
               },
-              exchangeRate: prev[selectedYear]?.exchangeRate || 30
+              exchangeRate: prev[selectedPeriodKey]?.exchangeRate || 30
           }
       }));
   };
@@ -66,9 +74,9 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
       const num = parseFloat(value);
       setLocalData(prev => ({
           ...prev,
-          [selectedYear]: {
-              ...prev[selectedYear],
-              prices: prev[selectedYear]?.prices || {},
+          [selectedPeriodKey]: {
+              ...prev[selectedPeriodKey],
+              prices: prev[selectedPeriodKey]?.prices || {},
               exchangeRate: isNaN(num) ? 30 : num
           }
       }));
@@ -76,7 +84,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
 
   const handleAiFetch = async () => {
       // 1. Get current data for selected year
-      const currentYearData = localData[selectedYear] || { prices: {}, exchangeRate: 0 };
+      const currentYearData = localData[selectedPeriodKey] || { prices: {}, exchangeRate: 0 };
 
       // 2. Filter out tickers that already have non-zero data
       const missingTickers = activeTickers.filter(t => {
@@ -148,7 +156,9 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
               queryMarkets = [toMarketCode(t.market as Market)];
           }
           
-          const result = await fetchHistoricalYearEndData(selectedYear, queryTickers, queryMarkets);
+          const result = selectedQuarter === 4
+            ? await fetchHistoricalYearEndData(selectedYear, queryTickers, queryMarkets)
+            : (await fetchHistoricalQuarterEndData(selectedYear, queryTickers, queryMarkets, [selectedQuarter]))[`${selectedYear}-Q${selectedQuarter}`];
           
           // 檢查是否有成功取得數據
           const successCount = Object.keys(result.prices).length;
@@ -169,30 +179,31 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
           
           setLocalData(prev => {
               const prevData = prev[selectedYear] || { prices: {}, exchangeRate: 0 };
+              const prevPeriodData = prev[selectedPeriodKey] || { prices: {}, exchangeRate: 0 };
               
               // Only update exchange rate if it was missing (0) or default (30)
-              const currentRate = prevData.exchangeRate;
+              const currentRate = prevPeriodData.exchangeRate;
               const shouldUpdateRate = !currentRate || currentRate === 0 || currentRate === 30;
               
               const newRate = shouldUpdateRate 
-                  ? (result.exchangeRate || 30) 
+                  ? (result.exchangeRate || 30)
                   : currentRate;
 
               // 各地區歷史匯率：只在尚未設定（0 或 undefined）時才覆蓋
               const pickRate = (current: number | undefined, fetched: number | undefined) =>
                   (!current || current === 0) && fetched && fetched > 0 ? fetched : current;
 
-              const newJpyRate = pickRate(prevData.jpyExchangeRate, result.jpyExchangeRate);
-              const newEurRate = pickRate(prevData.eurExchangeRate, result.eurExchangeRate);
-              const newGbpRate = pickRate(prevData.gbpExchangeRate, result.gbpExchangeRate);
-              const newHkdRate = pickRate(prevData.hkdExchangeRate, result.hkdExchangeRate);
-              const newKrwRate = pickRate(prevData.krwExchangeRate, result.krwExchangeRate);
-              const newCnyRate = pickRate(prevData.cnyExchangeRate, result.cnyExchangeRate);
-              const newCadRate = pickRate(prevData.cadExchangeRate, result.cadExchangeRate);
-              const newAudRate = pickRate(prevData.audExchangeRate, result.audExchangeRate);
+              const newJpyRate = pickRate(prevPeriodData.jpyExchangeRate, result.jpyExchangeRate);
+              const newEurRate = pickRate(prevPeriodData.eurExchangeRate, result.eurExchangeRate);
+              const newGbpRate = pickRate(prevPeriodData.gbpExchangeRate, result.gbpExchangeRate);
+              const newHkdRate = pickRate(prevPeriodData.hkdExchangeRate, result.hkdExchangeRate);
+              const newKrwRate = pickRate(prevPeriodData.krwExchangeRate, result.krwExchangeRate);
+              const newCnyRate = pickRate(prevPeriodData.cnyExchangeRate, result.cnyExchangeRate);
+              const newCadRate = pickRate(prevPeriodData.cadExchangeRate, result.cadExchangeRate);
+              const newAudRate = pickRate(prevPeriodData.audExchangeRate, result.audExchangeRate);
 
               // 合併價格數據，確保兩種格式的 key 都能正確對應
-              const mergedPrices = { ...prevData.prices };
+              const mergedPrices = { ...prevPeriodData.prices };
 
               Object.entries(result.prices).forEach(([key, price]) => {
                   mergedPrices[key] = price;
@@ -208,8 +219,8 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
 
               return {
                   ...prev,
-                  [selectedYear]: {
-                      ...prevData,
+                  [selectedPeriodKey]: {
+                      ...prevPeriodData,
                       prices: mergedPrices,
                       exchangeRate: newRate,
                       jpyExchangeRate: newJpyRate,
@@ -388,7 +399,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
       onClose();
   };
 
-  const currentYearData = localData[selectedYear] || { prices: {}, exchangeRate: 30 };
+  const currentYearData = localData[selectedPeriodKey] || { prices: {}, exchangeRate: 30 };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
@@ -404,7 +415,8 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
            <div className="flex gap-4 items-center bg-slate-50 p-4 rounded-lg border border-slate-200">
                <div>
                    <label className="block text-xs font-bold text-slate-500 mb-1">{tr.selectYearLabel}</label>
-                   <select 
+                   <div className="flex gap-2">
+                   <select
                      value={selectedYear} 
                      onChange={(e) => setSelectedYear(Number(e.target.value))}
                      className="border border-slate-300 rounded p-2 text-sm font-bold min-w-[100px] text-slate-800 bg-white"
@@ -414,6 +426,17 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                        ))}
                        {years.length === 0 && <option disabled>{tr.noHistoryYears}</option>}
                    </select>
+                   <select
+                     value={selectedQuarter}
+                     onChange={(e) => setSelectedQuarter(Number(e.target.value) as 1 | 2 | 3 | 4)}
+                     className="border border-slate-300 rounded p-2 text-sm font-bold min-w-[90px] text-slate-800 bg-white"
+                   >
+                     <option value={1}>Q1</option>
+                     <option value={2}>Q2</option>
+                     <option value={3}>Q3</option>
+                     <option value={4}>Q4</option>
+                   </select>
+                   </div>
                </div>
                
                <div className="flex-1 flex flex-col items-end gap-2">
@@ -466,7 +489,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
            <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: "#ffffff" }}>
                <div className="p-4 border-b flex justify-between items-center" style={{ backgroundColor: "#f1f5f9" }}>
                    <h3 className="font-bold" style={{ color: "#334155" }}>
-                     {applyVars(tr.yearEndDataTitle, { year: selectedYear })}
+                    {selectedYear} Q{selectedQuarter} 數據
                    </h3>
                    <div className="flex items-center gap-2">
                        <label className="text-sm" style={{ color: "#475569" }}>{tr.exchangeRateLabel}</label>
@@ -486,7 +509,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                            <th className="px-4 py-2">{tr.colMarket}</th>
                            <th className="px-4 py-2">{tr.colTicker}</th>
                            <th className="px-4 py-2 text-right">
-                             {applyVars(tr.colClosePrice, { year: selectedYear })}
+                            收盤價 ({selectedPeriodDateLabel})
                            </th>
                        </tr>
                    </thead>
