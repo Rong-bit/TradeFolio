@@ -579,6 +579,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         <Tooltip
                           contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                           labelStyle={{ color: '#0f172a', fontWeight: 700 }}
+                          separator=""
                           formatter={(value: number, name: string, props: any) => {
                             const isReal = props.payload.isRealData;
                             let suffix = '';
@@ -591,10 +592,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                               const plColor = value >= 0 ? '#10b981' : '#ef4444';
                               return [
                                 <span style={{ color: plColor, fontWeight: 700 }}>
-                                  {translations.dashboard.chartLabels.accumulatedPL}：{formatCurrency(value, baseCurrency)}
-                                </span>
-                                ,
-                                ''
+                                  {formatCurrency(value, baseCurrency)}
+                                </span>,
+                                `${translations.dashboard.chartLabels.accumulatedPL}：`
                               ];
                             }
 
