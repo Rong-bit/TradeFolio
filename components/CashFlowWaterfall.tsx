@@ -95,6 +95,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
         flow > 0 ? WF_COLOR_INFLOW_POS : flow < 0 ? WF_COLOR_INFLOW_NEG : '#64748b';
       const annualPLColor =
         annualPLWithIncome > 0 ? WF_COLOR_PL_POS : annualPLWithIncome < 0 ? WF_COLOR_PL_NEG : '#64748b';
+      const dividendIncludedLabel = tr.waterfall.includingLabel.replace('{item}', tr.waterfall.dividend);
 
       const item = (key: string, color: string, name: string, value: number) => (
         <li
@@ -130,7 +131,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
           <ul className="recharts-tooltip-item-list" style={{ padding: 0, margin: 0, listStyle: 'none' }}>
             {item('flow', inflowColor, tr.dashboard.annualNetInflow, flow)}
             {item('annual-pl', annualPLColor, tr.dashboard.annualProfit, annualPLWithIncome)}
-            {item('income', WF_COLOR_DIVIDEND, `（含${tr.waterfall.dividend}）`, income)}
+            {item('income', WF_COLOR_DIVIDEND, dividendIncludedLabel, income)}
           </ul>
         </div>
       );
