@@ -1406,10 +1406,10 @@ export const buildQuarterlyTrendData = (
     const snap = historicalData?.[key];
     if (!snap || Object.keys(snap.prices).length === 0) return null;
 
-    // 季末日期（Q1=3/31, Q2=6/30, Q3=9/30）
-    const qEndMonth = q * 3;
-    const qEndDay = q === 1 || q === 3 ? 31 : 30;
-    const snapDate = new Date(`${yearNum}-${String(qEndMonth).padStart(2,'0')}-${qEndDay}`);
+    // 季末日期（Q1=3/31, Q2=6/30, Q3=9/30, Q4=12/31）
+    // 用 new Date(year, month, 0) 取月末最後一天，避免 Safari 拒絕 9/31 等無效日期
+    const qEndMonth = q * 3; // 1→3, 2→6, 3→9, 4→12
+    const snapDate = new Date(yearNum, qEndMonth, 0); // day=0 → 上個月最後一天
     const { accountHoldings, cashBalances } = getPortfolioStateAtDate(snapDate, transactions, cashFlows, accounts);
 
     let stockValueTWD = 0;
