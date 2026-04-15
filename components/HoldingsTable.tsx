@@ -274,7 +274,7 @@ const HoldingsTable: React.FC<Props> = () => {
           <div className="flex flex-col gap-1">
             <span
               className={`text-xs font-medium text-right ${
-                isDarkMode ? 'text-[#94a3b8]' : 'text-[#64748b] group-hover:text-white'
+                isDarkMode ? 'text-[#94a3b8]' : 'text-[#64748b] group-hover:text-[#334155]'
               }`}
             >
               {h.weight.toFixed(1)}%
