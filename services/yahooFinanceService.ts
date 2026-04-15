@@ -2,6 +2,24 @@
 // yahooFinanceService.ts
 // 透過 Vercel serverless proxy 向 Yahoo Finance 取得即時股價與匯率。
 // GitHub Pages 靜態部署 → 所有 API 請求皆經 Vercel /api/yahoo-proxy 轉發。
+//
+// 【資料流紀錄（即時股價/匯率）】
+// 1) UI（App.tsx）觸發 handleAutoUpdatePrices()
+// 2) 呼叫 fetchCurrentPrices(tickers, markets, options)
+// 3) fetchCurrentPrices 會先把代號轉成 Yahoo symbol（例如 2330 -> 2330.TW）
+// 4) tryFetch 依序嘗試下列來源：
+//    - VITE_YAHOO_PROXY_URL + ?target=<Yahoo URL>（預期主路徑）
+//    - /api/yahoo-proxy?target=...（僅 vercel.app / localhost）
+//    - corsproxy.io / allorigins（備援）
+//    - 直連 Yahoo（最後備援）
+// 5) 成功解析 JSON 後，回傳 prices 與各幣別匯率，更新到前端 state。
+//
+// 備註：
+// - 前端建置環境是否帶入 VITE_YAHOO_PROXY_URL，會直接影響是否先走 Vercel proxy。
+// - 若前端部署在 GitHub Pages，請在「GitHub Repo -> Settings -> Actions -> Variables」
+//   設定 VITE_YAHOO_PROXY_URL（不是設在 Vercel 專案環境變數給 Pages 用）。
+// - 建議值：VITE_YAHOO_PROXY_URL=https://trade-folio.vercel.app/api/yahoo-proxy
+// - `regularMarketPrice` 為主要價格來源；若缺值則退回 previousClose / 預設值。
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── 型別 ─────────────────────────────────────────────────────────────────────
