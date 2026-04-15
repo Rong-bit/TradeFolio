@@ -39,7 +39,9 @@ jobs:
         run: npm run build
         env:
           API_KEY: ${{ secrets.API_KEY }}
-
+          # 須為「完整」代理網址，例如 https://你的專案.vercel.app/api/yahoo-proxy（勿少路徑、勿多空白）
+          # 若未設 Repository variable 或值錯誤，可整行刪除：建置將走 corsproxy 備援（較不穩）
+          VITE_YAHOO_PROXY_URL: ${{ vars.VITE_YAHOO_PROXY_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
