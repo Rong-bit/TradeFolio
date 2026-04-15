@@ -29,7 +29,7 @@ import HistoricalDataModal from './components/HistoricalDataModal';
 import BatchUpdateMarketModal from './components/BatchUpdateMarketModal';
 import AssetAllocationSimulator from './components/AssetAllocationSimulator';
 import DarkModeToggle from './components/DarkModeToggle';
-import { fetchCurrentPrices } from './services/yahooFinanceService';
+import { fetchCurrentPrices, clearYahooFinanceQuoteCaches } from './services/yahooFinanceService';
 import { autoSyncMissingHistoricalData, findYearsNeedingAutoHistoricalSync } from './utils/autoHistoricalSync';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
 import { Language, getLanguage, setLanguage as saveLanguage, t, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
@@ -154,8 +154,9 @@ const App: React.FC = () => {
     const qs = Array.from(tMktMap.keys()), mkts = qs.map(t => tMktMap.get(t)!);
     if (!qs.length) return;
     try {
-      // 手動更新時略過 5 分鐘快取，避免連點「看起來完全沒變」；定時靜默刷新仍走快取減少請求
-      const result = await fetchCurrentPrices(qs, mkts, { skipCache: !silent });
+      // 手動更新時先清記憶體快取（不依賴 fetchCurrentPrices 第三參數，避免舊型別定義導致 build 失敗）
+      if (!silent) clearYahooFinanceQuoteCaches({ includeRates: true });
+      const result = await fetchCurrentPrices(qs, mkts);
       const np: Record<string,number> = {}, nd: Record<string,{change:number;changePercent:number}> = {};
       holdingsToUse.forEach((h: Holding) => {
         const hKey = `${h.market}-${h.ticker}`, q = keyQMap.get(hKey) ?? h.ticker;
