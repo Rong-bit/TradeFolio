@@ -154,7 +154,8 @@ const App: React.FC = () => {
     const qs = Array.from(tMktMap.keys()), mkts = qs.map(t => tMktMap.get(t)!);
     if (!qs.length) return;
     try {
-      const result = await fetchCurrentPrices(qs, mkts);
+      // 手動更新時略過 5 分鐘快取，避免連點「看起來完全沒變」；定時靜默刷新仍走快取減少請求
+      const result = await fetchCurrentPrices(qs, mkts, { skipCache: !silent });
       const np: Record<string,number> = {}, nd: Record<string,{change:number;changePercent:number}> = {};
       holdingsToUse.forEach((h: Holding) => {
         const hKey = `${h.market}-${h.ticker}`, q = keyQMap.get(hKey) ?? h.ticker;
