@@ -435,6 +435,8 @@ export const fetchCurrentPrices = async (
   brlExchangeRate?: number;
 }> => {
   const skipCache = options?.skipCache === true;
+  // 與 REFRESH_INTERVAL 對齊：略過快取時一併清匯率快取，否則僅股價重抓、匯率仍可能 5 分鐘內不變
+  if (skipCache) clearYahooFinanceQuoteCaches({ includeRates: true });
   const symbols    = tickers.map((t, i) => toYahoo(t, markets?.[i]));
   const currencies = neededCurrencies(markets ?? []);
 
