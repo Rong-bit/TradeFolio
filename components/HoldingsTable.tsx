@@ -198,7 +198,7 @@ const HoldingsTable: React.FC<Props> = () => {
             : ''
         }`}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#f8fafc';
+          e.currentTarget.style.backgroundColor = isDarkMode ? '#334155' : '#f1f5f9';
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.backgroundColor = '';
@@ -242,7 +242,7 @@ const HoldingsTable: React.FC<Props> = () => {
 
         <td className="px-3 py-2 text-right">
            <div
-            className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-100 dark:group-hover:bg-slate-600"
+            className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-200/80 dark:group-hover:bg-slate-600"
            >
              <span className="text-slate-500 dark:text-slate-200 text-xs">$</span>
              <input
@@ -274,7 +274,7 @@ const HoldingsTable: React.FC<Props> = () => {
           <div className="flex flex-col gap-1">
             <span
               className={`text-xs font-medium text-right ${
-                isDarkMode ? 'text-[#94a3b8]' : 'text-[#64748b] group-hover:text-[#334155]'
+                isDarkMode ? 'text-[#94a3b8]' : 'text-[#475569] group-hover:text-[#1e293b]'
               }`}
             >
               {h.weight.toFixed(1)}%
