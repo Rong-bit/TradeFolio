@@ -356,9 +356,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                   // 取各季持倉的聯集作為查詢標的
                   const allQTickers = new Map<string, string>(); // key -> market
                   for (const q of quartersToFetch) {
-                      const qMonth = q * 3;
-                      const qDay = q === 1 || q === 3 ? 31 : 30;
-                      const qDate = new Date(`${y}-${String(qMonth).padStart(2,'0')}-${qDay}`);
+                      const qDate = new Date(y, q * 3, 0);
                       const { holdings: qHoldings } = getPortfolioStateAtDate(qDate, transactions, cashFlows, accounts);
                       Object.keys(qHoldings).filter(k => qHoldings[k] > 0.000001).forEach(k => {
                           const [market, ticker] = k.split('-');
