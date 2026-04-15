@@ -52,12 +52,15 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; year: number } | null>(null);
 
   const selectedPeriodKey = selectedQuarter === 4 ? String(selectedYear) : `${selectedYear}-Q${selectedQuarter}`;
-  const selectedPeriodDate = useMemo(() => {
-    const month = selectedQuarter * 3;
-    const day = selectedQuarter === 1 || selectedQuarter === 3 ? 31 : 30;
-    return new Date(`${selectedYear}-${String(month).padStart(2, '0')}-${day}`);
-  }, [selectedYear, selectedQuarter]);
-  const selectedPeriodDateLabel = `${selectedYear}/${String(selectedQuarter * 3).padStart(2, '0')}/${selectedQuarter === 1 || selectedQuarter === 3 ? '31' : '30'}`;
+  // 季末最後一日：new Date(Y, n*3, 0) 為「第 n*3 個月的前一日」＝該季最後一日（Q3 為 9/30，不可誤用 9/31）
+  const selectedPeriodDate = useMemo(
+    () => new Date(selectedYear, selectedQuarter * 3, 0),
+    [selectedYear, selectedQuarter],
+  );
+  const selectedPeriodDateLabel = useMemo(() => {
+    const d = selectedPeriodDate;
+    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+  }, [selectedPeriodDate]);
 
   // Determine tickers for selected period
   const activeTickers = useMemo(() => {
