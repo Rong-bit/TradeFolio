@@ -61,12 +61,27 @@ function setCache<T>(key: string, value: T, ttl = CACHE_TTL): void {
   _cache.set(key, { value, expiresAt: Date.now() + ttl });
 }
 
+/**
+ * 清除即時股價／匯率的記憶體快取（供手動刷新前呼叫）。
+ * 與 `fetchCurrentPrices(..., { skipCache: true })` 效果一致，且不依賴第三參數型別，方便 CI／舊檔案並存。
+ */
+export function clearYahooFinanceQuoteCaches(opts?: { includeRates?: boolean }): void {
+  const includeRates = opts?.includeRates === true;
+  for (const key of _cache.keys()) {
+    if (key.startsWith('price:') || (includeRates && key.startsWith('rate:'))) {
+      _cache.delete(key);
+    }
+  }
+}
+
 // ── Proxy URL 建構 ────────────────────────────────────────────────────────────
 
 function proxyUrls(target: string): string[] {
   const enc = encodeURIComponent(target);
   const urls: string[] = [];
-  const envProxy = import.meta.env.VITE_YAHOO_PROXY_URL;
+  // GitHub Actions 若設成空白或僅空白字元，會變成 "" 仍為 truthy 失敗來源；trim 後空則視同未設定
+  const raw = import.meta.env.VITE_YAHOO_PROXY_URL as string | undefined;
+  const envProxy = raw && String(raw).trim() ? String(raw).trim().replace(/\/+$/, '') : '';
 
   if (envProxy) {
     urls.push(`${envProxy}?target=${enc}`);
@@ -132,6 +147,58 @@ function extractOhlcv(json: unknown) {
     closes:     (r?.indicators?.quote?.[0]?.close    ?? []) as (number | null)[],
     adjCloses:  (r?.indicators?.adjclose?.[0]?.adjclose ?? []) as (number | null)[],
   };
+}
+
+function positiveQuoteNum(x: unknown): number {
+  const n = Number(x);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/**
+ * Yahoo 在盤外時 meta.regularMarketPrice 常仍是「上一個正盤收盤」；
+ * 併入盤後／盤前與 K 線最後一根（較新時間戳）可避免畫面一直像停在「昨天」。
+ */
+function pickLatestQuoteFromChart(
+  meta: Record<string, any>,
+  json: unknown,
+): { price: number; useYahooRegularChange: boolean } {
+  type Src = 'regular' | 'post' | 'pre';
+  let bestT = 0;
+  let bestP = 0;
+  let useYahooRegularChange = false;
+  const consider = (t: unknown, p: unknown, src: Src) => {
+    const ts = Number(t);
+    const pr = positiveQuoteNum(p);
+    if (!Number.isFinite(ts) || ts <= 0 || pr <= 0) return;
+    if (ts > bestT) {
+      bestT = ts;
+      bestP = pr;
+      useYahooRegularChange = src === 'regular';
+    }
+  };
+  consider(meta.regularMarketTime, meta.regularMarketPrice, 'regular');
+  consider(meta.postMarketTime, meta.postMarketPrice, 'post');
+  consider(meta.preMarketTime, meta.preMarketPrice, 'pre');
+
+  const { timestamps, closes } = extractOhlcv(json);
+  for (let i = closes.length - 1; i >= 0; i--) {
+    const c = closes[i];
+    if (c == null || !(c > 0)) continue;
+    const ts = timestamps[i];
+    if (Number.isFinite(ts) && ts > bestT) {
+      bestT = ts;
+      bestP = c;
+      useYahooRegularChange = false;
+    }
+    break;
+  }
+
+  const reg = positiveQuoteNum(meta.regularMarketPrice);
+  if (bestP <= 0) {
+    bestP = reg || positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
+    useYahooRegularChange = false;
+  }
+  return { price: bestP, useYahooRegularChange: bestP > 0 && useYahooRegularChange };
 }
 
 function findYearEnd(
@@ -210,21 +277,28 @@ function rateToTwd(currency: string, rateMap: Record<string, number>): number {
 
 // ── 即時股價 ─────────────────────────────────────────────────────────────────
 
-async function fetchSinglePrice(symbol: string, interval: '1m'|'1d' = '1m'): Promise<PriceData | null> {
+async function fetchSinglePrice(
+  symbol: string,
+  interval: '1m' | '1d' = '1m',
+  skipCache = false,
+): Promise<PriceData | null> {
   const ck = `price:${symbol}`;
-  const cached = getCache<PriceData>(ck);
-  if (cached) return cached;
+  if (!skipCache) {
+    const cached = getCache<PriceData>(ck);
+    if (cached) return cached;
+  }
 
-  const url  = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=1d`;
+  const bust = skipCache ? `&_=${Date.now()}` : '';
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=1d&includePrePost=true${bust}`;
   const resp = await tryFetch(url);
   const meta = extractMeta(resp?.json ?? null);
 
   if (!meta) {
-    return interval === '1m' ? fetchSinglePrice(symbol, '1d') : null;
+    return interval === '1m' ? fetchSinglePrice(symbol, '1d', skipCache) : null;
   }
 
-  const price = meta.regularMarketPrice ?? meta.previousClose ?? 0;
-  if (!price && interval === '1m') return fetchSinglePrice(symbol, '1d');
+  const { price, useYahooRegularChange } = pickLatestQuoteFromChart(meta, resp?.json);
+  if (!price && interval === '1m') return fetchSinglePrice(symbol, '1d', skipCache);
 
   if (shouldDebugSymbol(symbol)) {
     const rawCurrency = meta.currency ?? '';
@@ -238,18 +312,33 @@ async function fetchSinglePrice(symbol: string, interval: '1m'|'1d' = '1m'): Pro
       exchangeName: meta.exchangeName ?? meta.fullExchangeName ?? '',
       rawPrice,
       normalizedPrice,
-      // Yahoo 通常用秒時間戳，轉成 ISO 方便比對
       quoteTime: meta.regularMarketTime
         ? new Date(meta.regularMarketTime * 1000).toISOString()
         : null,
       previousClose: meta.previousClose ?? null,
       source: 'yahoo-chart-meta',
+      useYahooRegularChange,
     });
   }
 
-  const prev = meta.previousClose ?? meta.chartPreviousClose ?? 0;
-  const chg  = meta.regularMarketChange ?? meta.postMarketChange ?? meta.preMarketChange ?? (price - prev);
-  const pct  = meta.regularMarketChangePercent ?? meta.postMarketChangePercent ?? meta.preMarketChangePercent ?? (prev > 0 ? chg / prev * 100 : 0);
+  const prev = positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
+  let chg: number;
+  let pct: number;
+  if (useYahooRegularChange) {
+    chg =
+      meta.regularMarketChange ??
+      meta.postMarketChange ??
+      meta.preMarketChange ??
+      (prev > 0 ? price - prev : 0);
+    pct =
+      meta.regularMarketChangePercent ??
+      meta.postMarketChangePercent ??
+      meta.preMarketChangePercent ??
+      (prev > 0 ? (chg / prev) * 100 : 0);
+  } else {
+    chg = prev > 0 ? price - prev : 0;
+    pct = prev > 0 ? (chg / prev) * 100 : 0;
+  }
 
   const result: PriceData = {
     price,
@@ -329,6 +418,7 @@ async function fetchHistoricalRate(currency: string, year: number): Promise<numb
 export const fetchCurrentPrices = async (
   tickers: string[],
   markets?: YahooMarket[],
+  options?: { skipCache?: boolean },
 ): Promise<{
   prices: Record<string, PriceData>;
   exchangeRate: number;
@@ -344,13 +434,16 @@ export const fetchCurrentPrices = async (
   sarExchangeRate?: number;
   brlExchangeRate?: number;
 }> => {
+  const skipCache = options?.skipCache === true;
   const symbols    = tickers.map((t, i) => toYahoo(t, markets?.[i]));
   const currencies = neededCurrencies(markets ?? []);
 
   async function batchPrices(): Promise<(PriceData | null)[]> {
     const out: (PriceData | null)[] = [];
     for (let s = 0; s < symbols.length; s += CONCURRENCY) {
-      const batch = await Promise.all(symbols.slice(s, s + CONCURRENCY).map(sym => fetchSinglePrice(sym)));
+      const batch = await Promise.all(
+        symbols.slice(s, s + CONCURRENCY).map(sym => fetchSinglePrice(sym, '1m', skipCache)),
+      );
       out.push(...batch);
       if (s + CONCURRENCY < symbols.length)
         await new Promise(r => setTimeout(r, BATCH_DELAY));
