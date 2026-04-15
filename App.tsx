@@ -154,14 +154,14 @@ const App: React.FC = () => {
     const qs = Array.from(tMktMap.keys()), mkts = qs.map(t => tMktMap.get(t)!);
     if (!qs.length) return;
     try {
-      // 手動更新時清記憶體快取：以可選呼叫相容 CI 尚未含 clearYahooFinanceQuoteCaches 的舊 bundle
-      if (!silent) {
-        const clear = (YahooFinance as unknown as {
-          clearYahooFinanceQuoteCaches?: (opts?: { includeRates?: boolean }) => void;
-        }).clearYahooFinanceQuoteCaches;
-        clear?.({ includeRates: true });
-      }
-      const result = await YahooFinance.fetchCurrentPrices(qs, mkts);
+      // 手動與靜默（每 3 分鐘）皆略過快取，與倒數計時每次觸發一致，避免 5 分鐘記憶體快取導致「計時到了數字卻不更新」
+      type FetchPrices = (
+        tickers: string[],
+        markets?: Parameters<typeof YahooFinance.fetchCurrentPrices>[1],
+        options?: { skipCache?: boolean }
+      ) => ReturnType<typeof YahooFinance.fetchCurrentPrices>;
+      const fetchPrices = YahooFinance.fetchCurrentPrices as unknown as FetchPrices;
+      const result = await fetchPrices(qs, mkts, { skipCache: true });
       const np: Record<string,number> = {}, nd: Record<string,{change:number;changePercent:number}> = {};
       holdingsToUse.forEach((h: Holding) => {
         const hKey = `${h.market}-${h.ticker}`, q = keyQMap.get(hKey) ?? h.ticker;
