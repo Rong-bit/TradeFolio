@@ -1259,7 +1259,8 @@ export const buildWaterfallYearRows = (
 };
 
 /**
- * 依季拆解：淨流入／配息為實際發生月分攤；市場損益為該年度歸因值均分至四季（因無季末資產快照）。
+ * 依季拆解：淨流入／配息為實際發生月分攤；
+ * 市場損益僅分攤到「有資金投入或有持倉」的季度，避免未入市/空倉季度出現損益。
  */
 export const buildWaterfallQuarterRows = (
   chartData: ChartDataPoint[],
@@ -1287,8 +1288,7 @@ export const buildWaterfallQuarterRows = (
 
     const yearNum = Number(yearStr);
     const yearStart = yi > 0 ? sortedYears[yi - 1].totalAssets : 0;
-    const plQuarter = att.marketPL / 4;
-    let running = yearStart;
+    const quarterInputs: Array<{ q: number; deposit: number; withdraw: number; income: number; eligibleForPL: boolean }> = [];
 
     for (let q = 1; q <= 4; q++) {
       let deposit = 0;
@@ -1315,8 +1315,27 @@ export const buildWaterfallQuarterRows = (
         income += transactionAmountNativeToTWD(nativeIncome, tx, accounts, rates);
       });
 
+      const quarterEndDate = new Date(yearNum, q * 3, 0);
+      const { accountHoldings } = getPortfolioStateAtDate(quarterEndDate, transactions, cashFlows, accounts);
+      const hasHolding = accountHoldings.some(h => h.quantity > 0.000001);
+      const hasCapitalInflow = deposit > 0;
+
+      quarterInputs.push({
+        q,
+        deposit,
+        withdraw,
+        income,
+        eligibleForPL: hasCapitalInflow || hasHolding,
+      });
+    }
+
+    const eligibleQuarterCount = quarterInputs.filter(qi => qi.eligibleForPL).length;
+    const plQuarter = eligibleQuarterCount > 0 ? att.marketPL / eligibleQuarterCount : 0;
+    let running = yearStart;
+
+    quarterInputs.forEach(({ q, deposit, withdraw, income, eligibleForPL }) => {
       const netInflow = deposit - withdraw;
-      const marketPL = plQuarter;
+      const marketPL = eligibleForPL ? plQuarter : 0;
       const startAssets = running;
       const endAssets = startAssets + netInflow + income + marketPL;
       rows.push({
@@ -1331,7 +1350,7 @@ export const buildWaterfallQuarterRows = (
         isRealData: yPoint.isRealData,
       });
       running = endAssets;
-    }
+    });
   }
 
   return rows;
