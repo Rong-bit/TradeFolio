@@ -293,6 +293,52 @@ function rateToTwd(currency: string, rateMap: Record<string, number>): number {
   return rateMap[c] ?? 0;
 }
 
+// ── TWSE 即時報價（台股優先來源）──────────────────────────────────────────────
+//
+// 為什麼需要：Yahoo Finance US 的 v8/finance/chart 對「台股」常延遲 ——
+// `regularMarketPrice` 可能停在上一交易日收盤、`indicators.quote[0]` 為空，
+// 造成前端顯示永遠卡在昨收（例：0050 卡 84.15、2330 卡 2030）。
+// 台灣證交所 mis 的 `getStockInfo.jsp` 是台股/ETF 真正的盤中即時來源，
+// 回傳欄位：z=最新成交, o=開盤, h=最高, l=最低, y=昨收, v=量, t=時間。
+// 同時送 tse_ 與 otc_ 兩個前綴，可同時涵蓋上市與上櫃。
+
+async function fetchTwseQuote(code: string): Promise<PriceData | null> {
+  const bust = `&_=${Date.now()}`;
+  const url =
+    `https://mis.twse.com.tw/stock/api/getStockInfo.jsp` +
+    `?ex_ch=tse_${code}.tw|otc_${code}.tw&json=1&delay=0${bust}`;
+  const resp = await tryFetch(url);
+  const arr = (resp?.json as any)?.msgArray;
+  if (!Array.isArray(arr) || arr.length === 0) return null;
+
+  // 優先挑有實際價格資訊的一筆（上市/上櫃二擇一）
+  let picked: any = null;
+  for (const item of arr) {
+    const z = Number(item?.z), o = Number(item?.o), y = Number(item?.y);
+    if ((Number.isFinite(z) && z > 0) ||
+        (Number.isFinite(o) && o > 0) ||
+        (Number.isFinite(y) && y > 0)) {
+      picked = item; break;
+    }
+  }
+  if (!picked) return null;
+
+  const z = Number(picked.z);
+  const o = Number(picked.o);
+  const y = Number(picked.y);
+  // 盤中：z 為最新成交；盤前/無新成交：z 可能是 "-"，退到 o（今開盤）或 y（昨收）
+  const price =
+    (Number.isFinite(z) && z > 0) ? z :
+    (Number.isFinite(o) && o > 0) ? o :
+    (Number.isFinite(y) && y > 0) ? y : 0;
+  if (price <= 0) return null;
+
+  const prev = Number.isFinite(y) && y > 0 ? y : 0;
+  const change = prev > 0 ? price - prev : 0;
+  const changePercent = prev > 0 ? (change / prev) * 100 : 0;
+  return { price, change, changePercent, currency: 'TWD' };
+}
+
 // ── 即時股價 ─────────────────────────────────────────────────────────────────
 
 async function fetchSinglePrice(
@@ -304,6 +350,18 @@ async function fetchSinglePrice(
   if (!skipCache) {
     const cached = getCache<PriceData>(ck);
     if (cached) return cached;
+  }
+
+  // 台股優先用 TWSE 即時報價，避免 Yahoo US chart API 延遲回傳昨收
+  const twMatch = /^(\d+)\.TW$/i.exec(symbol);
+  if (twMatch) {
+    try {
+      const twseData = await fetchTwseQuote(twMatch[1]);
+      if (twseData && twseData.price > 0) {
+        setCache(ck, twseData);
+        return twseData;
+      }
+    } catch { /* TWSE 失敗就退回 Yahoo chart */ }
   }
 
   const bust = skipCache ? `&_=${Date.now()}` : '';
