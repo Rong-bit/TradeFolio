@@ -69,7 +69,7 @@ const HistoryView: React.FC<Props> = ({
             activeTab === 'list' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          📋 交易紀錄
+          {`📋 ${tr.history.tabTransactions}`}
         </button>
         <button
           onClick={() => setActiveTab('timeline')}
@@ -77,7 +77,7 @@ const HistoryView: React.FC<Props> = ({
             activeTab === 'timeline' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          📈 持有時間軸
+          {`📈 ${tr.history.tabTimeline}`}
         </button>
       </div>
 
