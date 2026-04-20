@@ -26,6 +26,7 @@ export const ko: Translations = {
     loading: '로딩 중...',
     search: '검색',
     logoutConfirm: '로그아웃 하시겠습니까?',
+    baseCurrency: '기준 통화',
     upgrade: '업그레이드',
     footerLocalDataPrivacy:
       '모든 거래 데이터는 기기에만 저장되어 개인정보를 보호합니다.',
@@ -246,6 +247,8 @@ export const ko: Translations = {
     confirmClear: '삭제 확인',
   },
   history: {
+    tabTransactions: '거래 기록',
+    tabTimeline: '보유 타임라인',
     operations: '작업',
     batchUpdateMarket: '시장 일괄 변경',
     clearAll: '전체 거래 삭제',

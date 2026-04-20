@@ -26,6 +26,7 @@ export const zhTW: Translations = {
     loading: '載入中...',
     search: '搜尋',
     logoutConfirm: '確定要登出系統嗎？',
+    baseCurrency: '基準幣',
     upgrade: '申請開通',
     footerLocalDataPrivacy: '此應用程式所有交易數據皆儲存於本地端，保障您的隱私安全。',
   },
@@ -244,6 +245,8 @@ export const zhTW: Translations = {
     confirmClear: '確認清空',
   },
   history: {
+    tabTransactions: '交易紀錄',
+    tabTimeline: '持有時間軸',
     operations: '操作選項',
     batchUpdateMarket: '批量修改市場',
     clearAll: '清空所有交易',

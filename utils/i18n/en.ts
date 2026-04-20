@@ -26,6 +26,7 @@ export const en: Translations = {
     loading: 'Loading...',
     search: 'Search',
     logoutConfirm: 'Are you sure you want to logout?',
+    baseCurrency: 'Base Currency',
     upgrade: 'Upgrade',
     footerLocalDataPrivacy:
       'All transaction data is stored locally on your device to protect your privacy.',
@@ -247,6 +248,8 @@ export const en: Translations = {
     confirmClear: 'Confirm Clear',
   },
   history: {
+    tabTransactions: 'Transactions',
+    tabTimeline: 'Holding Timeline',
     operations: 'Operations',
     batchUpdateMarket: 'Batch Update Market',
     clearAll: 'Clear All Transactions',

@@ -4,7 +4,7 @@ import { en } from './en';
 export const pt: Translations = {
   ...en,
   baseCurrency: { ...en.baseCurrency, TWD: 'Dólar taiwanês', USD: 'Dólar americano', JPY: 'Iene japonês', EUR: 'Euro', GBP: 'Libra esterlina', HKD: 'Dólar de Hong Kong', KRW: 'Won coreano', CAD: 'Dólar canadense', INR: 'Rúpia indiana', CNY: 'Yuan chinês', AUD: 'Dólar australiano', SAR: 'Riyal saudita', BRL: 'Real brasileiro' },
-  common: { ...en.common, confirm: 'Confirmar', cancel: 'Cancelar', delete: 'Excluir', edit: 'Editar', save: 'Salvar', close: 'Fechar', loading: 'Carregando...', search: 'Buscar', logoutConfirm: 'Sair?', upgrade: 'Atualizar', footerLocalDataPrivacy: 'Todos os dados de transações ficam armazenados localmente no seu dispositivo para proteger a sua privacidade.' },
+  common: { ...en.common, confirm: 'Confirmar', cancel: 'Cancelar', delete: 'Excluir', edit: 'Editar', save: 'Salvar', close: 'Fechar', loading: 'Carregando...', search: 'Buscar', logoutConfirm: 'Sair?', baseCurrency: 'Moeda base', upgrade: 'Atualizar', footerLocalDataPrivacy: 'Todos os dados de transações ficam armazenados localmente no seu dispositivo para proteger a sua privacidade.' },
   nav: { dashboard: 'Painel', history: 'Histórico', funds: 'Fundos', accounts: 'Contas', rebalance: 'Rebalanceamento', simulator: 'Simulador', help: 'Sistema', logout: 'Sair' },
   pages: { ...en.pages, dashboard: 'Painel da carteira', history: 'Histórico (transações e fluxo)', funds: 'Gestão de fundos', accounts: 'Gestão de contas', rebalance: 'Rebalanceamento', simulator: 'Simulador de alocação', help: 'Sistema e backup' },
   login: { title: 'Login TradeView', subtitle: 'Carteira de ações Taiwan e EUA', email: 'E-mail', password: 'Senha', login: 'Entrar', privacy: 'Privacidade', privacyDesc: 'Dados armazenados localmente. Sem coleta de dados pessoais.', riskDisclaimer: 'Aviso', riskDisclaimerDesc: 'Investimentos envolvem riscos.' },
@@ -181,6 +181,8 @@ export const pt: Translations = {
     confirmClear: 'Confirmar limpeza',
   },
   history: {
+    tabTransactions: 'Transações',
+    tabTimeline: 'Linha do tempo de posição',
     operations: 'Operações',
     batchUpdateMarket: 'Atualizar mercados em lote',
     clearAll: 'Limpar todas as transações',

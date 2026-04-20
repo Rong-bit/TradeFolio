@@ -26,6 +26,7 @@ export const ja: Translations = {
     loading: '読み込み中...',
     search: '検索',
     logoutConfirm: 'ログアウトしますか？',
+    baseCurrency: '基準通貨',
     upgrade: 'アップグレード',
     footerLocalDataPrivacy:
       '取引データはすべて端末に保存され、プライバシーを保護します。',
@@ -246,6 +247,8 @@ export const ja: Translations = {
     confirmClear: '確認削除',
   },
   history: {
+    tabTransactions: '取引履歴',
+    tabTimeline: '保有タイムライン',
     operations: '操作',
     batchUpdateMarket: '市場一括変更',
     clearAll: '全取引削除',

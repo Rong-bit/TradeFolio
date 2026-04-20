@@ -48,6 +48,7 @@ export interface Translations {
     loading: string;
     search: string;
     logoutConfirm: string;
+    baseCurrency: string;
     upgrade: string;
     /** 頁尾：交易資料僅存本地、隱私說明 */
     footerLocalDataPrivacy: string;
@@ -283,6 +284,8 @@ export interface Translations {
   };
   // 交易記錄
   history: {
+    tabTransactions: string;
+    tabTimeline: string;
     operations: string;
     batchUpdateMarket: string;
     clearAll: string;

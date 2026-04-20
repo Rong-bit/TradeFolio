@@ -4,7 +4,7 @@ import { en } from './en';
 export const fr: Translations = {
   ...en,
   baseCurrency: { TWD: 'Dollar taïwanais', USD: 'Dollar américain', JPY: 'Yen japonais', EUR: 'Euro', GBP: 'Livre sterling', HKD: 'Dollar HK', KRW: 'Won coréen', CAD: 'Dollar canadien', INR: 'Roupie indienne', CNY: 'Yuan chinois', AUD: 'Dollar australien', SAR: 'Riyal saoudien', BRL: 'Réal brésilien' },
-  common: { ...en.common, confirm: 'Confirmer', cancel: 'Annuler', delete: 'Supprimer', edit: 'Modifier', save: 'Enregistrer', close: 'Fermer', loading: 'Chargement...', search: 'Rechercher', logoutConfirm: 'Déconnexion ?', upgrade: 'Mettre à niveau', footerLocalDataPrivacy: 'Toutes les données de transaction sont stockées localement sur votre appareil pour protéger votre vie privée.' },
+  common: { ...en.common, confirm: 'Confirmer', cancel: 'Annuler', delete: 'Supprimer', edit: 'Modifier', save: 'Enregistrer', close: 'Fermer', loading: 'Chargement...', search: 'Rechercher', logoutConfirm: 'Déconnexion ?', baseCurrency: 'Devise de base', upgrade: 'Mettre à niveau', footerLocalDataPrivacy: 'Toutes les données de transaction sont stockées localement sur votre appareil pour protéger votre vie privée.' },
   nav: { dashboard: 'Tableau de bord', history: 'Historique', funds: 'Fonds', accounts: 'Comptes', rebalance: 'Rééquilibrage', simulator: 'Simulateur', help: 'Aide', logout: 'Déconnexion' },
   pages: { ...en.pages, dashboard: 'Portefeuille', history: 'Historique (transactions et flux)', funds: 'Gestion des fonds', accounts: 'Comptes', rebalance: 'Rééquilibrage', simulator: 'Simulateur d\'allocation', help: 'Paramètres et sauvegarde' },
   login: { title: 'Connexion TradeView', subtitle: 'Portefeuille actions Taiwan et US', email: 'E-mail', password: 'Mot de passe', login: 'Connexion', privacy: 'Confidentialité', privacyDesc: 'Données stockées localement. Aucune collecte de données personnelles.', riskDisclaimer: 'Avertissement', riskDisclaimerDesc: 'Les investissements comportent des risques. Les performances passées ne garantissent pas les résultats futurs.' },
@@ -181,6 +181,8 @@ export const fr: Translations = {
     confirmClear: 'Confirmer l\'effacement',
   },
   history: {
+    tabTransactions: 'Transactions',
+    tabTimeline: 'Chronologie de détention',
     operations: 'Opérations',
     batchUpdateMarket: 'Mise à jour groupée des marchés',
     clearAll: 'Effacer toutes les transactions',
