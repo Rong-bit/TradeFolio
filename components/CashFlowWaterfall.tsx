@@ -66,7 +66,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
 
       return {
         period: r.period,
-        // 股票盈虧為正時，與年度淨投入在正向堆疊中上下互換；虧損時維持原順序
+        // 股票盈虧為正時，將「投入」放在底部、股票盈虧疊在最上方；虧損時維持原順序
         segPLPosSwapped: shouldSwapFlowAndPL ? pl : 0,
         segPLPosDefault: shouldSwapFlowAndPL ? 0 : (pl >= 0 ? pl : 0),
         segPLNeg: pl < 0 ? pl : 0,
@@ -197,16 +197,15 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
                 return value;
               }}
             />
-            <Bar dataKey="segPLPosSwapped" name="segPLPosSwapped" stackId="wf" fill={WF_COLOR_PL_POS} radius={[0, 0, 0, 0]} legendType="none" />
-            <Bar dataKey="segIncomeSwapped" name="segIncomeSwapped" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} legendType="none" />
-            <Bar dataKey="segIncomeDefault" name="segIncomeDefault" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar
               dataKey="segFlowPosSwapped"
               name="segFlowPosSwapped"
               stackId="wf"
               fill={WF_COLOR_INFLOW_POS}
-              radius={[2, 2, 0, 0]}
+              radius={[0, 0, 0, 0]}
             />
+            <Bar dataKey="segIncomeSwapped" name="segIncomeSwapped" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} legendType="none" />
+            <Bar dataKey="segIncomeDefault" name="segIncomeDefault" stackId="wf" fill={WF_COLOR_DIVIDEND} radius={[0, 0, 0, 0]} />
             <Bar
               dataKey="segFlowPosDefault"
               name="segFlowPosDefault"
@@ -216,6 +215,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
               legendType="none"
             />
             <Bar dataKey="segPLPosDefault" name="segPLPosDefault" stackId="wf" fill={WF_COLOR_PL_POS} radius={[2, 2, 0, 0]} />
+            <Bar dataKey="segPLPosSwapped" name="segPLPosSwapped" stackId="wf" fill={WF_COLOR_PL_POS} radius={[2, 2, 0, 0]} legendType="none" />
             <Bar
               dataKey="segFlowNeg"
               name="segFlowNeg"
