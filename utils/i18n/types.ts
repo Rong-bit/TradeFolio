@@ -313,6 +313,39 @@ export interface Translations {
     cashFlowTransfer: string;
     cashFlowTransferIn: string;
   };
+  // 持有時間軸
+  stockTimeline: {
+    noTransactionsHint: string;
+    searchPlaceholder: string;
+    allMarkets: string;
+    statusAll: string;
+    statusHolding: string;
+    statusClosed: string;
+    sortByFirstBuy: string;
+    sortByTicker: string;
+    sortByPLPercent: string;
+    countUnit: string;
+    symbol: string;
+    plAndStatus: string;
+    holdingTitle: string;
+    closedTitle: string;
+    firstBuy: string;
+    lastTrade: string;
+    holdingDays: string;
+    avgCost: string;
+    currentPrice: string;
+    holdingQty: string;
+    pl: string;
+    fee: string;
+    noMatches: string;
+    legendBuy: string;
+    legendSell: string;
+    legendStockDividend: string;
+    legendCashDividend: string;
+    legendTransferIn: string;
+    legendTransferOut: string;
+    legendHolding: string;
+  };
   // 其他常用文字
   labels: {
     date: string;
