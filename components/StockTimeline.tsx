@@ -64,8 +64,21 @@ function datePct(date: string, minMs: number, maxMs: number): number {
   return ((ms - minMs) / (maxMs - minMs)) * 100;
 }
 
-function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+function formatDate(date: string, language: string): string {
+  const localeMap: Record<string, string> = {
+    'zh-TW': 'zh-TW',
+    'zh-CN': 'zh-CN',
+    en: 'en-US',
+    ja: 'ja-JP',
+    ko: 'ko-KR',
+    de: 'de-DE',
+    fr: 'fr-FR',
+    hi: 'hi-IN',
+    ar: 'ar-SA',
+    pt: 'pt-BR',
+  };
+  const locale = localeMap[language] ?? 'en-US';
+  return new Date(date).toLocaleDateString(locale, { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
 function holdingDays(first: string, last: string): number {
@@ -78,6 +91,15 @@ const StockTimeline: React.FC = () => {
   const { transactions, holdings, accounts } = usePortfolio();
   const { language } = useUI();
   const tr = t(language);
+  const st = tr.stockTimeline;
+  const eventConfig = {
+    [TransactionType.BUY]: { ...EVENT_CONFIG[TransactionType.BUY], label: st.legendBuy },
+    [TransactionType.SELL]: { ...EVENT_CONFIG[TransactionType.SELL], label: st.legendSell },
+    [TransactionType.DIVIDEND]: { ...EVENT_CONFIG[TransactionType.DIVIDEND], label: st.legendStockDividend },
+    [TransactionType.CASH_DIVIDEND]: { ...EVENT_CONFIG[TransactionType.CASH_DIVIDEND], label: st.legendCashDividend },
+    [TransactionType.TRANSFER_IN]: { ...EVENT_CONFIG[TransactionType.TRANSFER_IN], label: st.legendTransferIn },
+    [TransactionType.TRANSFER_OUT]: { ...EVENT_CONFIG[TransactionType.TRANSFER_OUT], label: st.legendTransferOut },
+  };
 
   const [search, setSearch] = useState('');
   const [filterMarket, setFilterMarket] = useState('ALL');
@@ -172,7 +194,7 @@ const StockTimeline: React.FC = () => {
         <svg className="w-12 h-12 mb-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
-        <p className="text-sm">尚無交易紀錄，請先新增交易。</p>
+        <p className="text-sm">{st.noTransactionsHint}</p>
       </div>
     );
   }
@@ -190,7 +212,7 @@ const StockTimeline: React.FC = () => {
             </svg>
             <input
               type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="搜尋代號..."
+              placeholder={st.searchPlaceholder}
               className={`pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg w-32 focus:outline-none focus:ring-2 focus:ring-indigo-300 ${FORM_FIELD_THEME}`}
             />
           </div>
@@ -200,7 +222,7 @@ const StockTimeline: React.FC = () => {
             value={filterMarket} onChange={e => setFilterMarket(e.target.value)}
             className={`text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 ${FORM_FIELD_THEME}`}
           >
-            {markets.map(m => <option key={m} value={m}>{m === 'ALL' ? '全部市場' : m}</option>)}
+            {markets.map(m => <option key={m} value={m}>{m === 'ALL' ? st.allMarkets : m}</option>)}
           </select>
 
           {/* 狀態 */}
@@ -210,7 +232,7 @@ const StockTimeline: React.FC = () => {
                 onClick={() => setFilterStatus(s)}
                 className={`px-3 py-1.5 transition ${filterStatus === s ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
               >
-                {s === 'all' ? '全部' : s === 'holding' ? '持有中' : '已結清'}
+                {s === 'all' ? st.statusAll : s === 'holding' ? st.statusHolding : st.statusClosed}
               </button>
             ))}
           </div>
@@ -220,12 +242,12 @@ const StockTimeline: React.FC = () => {
             value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)}
             className={`text-sm border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 ml-auto ${FORM_FIELD_THEME}`}
           >
-            <option value="firstDate">依首次買入</option>
-            <option value="ticker">依代號</option>
-            <option value="pl">依損益 %</option>
+            <option value="firstDate">{st.sortByFirstBuy}</option>
+            <option value="ticker">{st.sortByTicker}</option>
+            <option value="pl">{st.sortByPLPercent}</option>
           </select>
 
-          <span className="text-xs text-slate-400">{filtered.length} 檔</span>
+          <span className="text-xs text-slate-400">{filtered.length} {st.countUnit}</span>
         </div>
       </div>
 
@@ -234,7 +256,7 @@ const StockTimeline: React.FC = () => {
 
         {/* 時間刻度頭 */}
         <div className="flex items-center border-b border-slate-100 px-4 py-2 bg-slate-50">
-          <div className="w-36 shrink-0 text-xs font-medium text-slate-500">標的</div>
+          <div className="w-36 shrink-0 text-xs font-medium text-slate-500">{st.symbol}</div>
           <div className="flex-1 relative h-5">
             {[0, 25, 50, 75, 100].map(pct => {
               const ms = globalMin + (globalMax - globalMin) * (pct / 100);
@@ -248,7 +270,7 @@ const StockTimeline: React.FC = () => {
               );
             })}
           </div>
-          <div className="w-32 shrink-0 text-xs text-slate-400 text-right">損益 / 狀態</div>
+          <div className="w-32 shrink-0 text-xs text-slate-400 text-right">{st.plAndStatus}</div>
         </div>
 
         {/* 各股時間軸列 */}
@@ -277,7 +299,7 @@ const StockTimeline: React.FC = () => {
                     </span>
                     <span className="font-bold text-slate-800 dark:text-slate-100 text-sm truncate">{lane.ticker}</span>
                     {lane.isHolding && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" title="持有中" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" title={st.holdingTitle} />
                     )}
                   </div>
 
@@ -295,7 +317,7 @@ const StockTimeline: React.FC = () => {
                     {/* 事件點 */}
                     {lane.events.map((ev, idx) => {
                       const pct = datePct(ev.date, globalMin, globalMax);
-                      const evCfg = EVENT_CONFIG[ev.type];
+                      const evCfg = eventConfig[ev.type];
                       return (
                         <div
                           key={idx}
@@ -319,12 +341,12 @@ const StockTimeline: React.FC = () => {
                         <span className={`text-sm font-bold ${plColor}`}>
                           {lane.unrealizedPLPercent >= 0 ? '+' : ''}{lane.unrealizedPLPercent.toFixed(2)}%
                         </span>
-                        <div className="text-[10px] text-slate-400">{days} 天</div>
+                        <div className="text-[10px] text-slate-400">{days} {st.holdingDays}</div>
                       </div>
                     ) : (
                       <div>
-                        <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">已結清</span>
-                        <div className="text-[10px] text-slate-400 mt-0.5">{days} 天</div>
+                        <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{st.closedTitle}</span>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{days} {st.holdingDays}</div>
                       </div>
                     )}
                   </div>
@@ -335,15 +357,15 @@ const StockTimeline: React.FC = () => {
                   <div className="px-4 pb-4 bg-slate-50 border-t border-slate-100">
                     {/* 摘要列 */}
                     <div className="flex flex-wrap gap-4 py-3 text-xs text-slate-600">
-                      <div><span className="text-slate-400">首次買入　</span><span className="font-medium">{formatDate(lane.firstDate)}</span></div>
+                      <div><span className="text-slate-400">{st.firstBuy} </span><span className="font-medium">{formatDate(lane.firstDate, language)}</span></div>
                       {lane.isHolding ? (
                         <>
-                          <div><span className="text-slate-400">持有天數　</span><span className="font-medium">{days} 天</span></div>
-                          <div><span className="text-slate-400">均成本　</span><span className="font-medium">{lane.avgCost.toFixed(2)}</span></div>
-                          <div><span className="text-slate-400">現價　</span><span className="font-medium">{lane.currentPrice.toFixed(2)}</span></div>
-                          <div><span className="text-slate-400">持有量　</span><span className="font-medium">{lane.totalQty.toLocaleString()}</span></div>
+                          <div><span className="text-slate-400">{st.holdingDays} </span><span className="font-medium">{days}</span></div>
+                          <div><span className="text-slate-400">{st.avgCost} </span><span className="font-medium">{lane.avgCost.toFixed(2)}</span></div>
+                          <div><span className="text-slate-400">{st.currentPrice} </span><span className="font-medium">{lane.currentPrice.toFixed(2)}</span></div>
+                          <div><span className="text-slate-400">{st.holdingQty} </span><span className="font-medium">{lane.totalQty.toLocaleString()}</span></div>
                           <div>
-                            <span className="text-slate-400">損益　</span>
+                            <span className="text-slate-400">{st.pl} </span>
                             <span className={`font-bold ${plColor}`}>
                               {lane.unrealizedPLPercent >= 0 ? '+' : ''}{lane.unrealizedPLPercent.toFixed(2)}%
                             </span>
@@ -351,8 +373,8 @@ const StockTimeline: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <div><span className="text-slate-400">最後交易　</span><span className="font-medium">{formatDate(lane.events[lane.events.length - 1].date)}</span></div>
-                          <div><span className="text-slate-400">持有天數　</span><span className="font-medium">{days} 天</span></div>
+                          <div><span className="text-slate-400">{st.lastTrade} </span><span className="font-medium">{formatDate(lane.events[lane.events.length - 1].date, language)}</span></div>
+                          <div><span className="text-slate-400">{st.holdingDays} </span><span className="font-medium">{days}</span></div>
                         </>
                       )}
                     </div>
@@ -360,13 +382,13 @@ const StockTimeline: React.FC = () => {
                     {/* 交易明細 */}
                     <div className="space-y-1.5">
                       {lane.events.map((ev, idx) => {
-                        const evCfg = EVENT_CONFIG[ev.type];
+                        const evCfg = eventConfig[ev.type];
                         return (
                           <div key={idx} className={`flex items-center gap-3 text-xs rounded-lg px-3 py-2 border ${evCfg.border} ${evCfg.fill}`}>
                             {/* 事件點 */}
                             <div className={`w-2 h-2 rounded-full ${evCfg.bg} shrink-0`} />
                             {/* 日期 */}
-                            <span className="text-slate-500 w-24 shrink-0">{formatDate(ev.date)}</span>
+                            <span className="text-slate-500 w-24 shrink-0">{formatDate(ev.date, language)}</span>
                             {/* 類型 badge */}
                             <span className={`font-bold w-10 shrink-0 ${evCfg.text}`}>{evCfg.label}</span>
                             {/* 價格 × 數量 */}
@@ -375,7 +397,7 @@ const StockTimeline: React.FC = () => {
                             </span>
                             {/* 手續費 */}
                             {ev.fees > 0 && (
-                              <span className="text-slate-400">手續費 {ev.fees.toFixed(2)}</span>
+                              <span className="text-slate-400">{st.fee} {ev.fees.toFixed(2)}</span>
                             )}
                             {/* 帳戶 */}
                             <span className="text-slate-400 ml-auto">{ev.accountName}</span>
@@ -397,13 +419,13 @@ const StockTimeline: React.FC = () => {
         </div>
 
         {filtered.length === 0 && (
-          <div className="py-12 text-center text-slate-400 text-sm">查無符合條件的標的</div>
+          <div className="py-12 text-center text-slate-400 text-sm">{st.noMatches}</div>
         )}
       </div>
 
       {/* 圖例 */}
       <div className="flex flex-wrap gap-3 text-xs text-slate-500 px-1">
-        {Object.entries(EVENT_CONFIG).map(([type, cfg]) => (
+        {Object.entries(eventConfig).map(([type, cfg]) => (
           <div key={type} className="flex items-center gap-1.5">
             <div className={`w-2.5 h-2.5 rounded-full ${cfg.bg}`} />
             <span>{cfg.label}</span>
@@ -411,7 +433,7 @@ const StockTimeline: React.FC = () => {
         ))}
         <div className="flex items-center gap-1.5 ml-2">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>持有中</span>
+          <span>{st.legendHolding}</span>
         </div>
       </div>
     </div>
