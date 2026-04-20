@@ -1260,7 +1260,7 @@ export const buildWaterfallYearRows = (
 
 /**
  * 依季拆解：淨流入／配息為實際發生月分攤；
- * 市場損益僅分攤到「有資金投入或有持倉」的季度，避免未入市/空倉季度出現損益。
+ * 市場損益僅分攤到「有持倉」的季度，避免純入金但未進場也出現損益。
  */
 export const buildWaterfallQuarterRows = (
   chartData: ChartDataPoint[],
@@ -1318,14 +1318,13 @@ export const buildWaterfallQuarterRows = (
       const quarterEndDate = new Date(yearNum, q * 3, 0);
       const { accountHoldings } = getPortfolioStateAtDate(quarterEndDate, transactions, cashFlows, accounts);
       const hasHolding = accountHoldings.some(h => h.quantity > 0.000001);
-      const hasCapitalInflow = deposit > 0;
 
       quarterInputs.push({
         q,
         deposit,
         withdraw,
         income,
-        eligibleForPL: hasCapitalInflow || hasHolding,
+        eligibleForPL: hasHolding,
       });
     }
 
