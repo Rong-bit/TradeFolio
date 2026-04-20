@@ -1462,6 +1462,7 @@ export const buildQuarterlyTrendData = (
   };
 
   let cumulativeCostTWD = 0;
+  let hasStarted = false;
 
   const result: Array<{
     period: string;
@@ -1471,6 +1472,24 @@ export const buildQuarterlyTrendData = (
     estTotalAssets: number;
     isRealData: boolean;
   }> = [];
+
+  const hasQuarterCapitalInflow = (yearNum: number, q: number): boolean => {
+    const qStart = (q - 1) * 3 + 1;
+    const qEnd = q * 3;
+    return cashFlows.some(cf => {
+      const d = new Date(cf.date);
+      if (d.getFullYear() !== yearNum) return false;
+      const m = d.getMonth() + 1;
+      if (m < qStart || m > qEnd) return false;
+      return cf.type === CashFlowType.DEPOSIT;
+    });
+  };
+
+  const hasQuarterHolding = (yearNum: number, q: number): boolean => {
+    const quarterEndDate = new Date(yearNum, q * 3, 0);
+    const { accountHoldings } = getPortfolioStateAtDate(quarterEndDate, transactions, cashFlows, accounts);
+    return accountHoldings.some(h => h.quantity > 0.000001);
+  };
 
   for (let yi = 0; yi < sortedYears.length; yi++) {
     const yearNum = sortedYears[yi];
@@ -1537,6 +1556,10 @@ export const buildQuarterlyTrendData = (
 
       const estTotalAssets = prevYearEst + (yearEndEst - prevYearEst) * (q / 4);
 
+      const shouldDisplay = hasQuarterCapitalInflow(yearNum, q) || hasQuarterHolding(yearNum, q);
+      if (shouldDisplay) hasStarted = true;
+      if (!hasStarted) continue;
+
       result.push({
         period: `${yearStr}-Q${q}`,
         cost: cumulativeCostTWD,
@@ -1562,14 +1585,16 @@ export const buildQuarterlyTrendData = (
         else if (cf.type === CashFlowType.WITHDRAW) cumulativeCostToDate -= getCashFlowAmountTWD(cf);
       });
 
-      result.push({
-        period: `${yearStr}-NOW`,
-        cost: cumulativeCostToDate,
-        profit: yearEndAssets - cumulativeCostToDate,
-        totalAssets: yearEndAssets,
-        estTotalAssets: yearEndEst,
-        isRealData: yearIsReal,
-      });
+      if (hasStarted) {
+        result.push({
+          period: `${yearStr}-NOW`,
+          cost: cumulativeCostToDate,
+          profit: yearEndAssets - cumulativeCostToDate,
+          totalAssets: yearEndAssets,
+          estTotalAssets: yearEndEst,
+          isRealData: yearIsReal,
+        });
+      }
     }
   }
 
