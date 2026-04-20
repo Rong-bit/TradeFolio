@@ -1472,18 +1472,6 @@ export const buildQuarterlyTrendData = (
     isRealData: boolean;
   }> = [];
 
-  const hasQuarterCapitalInflow = (yearNum: number, q: number): boolean => {
-    const qStart = (q - 1) * 3 + 1;
-    const qEnd = q * 3;
-    return cashFlows.some(cf => {
-      const d = new Date(cf.date);
-      if (d.getFullYear() !== yearNum) return false;
-      const m = d.getMonth() + 1;
-      if (m < qStart || m > qEnd) return false;
-      return cf.type === CashFlowType.DEPOSIT;
-    });
-  };
-
   const hasQuarterHolding = (yearNum: number, q: number): boolean => {
     const quarterEndDate = new Date(yearNum, q * 3, 0);
     const { accountHoldings } = getPortfolioStateAtDate(quarterEndDate, transactions, cashFlows, accounts);
@@ -1555,7 +1543,7 @@ export const buildQuarterlyTrendData = (
 
       const estTotalAssets = prevYearEst + (yearEndEst - prevYearEst) * (q / 4);
 
-      const shouldDisplay = hasQuarterCapitalInflow(yearNum, q) || hasQuarterHolding(yearNum, q);
+      const shouldDisplay = hasQuarterHolding(yearNum, q);
       if (shouldDisplay) hasStarted = true;
       if (!hasStarted) continue;
 
