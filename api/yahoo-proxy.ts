@@ -7,6 +7,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const ALLOWED_PREFIXES = [
   'https://query1.finance.yahoo.com/',
   'https://stockanalysis.com/',
+  // 台灣證交所即時報價（Yahoo US chart API 對 TW 股票常延遲至前一交易日收盤，需要用 TWSE 補盤中價）
+  'https://mis.twse.com.tw/',
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -40,11 +42,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('[yahoo-proxy] Fetching:', targetUrl);
 
+    const isTwse = targetUrl.startsWith('https://mis.twse.com.tw/');
     const upstream = await fetch(targetUrl, {
       method: 'GET',
       headers: {
         // 保持簡單，不轉發瀏覽器所有 header
         'Accept': 'application/json,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        // Yahoo 對無 UA 的請求常回 429「Edge: Too Many Requests」，導致前端拿不到報價
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        // TWSE mis API 需要看起來像從它自家網頁發起，否則可能被擋或回空資料
+        ...(isTwse ? { Referer: 'https://mis.twse.com.tw/stock/fibest.jsp' } : {}),
       },
     });
 
