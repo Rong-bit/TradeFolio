@@ -180,43 +180,39 @@ function pickLatestQuoteFromChart(
   meta: Record<string, any>,
   json: unknown,
 ): { price: number; useYahooRegularChange: boolean } {
-  type Src = 'regular' | 'post' | 'pre';
-  let bestT = 0;
-  let bestP = 0;
-  let useYahooRegularChange = false;
-  const consider = (t: unknown, p: unknown, src: Src) => {
-    const ts = Number(t);
-    const pr = positiveQuoteNum(p);
-    if (!Number.isFinite(ts) || ts <= 0 || pr <= 0) return;
-    if (ts > bestT) {
-      bestT = ts;
-      bestP = pr;
-      useYahooRegularChange = src === 'regular';
-    }
-  };
-  consider(meta.regularMarketTime, meta.regularMarketPrice, 'regular');
-  consider(meta.postMarketTime, meta.postMarketPrice, 'post');
-  consider(meta.preMarketTime, meta.preMarketPrice, 'pre');
+  // 優先使用 regularMarketPrice，避免盤前/盤後價格覆蓋「現價」顯示。
+  const reg = positiveQuoteNum(meta.regularMarketPrice);
+  if (reg > 0) {
+    return { price: reg, useYahooRegularChange: true };
+  }
 
-  const { timestamps, closes } = extractOhlcv(json);
+  // 若正規盤價缺失，再退回盤後/盤前（以時間較新者為準）。
+  const postTs = Number(meta.postMarketTime);
+  const postP = positiveQuoteNum(meta.postMarketPrice);
+  const preTs = Number(meta.preMarketTime);
+  const preP = positiveQuoteNum(meta.preMarketPrice);
+  if (postP > 0 || preP > 0) {
+    if (postP > 0 && (!Number.isFinite(preTs) || postTs >= preTs)) {
+      return { price: postP, useYahooRegularChange: false };
+    }
+    if (preP > 0) {
+      return { price: preP, useYahooRegularChange: false };
+    }
+  }
+
+  const { closes } = extractOhlcv(json);
   for (let i = closes.length - 1; i >= 0; i--) {
     const c = closes[i];
-    if (c == null || !(c > 0)) continue;
-    const ts = timestamps[i];
-    if (Number.isFinite(ts) && ts > bestT) {
-      bestT = ts;
-      bestP = c;
-      useYahooRegularChange = false;
+    if (c != null && c > 0) {
+      return { price: c, useYahooRegularChange: false };
     }
-    break;
   }
 
-  const reg = positiveQuoteNum(meta.regularMarketPrice);
-  if (bestP <= 0) {
-    bestP = reg || positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
-    useYahooRegularChange = false;
-  }
-  return { price: bestP, useYahooRegularChange: bestP > 0 && useYahooRegularChange };
+  const fallback =
+    positiveQuoteNum(meta.previousClose) ||
+    positiveQuoteNum(meta.chartPreviousClose) ||
+    0;
+  return { price: fallback, useYahooRegularChange: false };
 }
 
 function findYearEnd(
