@@ -299,8 +299,17 @@ function rateToTwd(currency: string, rateMap: Record<string, number>): number {
 // `regularMarketPrice` 可能停在上一交易日收盤、`indicators.quote[0]` 為空，
 // 造成前端顯示永遠卡在昨收（例：0050 卡 84.15、2330 卡 2030）。
 // 台灣證交所 mis 的 `getStockInfo.jsp` 是台股/ETF 真正的盤中即時來源，
-// 回傳欄位：z=最新成交, o=開盤, h=最高, l=最低, y=昨收, v=量, t=時間。
+// 回傳欄位：z=最新成交, o=開盤, h=最高, l=最低, y=昨收, v=量, t=時間，
+//          a=五檔委賣（_分隔，首檔最佳）, b=五檔委買（_分隔，首檔最佳）。
 // 同時送 tse_ 與 otc_ 兩個前綴，可同時涵蓋上市與上櫃。
+
+/** 解析 TWSE 用底線串接的五檔字串，取第一檔（最佳價） */
+function parseBestQuote(s: unknown): number {
+  if (s == null) return 0;
+  const first = String(s).split('_')[0];
+  const n = Number(first);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
 
 async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   const bust = `&_=${Date.now()}`;
@@ -315,9 +324,11 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   let picked: any = null;
   for (const item of arr) {
     const z = Number(item?.z), o = Number(item?.o), y = Number(item?.y);
+    const ask = parseBestQuote(item?.a), bid = parseBestQuote(item?.b);
     if ((Number.isFinite(z) && z > 0) ||
         (Number.isFinite(o) && o > 0) ||
-        (Number.isFinite(y) && y > 0)) {
+        (Number.isFinite(y) && y > 0) ||
+        ask > 0 || bid > 0) {
       picked = item; break;
     }
   }
@@ -326,11 +337,30 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   const z = Number(picked.z);
   const o = Number(picked.o);
   const y = Number(picked.y);
-  // 盤中：z 為最新成交；盤前/無新成交：z 可能是 "-"，退到 o（今開盤）或 y（昨收）
-  const price =
-    (Number.isFinite(z) && z > 0) ? z :
-    (Number.isFinite(o) && o > 0) ? o :
-    (Number.isFinite(y) && y > 0) ? y : 0;
+  const bestAsk = parseBestQuote(picked.a); // 最低賣價
+  const bestBid = parseBestQuote(picked.b); // 最高買價
+
+  // 價格優先順序（貼近「真正現價」的程度）：
+  //  1. z：最新成交（盤中理想來源）
+  //  2. 買賣五檔首檔中價：z="-"（polling 窗內無新單）時的最佳近似值，
+  //     比退到開盤 o 精準得多，避免「現價突然跳回開盤」的抖動。
+  //  3. bestBid / bestAsk：只有單邊也能給出合理估計
+  //  4. o：盤前已開盤但尚無五檔時
+  //  5. y：完全沒資料時（保底不會 NaN）
+  let price = 0;
+  if (Number.isFinite(z) && z > 0) {
+    price = z;
+  } else if (bestAsk > 0 && bestBid > 0) {
+    price = (bestAsk + bestBid) / 2;
+  } else if (bestBid > 0) {
+    price = bestBid;
+  } else if (bestAsk > 0) {
+    price = bestAsk;
+  } else if (Number.isFinite(o) && o > 0) {
+    price = o;
+  } else if (Number.isFinite(y) && y > 0) {
+    price = y;
+  }
   if (price <= 0) return null;
 
   const prev = Number.isFinite(y) && y > 0 ? y : 0;
