@@ -412,6 +412,33 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   return { price, change, changePercent, currency: 'TWD' };
 }
 
+/**
+ * 台股 Yahoo 頁面備援（HTML 解析）：
+ * 當 TWSE MIS 暫時取不到有效欄位時，嘗試從 Yahoo TW quote 頁抓「成交／昨收」。
+ */
+async function fetchYahooTwHtmlFallback(code: string): Promise<PriceData | null> {
+  const url = `https://tw.stock.yahoo.com/quote/${encodeURIComponent(code)}`;
+  const resp = await tryFetch(url);
+  const html = resp?.text ?? '';
+  if (!html) return null;
+
+  // 例：<span ...>成交</span><span ...>86.00</span>
+  const lastMatch = html.match(/成交<\/span><span[^>]*>([\d,]+(?:\.\d+)?)/);
+  const prevMatch = html.match(/昨收<\/span><span[^>]*>([\d,]+(?:\.\d+)?)/);
+  const upDownMatch = html.match(/漲跌<\/span><span[^>]*>(?:<span[^>]*><\/span>)?([+\-]?\d+(?:\.\d+)?)/);
+
+  const price = Number((lastMatch?.[1] ?? '').replace(/,/g, ''));
+  if (!Number.isFinite(price) || price <= 0) return null;
+
+  const prev = Number((prevMatch?.[1] ?? '').replace(/,/g, ''));
+  let change = Number((upDownMatch?.[1] ?? '').replace(/,/g, ''));
+  if (!Number.isFinite(change)) {
+    change = Number.isFinite(prev) && prev > 0 ? price - prev : 0;
+  }
+  const changePercent = Number.isFinite(prev) && prev > 0 ? (change / prev) * 100 : 0;
+  return { price, change, changePercent, currency: 'TWD' };
+}
+
 // ── 即時股價 ─────────────────────────────────────────────────────────────────
 
 async function fetchSinglePrice(
@@ -433,6 +460,11 @@ async function fetchSinglePrice(
       if (twseData && twseData.price > 0) {
         setCache(ck, twseData);
         return twseData;
+      }
+      const yahooTwData = await fetchYahooTwHtmlFallback(twMatch[1]);
+      if (yahooTwData && yahooTwData.price > 0) {
+        setCache(ck, yahooTwData, 60 * 1000);
+        return yahooTwData;
       }
     } catch { /* TWSE 失敗就退回 Yahoo chart */ }
   }
