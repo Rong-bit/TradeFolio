@@ -179,26 +179,28 @@ function positiveQuoteNum(x: unknown): number {
 function pickLatestQuoteFromChart(
   meta: Record<string, any>,
   json: unknown,
-): { price: number; useYahooRegularChange: boolean } {
-  type Src = 'regular' | 'post' | 'pre';
-  let bestT = 0;
-  let bestP = 0;
-  let useYahooRegularChange = false;
-  const consider = (t: unknown, p: unknown, src: Src) => {
-    const ts = Number(t);
-    const pr = positiveQuoteNum(p);
-    if (!Number.isFinite(ts) || ts <= 0 || pr <= 0) return;
-    if (ts > bestT) {
-      bestT = ts;
-      bestP = pr;
-      useYahooRegularChange = src === 'regular';
-    }
-  };
-  consider(meta.regularMarketTime, meta.regularMarketPrice, 'regular');
-  consider(meta.postMarketTime, meta.postMarketPrice, 'post');
-  consider(meta.preMarketTime, meta.preMarketPrice, 'pre');
+): { price: number; source: 'regular' | 'post' | 'pre' | 'fallback' } {
+  // 正規盤優先：UI 顯示固定跟 Yahoo 「At close」一致；盤前/盤後僅作備援。
+  const preT = Number(meta.preMarketTime);
+  const preP = positiveQuoteNum(meta.preMarketPrice);
+  const postT = Number(meta.postMarketTime);
+  const postP = positiveQuoteNum(meta.postMarketPrice);
+  const regT = Number(meta.regularMarketTime);
+  const regP = positiveQuoteNum(meta.regularMarketPrice);
+
+  if (regP > 0 && Number.isFinite(regT) && regT > 0) {
+    return { price: regP, source: 'regular' };
+  }
+  if (preP > 0 && Number.isFinite(preT) && preT > 0) {
+    return { price: preP, source: 'pre' };
+  }
+  if (postP > 0 && Number.isFinite(postT) && postT > 0) {
+    return { price: postP, source: 'post' };
+  }
 
   const { timestamps, closes } = extractOhlcv(json);
+  let bestT = 0;
+  let bestP = 0;
   for (let i = closes.length - 1; i >= 0; i--) {
     const c = closes[i];
     if (c == null || !(c > 0)) continue;
@@ -206,17 +208,14 @@ function pickLatestQuoteFromChart(
     if (Number.isFinite(ts) && ts > bestT) {
       bestT = ts;
       bestP = c;
-      useYahooRegularChange = false;
     }
     break;
   }
 
-  const reg = positiveQuoteNum(meta.regularMarketPrice);
   if (bestP <= 0) {
-    bestP = reg || positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
-    useYahooRegularChange = false;
+    bestP = regP || positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
   }
-  return { price: bestP, useYahooRegularChange: bestP > 0 && useYahooRegularChange };
+  return { price: bestP, source: 'fallback' };
 }
 
 function findYearEnd(
@@ -447,7 +446,7 @@ async function fetchSinglePrice(
     return interval === '1m' ? fetchSinglePrice(symbol, '1d', skipCache) : null;
   }
 
-  const { price, useYahooRegularChange } = pickLatestQuoteFromChart(meta, resp?.json);
+  const { price, source } = pickLatestQuoteFromChart(meta, resp?.json);
   if (!price && interval === '1m') return fetchSinglePrice(symbol, '1d', skipCache);
 
   if (shouldDebugSymbol(symbol)) {
@@ -467,23 +466,33 @@ async function fetchSinglePrice(
         : null,
       previousClose: meta.previousClose ?? null,
       source: 'yahoo-chart-meta',
-      useYahooRegularChange,
+      quoteSource: source,
     });
   }
 
   const prev = positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
   let chg: number;
   let pct: number;
-  if (useYahooRegularChange) {
+  if (source === 'pre') {
     chg =
-      meta.regularMarketChange ??
-      meta.postMarketChange ??
       meta.preMarketChange ??
       (prev > 0 ? price - prev : 0);
     pct =
-      meta.regularMarketChangePercent ??
-      meta.postMarketChangePercent ??
       meta.preMarketChangePercent ??
+      (prev > 0 ? (chg / prev) * 100 : 0);
+  } else if (source === 'post') {
+    chg =
+      meta.postMarketChange ??
+      (prev > 0 ? price - prev : 0);
+    pct =
+      meta.postMarketChangePercent ??
+      (prev > 0 ? (chg / prev) * 100 : 0);
+  } else if (source === 'regular') {
+    chg =
+      meta.regularMarketChange ??
+      (prev > 0 ? price - prev : 0);
+    pct =
+      meta.regularMarketChangePercent ??
       (prev > 0 ? (chg / prev) * 100 : 0);
   } else {
     chg = prev > 0 ? price - prev : 0;
@@ -496,7 +505,12 @@ async function fetchSinglePrice(
     changePercent: isNaN(pct) ? 0 : pct,
     currency: meta.currency ? normalizeYahooCurrency(meta.currency) : undefined,
   };
-  setCache(ck, result);
+  // 盤前/盤後波動快，縮短快取以避免畫面長時間停在舊值。
+  if (source === 'pre' || source === 'post') {
+    setCache(ck, result, 30 * 1000);
+  } else {
+    setCache(ck, result);
+  }
   return result;
 }
 
