@@ -172,6 +172,42 @@ function positiveQuoteNum(x: unknown): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
+function pickPreferMetaChange(
+  metaChangeRaw: unknown,
+  metaPctRaw: unknown,
+  price: number,
+  prev: number,
+): { change: number; pct: number } {
+  const derivedChange = prev > 0 ? price - prev : 0;
+  const derivedPct = prev > 0 ? (derivedChange / prev) * 100 : 0;
+  const metaChange = Number(metaChangeRaw);
+  const metaPct = Number(metaPctRaw);
+
+  const hasMetaChange = Number.isFinite(metaChange);
+  const hasMetaPct = Number.isFinite(metaPct);
+
+  // Yahoo 偶爾會回 0 但 regularMarketPrice 與 previousClose 差異明顯。
+  // 這時改用推導值，避免 UI 卡在 0.00（例如 BNDW）。
+  if (
+    hasMetaChange &&
+    Math.abs(metaChange) < 1e-9 &&
+    Math.abs(derivedChange) >= 0.005
+  ) {
+    return { change: derivedChange, pct: derivedPct };
+  }
+
+  if (hasMetaChange && hasMetaPct) {
+    return { change: metaChange, pct: metaPct };
+  }
+  if (hasMetaChange) {
+    return { change: metaChange, pct: prev > 0 ? (metaChange / prev) * 100 : 0 };
+  }
+  if (hasMetaPct) {
+    return { change: derivedChange, pct: metaPct };
+  }
+  return { change: derivedChange, pct: derivedPct };
+}
+
 /**
  * Yahoo 在盤外時 meta.regularMarketPrice 常仍是「上一個正盤收盤」；
  * 併入盤後／盤前與 K 線最後一根（較新時間戳）可避免畫面一直像停在「昨天」。
@@ -506,26 +542,32 @@ async function fetchSinglePrice(
   let chg: number;
   let pct: number;
   if (source === 'pre') {
-    chg =
-      meta.preMarketChange ??
-      (prev > 0 ? price - prev : 0);
-    pct =
-      meta.preMarketChangePercent ??
-      (prev > 0 ? (chg / prev) * 100 : 0);
+    const chosen = pickPreferMetaChange(
+      meta.preMarketChange,
+      meta.preMarketChangePercent,
+      price,
+      prev,
+    );
+    chg = chosen.change;
+    pct = chosen.pct;
   } else if (source === 'post') {
-    chg =
-      meta.postMarketChange ??
-      (prev > 0 ? price - prev : 0);
-    pct =
-      meta.postMarketChangePercent ??
-      (prev > 0 ? (chg / prev) * 100 : 0);
+    const chosen = pickPreferMetaChange(
+      meta.postMarketChange,
+      meta.postMarketChangePercent,
+      price,
+      prev,
+    );
+    chg = chosen.change;
+    pct = chosen.pct;
   } else if (source === 'regular') {
-    chg =
-      meta.regularMarketChange ??
-      (prev > 0 ? price - prev : 0);
-    pct =
-      meta.regularMarketChangePercent ??
-      (prev > 0 ? (chg / prev) * 100 : 0);
+    const chosen = pickPreferMetaChange(
+      meta.regularMarketChange,
+      meta.regularMarketChangePercent,
+      price,
+      prev,
+    );
+    chg = chosen.change;
+    pct = chosen.pct;
   } else {
     chg = prev > 0 ? price - prev : 0;
     pct = prev > 0 ? (chg / prev) * 100 : 0;
