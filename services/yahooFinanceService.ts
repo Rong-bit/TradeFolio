@@ -180,39 +180,43 @@ function pickLatestQuoteFromChart(
   meta: Record<string, any>,
   json: unknown,
 ): { price: number; useYahooRegularChange: boolean } {
-  // 優先使用 regularMarketPrice，避免盤前/盤後價格覆蓋「現價」顯示。
-  const reg = positiveQuoteNum(meta.regularMarketPrice);
-  if (reg > 0) {
-    return { price: reg, useYahooRegularChange: true };
-  }
-
-  // 若正規盤價缺失，再退回盤後/盤前（以時間較新者為準）。
-  const postTs = Number(meta.postMarketTime);
-  const postP = positiveQuoteNum(meta.postMarketPrice);
-  const preTs = Number(meta.preMarketTime);
-  const preP = positiveQuoteNum(meta.preMarketPrice);
-  if (postP > 0 || preP > 0) {
-    if (postP > 0 && (!Number.isFinite(preTs) || postTs >= preTs)) {
-      return { price: postP, useYahooRegularChange: false };
+  type Src = 'regular' | 'post' | 'pre';
+  let bestT = 0;
+  let bestP = 0;
+  let useYahooRegularChange = false;
+  const consider = (t: unknown, p: unknown, src: Src) => {
+    const ts = Number(t);
+    const pr = positiveQuoteNum(p);
+    if (!Number.isFinite(ts) || ts <= 0 || pr <= 0) return;
+    if (ts > bestT) {
+      bestT = ts;
+      bestP = pr;
+      useYahooRegularChange = src === 'regular';
     }
-    if (preP > 0) {
-      return { price: preP, useYahooRegularChange: false };
-    }
-  }
+  };
+  consider(meta.regularMarketTime, meta.regularMarketPrice, 'regular');
+  consider(meta.postMarketTime, meta.postMarketPrice, 'post');
+  consider(meta.preMarketTime, meta.preMarketPrice, 'pre');
 
-  const { closes } = extractOhlcv(json);
+  const { timestamps, closes } = extractOhlcv(json);
   for (let i = closes.length - 1; i >= 0; i--) {
     const c = closes[i];
-    if (c != null && c > 0) {
-      return { price: c, useYahooRegularChange: false };
+    if (c == null || !(c > 0)) continue;
+    const ts = timestamps[i];
+    if (Number.isFinite(ts) && ts > bestT) {
+      bestT = ts;
+      bestP = c;
+      useYahooRegularChange = false;
     }
+    break;
   }
 
-  const fallback =
-    positiveQuoteNum(meta.previousClose) ||
-    positiveQuoteNum(meta.chartPreviousClose) ||
-    0;
-  return { price: fallback, useYahooRegularChange: false };
+  const reg = positiveQuoteNum(meta.regularMarketPrice);
+  if (bestP <= 0) {
+    bestP = reg || positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
+    useYahooRegularChange = false;
+  }
+  return { price: bestP, useYahooRegularChange: bestP > 0 && useYahooRegularChange };
 }
 
 function findYearEnd(
@@ -307,6 +311,35 @@ function parseBestQuote(s: unknown): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
+/**
+ * 依「台北時間」判斷台股一般交易日時段（不含國定假日判斷）。
+ * - preopen / weekend：不採用五檔試算價，避免開盤前集合競價造成數字跳動。
+ * - continuous：09:00–13:30，可用成交價與五檔。
+ * - postclose：收盤後不取五檔中價，避免盤後委託簿雜訊。
+ */
+function getTwseSession(now: Date): 'weekend' | 'preopen' | 'continuous' | 'postclose' {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Taipei',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(now);
+  const map: Record<string, string> = {};
+  for (const p of parts) {
+    if (p.type !== 'literal') map[p.type] = p.value;
+  }
+  const wd = map.weekday;
+  if (wd === 'Sat' || wd === 'Sun') return 'weekend';
+  const h = Number(map.hour);
+  const m = Number(map.minute);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return 'preopen';
+  const mins = h * 60 + m;
+  if (mins < 9 * 60) return 'preopen';
+  if (mins < 13 * 60 + 30) return 'continuous';
+  return 'postclose';
+}
+
 async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   const bust = `&_=${Date.now()}`;
   const url =
@@ -335,6 +368,15 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   const y = Number(picked.y);
   const bestAsk = parseBestQuote(picked.a); // 最低賣價
   const bestBid = parseBestQuote(picked.b); // 最高買價
+  const session = getTwseSession(new Date());
+
+  // 開盤前／週末：只顯示昨收，不採五檔（避免集合競價委託簿讓「現價」跳動）。
+  if (session === 'preopen' || session === 'weekend') {
+    if (Number.isFinite(y) && y > 0) {
+      return { price: y, change: 0, changePercent: 0, currency: 'TWD' };
+    }
+    return null;
+  }
 
   // 價格優先順序（貼近「真正現價」的程度）：
   //  1. z：最新成交（盤中理想來源）
@@ -343,18 +385,24 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   //  3. bestBid / bestAsk：只有單邊也能給出合理估計
   //  4. o：盤前已開盤但尚無五檔時
   //  5. y：完全沒資料時（保底不會 NaN）
+  // 收盤後：不用五檔，避免盤後簿價干擾。
   let price = 0;
   if (Number.isFinite(z) && z > 0) {
     price = z;
-  } else if (bestAsk > 0 && bestBid > 0) {
-    price = (bestAsk + bestBid) / 2;
-  } else if (bestBid > 0) {
-    price = bestBid;
-  } else if (bestAsk > 0) {
-    price = bestAsk;
-  } else if (Number.isFinite(o) && o > 0) {
-    price = o;
+  } else if (session === 'continuous') {
+    if (bestAsk > 0 && bestBid > 0) {
+      price = (bestAsk + bestBid) / 2;
+    } else if (bestBid > 0) {
+      price = bestBid;
+    } else if (bestAsk > 0) {
+      price = bestAsk;
+    } else if (Number.isFinite(o) && o > 0) {
+      price = o;
+    } else if (Number.isFinite(y) && y > 0) {
+      price = y;
+    }
   } else if (Number.isFinite(y) && y > 0) {
+    // postclose：z 無效時不取五檔、也不退回開盤價 o（易誤導），僅用昨收。
     price = y;
   }
   if (price <= 0) return null;
