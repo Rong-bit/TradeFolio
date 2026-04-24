@@ -6,6 +6,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const ALLOWED_PREFIXES = [
   'https://query1.finance.yahoo.com/',
+  // 台股週末/非盤中備援：抓 Yahoo TW quote HTML 的最後成交/昨收
+  'https://tw.stock.yahoo.com/',
   'https://stockanalysis.com/',
   // 台灣證交所即時報價（Yahoo US chart API 對 TW 股票常延遲至前一交易日收盤，需要用 TWSE 補盤中價）
   'https://mis.twse.com.tw/',
