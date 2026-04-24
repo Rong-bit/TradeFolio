@@ -124,10 +124,12 @@ function proxyUrls(target: string): string[] {
 
 // ── 底層 Fetch ────────────────────────────────────────────────────────────────
 
-function isErrorBody(text: string): boolean {
+function isErrorBody(text: string, opts?: { allowHtml?: boolean }): boolean {
   const t = text.trim();
-  return !t || t.startsWith('Edge:') || /^too many/i.test(t) ||
-    t.includes('<!DOCTYPE') || t.includes('<html');
+  if (!t) return true;
+  if (t.startsWith('Edge:') || /^too many/i.test(t)) return true;
+  if (opts?.allowHtml) return false;
+  return t.includes('<!DOCTYPE') || t.includes('<html');
 }
 
 function isDevLogEnabled(): boolean {
@@ -163,6 +165,9 @@ function logFetchDebug(event: string, detail: Record<string, unknown>): void {
 /** 嘗試各 proxy，回傳已解析的 JSON 或（HTML 字串用於 StockAnalysis）。 */
 async function tryFetch(target: string): Promise<{ json: unknown; text: string } | null> {
   const candidates = proxyUrls(target);
+  const allowHtml =
+    /^https:\/\/tw\.stock\.yahoo\.com\//i.test(target) ||
+    /^https:\/\/stockanalysis\.com\//i.test(target);
   for (let i = 0; i < candidates.length; i++) {
     const url = candidates[i];
     try {
@@ -186,7 +191,7 @@ async function tryFetch(target: string): Promise<{ json: unknown; text: string }
         continue;
       }
       const text = await res.text();
-      if (isErrorBody(text)) {
+      if (isErrorBody(text, { allowHtml })) {
         logFetchDebug('error_body', {
           target,
           url,
