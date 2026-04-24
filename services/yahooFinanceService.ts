@@ -405,11 +405,15 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   const bestBid = parseBestQuote(picked.b); // 最高買價
   const session = getTwseSession(new Date());
 
-  // 開盤前／週末：只顯示昨收，不採五檔（避免集合競價委託簿讓「現價」跳動）。
-  if (session === 'preopen' || session === 'weekend') {
+  // 開盤前：只顯示昨收，不採五檔（避免集合競價委託簿讓「現價」跳動）。
+  // 週末：回傳 null，交由上層改走 Yahoo TW HTML fallback，盡量顯示最後成交。
+  if (session === 'preopen') {
     if (Number.isFinite(y) && y > 0) {
       return { price: y, change: 0, changePercent: 0, currency: 'TWD' };
     }
+    return null;
+  }
+  if (session === 'weekend') {
     return null;
   }
 
