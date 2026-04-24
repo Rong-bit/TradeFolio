@@ -113,7 +113,13 @@ function proxyUrls(target: string): string[] {
 
   urls.push(`https://corsproxy.io/?${enc}`);
   urls.push(`https://api.allorigins.win/raw?url=${enc}`);
-  urls.push(target); // 直連備援
+  // 瀏覽器端對部分站點（例如 tw.stock.yahoo.com）直連幾乎必定被 CORS 擋下，
+  // 會造成 console 持續噴錯且無實際收益；這些站點改成只走 proxy 鏈。
+  const isBrowser = typeof window !== 'undefined';
+  const blockDirectInBrowser = /^https:\/\/(tw\.stock\.yahoo\.com|mis\.twse\.com\.tw|stockanalysis\.com)\//i.test(target);
+  if (!isBrowser || !blockDirectInBrowser) {
+    urls.push(target); // 可直連時才保留最後備援
+  }
   return urls;
 }
 
