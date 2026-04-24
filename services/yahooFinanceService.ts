@@ -130,9 +130,24 @@ function isErrorBody(text: string): boolean {
     t.includes('<!DOCTYPE') || t.includes('<html');
 }
 
+function isDevLogEnabled(): boolean {
+  try {
+    return Boolean((import.meta as any)?.env?.DEV);
+  } catch {
+    return false;
+  }
+}
+
+function logFetchDebug(event: string, detail: Record<string, unknown>): void {
+  if (!isDevLogEnabled()) return;
+  console.debug('[QUOTE_FETCH_DEBUG]', event, detail);
+}
+
 /** 嘗試各 proxy，回傳已解析的 JSON 或（HTML 字串用於 StockAnalysis）。 */
 async function tryFetch(target: string): Promise<{ json: unknown; text: string } | null> {
-  for (const url of proxyUrls(target)) {
+  const candidates = proxyUrls(target);
+  for (let i = 0; i < candidates.length; i++) {
+    const url = candidates[i];
     try {
       const ctrl = new AbortController();
       const tid  = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
@@ -142,18 +157,61 @@ async function tryFetch(target: string): Promise<{ json: unknown; text: string }
       });
       clearTimeout(tid);
 
-      if (!res.ok) continue;
+      if (!res.ok) {
+        logFetchDebug('http_not_ok', {
+          target,
+          url,
+          attempt: i + 1,
+          total: candidates.length,
+          status: res.status,
+          statusText: res.statusText,
+        });
+        continue;
+      }
       const text = await res.text();
-      if (isErrorBody(text)) continue;
+      if (isErrorBody(text)) {
+        logFetchDebug('error_body', {
+          target,
+          url,
+          attempt: i + 1,
+          total: candidates.length,
+          bodyPreview: text.slice(0, 120),
+        });
+        continue;
+      }
 
       try {
+        logFetchDebug('success_json', {
+          target,
+          url,
+          attempt: i + 1,
+          total: candidates.length,
+        });
         return { json: JSON.parse(text), text };
       } catch {
         // 非 JSON（HTML page for StockAnalysis）也回傳
+        logFetchDebug('success_text', {
+          target,
+          url,
+          attempt: i + 1,
+          total: candidates.length,
+        });
         return { json: null, text };
       }
-    } catch { /* timeout / CORS → 換下一個 */ }
+    } catch (e: any) {
+      const msg = String(e?.message || e || '');
+      const isAbort = e?.name === 'AbortError' || /abort/i.test(msg);
+      logFetchDebug(isAbort ? 'timeout' : 'network_error', {
+        target,
+        url,
+        attempt: i + 1,
+        total: candidates.length,
+        error: msg || null,
+      });
+      /* timeout / CORS → 換下一個 */
+    }
   }
+  logFetchDebug('all_failed', { target, total: candidates.length });
   return null;
 }
 
