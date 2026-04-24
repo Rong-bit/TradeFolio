@@ -132,7 +132,24 @@ function isErrorBody(text: string): boolean {
 
 function isDevLogEnabled(): boolean {
   try {
-    return Boolean((import.meta as any)?.env?.DEV);
+    const env = (import.meta as any)?.env ?? {};
+    if (Boolean(env.DEV)) return true;
+    if (String(env.VITE_DEBUG_QUOTES || '').toLowerCase() === 'true') return true;
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('tfDebugQuotes');
+      if (q === '1') {
+        localStorage.setItem('tf-debug-quotes', '1');
+        return true;
+      }
+      if (q === '0') {
+        localStorage.removeItem('tf-debug-quotes');
+        return false;
+      }
+      return localStorage.getItem('tf-debug-quotes') === '1';
+    }
+    return false;
   } catch {
     return false;
   }
