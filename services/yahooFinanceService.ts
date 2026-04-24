@@ -159,6 +159,14 @@ function isDevLogEnabled(): boolean {
 
 function logFetchDebug(event: string, detail: Record<string, unknown>): void {
   if (!isDevLogEnabled()) return;
+  const failureEvents = new Set([
+    'http_not_ok',
+    'error_body',
+    'timeout',
+    'network_error',
+    'all_failed',
+  ]);
+  if (!failureEvents.has(event)) return;
   console.debug('[QUOTE_FETCH_DEBUG]', event, detail);
 }
 
