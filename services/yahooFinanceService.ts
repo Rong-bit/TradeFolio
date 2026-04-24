@@ -110,9 +110,8 @@ function proxyUrls(target: string): string[] {
   ) {
     urls.push(`/api/yahoo-proxy?target=${enc}`);
   }
-
-  urls.push(`https://corsproxy.io/?${enc}`);
-  urls.push(`https://api.allorigins.win/raw?url=${enc}`);
+  // 公開 CORS 代理（corsproxy/allorigins）在 production 常有配額/穩定性問題，
+  // 這裡改為僅依賴自有 Vercel proxy。
   // 瀏覽器端對部分站點（例如 tw.stock.yahoo.com）直連幾乎必定被 CORS 擋下，
   // 會造成 console 持續噴錯且無實際收益；這些站點改成只走 proxy 鏈。
   const isBrowser = typeof window !== 'undefined';
