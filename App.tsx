@@ -1,631 +1,835 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Transaction, Holding, PortfolioSummary, Market, Account, CashFlow,
-  TransactionType, CashFlowType, Currency, HistoricalData,
-  BaseCurrency, BASE_CURRENCIES
-} from './types';
-import { useLocalStorageDebouncedSimple } from './hooks/useLocalStorageDebounced';
-import { useFilters } from './hooks/useFilters';
-import { useDeleteState } from './hooks/useDeleteState';
-import { useUIState } from './hooks/useUIState';
-import { useExchangeRates, ExchangeRateState } from './hooks/useExchangeRates';
-import { usePortfolioData } from './hooks/usePortfolioData';
-import { useAutoRefresh } from './hooks/useAutoRefresh';
-import {
-  calculateHoldings, calculateAccountBalances, buildLedgerState, generateAdvancedChartData,
-  calculateAssetAllocation, calculateAnnualPerformance, calculateAccountPerformance,
-  calculateXIRR, getDisplayRateForBaseCurrency, ExchangeRates,
-  currencyToTWDRate, holdingValueToTWD, transactionAmountNativeToTWD
-} from './utils/calculations';
-import TransactionForm from './components/TransactionForm';
-import Dashboard from './components/Dashboard';
-import AccountManager from './components/AccountManager';
-import FundManager from './components/FundManager';
-import RebalanceView from './components/RebalanceView';
-import HelpView from './components/HelpView';
-import HistoryView from './components/HistoryView';
-import BatchImportModal from './components/BatchImportModal';
-import HistoricalDataModal from './components/HistoricalDataModal';
-import BatchUpdateMarketModal from './components/BatchUpdateMarketModal';
-import AssetAllocationSimulator from './components/AssetAllocationSimulator';
-import DarkModeToggle from './components/DarkModeToggle';
-import * as YahooFinance from './services/yahooFinanceService';
-import { autoSyncMissingHistoricalData, findYearsNeedingAutoHistoricalSync } from './utils/autoHistoricalSync';
-import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
-import { Language, getLanguage, setLanguage as saveLanguage, t, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
-import { PortfolioContext } from './contexts/PortfolioContext';
-import type { View } from './contexts/UIContext';
-import { MarketContext } from './contexts/MarketContext';
-import { UIContext } from './contexts/UIContext';
 
-// ─── 工具函式 ───────────────────────────────────────────────────
+import React, { useState, useRef, useEffect } from 'react';
+import Header from './components/header.tsx';
+import Sidebar from './components/sidebar.tsx';
+import NovelInput from './components/novelinput.tsx';
+import NovelDisplay from './components/noveldisplay.tsx';
+import { NovelContent, ReaderState } from './types.ts';
+import { fetchNovelContent, generateSpeech } from './services/geminiService.ts';
+import { decode, decodeAudioData } from './utils/audioUtils.ts';
+import { getSafeOpenUrl } from './utils/urlUtils.ts';
 
-const formatNumber = (num: number): string => num.toString();
+const STORAGE_KEY_SETTINGS = 'gemini_reader_settings';
+const STORAGE_KEY_PROGRESS = 'gemini_reader_progress';
+const STORAGE_KEY_WEB_RATE = 'web_reader_rate';
+const STORAGE_KEY_WEB_VOICE = 'web_reader_voice';
+const STORAGE_KEY_WEB_LIST = 'web_reader_list';
 
-const formatAmount = (num: number): string =>
-  num % 1 === 0
-    ? num.toLocaleString('zh-TW')
-    : num.toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-// ─── App ────────────────────────────────────────────────────────
+function getNovelText(novel: NovelContent | null): string {
+  if (!novel) return '';
+  if (typeof (novel as any).content === 'string' && (novel as any).content.length > 0) return (novel as any).content;
+  const chapters = (novel as any).chapters;
+  if (Array.isArray(chapters)) return chapters.map((c: any) => c.text ?? c.content ?? '').join('\n');
+  return '';
+}
 
 const App: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [currentUser, setCurrentUser] = useState('');
-  const [view, setView] = useState<View>('dashboard');
-  const REFRESH_INTERVAL_MS = 3 * 60 * 1000; // 3 分鐘
-  const [language, setLanguage] = useState<Language>(getLanguage());
-  const [baseCurrency, setBaseCurrency] = useState<BaseCurrency>('TWD');
-  const [alertDialog, setAlertDialog] = useState<{ isOpen: boolean; title: string; message: string; type: 'info'|'success'|'error' }>({ isOpen: false, title: '', message: '', type: 'info' });
+  // --- States ---
+  const [novel, setNovel] = useState<NovelContent | null>(null);
+  const [state, setState] = useState<ReaderState>(ReaderState.IDLE);
+  const [voice, setVoice] = useState('Kore');
+  const [error, setError] = useState<string | null>(null);
+  const [volume, setVolume] = useState(0.8);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
+  
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isBrowseOpen, setIsBrowseOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(true);
+  const [fontSize, setFontSize] = useState(18);
+  const [theme, setTheme] = useState<'dark' | 'sepia' | 'slate'>('dark');
+  const [showResumeToast, setShowResumeToast] = useState(false);
+  const [readerMode, setReaderMode] = useState<'novel' | 'web'>('novel');
 
-  const { isFormOpen, isImportOpen, isDeleteConfirmOpen, isTransactionDeleteConfirmOpen, isCashFlowDeleteConfirmOpen, isHistoricalModalOpen, isBatchUpdateMarketOpen, isMobileMenuOpen, setIsFormOpen, setIsImportOpen, setIsDeleteConfirmOpen, setIsTransactionDeleteConfirmOpen, setIsCashFlowDeleteConfirmOpen, setIsHistoricalModalOpen, setIsBatchUpdateMarketOpen, setIsMobileMenuOpen } = useUIState();
-  const { transactionToDelete, transactionToEdit, cashFlowToDelete, setTransactionToDelete, setTransactionToEdit, setCashFlowToDelete, clearTransactionDelete, clearTransactionEdit, clearCashFlowDelete } = useDeleteState();
-  const { filterAccount, filterTicker, filterDateFrom, filterDateTo, includeCashFlow, setFilterAccount, setFilterTicker, setFilterDateFrom, setFilterDateTo, setIncludeCashFlow, clearFilters } = useFilters();
+  const [webUrl, setWebUrl] = useState('');
+  const [webTitle, setWebTitle] = useState('');
+  const [webText, setWebText] = useState('');
+  const [webRate, setWebRate] = useState(1.0);
+  const [webError, setWebError] = useState<string | null>(null);
+  const [webLoading, setWebLoading] = useState(false);
+  const [webIsSpeaking, setWebIsSpeaking] = useState(false);
+  const [webIsPaused, setWebIsPaused] = useState(false);
+  const [webVoices, setWebVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [webVoice, setWebVoice] = useState('');
+  const [webList, setWebList] = useState<Array<{ id: string; title: string; text: string }>>([]);
+  const [showShareHelp, setShowShareHelp] = useState(true);
+  const [isOnline, setIsOnline] = useState(true);
 
-  const { rates, loadRates, saveRates, updateRates, setUsdRate, resetRates, exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cadExchangeRate, inrExchangeRate, cnyExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate } = useExchangeRates();
+  // --- Refs ---
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const requestRef = useRef<number>(0);
+  const lastSavedTimeRef = useRef<number>(0);
+  const webUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const webChunksRef = useRef<string[]>([]);
+  const webChunkIndexRef = useRef(0);
+  const webStopRequestedRef = useRef(false);
 
-  const userPrefix = isAuthenticated && currentUser ? `tf_${currentUser}` : undefined;
-  const { transactions, accounts, cashFlows, currentPrices, priceDetails, rebalanceTargets, rebalanceEnabledItems, historicalData, loadData, resetData, importData, addTransaction, updateTransaction, removeTransaction, addBatchTransactions, clearTransactions, batchUpdateMarket, addAccount, updateAccount, removeAccount, addCashFlow, updateCashFlow, removeCashFlow, addBatchCashFlows, clearCashFlows, updatePrice, updatePricesAndDetails, updateRebalanceTargets, setRebalanceEnabledItems, saveHistoricalData } = usePortfolioData(userPrefix);
-
-  useLocalStorageDebouncedSimple('baseCurrency', baseCurrency, 500, userPrefix);
-
-  const showAlert = (message: string, title = '提示', type: 'info'|'success'|'error' = 'info') => setAlertDialog({ isOpen: true, title, message, type });
-  const closeAlert = () => setAlertDialog(prev => ({ ...prev, isOpen: false }));
-
+  // --- Initialization ---
   useEffect(() => {
-    const lastUser = localStorage.getItem('tf_last_user');
-    const isAuth = localStorage.getItem('tf_is_auth');
-    const guestStatus = localStorage.getItem('tf_is_guest');
-    setLanguage(getLanguage());
-    if (isAuth === 'true' && lastUser) {
-      setCurrentUser(lastUser);
-      setIsGuest(guestStatus === 'true');
-      setIsAuthenticated(true);
+    const savedSettings = localStorage.getItem(STORAGE_KEY_SETTINGS);
+    if (savedSettings) {
+      const s = JSON.parse(savedSettings);
+      setVoice(s.voice || 'Kore');
+      setVolume(s.volume ?? 0.8);
+      setPlaybackRate(s.playbackRate ?? 1.0);
+      setFontSize(s.fontSize ?? 18);
+      setTheme(s.theme || 'dark');
+    }
+
+    const savedWebRate = localStorage.getItem(STORAGE_KEY_WEB_RATE);
+    if (savedWebRate) {
+      const rate = parseFloat(savedWebRate);
+      if (!Number.isNaN(rate)) setWebRate(rate);
+    }
+
+    const savedWebVoice = localStorage.getItem(STORAGE_KEY_WEB_VOICE);
+    if (savedWebVoice) setWebVoice(savedWebVoice);
+
+    const savedWebList = localStorage.getItem(STORAGE_KEY_WEB_LIST);
+    if (savedWebList) {
+      try {
+        const list = JSON.parse(savedWebList);
+        if (Array.isArray(list)) setWebList(list);
+      } catch {}
+    }
+
+    const savedProgress = localStorage.getItem(STORAGE_KEY_PROGRESS);
+    if (savedProgress) {
+      const p = JSON.parse(savedProgress);
+      if (p.novel) {
+        setNovel(p.novel);
+        setCurrentTime(p.currentTime || 0);
+        setShowSearch(false); // 如果有紀錄，預設進入閱讀模式
+        setShowResumeToast(true);
+        setTimeout(() => setShowResumeToast(false), 3000);
+      }
     }
   }, []);
 
-  const loginSuccess = (user: string, isGuestUser: boolean) => {
-    setCurrentUser(user); setIsAuthenticated(true); setIsGuest(isGuestUser);
-    localStorage.setItem('tf_is_auth', 'true');
-    localStorage.setItem('tf_last_user', user);
-    localStorage.setItem('tf_is_guest', isGuestUser ? 'true' : 'false');
+  useEffect(() => {
+    const settings = { voice, volume, playbackRate, fontSize, theme };
+    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+  }, [voice, volume, playbackRate, fontSize, theme]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_WEB_RATE, String(webRate));
+  }, [webRate]);
+
+  useEffect(() => {
+    if (webVoice) localStorage.setItem(STORAGE_KEY_WEB_VOICE, webVoice);
+  }, [webVoice]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_WEB_LIST, JSON.stringify(webList));
+  }, [webList]);
+
+  useEffect(() => {
+    const updateOnline = () => setIsOnline(navigator.onLine);
+    updateOnline();
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
+    return () => {
+      window.removeEventListener('online', updateOnline);
+      window.removeEventListener('offline', updateOnline);
+    };
+  }, []);
+
+  const saveReadingProgress = (time: number) => {
+    if (!novel) return;
+    const progress = { novel, currentTime: time };
+    localStorage.setItem(STORAGE_KEY_PROGRESS, JSON.stringify(progress));
+    lastSavedTimeRef.current = time;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    const email = loginEmail.trim(), password = loginPassword.trim();
-    if (!email) return showAlert('請輸入 Email 信箱', '登入錯誤', 'error');
-    if (email === ADMIN_EMAIL) {
-      if (password === SYSTEM_ACCESS_CODE) { loginSuccess(email, false); showAlert('歡迎回來，管理員！', '登入成功', 'success'); }
-      else showAlert('管理員密碼錯誤', '登入失敗', 'error');
+  const initAudioContext = () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+    }
+    return audioContextRef.current;
+  };
+
+  const updateProgress = () => {
+    if (audioContextRef.current && state === ReaderState.PLAYING) {
+      const elapsedSinceStart = audioContextRef.current.currentTime - startTimeRef.current;
+      const newTime = Math.min(lastSavedTimeRef.current + (elapsedSinceStart * playbackRate), duration);
+      setCurrentTime(newTime);
+      
+      if (Math.floor(newTime) % 5 === 0 && Math.abs(newTime - lastSavedTimeRef.current) > 1) {
+        const progress = { novel, currentTime: newTime };
+        localStorage.setItem(STORAGE_KEY_PROGRESS, JSON.stringify(progress));
+      }
+    }
+    requestRef.current = requestAnimationFrame(updateProgress);
+  };
+
+  useEffect(() => {
+    if (state === ReaderState.PLAYING) {
+      requestRef.current = requestAnimationFrame(updateProgress);
+    } else {
+      cancelAnimationFrame(requestRef.current);
+    }
+    return () => cancelAnimationFrame(requestRef.current);
+  }, [state, duration, playbackRate]);
+
+  useEffect(() => {
+    if (readerMode !== 'web') {
+      if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+      setWebIsSpeaking(false);
+      setWebIsPaused(false);
+      webUtteranceRef.current = null;
+    }
+  }, [readerMode]);
+
+  useEffect(() => {
+    if (typeof speechSynthesis === 'undefined') return;
+    const loadVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      setWebVoices(voices);
+      if (!webVoice && voices.length > 0) {
+        const zhVoice = voices.find(v => v.lang?.toLowerCase().startsWith('zh'));
+        setWebVoice((zhVoice || voices[0]).name);
+      }
+    };
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
+    return () => {
+      speechSynthesis.onvoiceschanged = null;
+    };
+  }, [webVoice]);
+
+  const handleSearch = async (input: string) => {
+    try {
+      handleStop();
+      setState(ReaderState.FETCHING);
+      setError(null);
+      const data = await fetchNovelContent(input);
+      setNovel(data);
+      saveReadingProgress(0);
+      setShowSearch(false); // 成功載入後隱藏搜尋區域
+      setState(ReaderState.IDLE);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "無法處理網址。請檢查網址是否正確。");
+      setState(ReaderState.ERROR);
+    }
+  };
+
+  const handleNextChapter = () => {
+    // 不再支持下一章功能，因為不抓取內容
+    const url = novel?.sourceUrl ? getSafeOpenUrl(novel.sourceUrl) : null;
+    if (url) window.open(url, '_blank');
+  };
+
+  const playAudio = async () => {
+    const text = getNovelText(novel);
+    if (!novel) {
+      setError('請先輸入小說網址並載入內容');
       return;
     }
-    if (GLOBAL_AUTHORIZED_USERS.includes(email)) { loginSuccess(email, false); return; }
-    loginSuccess(email, true);
-    showAlert('已為您登入「非會員模式」。\n\n您尚未註冊，若需開通會員模式，請按\'申請開通\'發送申請信通知管理員開通權限。', '登入成功', 'info');
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false); setIsGuest(false); setCurrentUser('');
-    setLoginEmail(''); setLoginPassword('');
-    localStorage.removeItem('tf_is_auth'); localStorage.removeItem('tf_last_user'); localStorage.removeItem('tf_is_guest');
-    resetData(); resetRates();
-  };
-
-  const handleContactAdmin = () => {
-    const subject = encodeURIComponent('TradeView 購買/權限開通申請');
-    const body = encodeURIComponent(`Hi 管理員,\n\n我的帳號是: ${currentUser}\n\n我目前是非會員身份，希望申請/購買完整權限。\n\n請協助處理，謝謝。`);
-    window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
-  };
-
-  const handleLanguageChange = (lang: Language) => { setLanguage(lang); saveLanguage(lang); };
-
-  useEffect(() => {
-    if (!isAuthenticated || !currentUser) return;
-    const getKey = (key: string) => `tf_${currentUser}_${key}`;
-    loadData(getKey);
-    loadRates(getKey);
-    const savedBase = localStorage.getItem(getKey('baseCurrency'));
-    const validBases: BaseCurrency[] = ['TWD','USD','JPY','EUR','GBP','HKD','KRW','CAD','INR','CNY','AUD','SAR','BRL'];
-    if (savedBase && validBases.includes(savedBase as BaseCurrency)) setBaseCurrency(savedBase as BaseCurrency);
-    else { const lang = navigator.language ?? ''; if (lang.startsWith('ja')) setBaseCurrency('JPY'); else if (lang.startsWith('ko')) setBaseCurrency('KRW'); else if (lang.startsWith('de')) setBaseCurrency('EUR'); else setBaseCurrency('TWD'); }
-  }, [isAuthenticated, currentUser]);
-
-  useEffect(() => {
-    if (!userPrefix) return;
-    const timer = setTimeout(() => saveRates(rates, `tf_${currentUser}`), 500);
-    return () => clearTimeout(timer);
-  }, [rates, userPrefix]);
-
-  // ─── 自動更新 ────────────────────────────────────────────────
-
-  const handleAutoUpdatePrices = async (silent = false) => {
-    const holdingsToUse = baseHoldings.length > 0 ? baseHoldings : holdings;
-    type MS = 'US'|'TW'|'UK'|'JP'|'CN'|'SZ'|'IN'|'CA'|'FR'|'HK'|'KR'|'DE'|'AU'|'SA'|'BR';
-    const MM: Record<string, MS> = { [Market.US]:'US',[Market.TW]:'TW',[Market.UK]:'UK',[Market.JP]:'JP',[Market.CN]:'CN',[Market.SZ]:'SZ',[Market.IN]:'IN',[Market.CA]:'CA',[Market.FR]:'FR',[Market.HK]:'HK',[Market.KR]:'KR',[Market.DE]:'DE',[Market.AU]:'AU',[Market.SA]:'SA',[Market.BR]:'BR' };
-    const tMktMap = new Map<string, MS>(), keyQMap = new Map<string, string>();
-    holdingsToUse.forEach((h: Holding) => {
-      let q = h.ticker; if (h.market === Market.TW && /^\d{4}$/.test(q)) q = `TPE:${q}`;
-      const hKey = `${h.market}-${h.ticker}`; tMktMap.set(q, MM[h.market] ?? 'US'); keyQMap.set(hKey, q);
-    });
-    const qs = Array.from(tMktMap.keys()), mkts = qs.map(t => tMktMap.get(t)!);
-    if (!qs.length) return;
+    if (!text || text.length === 0) {
+      setError('此環境無法取得章節正文。若要朗讀請在本機執行 npm run dev:all，並從同一網址重新載入。');
+      return;
+    }
     try {
-      // 手動與靜默（每 3 分鐘）皆略過快取，與倒數計時每次觸發一致，避免 5 分鐘記憶體快取導致「計時到了數字卻不更新」
-      type FetchPrices = (
-        tickers: string[],
-        markets?: Parameters<typeof YahooFinance.fetchCurrentPrices>[1],
-        options?: { skipCache?: boolean }
-      ) => ReturnType<typeof YahooFinance.fetchCurrentPrices>;
-      const fetchPrices = YahooFinance.fetchCurrentPrices as unknown as FetchPrices;
-      const result = await fetchPrices(qs, mkts, { skipCache: true });
-      const np: Record<string,number> = {}, nd: Record<string,{change:number;changePercent:number}> = {};
-      holdingsToUse.forEach((h: Holding) => {
-        const hKey = `${h.market}-${h.ticker}`, q = keyQMap.get(hKey) ?? h.ticker;
-        const m = result.prices[q] ?? result.prices[h.ticker] ?? result.prices[`TPE:${h.ticker}`]
-          ?? (() => { const f = Object.keys(result.prices).find(k => k.toLowerCase() === h.ticker.toLowerCase() || k.endsWith(h.ticker)); return f ? result.prices[f] : undefined; })();
-        if (m) { np[hKey] = m.price; nd[hKey] = { change: m.change ?? 0, changePercent: m.changePercent ?? 0 }; }
-      });
-      updatePricesAndDetails(np, nd);
-      const ru: Partial<ExchangeRateState> = {};
-      if (result.exchangeRate > 0) ru.exchangeRateUsdToTwd = result.exchangeRate;
-      // 逐一存取各匯率（型別安全）
-      if (result.jpyExchangeRate  && result.jpyExchangeRate  > 0) ru.jpyExchangeRate  = result.jpyExchangeRate;
-      if (result.eurExchangeRate  && result.eurExchangeRate  > 0) ru.eurExchangeRate  = result.eurExchangeRate;
-      if (result.gbpExchangeRate  && result.gbpExchangeRate  > 0) ru.gbpExchangeRate  = result.gbpExchangeRate;
-      if (result.hkdExchangeRate  && result.hkdExchangeRate  > 0) ru.hkdExchangeRate  = result.hkdExchangeRate;
-      if (result.krwExchangeRate  && result.krwExchangeRate  > 0) ru.krwExchangeRate  = result.krwExchangeRate;
-      if (result.cnyExchangeRate  && result.cnyExchangeRate  > 0) ru.cnyExchangeRate  = result.cnyExchangeRate;
-      if (result.inrExchangeRate  && result.inrExchangeRate  > 0) ru.inrExchangeRate  = result.inrExchangeRate;
-      if (result.cadExchangeRate  && result.cadExchangeRate  > 0) ru.cadExchangeRate  = result.cadExchangeRate;
-      if (result.audExchangeRate  && result.audExchangeRate  > 0) ru.audExchangeRate  = result.audExchangeRate;
-      if (result.sarExchangeRate  && result.sarExchangeRate  > 0) ru.sarExchangeRate  = result.sarExchangeRate;
-      if (result.brlExchangeRate  && result.brlExchangeRate  > 0) ru.brlExchangeRate  = result.brlExchangeRate;
-      if (Object.keys(ru).length) updateRates(ru);
-      if (!silent) showAlert(`成功更新 ${Object.keys(np).length} 筆股價${result.exchangeRate > 0 ? `，並同步更新匯率為 ${result.exchangeRate}` : ''}`, '更新完成', 'success');
-    } catch { if (!silent) showAlert('自動更新失敗', '錯誤', 'error'); }
-  };
+      setState(ReaderState.READING);
+      setError(null);
+      const resumeFrom = currentTime;
+      const ctx = initAudioContext();
+      if (ctx.state === 'suspended') await ctx.resume();
+      if (sourceRef.current) sourceRef.current.stop();
 
-  // ─── 匯出/匯入 ──────────────────────────────────────────────
+      const textToRead = text.slice(0, 4000);
+      const base64Audio = await generateSpeech(textToRead, voice);
+      const audioBuffer = await decodeAudioData(decode(base64Audio), ctx, 24000, 1);
+      setDuration(audioBuffer.duration);
 
-  const fallbackDownload = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob);
-    try { const a = document.createElement('a'); a.href = url; a.download = filename; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); return; } catch {}
-    URL.revokeObjectURL(url); showAlert('下載失敗：請嘗試使用瀏覽器開啟此頁面。', '下載錯誤', 'error');
-  };
+      const source = ctx.createBufferSource();
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = volume;
+      gainNodeRef.current = gainNode;
+      source.buffer = audioBuffer;
+      source.playbackRate.value = playbackRate;
+      source.connect(gainNode);
+      gainNode.connect(ctx.destination);
 
-  const handleExportData = async () => {
-    try {
-      const d = { version:'2.0', user:currentUser, timestamp:new Date().toISOString(), transactions, accounts, cashFlows, currentPrices, priceDetails, ...rates, exchangeRate:rates.exchangeRateUsdToTwd, baseCurrency, rebalanceTargets, rebalanceEnabledItems, historicalData };
-      const blob = new Blob([JSON.stringify(d,null,2)], { type:'application/json' });
-      const filename = `TradeView_${(currentUser||'guest').replace(/[^a-zA-Z0-9@._-]/g,'_')}_${new Date().toISOString().split('T')[0]}.json`;
-      if (navigator.share) {
-        try { const f = new File([blob], filename, { type:'application/json' }); if (navigator.canShare?.({files:[f]})) { await navigator.share({title:'TradeView 備份檔案',files:[f]}); return; } } catch(e:any) { if (e.name==='AbortError') return; }
+      source.onended = () => {
+        setState(ReaderState.IDLE);
+        setCurrentTime(0);
+        saveReadingProgress(0);
+      };
+
+      startTimeRef.current = ctx.currentTime;
+      lastSavedTimeRef.current = resumeFrom;
+      const offset = resumeFrom / playbackRate;
+      source.start(0, Math.min(offset, audioBuffer.duration));
+      sourceRef.current = source;
+      setState(ReaderState.PLAYING);
+    } catch (err: any) {
+      const msg = err?.message ?? err?.toString?.() ?? '';
+      setState(ReaderState.ERROR);
+      if (msg.includes('API') || msg.includes('401') || msg.includes('403') || msg.includes('API key') || msg.includes('quota')) {
+        setError('語音服務無法使用：請在 Vercel 專案設定中新增環境變數 GEMINI_API_KEY');
+      } else {
+        setError(msg || '語音產生失敗，請稍後再試');
       }
-      fallbackDownload(blob, filename);
-    } catch(err) { showAlert(`備份失敗：${err instanceof Error ? err.message : String(err)}`, '錯誤', 'error'); }
+    }
   };
 
-  const handleImportData = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-        if (!data.transactions && !data.accounts) throw new Error('Invalid format');
-        importData({ transactions:data.transactions??[], accounts:data.accounts??[], cashFlows:data.cashFlows??[], currentPrices:data.currentPrices??{}, priceDetails:data.priceDetails??{}, rebalanceTargets:data.rebalanceTargets??{}, rebalanceEnabledItems:data.rebalanceEnabledItems??[], historicalData:data.historicalData??{} });
-        const ru: Partial<ExchangeRateState> = {};
-        const usd = data.exchangeRate ?? data.exchangeRateUsdToTwd; if (usd) ru.exchangeRateUsdToTwd = usd;
-        if (data.jpyExchangeRate) ru.jpyExchangeRate = data.jpyExchangeRate;
-        if (data.eurExchangeRate) ru.eurExchangeRate = data.eurExchangeRate;
-        if (data.gbpExchangeRate) ru.gbpExchangeRate = data.gbpExchangeRate;
-        if (data.hkdExchangeRate) ru.hkdExchangeRate = data.hkdExchangeRate;
-        if (data.krwExchangeRate) ru.krwExchangeRate = data.krwExchangeRate;
-        if (data.cnyExchangeRate) ru.cnyExchangeRate = data.cnyExchangeRate;
-        if (data.inrExchangeRate) ru.inrExchangeRate = data.inrExchangeRate;
-        if (data.cadExchangeRate) ru.cadExchangeRate = data.cadExchangeRate;
-        if (data.audExchangeRate) ru.audExchangeRate = data.audExchangeRate;
-        if (data.sarExchangeRate) ru.sarExchangeRate = data.sarExchangeRate;
-        if (data.brlExchangeRate) ru.brlExchangeRate = data.brlExchangeRate;
-        if (Object.keys(ru).length) updateRates(ru);
-        const valid: BaseCurrency[] = ['TWD','USD','JPY','EUR','GBP','HKD','KRW','CAD','INR','CNY','AUD','SAR','BRL'];
-        if (data.baseCurrency && valid.includes(data.baseCurrency)) setBaseCurrency(data.baseCurrency);
-        showAlert('成功還原資料！', '還原成功', 'success');
-      } catch { showAlert('匯入失敗：檔案格式錯誤。', '匯入失敗', 'error'); }
-    };
-    reader.readAsText(file);
+  const handlePlayPause = () => {
+    const ctx = audioContextRef.current;
+    if (state === ReaderState.PLAYING && ctx) {
+      ctx.suspend();
+      setState(ReaderState.PAUSED);
+      saveReadingProgress(currentTime);
+    } else if (state === ReaderState.PAUSED && ctx) {
+      ctx.resume();
+      startTimeRef.current = ctx.currentTime;
+      lastSavedTimeRef.current = currentTime;
+      setState(ReaderState.PLAYING);
+    } else {
+      playAudio();
+    }
   };
 
-  // ─── 計算 ───────────────────────────────────────────────────
+  const handleStop = () => {
+    try { sourceRef.current?.stop(); } catch(e) {}
+    saveReadingProgress(currentTime);
+    setState(ReaderState.IDLE);
+    setCurrentTime(0);
+  };
 
-  const baseHoldings = useMemo(
-    () => calculateHoldings(transactions, currentPrices, priceDetails, accounts, rates),
-    [transactions, currentPrices, priceDetails, accounts, rates]
-  );
-  const computedAccounts = useMemo(() => calculateAccountBalances(accounts, cashFlows, transactions), [accounts, cashFlows, transactions]);
+  const handleVolumeChange = (v: number) => {
+    setVolume(v);
+    if (gainNodeRef.current && audioContextRef.current) {
+      gainNodeRef.current.gain.setTargetAtTime(v, audioContextRef.current.currentTime, 0.05);
+    }
+  };
 
-  const summary = useMemo<PortfolioSummary>(() => {
-    let netInvestedTWD = 0, totalUsdInflow = 0, totalTwdCostForUsd = 0;
-    cashFlows.forEach((cf: CashFlow) => {
-      const account = accounts.find((a: Account) => a.id === cf.accountId);
-      const accountCurrency = account?.currency ?? Currency.TWD;
-      const rate = cf.exchangeRate ?? currencyToTWDRate(accountCurrency, rates);
-      if (cf.type === CashFlowType.DEPOSIT) netInvestedTWD += cf.amountTWD ?? cf.amount * rate;
-      else if (cf.type === CashFlowType.WITHDRAW) netInvestedTWD -= cf.amountTWD ?? cf.amount * rate;
-      if (cf.type === CashFlowType.DEPOSIT && account?.currency === Currency.USD) { totalUsdInflow += cf.amount; totalTwdCostForUsd += cf.amountTWD ?? cf.amount * (cf.exchangeRate ?? exchangeRate); }
-      if (cf.type === CashFlowType.TRANSFER && cf.targetAccountId) { const ta = accounts.find((a: Account) => a.id === cf.targetAccountId); if (account?.currency === Currency.TWD && ta?.currency === Currency.USD) { totalUsdInflow += cf.exchangeRate ? cf.amount/cf.exchangeRate : cf.amount/exchangeRate; totalTwdCostForUsd += cf.amount; } }
-    });
-    const stockValueTWD = baseHoldings.reduce((s: number, h: Holding) => s + holdingValueToTWD(h, accounts, rates), 0);
-    const cashValueTWD = computedAccounts.reduce((s: number, a: Account) => {
-      return s + (a.balance * currencyToTWDRate(a.currency, rates));
-    }, 0);
-    const totalValueTWD = stockValueTWD, totalAssets = totalValueTWD + cashValueTWD, totalPLTWD = totalAssets - netInvestedTWD;
-    const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => {
-      const baseVal = t.price * t.quantity;
-      const amt = (t.amount ?? baseVal) - t.fees;
-      return s + transactionAmountNativeToTWD(amt, t, accounts, rates);
-    }, 0);
-    return {
-      totalCostTWD: 0, totalValueTWD, totalPLTWD,
-      totalPLPercent: netInvestedTWD > 0 ? (totalPLTWD / netInvestedTWD) * 100 : 0,
-      cashBalanceTWD: cashValueTWD, netInvestedTWD,
-      annualizedReturn: calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate),
-      exchangeRateUsdToTwd: exchangeRate,
-      jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate,
-      krwExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate,
-      audExchangeRate, sarExchangeRate, brlExchangeRate,
-      accumulatedCashDividendsTWD: sumDiv(TransactionType.CASH_DIVIDEND),
-      accumulatedStockDividendsTWD: sumDiv(TransactionType.DIVIDEND),
-      avgExchangeRate: totalUsdInflow > 0 ? totalTwdCostForUsd / totalUsdInflow : 0,
-    };
-  }, [baseHoldings, computedAccounts, cashFlows, rates, accounts, transactions]);
+  const handlePlaybackRateChange = (r: number) => {
+    setPlaybackRate(r);
+    if (sourceRef.current && audioContextRef.current) {
+      sourceRef.current.playbackRate.setTargetAtTime(r, audioContextRef.current.currentTime, 0.05);
+      startTimeRef.current = audioContextRef.current.currentTime;
+      lastSavedTimeRef.current = currentTime;
+    }
+  };
 
-  const displayRate = useMemo(() => getDisplayRateForBaseCurrency(baseCurrency, rates), [baseCurrency, rates]);
-
-  const holdings = useMemo(() => {
-    const total = summary.totalValueTWD + summary.cashBalanceTWD;
-    return baseHoldings.map((h: Holding) => ({ ...h, weight: total>0 ? (holdingValueToTWD(h, accounts, rates)/total)*100 : 0 }));
-  }, [baseHoldings, summary.totalValueTWD, summary.cashBalanceTWD, rates, accounts]);
-
-  // useAutoRefresh：登入且有持倉時自動每 3 分鐘刷新，切回前台立即補刷
-  useAutoRefresh(handleAutoUpdatePrices, {
-    intervalMs: REFRESH_INTERVAL_MS,
-    enabled: isAuthenticated && baseHoldings.length > 0,
-    refreshOnVisible: true,
-  });
-
-  const yearsNeedingHistoricalAuto = useMemo(
-    () =>
-      !isAuthenticated || isGuest || !userPrefix
-        ? []
-        : findYearsNeedingAutoHistoricalSync(transactions, cashFlows, accounts, historicalData),
-    [isAuthenticated, isGuest, userPrefix, transactions, cashFlows, accounts, historicalData]
-  );
-
-  /** 從未存過快照的過去年度，登入後自動向 Yahoo 補年終股價／匯率（與彈窗「一鍵抓取」同源）。localStorage tf_disable_auto_historical=1 可關閉 */
-  useEffect(() => {
-    if (!isAuthenticated || isGuest || !userPrefix) return;
-    if (yearsNeedingHistoricalAuto.length === 0) return;
+  const normalizeUrl = (input: string) => {
+    let url = input
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+      .replace(/\u3000/g, ' ')
+      .trim();
+    if (!url) return '';
+    const match = url.match(/https?:\/\/[^\s]+/i);
+    if (match) url = match[0];
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
     try {
-      if (typeof localStorage !== 'undefined' && localStorage.getItem('tf_disable_auto_historical') === '1') return;
+      new URL(url);
+      return url;
     } catch {
-      /* ignore */
+      return '';
+    }
+  };
+
+  const handleWebFetch = async () => {
+    const url = normalizeUrl(webUrl);
+    if (!url) {
+      setWebError('請輸入正確的網址');
+      return;
+    }
+    setWebError(null);
+    setWebLoading(true);
+    try {
+      const res = await fetch('/api/fetch-novel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      if (!res.ok) throw new Error('抓取失敗');
+      const data = await res.json();
+      setWebTitle(data.title || '');
+      setWebText(data.content || '');
+      if (!data.content) {
+        setWebError('無法取得內容，可改為直接貼上文字');
+      }
+    } catch (err) {
+      setWebError('抓取失敗，請改為直接貼上文字');
+    } finally {
+      setWebLoading(false);
+    }
+  };
+
+  const handleWebPaste = async () => {
+    try {
+      if (!navigator.clipboard?.readText) {
+        setWebError('此瀏覽器不支援剪貼簿讀取，請手動貼上');
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      if (!text.trim()) {
+        setWebError('剪貼簿沒有文字內容');
+        return;
+      }
+      setWebText(text);
+      setWebError(null);
+    } catch {
+      setWebError('無法讀取剪貼簿，請手動貼上');
+    }
+  };
+
+  const handleWebPlayPause = () => {
+    if (typeof speechSynthesis === 'undefined') {
+      setWebError('此瀏覽器不支援語音朗讀');
+      return;
+    }
+    if (webIsSpeaking && !webIsPaused) {
+      speechSynthesis.pause();
+      setWebIsPaused(true);
+      return;
+    }
+    if (webIsSpeaking && webIsPaused) {
+      speechSynthesis.resume();
+      setWebIsPaused(false);
+      return;
+    }
+    const text = webText.trim();
+    if (!text) {
+      setWebError('請先貼上文字或抓取內容');
+      return;
     }
 
-    let cancelled = false;
-    const delayMs = 2800;
-    const timerId = window.setTimeout(() => {
-      if (cancelled) return;
-      void (async () => {
-        try {
-          const { data, didUpdate } = await autoSyncMissingHistoricalData(
-            transactions,
-            cashFlows,
-            accounts,
-            historicalData
-          );
-          if (cancelled || !didUpdate) return;
-          saveHistoricalData(data);
-        } catch (e) {
-          console.warn('[autoHistorical]', e);
-        }
-      })();
-    }, delayMs);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timerId);
+    const splitTextForSpeech = (input: string, maxLen = 180) => {
+      const normalized = input.replace(/\s+/g, ' ').trim();
+      if (!normalized) return [];
+      const chunks: string[] = [];
+      let rest = normalized;
+      while (rest.length > maxLen) {
+        let cut = Math.max(
+          rest.lastIndexOf('。', maxLen),
+          rest.lastIndexOf('！', maxLen),
+          rest.lastIndexOf('？', maxLen),
+          rest.lastIndexOf('，', maxLen),
+          rest.lastIndexOf('.', maxLen),
+          rest.lastIndexOf(',', maxLen),
+          rest.lastIndexOf(' ', maxLen)
+        );
+        if (cut < 30) cut = maxLen;
+        chunks.push(rest.slice(0, cut + 1).trim());
+        rest = rest.slice(cut + 1).trim();
+      }
+      if (rest) chunks.push(rest);
+      return chunks.filter(Boolean);
     };
-  }, [
-    isAuthenticated,
-    isGuest,
-    userPrefix,
-    transactions,
-    cashFlows,
-    accounts,
-    historicalData,
-    saveHistoricalData,
-    yearsNeedingHistoricalAuto.length,
-  ]);
 
-  const chartData = useMemo(() => generateAdvancedChartData(
-    transactions, cashFlows, accounts,
-    summary.totalValueTWD + summary.cashBalanceTWD,
-    rates, historicalData
-  ), [transactions, cashFlows, accounts, summary.totalValueTWD, summary.cashBalanceTWD, rates, historicalData]);
+    const speakNextChunk = () => {
+      if (webStopRequestedRef.current) return;
+      const chunks = webChunksRef.current;
+      const idx = webChunkIndexRef.current;
+      if (idx >= chunks.length) {
+        setWebIsSpeaking(false);
+        setWebIsPaused(false);
+        webUtteranceRef.current = null;
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(chunks[idx]);
+      utterance.rate = webRate;
+      if (webVoice) {
+        const voice = webVoices.find(v => v.name === webVoice);
+        if (voice) utterance.voice = voice;
+      }
+      utterance.onend = () => {
+        if (webStopRequestedRef.current) return;
+        webChunkIndexRef.current += 1;
+        speakNextChunk();
+      };
+      utterance.onerror = () => {
+        setWebError('朗讀失敗，請稍後再試');
+        setWebIsSpeaking(false);
+        setWebIsPaused(false);
+        webUtteranceRef.current = null;
+      };
+      webUtteranceRef.current = utterance;
+      speechSynthesis.speak(utterance);
+    };
 
-  const assetAllocation = useMemo(() => calculateAssetAllocation(
-    holdings, summary.cashBalanceTWD, rates, accounts
-  ), [holdings, summary.cashBalanceTWD, rates, accounts]);
-
-  const annualPerformance = useMemo(() => calculateAnnualPerformance(chartData), [chartData]);
-
-  const accountPerformance = useMemo(() => calculateAccountPerformance(
-    computedAccounts, holdings, cashFlows, transactions, rates
-  ), [computedAccounts, holdings, cashFlows, transactions, rates]);
-
-  // ─── Combined Records & Filters ─────────────────────────────
-
-  const combinedRecords = useMemo(() => buildLedgerState(transactions, cashFlows, accounts).combinedRecordsSorted, [transactions, cashFlows, accounts]);
-
-  const filteredRecords = useMemo(() => combinedRecords.filter(r => {
-    if (filterAccount && r.accountId!==filterAccount) return false;
-    if (!includeCashFlow && r.type==='CASHFLOW') return false;
-    if (filterTicker && r.type==='TRANSACTION' && !r.ticker.toLowerCase().includes(filterTicker.toLowerCase())) return false;
-    if (filterDateFrom && new Date(r.date)<new Date(filterDateFrom)) return false;
-    if (filterDateTo && new Date(r.date)>new Date(filterDateTo)) return false;
-    return true;
-  }), [combinedRecords, filterAccount, filterTicker, filterDateFrom, filterDateTo, includeCashFlow]);
-
-  // ─── Transaction 操作包裝 ────────────────────────────────────
-
-  const handleUpdateTransaction = (tx: Transaction) => { updateTransaction(tx); showAlert('交易記錄已更新', '更新成功', 'success'); };
-  const handleBatchUpdateMarket = (updates: {id:string;market:Market}[]) => { batchUpdateMarket(updates); showAlert(`成功更新 ${updates.length} 筆交易的市場設置`, '更新成功', 'success'); };
-  const handleRemoveTransaction = (id: string) => { setTransactionToDelete(id); setIsTransactionDeleteConfirmOpen(true); };
-  const confirmRemoveTransaction = () => { if (transactionToDelete) { removeTransaction(transactionToDelete); showAlert('交易記錄已刪除','刪除成功','success'); } setIsTransactionDeleteConfirmOpen(false); clearTransactionDelete(); };
-  const handleClearAllTransactions = () => setIsDeleteConfirmOpen(true);
-  const confirmDeleteAllTransactions = () => { const n=transactions.length; clearTransactions(); setIsDeleteConfirmOpen(false); setTimeout(()=>showAlert(`✅ 成功清空 ${n} 筆交易紀錄！`,'刪除成功','success'),100); };
-  const handleUpdateAccount = (acc: Account) => { updateAccount(acc); showAlert(`帳戶「${acc.name}」已更新`,'更新成功','success'); };
-  const handleRemoveAccount = (id: string) => { const acc=accounts.find(a=>a.id===id); removeAccount(id); showAlert(`帳戶「${acc?.name}」已刪除`,'刪除成功','success'); };
-  const handleUpdateCashFlow = (cf: CashFlow) => { updateCashFlow(cf); showAlert('資金記錄已更新','更新成功','success'); };
-  const handleRemoveCashFlow = (id: string) => { setCashFlowToDelete(id); setIsCashFlowDeleteConfirmOpen(true); };
-  const confirmRemoveCashFlow = () => { if (cashFlowToDelete) { removeCashFlow(cashFlowToDelete); showAlert('現金流紀錄已刪除','刪除成功','success'); } setIsCashFlowDeleteConfirmOpen(false); clearCashFlowDelete(); };
-  const cancelRemoveCashFlow = () => { setIsCashFlowDeleteConfirmOpen(false); clearCashFlowDelete(); };
-  const handleClearAllCashFlows = () => { clearCashFlows(); showAlert('✅ 成功清空所有資金紀錄！','刪除成功','success'); };
-  const handleSaveHistoricalData = (nd: HistoricalData) => { saveHistoricalData(nd); showAlert('歷史資產數據更新完成！報表已根據真實股價修正。','更新成功','success'); };
-
-  const availableViews = isGuest
-    ? (['dashboard','history','funds','accounts','simulator','help'] as View[])
-    : (['dashboard','history','funds','accounts','rebalance','simulator','help'] as View[]);
-
-  // ─── Context Values ────────────────────────────────────────────
-  const portfolioValue = {
-    transactions, accounts, cashFlows, currentPrices, priceDetails,
-    historicalData, rebalanceTargets, rebalanceEnabledItems,
-    holdings, computedAccounts, summary, chartData,
-    assetAllocation, annualPerformance, accountPerformance,
-    addTransaction, updateTransaction, removeTransaction,
-    addBatchTransactions, clearTransactions, batchUpdateMarket,
-    addAccount, updateAccount: handleUpdateAccount, removeAccount: handleRemoveAccount,
-    addCashFlow, updateCashFlow: handleUpdateCashFlow,
-    removeCashFlow: handleRemoveCashFlow,
-    addBatchCashFlows, clearCashFlows: handleClearAllCashFlows,
-    updatePrice, updatePricesAndDetails,
-    saveHistoricalData: handleSaveHistoricalData,
-    updateRebalanceTargets, setRebalanceEnabledItems,
-    handleAutoUpdatePrices,
-    refreshIntervalMs: REFRESH_INTERVAL_MS,
+    setWebError(null);
+    webChunksRef.current = splitTextForSpeech(text);
+    webChunkIndexRef.current = 0;
+    webStopRequestedRef.current = false;
+    if (webChunksRef.current.length === 0) {
+      setWebError('沒有可朗讀的內容');
+      return;
+    }
+    // 手機瀏覽器（特別是 iOS）在重新播放前先 cancel，成功率更高
+    speechSynthesis.cancel();
+    setWebIsSpeaking(true);
+    setWebIsPaused(false);
+    speakNextChunk();
   };
 
-  const marketValue = {
-    rates,
-    exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate,
-    hkdExchangeRate, krwExchangeRate, cadExchangeRate, inrExchangeRate,
-    cnyExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate,
-    baseCurrency, setBaseCurrency,
-    displayRate,
-    setUsdRate, updateRates,
+  const handleWebStop = () => {
+    webStopRequestedRef.current = true;
+    webChunksRef.current = [];
+    webChunkIndexRef.current = 0;
+    if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+    setWebIsSpeaking(false);
+    setWebIsPaused(false);
+    webUtteranceRef.current = null;
   };
 
-  const uiValue = {
-    language, setLanguage: handleLanguageChange,
-    view, setView: (v: View) => setView(v),
-    availableViews,
-    isAuthenticated, isGuest, currentUser,
-    alertDialog, showAlert, closeAlert,
+  const handleWebAddToList = () => {
+    const text = webText.trim();
+    if (!text) {
+      setWebError('沒有可加入清單的文字');
+      return;
+    }
+    const title = webTitle.trim() || text.slice(0, 20);
+    setWebList(prev => [{ id: String(Date.now()), title, text }, ...prev]);
+    setWebError(null);
   };
 
+  const handleWebLoadFromList = (id: string) => {
+    const item = webList.find(i => i.id === id);
+    if (!item) return;
+    setWebTitle(item.title);
+    setWebText(item.text);
+  };
 
+  const handleWebDeleteFromList = (id: string) => {
+    setWebList(prev => prev.filter(i => i.id !== id));
+  };
 
-  // ─── 登入頁 ──────────────────────────────────────────────────
+  const getThemeClass = () => {
+    switch(theme) {
+      case 'sepia': return 'bg-[#f4ecd8] text-[#5b4636] selection:bg-[#5b4636]/20';
+      case 'slate': return 'bg-[#1e293b] text-slate-200 selection:bg-indigo-500/30';
+      default: return 'bg-[#0b0f1a] text-slate-300 selection:bg-indigo-500/30';
+    }
+  };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
-          <div className="p-8">
-            <div className="text-center mb-8">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-3xl font-bold shadow-lg">T</div>
-              <h1 className="mt-4 text-2xl font-bold text-slate-800">{t(language).login.title}</h1>
-              <p className="mt-2 text-slate-500 text-sm">{t(language).login.subtitle}</p>
-            </div>
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700">{t(language).login.email}</label>
-                <input type="email" required value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} className="mt-1 w-full border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" placeholder="name@example.com" />
-              </div>
-              {loginEmail===ADMIN_EMAIL && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">{t(language).login.password}</label>
-                  <input type="password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} className="mt-1 w-full border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" placeholder="請輸入密碼" />
-                </div>
-              )}
-              <button type="submit" className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors">{t(language).login.login}</button>
-            </form>
-            <div className="mt-8 space-y-4">
-              <div className="p-4 bg-blue-50 border-2 border-dashed border-blue-400 rounded-xl text-center shadow-sm">
-                <p className="text-sm font-bold text-blue-900 flex flex-col items-center gap-1">
-                  <span className="flex items-center gap-1 text-blue-700"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>{t(language).login.privacy}</span>
-                  <span>{t(language).login.privacyDesc}</span>
-                </p>
-              </div>
-              <div className="p-4 bg-red-50 border-2 border-dashed border-red-400 rounded-xl text-center shadow-sm">
-                <p className="text-sm font-bold text-red-900 flex flex-col items-center gap-1">
-                  <span className="flex items-center gap-1 text-red-700"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>{t(language).login.riskDisclaimer}</span>
-                  <span className="text-xs text-red-800 mt-1">{t(language).login.riskDisclaimerDesc}</span>
-                </p>
-              </div>
-            </div>
-          </div>
+  return (
+    <div className={`min-h-screen pb-40 flex flex-col transition-colors duration-500 ${getThemeClass()}`}>
+      <Header onToggleMenu={() => setIsMenuOpen(true)} />
+      
+      <Sidebar 
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenBrowse={() => setIsBrowseOpen(true)}
+        onOpenLibrary={() => setIsBrowseOpen(true)}
+        onNewSearch={() => setShowSearch(true)}
+        currentNovelTitle={novel?.title}
+      />
+
+      {showResumeToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] bg-indigo-600 text-white px-5 py-2.5 rounded-full shadow-2xl animate-fade-in-up text-sm font-bold flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          已自動恢復上次閱讀進度
         </div>
-        {alertDialog.isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
-            <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
-              <h3 className={`text-lg font-bold mb-2 ${alertDialog.type==='error'?'text-red-600':alertDialog.type==='success'?'text-green-600':'text-slate-800'}`}>
-                {alertDialog.title}
-              </h3>
-              <p className="text-slate-600 mb-6 whitespace-pre-line">{alertDialog.message}</p>
-              <button onClick={closeAlert} className="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">
-                {t(language).common.confirm}
+      )}
+
+      <main className="flex-1 container mx-auto px-4 md:px-6">
+        <div className="max-w-4xl mx-auto pt-6 md:pt-10">
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex bg-white/5 rounded-full p-1 border border-white/10">
+              <button
+                type="button"
+                onClick={() => setReaderMode('novel')}
+                className={`px-4 py-2 text-xs font-bold rounded-full transition-all ${readerMode === 'novel' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                小說閱讀
+              </button>
+              <button
+                type="button"
+                onClick={() => setReaderMode('web')}
+                className={`px-4 py-2 text-xs font-bold rounded-full transition-all ${readerMode === 'web' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}
+              >
+                手機朗讀器
               </button>
             </div>
           </div>
-        )}
-      </div>
-    );
-  }
+          
+          {/* 只有在需要搜尋或尚未載入小說時顯示標題與輸入框 */}
+          {readerMode === 'novel' && (showSearch || !novel) && (
+            <div className="animate-fade-in-up">
+              <div className="text-center mb-6">
+                <h1 className="text-3xl md:text-5xl font-extrabold mb-3 tracking-tight">
+                  聆聽您最 <span className="text-indigo-500 italic">喜愛</span> 的小說。
+                </h1>
+              </div>
 
-  // ─── 主頁 ────────────────────────────────────────────────────
+              <NovelInput onSearch={handleSearch} isLoading={state === ReaderState.FETCHING} />
 
-  return (
-    <PortfolioContext.Provider value={portfolioValue}>
-    <MarketContext.Provider value={marketValue}>
-    <UIContext.Provider value={uiValue}>
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3 shrink-0">
-              <button onClick={()=>setIsMobileMenuOpen(true)} className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors" aria-label="Open Menu"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg cursor-pointer" onClick={()=>setView('dashboard')}>T</div>
-              <div className="hidden sm:block"><h1 className="font-bold text-lg leading-none bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">TradeView</h1><p className="text-[10px] text-slate-400 leading-none mt-0.5">{t(language).login.subtitle}</p></div>
+              {novel && (
+                <div className="flex justify-center mb-8">
+                  <button 
+                    onClick={() => setShowSearch(false)}
+                    className="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-2 px-4 py-2 bg-indigo-500/10 rounded-full border border-indigo-500/20 transition-all"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    返回閱讀模式
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden sm:flex items-center"><select value={language} onChange={e=>handleLanguageChange(e.target.value as Language)} className="bg-slate-800 border border-slate-700 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">{LANGUAGES.map(({code,label})=><option key={code} value={code}>{label}</option>)}</select></div>
-              {isGuest && (<button onClick={handleContactAdmin} className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold rounded-full transition shadow-lg shadow-amber-500/20"><svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" /></svg><span>{t(language).common.upgrade}</span></button>)}
-              <div className="hidden sm:flex items-center gap-2">
-                <select value={baseCurrency} onChange={e=>setBaseCurrency(e.target.value as BaseCurrency)} className="bg-slate-800 border border-slate-700 rounded-md px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">{BASE_CURRENCIES.map(c=><option key={c} value={c}>{getBaseCurrencyLabel(c as BaseCurrencyCode, language)}</option>)}</select>
-                <div className="flex items-center bg-slate-800 rounded-md px-2 py-1 border border-slate-700">
-                  <span className="text-xs text-slate-400 mr-2">{displayRate.label}</span>
-                  {baseCurrency==='TWD' ? <input type="number" step="0.01" value={exchangeRate} onChange={e=>setUsdRate(parseFloat(e.target.value))} className="w-14 bg-transparent text-sm text-white font-mono focus:outline-none text-right" /> : <span className="w-14 text-sm text-white font-mono text-right">{displayRate.value.toFixed(2)}</span>}
+          )}
+
+          {readerMode === 'novel' && error && (
+            <div className="max-w-xl mx-auto mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-xl text-red-400 text-sm text-center">
+              {error}
+            </div>
+          )}
+
+          {readerMode === 'novel' && (
+            <div style={{ fontSize: `${fontSize}px` }}>
+              <NovelDisplay novel={novel} isLoading={state === ReaderState.FETCHING} onNextChapter={handleNextChapter} />
+            </div>
+          )}
+
+          {readerMode === 'web' && (
+            <div className="space-y-6">
+              {!isOnline && (
+                <div className="bg-orange-500/10 border border-orange-500/30 text-orange-300 text-xs rounded-2xl px-4 py-3">
+                  目前離線：無法抓取網址內容，但仍可貼上文字朗讀。
+                </div>
+              )}
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-slate-300 font-bold">手機快速分享貼上</div>
+                  <button
+                    type="button"
+                    onClick={() => setShowShareHelp(!showShareHelp)}
+                    className="text-xs text-slate-400 hover:text-slate-200"
+                  >
+                    {showShareHelp ? '收起' : '展開'}
+                  </button>
+                </div>
+                {showShareHelp && (
+                  <div className="text-xs text-slate-400 space-y-2">
+                    <div>iOS：在原頁面點「分享」→「拷貝」→ 回此頁按「從剪貼簿貼上」。</div>
+                    <div>Android：在原頁面點「分享」→「複製連結或文字」→ 回此頁按「從剪貼簿貼上」。</div>
+                    <div>若剪貼簿無法讀取，請手動長按貼上。</div>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 space-y-4">
+                <div className="text-sm text-slate-300 font-bold">網址抓取（需後端支援）</div>
+                <div className="flex flex-col md:flex-row gap-3">
+                  <input
+                    value={webUrl}
+                    onChange={(e) => setWebUrl(e.target.value)}
+                    placeholder="貼上網址（例如 https://example.com）"
+                    className="flex-1 bg-slate-900/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleWebFetch}
+                    disabled={webLoading}
+                    className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold disabled:opacity-50"
+                  >
+                    {webLoading ? '抓取中...' : '抓取內容'}
+                  </button>
+                </div>
+                <div className="text-xs text-slate-500">
+                  GitHub Pages 為純前端，無法抓取網址；請改用貼文字朗讀。
+                </div>
+                {webError && (
+                  <div className="text-xs text-orange-400">{webError}</div>
+                )}
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-slate-300 font-bold">可直接貼上文字</div>
+                  <button
+                    type="button"
+                    onClick={handleWebPaste}
+                    className="text-xs text-indigo-400 hover:text-indigo-300"
+                  >
+                    從剪貼簿貼上
+                  </button>
+                </div>
+                {webTitle && (
+                  <div className="text-xs text-slate-500">標題：{webTitle}</div>
+                )}
+                <textarea
+                  value={webText}
+                  onChange={(e) => setWebText(e.target.value)}
+                  placeholder="貼上要朗讀的文字"
+                  rows={10}
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                />
+                <div className="flex flex-col md:flex-row md:items-center gap-4 pt-2">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleWebPlayPause}
+                      className="px-4 py-2 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold"
+                    >
+                      {webIsSpeaking && !webIsPaused ? '暫停' : webIsPaused ? '繼續' : '播放'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleWebStop}
+                      className="px-4 py-2 rounded-full bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-bold"
+                    >
+                      停止
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleWebAddToList}
+                      className="px-4 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold"
+                    >
+                      加入清單
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-400 font-bold">{webRate.toFixed(1)}x</span>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.0"
+                      step="0.1"
+                      value={webRate}
+                      onChange={(e) => setWebRate(parseFloat(e.target.value))}
+                      className="w-40 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400 font-bold">語音</span>
+                    <select
+                      value={webVoice}
+                      onChange={(e) => setWebVoice(e.target.value)}
+                      className="bg-slate-800 text-xs font-bold rounded-lg px-2 py-1 focus:outline-none border border-white/5 text-white max-w-[180px]"
+                    >
+                      {webVoices.length === 0 && <option value="">預設</option>}
+                      {webVoices.map(v => (
+                        <option key={v.name} value={v.name}>
+                          {v.name} ({v.lang || 'unknown'})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-700">
-                <DarkModeToggle />
-                <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold ring-2 ring-slate-800 shadow-sm" title={currentUser}>{currentUser.substring(0,2).toUpperCase()}</div>
-                <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-white rounded-full hover:bg-slate-800 transition-colors" title={t(language).nav.logout}><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg></button>
+
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 space-y-3">
+                <div className="text-sm text-slate-300 font-bold">朗讀清單</div>
+                {webList.length === 0 && (
+                  <div className="text-xs text-slate-500">尚無項目，請先加入清單。</div>
+                )}
+                {webList.length > 0 && (
+                  <div className="space-y-2">
+                    {webList.map(item => (
+                      <div key={item.id} className="flex items-center justify-between gap-3 bg-slate-900/40 border border-white/5 rounded-xl px-3 py-2">
+                        <div className="text-xs text-slate-200 truncate flex-1">{item.title}</div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleWebLoadFromList(item.id)}
+                            className="text-xs text-indigo-400 hover:text-indigo-300"
+                          >
+                            載入
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleWebDeleteFromList(item.id)}
+                            className="text-xs text-slate-400 hover:text-slate-200"
+                          >
+                            刪除
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8">
-        <div className="mb-6">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
-            <span className="break-words">{view==='dashboard'&&t(language).pages.dashboard}{view==='history'&&t(language).pages.history}{view==='funds'&&t(language).pages.funds}{view==='accounts'&&t(language).pages.accounts}{view==='rebalance'&&t(language).pages.rebalance}{view==='simulator'&&t(language).pages.simulator}{view==='help'&&t(language).pages.help}</span>
-            {isGuest&&<button onClick={handleContactAdmin} className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow">{t(language).common.upgrade}</button>}
-          </h2>
-        </div>
-        <div className="animate-fade-in">
-          {view==='dashboard'&&<Dashboard onUpdateHistorical={()=>setIsHistoricalModalOpen(true)} />}
-          {view==='history'&&(
-            <HistoryView
-              onAddTransaction={() => { setTransactionToEdit(null); setIsFormOpen(true); }}
-              onEditTransaction={(id) => { const tx = transactions.find(t => t.id === id); if (tx) { setTransactionToEdit(tx); setIsFormOpen(true); } }}
-              onRemoveTransaction={handleRemoveTransaction}
-              onRemoveCashFlow={handleRemoveCashFlow}
-              onClearAllTransactions={handleClearAllTransactions}
-              onOpenBatchUpdateMarket={() => setIsBatchUpdateMarketOpen(true)}
-              onOpenImport={() => setIsImportOpen(true)}
-              filteredRecords={filteredRecords}
-              filterAccount={filterAccount}
-              setFilterAccount={setFilterAccount}
-              filterTicker={filterTicker}
-              setFilterTicker={setFilterTicker}
-              filterDateFrom={filterDateFrom}
-              setFilterDateFrom={setFilterDateFrom}
-              filterDateTo={filterDateTo}
-              setFilterDateTo={setFilterDateTo}
-              includeCashFlow={includeCashFlow}
-              setIncludeCashFlow={setIncludeCashFlow}
-              clearFilters={clearFilters}
-              formatNumber={formatNumber}
-              formatAmount={formatAmount}
-            />
           )}
-          {view==='accounts'&&<AccountManager />}
-          {view==='funds'&&<FundManager />}
-          {view==='rebalance'&&!isGuest&&<RebalanceView />}
-          {view==='simulator'&&<AssetAllocationSimulator />}
-          {view==='help'&&<HelpView onExport={handleExportData} onImport={handleImportData} />}
         </div>
       </main>
 
-      {isMobileMenuOpen&&(
-        <div className="fixed inset-0 z-50 flex bg-black bg-opacity-50 animate-fade-in" onClick={()=>setIsMobileMenuOpen(false)}>
-          <div className="bg-slate-900 w-80 h-full shadow-2xl flex flex-col animate-slide-right" onClick={e=>e.stopPropagation()} style={{willChange:'transform'}}>
-            <div className="p-6 bg-slate-800 border-b border-slate-700 flex justify-between items-center"><div><h3 className="text-white font-bold text-lg">TradeView</h3><p className="text-slate-400 text-xs mt-1">{currentUser}</p></div><button onClick={()=>setIsMobileMenuOpen(false)} className="text-slate-400 hover:text-white text-2xl transition-colors" aria-label="Close Menu">&times;</button></div>
-            <div className="p-4 bg-slate-900/50 border-b border-slate-800 space-y-2">
-              <div className="flex justify-between items-center text-xs font-bold gap-2"><span className="text-slate-500">{t(language).common.baseCurrency}</span><select value={baseCurrency} onChange={e=>setBaseCurrency(e.target.value as BaseCurrency)} className="flex-1 bg-slate-800 rounded border border-slate-700 text-emerald-400 px-2 py-1">{BASE_CURRENCIES.map(c=><option key={c} value={c}>{getBaseCurrencyLabel(c as BaseCurrencyCode,language)}</option>)}</select></div>
-              <div className="flex justify-between items-center text-xs font-bold"><span className="text-slate-500">{displayRate.label} {t(language).labels.exchangeRate}</span>{baseCurrency==='TWD'?<input type="number" step="0.01" value={exchangeRate} onChange={e=>setUsdRate(parseFloat(e.target.value))} className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1" />:<span className="text-emerald-400 font-mono">{displayRate.value.toFixed(2)}</span>}</div>
+      {/* 固定底部播放列 */}
+      {readerMode === 'novel' && (
+        <div className="fixed bottom-0 left-0 right-0 z-[100] flex items-center justify-center gap-4 px-4 py-4 bg-slate-900/95 border-t border-white/10 backdrop-blur-md shadow-[0_-4px_24px_rgba(0,0,0,0.4)]">
+          <span className="text-slate-400 text-sm font-medium truncate max-w-[120px] md:max-w-[200px]" title={novel?.title}>{novel?.title || '未選書'}</span>
+          <button
+            type="button"
+            onClick={handlePlayPause}
+            disabled={state === ReaderState.READING}
+            className="flex-shrink-0 w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-white shadow-lg transition-colors"
+            title={state === ReaderState.READING ? '正在產生語音…' : state === ReaderState.PLAYING ? '暫停' : '播放'}
+          >
+            {state === ReaderState.READING ? (
+              <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 11-6.22-8.6" strokeLinecap="round"/></svg>
+            ) : state === ReaderState.PLAYING ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={handleStop}
+            className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-300 transition-colors"
+            title="停止"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          </button>
+          <span className="text-slate-500 text-xs tabular-nums">
+            {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')}
+            {duration > 0 && ` / ${Math.floor(duration / 60)}:${(Math.floor(duration % 60)).toString().padStart(2, '0')}`}
+          </span>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {isSettingsOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-white/10 w-full max-w-md rounded-[2rem] p-8 shadow-2xl text-slate-100 animate-fade-in-up">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-bold">閱讀偏好</h2>
+              <button onClick={() => setIsSettingsOpen(false)} className="text-slate-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-1">
-              {availableViews.map(v=><button key={v} onClick={()=>{setView(v);setIsMobileMenuOpen(false);}} className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition ${view===v?'bg-indigo-600 text-white':'hover:bg-slate-800 text-slate-300'}`}><span className="font-bold">{v==='dashboard'&&t(language).nav.dashboard}{v==='history'&&t(language).nav.history}{v==='funds'&&t(language).nav.funds}{v==='accounts'&&t(language).nav.accounts}{v==='rebalance'&&t(language).nav.rebalance}{v==='simulator'&&t(language).nav.simulator}{v==='help'&&t(language).nav.help}</span></button>)}
+            <div className="space-y-8">
+              <div><label className="block text-sm font-bold text-slate-400 mb-3 uppercase tracking-widest">字體大小 ({fontSize}px)</label><input type="range" min="14" max="32" value={fontSize} onChange={(e) => setFontSize(parseInt(e.target.value))} className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500" /></div>
+              <div><label className="block text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">閱讀主題</label><div className="grid grid-cols-3 gap-3">{['dark', 'sepia', 'slate'].map(t => (<button key={t} onClick={() => setTheme(t as any)} className={`py-4 rounded-2xl border transition-all font-bold ${theme === t ? 'border-indigo-500 bg-indigo-500/10 text-white shadow-lg shadow-indigo-500/10' : 'border-white/5 bg-white/5 text-slate-500 hover:bg-white/10'}`}>{t === 'dark' ? '深邃黑' : t === 'sepia' ? '羊皮紙' : '岩板灰'}</button>))}</div></div>
             </div>
-            <div className="p-4 border-t border-slate-800 space-y-2">
-              <select value={language} onChange={e=>{handleLanguageChange(e.target.value as Language);setIsMobileMenuOpen(false);}} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">{LANGUAGES.map(({code,label})=><option key={code} value={code}>{label}</option>)}</select>
-              {isGuest&&<button onClick={()=>{handleContactAdmin();setIsMobileMenuOpen(false);}} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-amber-500 text-slate-900 font-bold hover:bg-amber-600 transition"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" /><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" /></svg>{t(language).common.upgrade}</button>}
-              <button onClick={()=>{handleLogout();setIsMobileMenuOpen(false);}} className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-red-900/20 text-red-400 font-bold border border-red-900/30 hover:bg-red-900/30 transition"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>{t(language).nav.logout}</button>
+            <button onClick={() => setIsSettingsOpen(false)} className="w-full mt-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl transition-all shadow-xl shadow-indigo-600/20">確認儲存</button>
+          </div>
+        </div>
+      )}
+
+      {/* Browse Modal */}
+      {isBrowseOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-white/10 w-full max-w-2xl rounded-[2rem] p-8 shadow-2xl text-slate-100 animate-fade-in-up">
+            <div className="flex justify-between items-center mb-8"><div><h2 className="text-2xl font-bold">瀏覽書源</h2><p className="text-slate-400 text-sm mt-1">開啟連結搜尋後，將網址貼回首頁輸入框。</p></div><button onClick={() => setIsBrowseOpen(false)} className="text-slate-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[ { name: '番茄小說', url: 'https://fanqienovel.com/', c: 'bg-orange-500' }, { name: '起點中文網', url: 'https://www.qidian.com/', c: 'bg-red-600' }, { name: '晉江文學城', url: 'https://www.jjwxc.net/', c: 'bg-green-600' }, { name: '縱橫中文網', url: 'https://www.zongheng.com/', c: 'bg-blue-600' } ].map(site => (
+                <a key={site.name} href={site.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-5 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group">
+                  <div className={`w-12 h-12 rounded-xl ${site.c} flex items-center justify-center text-white font-bold shadow-lg`}>{site.name[0]}</div>
+                  <div><h3 className="font-bold group-hover:text-indigo-400 transition-colors">{site.name}</h3><p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">前往官方網站</p></div>
+                </a>
+              ))}
             </div>
           </div>
         </div>
       )}
 
-      <footer className="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800"><div className="max-w-7xl mx-auto px-4 text-center"><p className="text-sm">© 2025 TradeView. Designed & Developed by <span className="text-indigo-400 font-bold">Jun-rong, Huang</span></p><p className="text-[10px] mt-2 text-slate-500">{t(language).common.footerLocalDataPrivacy}</p></div></footer>
-
-      {isFormOpen&&<TransactionForm onAdd={addTransaction} onUpdate={handleUpdateTransaction} editingTransaction={transactionToEdit} onClose={()=>{setIsFormOpen(false);setTransactionToEdit(null);}} />}
-      {isImportOpen&&<BatchImportModal onImport={addBatchTransactions} onClose={()=>setIsImportOpen(false)} />}
-      {isHistoricalModalOpen&&<HistoricalDataModal onSave={handleSaveHistoricalData} onClose={()=>setIsHistoricalModalOpen(false)} />}
-      {isBatchUpdateMarketOpen&&<BatchUpdateMarketModal onUpdate={handleBatchUpdateMarket} onClose={()=>setIsBatchUpdateMarketOpen(false)} />}
-
-      {isDeleteConfirmOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-sm"><h3 className="text-lg font-bold text-red-600 mb-2">確認清空所有交易？</h3><p className="text-slate-600 mb-6">此操作無法復原，請確認您已備份資料。</p><div className="flex justify-end gap-3"><button onClick={()=>setIsDeleteConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50">取消</button><button onClick={confirmDeleteAllTransactions} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">確認清空</button></div></div></div>}
-      {isTransactionDeleteConfirmOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-sm"><h3 className="text-lg font-bold text-slate-800 mb-2">刪除交易</h3><p className="text-slate-600 mb-6">確定要刪除這筆交易紀錄嗎？</p><div className="flex justify-end gap-3"><button onClick={()=>setIsTransactionDeleteConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50">取消</button><button onClick={confirmRemoveTransaction} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">刪除</button></div></div></div>}
-      {isCashFlowDeleteConfirmOpen&&cashFlowToDelete&&(()=>{
-        const cf=cashFlows.find(c=>c.id===cashFlowToDelete); if(!cf) return null;
-        const acc=accounts.find(a=>a.id===cf.accountId);
-        const rTx=transactions.filter(tx=>[cf.accountId,cf.targetAccountId].filter(Boolean).includes(tx.accountId)).length;
-        const gTN=(type: CashFlowType)=>({[CashFlowType.DEPOSIT]:'匯入',[CashFlowType.WITHDRAW]:'匯出',[CashFlowType.TRANSFER]:'轉帳',[CashFlowType.INTEREST]:'利息'}[type]??type);
-        return (<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-md"><h3 className="text-lg font-bold text-red-600 mb-2">確認刪除資金紀錄</h3><div className="mb-4"><p className="text-slate-700 mb-2"><span className="font-semibold">帳戶：</span>{acc?.name??'未知帳戶'}</p><p className="text-slate-700 mb-2"><span className="font-semibold">日期：</span>{cf.date}</p><p className="text-slate-700 mb-2"><span className="font-semibold">類型：</span>{gTN(cf.type)}</p><p className="text-slate-700"><span className="font-semibold">金額：</span>{acc?.currency===Currency.USD?`$${cf.amount.toLocaleString()}`:`NT$${cf.amount.toLocaleString()}`}</p></div>{rTx>0&&<div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4"><p className="text-sm text-amber-800 font-semibold mb-1">⚠️ 注意</p><p className="text-sm text-amber-700">此帳戶有 <span className="font-bold">{rTx}</span> 筆相關交易記錄。刪除此資金紀錄可能會影響帳戶餘額計算的準確性。</p></div>}<p className="text-slate-600 mb-6">確定要刪除這筆資金紀錄嗎？此操作無法復原。</p><div className="flex justify-end gap-3"><button onClick={cancelRemoveCashFlow} className="px-4 py-2 rounded border hover:bg-slate-50">取消</button><button onClick={confirmRemoveCashFlow} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">確認刪除</button></div></div></div>);
-      })()}
-
-      {alertDialog.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
-          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
-            <h3 className={`text-lg font-bold mb-2 ${alertDialog.type==='error'?'text-red-600':alertDialog.type==='success'?'text-green-600':'text-slate-800'}`}>
-              {alertDialog.title}
-            </h3>
-            <p className="text-slate-600 mb-6 whitespace-pre-line">{alertDialog.message}</p>
-            <button onClick={closeAlert} className="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">確定</button>
-          </div>
-        </div>
-      )}
+      {theme === 'dark' && (<><div className="fixed -top-24 -left-24 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none -z-10"></div><div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none -z-10"></div></>)}
     </div>
-    </UIContext.Provider>
-    </MarketContext.Provider>
-    </PortfolioContext.Provider>
   );
 };
 
