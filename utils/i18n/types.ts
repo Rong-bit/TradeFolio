@@ -629,16 +629,11 @@ export interface Translations {
     transferInSectionTitle: string;
     targetAccount: string;
     targetAccountPlaceholder: string;
-    transferInMarket: string;
-    transferInTicker: string;
-    transferInPrice: string;
-    transferInQuantity: string;
     placeholderPrice: string;
     placeholderQuantity: string;
     errorNoAccount: string;
     errorNoTargetAccount: string;
     errorSameTransferAccount: string;
-    errorInvalidTransferIn: string;
     transferInConfirmHint: string;
     feesShort: string;
     formulaNote: string;
