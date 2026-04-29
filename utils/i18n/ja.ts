@@ -690,6 +690,7 @@ A: 株式転送には2つの取引記録を作成する必要があります：
     errorNoAccount: '口座を先に作成してください',
     errorNoTargetAccount: '入金先口座を選択してください',
     errorSameTransferAccount: '出金口座と入金口座は同一にできません',
+    errorInsufficientTransferOutQuantity: '出庫株数が現在の保有数量を超えています',
     transferInConfirmHint: '振込取引も同時に作成されます',
     feesShort: '手数料',
     formulaNote: '(台湾株は切り捨て)',

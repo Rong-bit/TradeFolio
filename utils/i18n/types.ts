@@ -634,6 +634,7 @@ export interface Translations {
     errorNoAccount: string;
     errorNoTargetAccount: string;
     errorSameTransferAccount: string;
+    errorInsufficientTransferOutQuantity: string;
     transferInConfirmHint: string;
     feesShort: string;
     formulaNote: string;

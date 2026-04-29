@@ -605,6 +605,7 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     errorNoAccount: 'पहले खाता बनाएं।',
     errorNoTargetAccount: 'कृपया लक्ष्य ट्रेडिंग खाता चुनें।',
     errorSameTransferAccount: 'स्रोत और लक्ष्य खाते एक जैसे नहीं हो सकते।',
+    errorInsufficientTransferOutQuantity: 'ट्रांसफर-आउट मात्रा उपलब्ध होल्डिंग से अधिक है',
     transferInConfirmHint: 'एक ट्रांसफर-इन रिकॉर्ड भी साथ में बनाया जाएगा',
     feesShort: 'शुल्क',
     formulaNote: ' (TW पूर्णांक)',

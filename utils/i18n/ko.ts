@@ -690,6 +690,7 @@ A: 주식 이전에는 두 개의 거래 기록을 생성해야 합니다:
     errorNoAccount: '먼저 계좌를 생성하세요',
     errorNoTargetAccount: '대상 거래 계좌를 선택하세요',
     errorSameTransferAccount: '출고 계좌와 입고 계좌는 같을 수 없습니다',
+    errorInsufficientTransferOutQuantity: '출고 수량이 현재 보유 수량을 초과했습니다',
     transferInConfirmHint: '입고 거래도 함께 생성됩니다',
     feesShort: '수수료',
     formulaNote: '(대만주 내림)',

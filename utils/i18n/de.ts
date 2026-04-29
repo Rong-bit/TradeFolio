@@ -552,6 +552,7 @@ A: Aktienübertragungen erfordern die Erstellung von zwei Transaktionsaufzeichnu
     errorNoAccount: 'Bitte zuerst Konto anlegen.',
     errorNoTargetAccount: 'Bitte Zielkonto auswählen.',
     errorSameTransferAccount: 'Quell- und Zielkonto dürfen nicht identisch sein.',
+    errorInsufficientTransferOutQuantity: 'Die Ausbuchungsmenge überschreitet den verfügbaren Bestand',
     transferInConfirmHint: 'Eine Einbuchungstransaktion wird ebenfalls erstellt',
     feesShort: 'Gebühren',
     formulaNote: ' (TW Abrundung)',

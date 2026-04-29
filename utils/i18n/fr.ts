@@ -580,6 +580,7 @@ R : Les transferts d'actions nécessitent la création de deux enregistrements d
     errorNoAccount: 'Veuillez d\'abord créer un compte.',
     errorNoTargetAccount: 'Veuillez sélectionner un compte cible.',
     errorSameTransferAccount: 'Le compte source et le compte cible ne peuvent pas être identiques.',
+    errorInsufficientTransferOutQuantity: 'La quantité sortante dépasse la position disponible',
     transferInConfirmHint: 'Un enregistrement de transfert entrant sera aussi créé',
     feesShort: 'frais',
     formulaNote: ' (TW arrondi)',

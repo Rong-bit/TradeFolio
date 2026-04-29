@@ -605,6 +605,7 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     errorNoAccount: 'أنشئ حساباً أولاً.',
     errorNoTargetAccount: 'يرجى اختيار حساب التداول الهدف.',
     errorSameTransferAccount: 'لا يمكن أن يكون حساب المصدر والهدف متطابقين.',
+    errorInsufficientTransferOutQuantity: 'كمية التحويل الصادر تتجاوز الكمية المتاحة في الحيازة',
     transferInConfirmHint: 'سيتم أيضاً إنشاء سجل تحويل وارد',
     feesShort: 'عمولة',
     formulaNote: ' (TW تقريب)',

@@ -689,6 +689,7 @@ A: 股票轉移需要建立兩筆交易記錄：
     errorNoAccount: '請先建立並選擇證券帳戶',
     errorNoTargetAccount: '請選擇目標交易帳戶',
     errorSameTransferAccount: '來源帳戶與目標帳戶不可相同',
+    errorInsufficientTransferOutQuantity: '匯出股數超過目前可用持股',
     transferInConfirmHint: '將同步建立匯入持股',
     feesShort: '手續費',
     formulaNote: ' (台股向下取整)',
