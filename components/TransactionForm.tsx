@@ -122,6 +122,17 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     // 現金股息時，數量固定為 1
     const quantity = formData.type === TransactionType.CASH_DIVIDEND ? 1 : parseFloat(formData.quantity);
     const fees = parseFloat(formData.fees) || 0;
+
+    if (!isEditing && formData.type === TransactionType.TRANSFER_OUT) {
+      const availableQuantity = getAvailableHoldingQuantity(
+        formData.accountId,
+        formData.ticker,
+        formData.market
+      );
+      if (!Number.isNaN(quantity) && quantity > availableQuantity) {
+        return alert(`${tf.errorInsufficientTransferOutQuantity}（${availableQuantity} ${tf.shares}）`);
+      }
+    }
     
     // 計算總金額邏輯
     let finalAmount = 0;
@@ -288,6 +299,23 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     return matchedHolding && matchedHolding.avgCost > 0 ? matchedHolding.avgCost : null;
   };
 
+  const getAvailableHoldingQuantity = (
+    accountId: string,
+    ticker: string,
+    market: Market
+  ): number => {
+    if (!accountId || !ticker || !holdings || holdings.length === 0) return 0;
+
+    const upperTicker = ticker.toUpperCase().trim();
+    const matchedHolding = holdings.find((h: Holding) => {
+      return h.accountId === accountId &&
+             h.market === market &&
+             h.ticker.toUpperCase().trim() === upperTicker;
+    });
+
+    return matchedHolding ? matchedHolding.quantity : 0;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const newFormData = { ...formData, [e.target.name]: e.target.value };
     
@@ -362,6 +390,9 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   };
 
   const selectedAccountCurrency = getAccountCurrencyCode(formData.accountId);
+  const availableTransferOutQuantity = isTransferOutMode
+    ? getAvailableHoldingQuantity(formData.accountId, formData.ticker, formData.market)
+    : 0;
 
   return (
     <>
@@ -601,6 +632,11 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 disabled={formData.type === TransactionType.CASH_DIVIDEND}
                 className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME} ${formData.type === TransactionType.CASH_DIVIDEND ? 'bg-slate-100 cursor-not-allowed dark:bg-slate-700' : ''}`}
               />
+              {isTransferOutMode && formData.ticker.trim() && (
+                <div className="mt-1 text-xs text-slate-500">
+                  可用：{availableTransferOutQuantity} {tf.shares}
+                </div>
+              )}
             </div>
              <div>
               <label className="block text-sm font-medium text-slate-700">{tf.fees}</label>
