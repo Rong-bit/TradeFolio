@@ -581,6 +581,7 @@ R: As transferências de ações requerem a criação de dois registos de transa
     errorNoTargetAccount: 'Selecione a conta de destino da transação.',
     errorSameTransferAccount: 'A conta de origem e a conta de destino não podem ser iguais.',
     errorInsufficientTransferOutQuantity: 'A quantidade de saída excede a posição disponível',
+    availableTransferOutQuantity: 'Disponível: {quantity} {shares}',
     transferInConfirmHint: 'Um registro de transferência de entrada também será criado',
     feesShort: 'taxas',
     formulaNote: ' (TW arred.)',

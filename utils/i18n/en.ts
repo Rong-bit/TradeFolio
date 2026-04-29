@@ -694,6 +694,7 @@ A: Stock transfers require creating two transaction records:
     errorNoTargetAccount: 'Please select a target account',
     errorSameTransferAccount: 'Source and target accounts cannot be the same',
     errorInsufficientTransferOutQuantity: 'Transfer-out shares exceed available holdings',
+    availableTransferOutQuantity: 'Available: {quantity} {shares}',
     transferInConfirmHint: 'A transfer-in record will also be created',
     feesShort: 'fees',
     formulaNote: ' (TW floor)',
