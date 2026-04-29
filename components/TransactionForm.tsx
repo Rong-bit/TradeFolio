@@ -485,29 +485,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
             </div>
           </div>
 
-          {isTransferOutMode && !isEditing && (
-            <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 p-4 space-y-3">
-              <div className="font-semibold text-slate-800">{tf.transferInSectionTitle}</div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">{tf.targetAccount}</label>
-                <select
-                  name="targetAccountId"
-                  required
-                  value={targetAccountId}
-                  onChange={e => setTargetAccountId(e.target.value)}
-                  className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
-                >
-                  <option value="">{tf.targetAccountPlaceholder}</option>
-                  {accounts
-                    .filter(a => a.id !== formData.accountId)
-                    .map(a => (
-                      <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
-                    ))}
-                </select>
-              </div>
-            </div>
-          )}
-
           <div className="grid grid-cols-2 gap-4">
              <div>
               <label className="block text-sm font-medium text-slate-700">{tf.market}</label>
@@ -588,6 +565,29 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               />
             </div>
           </div>
+
+          {isTransferOutMode && !isEditing && (
+            <div className="rounded-lg border border-indigo-200 bg-indigo-50/60 p-4 space-y-3">
+              <div className="font-semibold text-slate-800">{tf.transferInSectionTitle}</div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">{tf.targetAccount}</label>
+                <select
+                  name="targetAccountId"
+                  required
+                  value={targetAccountId}
+                  onChange={e => setTargetAccountId(e.target.value)}
+                  className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                >
+                  <option value="">{tf.targetAccountPlaceholder}</option>
+                  {accounts
+                    .filter(a => a.id !== formData.accountId)
+                    .map(a => (
+                      <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>
+                    ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
              <div>
