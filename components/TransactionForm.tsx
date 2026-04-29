@@ -36,6 +36,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   });
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [transferValidationMessage, setTransferValidationMessage] = useState<string | null>(null);
   const [pendingTransaction, setPendingTransaction] = useState<Transaction | null>(null);
   const [pendingTransferInTransaction, setPendingTransferInTransaction] = useState<Transaction | null>(null);
   const [targetAccountId, setTargetAccountId] = useState('');
@@ -130,7 +131,10 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         formData.market
       );
       if (!Number.isNaN(quantity) && quantity > availableQuantity) {
-        return alert(`${tf.errorInsufficientTransferOutQuantity}（${availableQuantity} ${tf.shares}）`);
+        setTransferValidationMessage(
+          `${tf.errorInsufficientTransferOutQuantity}（${formatDisplayQuantity(availableQuantity)} ${tf.shares}）`
+        );
+        return;
       }
     }
     
@@ -389,6 +393,11 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     return account ? `${account.name} (${account.currency})` : accountId;
   };
 
+  const formatDisplayQuantity = (value: number): string => {
+    const rounded = Number(value.toFixed(8));
+    return rounded.toString();
+  };
+
   const selectedAccountCurrency = getAccountCurrencyCode(formData.accountId);
   const availableTransferOutQuantity = isTransferOutMode
     ? getAvailableHoldingQuantity(formData.accountId, formData.ticker, formData.market)
@@ -397,6 +406,27 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   return (
     <>
       {/* 確認對話框 */}
+      {transferValidationMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[70]">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-red-600 p-4">
+              <h3 className="text-white font-bold text-lg">{tf.confirmTitle}</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-800">{transferValidationMessage}</p>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setTransferValidationMessage(null)}
+                  className="px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
+                >
+                  {translations.common.confirm}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {showConfirmDialog && pendingTransaction && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -634,7 +664,9 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               />
               {isTransferOutMode && formData.ticker.trim() && (
                 <div className="mt-1 text-xs text-slate-500">
-                  可用：{availableTransferOutQuantity} {tf.shares}
+                  {tf.availableTransferOutQuantity
+                    .replace('{quantity}', formatDisplayQuantity(availableTransferOutQuantity))
+                    .replace('{shares}', tf.shares)}
                 </div>
               )}
             </div>
