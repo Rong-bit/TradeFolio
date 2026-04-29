@@ -39,13 +39,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   const [pendingTransaction, setPendingTransaction] = useState<Transaction | null>(null);
   const [pendingTransferInTransaction, setPendingTransferInTransaction] = useState<Transaction | null>(null);
   const [targetAccountId, setTargetAccountId] = useState('');
-  const [transferInData, setTransferInData] = useState({
-    market: Market.TW,
-    ticker: '',
-    price: '',
-    quantity: ''
-  });
-  const [isTransferInManuallyEdited, setIsTransferInManuallyEdited] = useState(false);
   const isTransferOutMode = formData.type === TransactionType.TRANSFER_OUT;
 
   // 當進入編輯模式時，載入現有交易資料
@@ -64,13 +57,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         priceCurrency: editingTransaction.priceCurrency || ''
       });
       setTargetAccountId('');
-      setTransferInData({
-        market: editingTransaction.market,
-        ticker: editingTransaction.ticker,
-        price: editingTransaction.price.toString(),
-        quantity: editingTransaction.quantity.toString()
-      });
-      setIsTransferInManuallyEdited(false);
     } else {
       // 重置為預設值
       setFormData({
@@ -86,31 +72,14 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         priceCurrency: ''
       });
       setTargetAccountId('');
-      setTransferInData({
-        market: Market.TW,
-        ticker: '',
-        price: '',
-        quantity: ''
-      });
-      setIsTransferInManuallyEdited(false);
     }
   }, [editingTransaction, accounts]);
 
   useEffect(() => {
     if (!isTransferOutMode) {
       setTargetAccountId('');
-      setIsTransferInManuallyEdited(false);
-      return;
     }
-    if (!isTransferInManuallyEdited) {
-      setTransferInData({
-        market: formData.market,
-        ticker: formData.ticker,
-        price: formData.price,
-        quantity: formData.quantity
-      });
-    }
-  }, [isTransferOutMode, isTransferInManuallyEdited, formData.market, formData.ticker, formData.price, formData.quantity]);
+  }, [isTransferOutMode]);
 
   // 當交易類型變更為現金股息時，自動將數量設為 1
   useEffect(() => {
@@ -199,31 +168,19 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     };
 
     if (shouldCreateTransferPair) {
-      const transferInPrice = parseFloat(transferInData.price);
-      const transferInQuantity = parseFloat(transferInData.quantity);
-      if (
-        !transferInData.market ||
-        !transferInData.ticker.trim() ||
-        Number.isNaN(transferInPrice) ||
-        Number.isNaN(transferInQuantity) ||
-        transferInPrice < 0 ||
-        transferInQuantity <= 0
-      ) {
-        return alert(tf.errorInvalidTransferIn);
-      }
       const transferInTx: Transaction = {
         id: uuidv4(),
         date: formData.date,
-        ticker: transferInData.ticker.toUpperCase(),
-        market: transferInData.market,
+        ticker: formData.ticker.toUpperCase(),
+        market: formData.market,
         type: TransactionType.TRANSFER_IN,
-        price: transferInPrice,
-        quantity: transferInQuantity,
+        price: price,
+        quantity: quantity,
         fees: 0,
         accountId: targetAccountId,
         note: formData.note,
         priceCurrency: formData.priceCurrency || undefined,
-        amount: transferInPrice * transferInQuantity
+        amount: price * quantity
       };
       setPendingTransferInTransaction(transferInTx);
     } else {
@@ -404,12 +361,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     return account ? `${account.name} (${account.currency})` : accountId;
   };
 
-  const handleTransferInChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setTransferInData(prev => ({ ...prev, [name]: value }));
-    setIsTransferInManuallyEdited(true);
-  };
-
   const selectedAccountCurrency = getAccountCurrencyCode(formData.accountId);
 
   return (
@@ -554,72 +505,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                     ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">{tf.transferInMarket}</label>
-                  <select
-                    name="market"
-                    value={transferInData.market}
-                    onChange={handleTransferInChange}
-                    className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
-                  >
-                    <option value={Market.TW}>{tf.marketTW}</option>
-                    <option value={Market.US}>{tf.marketUS}</option>
-                    <option value={Market.UK}>{tf.marketUK}</option>
-                    <option value={Market.JP}>{tf.marketJP}</option>
-                    <option value={Market.CN}>{tf.marketCN}</option>
-                    <option value={Market.SZ}>{tf.marketSZ}</option>
-                    <option value={Market.IN}>{tf.marketIN}</option>
-                    <option value={Market.CA}>{tf.marketCA}</option>
-                    <option value={Market.FR}>{tf.marketFR}</option>
-                    <option value={Market.HK}>{tf.marketHK}</option>
-                    <option value={Market.KR}>{tf.marketKR}</option>
-                    <option value={Market.DE}>{tf.marketDE}</option>
-                    <option value={Market.AU}>{tf.marketAU}</option>
-                    <option value={Market.SA}>{tf.marketSA}</option>
-                    <option value={Market.BR}>{tf.marketBR}</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">{tf.transferInTicker}</label>
-                  <input
-                    type="text"
-                    name="ticker"
-                    required
-                    value={transferInData.ticker}
-                    onChange={handleTransferInChange}
-                    className={`mt-1 w-full border border-slate-300 rounded-md p-2 uppercase ${FORM_FIELD_THEME}`}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">{tf.transferInPrice} ({selectedAccountCurrency})</label>
-                  <input
-                    type="number"
-                    name="price"
-                    required
-                    step="any"
-                    min="0"
-                    value={transferInData.price}
-                    onChange={handleTransferInChange}
-                    className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700">{tf.transferInQuantity}</label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    required
-                    step="any"
-                    min="0"
-                    value={transferInData.quantity}
-                    onChange={handleTransferInChange}
-                    className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
-                  />
-                </div>
-              </div>
             </div>
           )}
 
@@ -690,7 +575,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 <option value={TransactionType.SELL}>{tf.typeSell}</option>
                 <option value={TransactionType.DIVIDEND}>{tf.typeDividend}</option>
                 <option value={TransactionType.CASH_DIVIDEND}>{tf.typeCashDividend}</option>
-                <option value={TransactionType.TRANSFER_IN}>{tf.typeTransferIn}</option>
                 <option value={TransactionType.TRANSFER_OUT}>{tf.typeTransferOut}</option>
               </select>
             </div>
