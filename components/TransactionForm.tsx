@@ -613,6 +613,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 <option value={TransactionType.SELL}>{tf.typeSell}</option>
                 <option value={TransactionType.DIVIDEND}>{tf.typeDividend}</option>
                 <option value={TransactionType.CASH_DIVIDEND}>{tf.typeCashDividend}</option>
+                <option value={TransactionType.TRANSFER_IN}>{tf.typeTransferIn}</option>
                 <option value={TransactionType.TRANSFER_OUT}>{tf.typeTransferOut}</option>
               </select>
             </div>
