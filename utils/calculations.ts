@@ -1725,7 +1725,27 @@ export const calculateAccountPerformance = (
     });
     // B 口徑：總損益由未實現 + 已實現 + 股利/利息組成。
     const profitTWD = unrealizedProfitTWD + realizedProfitTWD + incomeTWD;
-    const roi = netInvestedTWD > 0 ? (profitTWD / netInvestedTWD) * 100 : 0;
+    const accountFlows: { amount: number; date: number }[] = [];
+    cashFlows.forEach(cf => {
+      const amountFlowTWD = getCashFlowAmountTWD(cf);
+      const flowDate = new Date(cf.date).getTime();
+      if (cf.accountId === acc.id) {
+        if (cf.type === CashFlowType.DEPOSIT) {
+          accountFlows.push({ amount: -amountFlowTWD, date: flowDate });
+        } else if (cf.type === CashFlowType.WITHDRAW) {
+          accountFlows.push({ amount: amountFlowTWD, date: flowDate });
+        } else if (cf.type === CashFlowType.TRANSFER) {
+          accountFlows.push({ amount: amountFlowTWD, date: flowDate });
+        }
+      }
+      if (cf.targetAccountId === acc.id && cf.type === CashFlowType.TRANSFER) {
+        accountFlows.push({ amount: -amountFlowTWD, date: flowDate });
+      }
+    });
+    const roi = calculateGenericXIRR([
+      ...accountFlows,
+      { amount: totalAssetsTWD, date: Date.now() }
+    ]);
 
     // 計算原始幣種數值（用於切換顯示）
     // stockValueNative 已經是原始幣種（美金帳戶=美金，台幣帳戶=台幣，日幣帳戶=日幣）
