@@ -593,7 +593,7 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     marketBR: 'ब्राजील (BR)',
     typeBuy: 'खरीद',
     typeSell: 'बिक्री',
-    typeDividend: 'स्टॉक डिविडेंड',
+    typeDividend: 'लाभांश पुनर्निवेश (DRIP)',
     typeCashDividend: 'कैश डिविडेंड',
     typeTransferIn: 'ट्रांसफर इन',
     typeTransferOut: 'ट्रांसफर आउट',

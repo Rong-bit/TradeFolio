@@ -678,7 +678,7 @@ A: 주식 이전에는 두 개의 거래 기록을 생성해야 합니다:
     marketBR: '브라질(BR)',
     typeBuy: '매수',
     typeSell: '매도',
-    typeDividend: '주식 배당',
+    typeDividend: '배당 재투자 (DRIP)',
     typeCashDividend: '현금 배당',
     typeTransferIn: '입고',
     typeTransferOut: '출고',

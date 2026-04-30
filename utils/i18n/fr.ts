@@ -568,7 +568,7 @@ R : Les transferts d'actions nécessitent la création de deux enregistrements d
     marketBR: 'Brésil (BR)',
     typeBuy: 'Achat',
     typeSell: 'Vente',
-    typeDividend: 'Dividende en actions',
+    typeDividend: 'Reinvestissement des dividendes (DRIP)',
     typeCashDividend: 'Dividende en espèces',
     typeTransferIn: 'Transfert entrant',
     typeTransferOut: 'Transfert sortant',

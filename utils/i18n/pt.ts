@@ -568,7 +568,7 @@ R: As transferências de ações requerem a criação de dois registos de transa
     marketBR: 'Brasil (BR)',
     typeBuy: 'Comprar',
     typeSell: 'Vender',
-    typeDividend: 'Dividendo em ações',
+    typeDividend: 'Reinvestimento de dividendos (DRIP)',
     typeCashDividend: 'Dividendo em dinheiro',
     typeTransferIn: 'Transferência entrada',
     typeTransferOut: 'Transferência saída',

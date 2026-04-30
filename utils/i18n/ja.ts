@@ -678,7 +678,7 @@ A: 株式転送には2つの取引記録を作成する必要があります：
     marketBR: 'ブラジル(BR)',
     typeBuy: '買い',
     typeSell: '売り',
-    typeDividend: '株式配当',
+    typeDividend: '配当再投資 (DRIP)',
     typeCashDividend: '現金配当',
     typeTransferIn: '振込',
     typeTransferOut: '振出',

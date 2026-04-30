@@ -677,7 +677,7 @@ A: 股票轉移需要建立兩筆交易記錄：
     marketBR: '巴西 (BR)',
     typeBuy: '買入 (Buy)',
     typeSell: '賣出 (Sell)',
-    typeDividend: '股票股息 (Reinvest)',
+    typeDividend: '股息再投入 (DRIP)',
     typeCashDividend: '現金股息 (Cash)',
     typeTransferIn: '匯入持股 (Transfer In)',
     typeTransferOut: '匯出持股 (Transfer Out)',

@@ -681,7 +681,7 @@ A: Stock transfers require creating two transaction records:
     marketBR: 'Brazil (BR)',
     typeBuy: 'Buy',
     typeSell: 'Sell',
-    typeDividend: 'Stock Dividend (Reinvest)',
+    typeDividend: 'Dividend Reinvestment (DRIP)',
     typeCashDividend: 'Cash Dividend',
     typeTransferIn: 'Transfer In',
     typeTransferOut: 'Transfer Out',

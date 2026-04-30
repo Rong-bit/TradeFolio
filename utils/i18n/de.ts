@@ -540,7 +540,7 @@ A: Aktienübertragungen erfordern die Erstellung von zwei Transaktionsaufzeichnu
     marketBR: 'Brasilien (BR)',
     typeBuy: 'Kaufen',
     typeSell: 'Verkaufen',
-    typeDividend: 'Aktiendividende',
+    typeDividend: 'Dividenden-Reinvestition (DRIP)',
     typeCashDividend: 'Bardividende',
     typeTransferIn: 'Einbuchung',
     typeTransferOut: 'Ausbuchung',

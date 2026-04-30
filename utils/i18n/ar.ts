@@ -593,7 +593,7 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     marketBR: 'البرازيل (BR)',
     typeBuy: 'شراء',
     typeSell: 'بيع',
-    typeDividend: 'توزيع أسهم',
+    typeDividend: 'إعادة استثمار التوزيعات (DRIP)',
     typeCashDividend: 'توزيع نقدي',
     typeTransferIn: 'تحويل وارد',
     typeTransferOut: 'تحويل صادر',
