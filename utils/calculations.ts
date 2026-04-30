@@ -1680,10 +1680,18 @@ export const calculateAccountPerformance = (
       incomeTWD += getCashFlowAmountTWD(cf);
     });
 
-    // 總損益與總覽「總資產 − 淨投入」一致；再投資/平均成本與券商「逐筆已實現」口徑常不同，
-    // 故已實現改為剩餘項，使 未實現 + 已實現 + 股利/利息 = 總損益。
+    // 總損益維持與總覽「總資產 − 淨投入」一致。
+    // 已實現採券商常見口徑：僅統計 SELL 交易，不把 TRANSFER_OUT 視為已實現。
     const profitTWD = totalAssetsTWD - netInvestedTWD;
-    const realizedProfitTWD = profitTWD - unrealizedProfitTWD - incomeTWD;
+    let realizedProfitTWD = 0;
+    transactions.forEach(tx => {
+      if (tx.accountId !== acc.id) return;
+      if (tx.type !== TransactionType.SELL) return;
+      let baseVal = tx.price * tx.quantity;
+      if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+      const realizedNative = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
+      realizedProfitTWD += transactionAmountNativeToTWD(realizedNative, tx, accounts, rates);
+    });
     const roi = netInvestedTWD > 0 ? (profitTWD / netInvestedTWD) * 100 : 0;
 
     // 計算原始幣種數值（用於切換顯示）
