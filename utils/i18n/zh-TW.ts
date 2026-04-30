@@ -115,7 +115,7 @@ export const zhTW: Translations = {
     balanceNT: '餘額',
     profitNT: '損益',
     profitFormulaTooltip:
-      '總損益 = 總資產 − 淨投入（與總覽一致）。未實現／已實現／股利為拆帳，加總未必等於總損益。',
+      '總損益 = 未實現 + 已實現 + 股利/利息。已實現僅計 SELL，轉倉不列入已實現。',
     unrealizedPL: '未實現損益',
     realizedPL: '已實現損益',
     dividendInterest: '累積股利/利息',

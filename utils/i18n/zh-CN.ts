@@ -56,7 +56,7 @@ zhCN.dashboard = {
   balanceNT: '余额',
   profitNT: '损益',
   profitFormulaTooltip:
-    '总损益 = 总资产 − 净投入（与总览一致）。未实现／已实现／股息为分项，加总未必等于总损益。',
+    '总损益 = 未实现 + 已实现 + 股息/利息。已实现仅统计 SELL，转仓不计入已实现。',
   unrealizedPL: '未实现损益',
   realizedPL: '已实现损益',
   dividendInterest: '累计股息/利息',

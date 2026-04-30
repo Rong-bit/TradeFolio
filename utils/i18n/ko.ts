@@ -116,7 +116,7 @@ export const ko: Translations = {
     marketValueNT: '시가총액',
     balanceNT: '잔액',
     profitNT: '손익',
-    profitFormulaTooltip: '총 손익 = 미실현 + 실현 + 배당/이자',
+    profitFormulaTooltip: '총 손익 = 미실현 + 실현 + 배당/이자. 실현 손익은 SELL만 집계하며, 계좌 간 이관은 제외됩니다.',
     unrealizedPL: '미실현 손익',
     realizedPL: '실현 손익',
     dividendInterest: '배당/이자',

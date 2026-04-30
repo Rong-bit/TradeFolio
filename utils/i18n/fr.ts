@@ -57,7 +57,7 @@ export const fr: Translations = {
     marketValueNT: 'Valeur Marchande',
     balanceNT: 'Solde',
     profitNT: 'Profit',
-    profitFormulaTooltip: 'P/L total = Non realise + Realise + Div./Interets',
+    profitFormulaTooltip: 'P/L total = Non realise + Realise + Div./Interets. Le realise ne compte que les SELL, les transferts sont exclus.',
     unrealizedPL: 'P/L non realise',
     realizedPL: 'P/L realise',
     dividendInterest: 'Div./Interets',

@@ -56,7 +56,7 @@ export const de: Translations = {
     marketValueNT: 'Marktwert',
     balanceNT: 'Saldo',
     profitNT: 'Gewinn',
-    profitFormulaTooltip: 'Gesamt G/V = Nicht real. + Real. + Div./Zinsen',
+    profitFormulaTooltip: 'Gesamt G/V = Nicht realisiert + Realisiert + Div./Zinsen. Realisiert wird nur aus SELL berechnet, Überträge sind ausgeschlossen.',
     unrealizedPL: 'Nicht real. G/V',
     realizedPL: 'Real. G/V',
     dividendInterest: 'Div./Zinsen',

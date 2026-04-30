@@ -116,7 +116,7 @@ export const ja: Translations = {
     marketValueNT: '時価',
     balanceNT: '残高',
     profitNT: '損益',
-    profitFormulaTooltip: '総損益 = 含み + 実現 + 配当/利息',
+    profitFormulaTooltip: '総損益 = 含み + 実現 + 配当/利息。実現損益は SELL のみ集計し、移管は含めません。',
     unrealizedPL: '含み損益',
     realizedPL: '実現損益',
     dividendInterest: '配当/利息',

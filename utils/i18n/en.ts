@@ -117,7 +117,7 @@ export const en: Translations = {
     balanceNT: 'Balance',
     profitNT: 'Profit',
     profitFormulaTooltip:
-      'Total P/L = Total assets − Net invested (same as summary). Unrealized / realized / dividends are a breakdown and may not sum to total P/L.',
+      'Total P/L = Unrealized + Realized + Div/Interest. Realized P/L includes SELL only; transfers are excluded.',
     unrealizedPL: 'Unrealized P/L',
     realizedPL: 'Realized P/L',
     dividendInterest: 'Div/Interest',

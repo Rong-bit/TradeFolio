@@ -57,7 +57,7 @@ export const hi: Translations = {
     marketValueNT: 'बाजार मूल्य',
     balanceNT: 'शेष',
     profitNT: 'लाभ',
-    profitFormulaTooltip: 'कुल लाभ/हानि = अप्राप्त + प्राप्त + लाभांश/ब्याज',
+    profitFormulaTooltip: 'कुल लाभ/हानि = अप्राप्त + प्राप्त + लाभांश/ब्याज। प्राप्त लाभ/हानि में केवल SELL शामिल है, ट्रांसफर शामिल नहीं है।',
     unrealizedPL: 'अप्राप्त लाभ/हानि',
     realizedPL: 'प्राप्त लाभ/हानि',
     dividendInterest: 'लाभांश/ब्याज',

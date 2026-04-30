@@ -57,7 +57,7 @@ export const ar: Translations = {
     marketValueNT: 'القيمة السوقية',
     balanceNT: 'الرصيد',
     profitNT: 'الربح',
-    profitFormulaTooltip: 'إجمالي الربح/الخسارة = غير محقق + محقق + توزيعات/فوائد',
+    profitFormulaTooltip: 'إجمالي الربح/الخسارة = غير محقق + محقق + توزيعات/فوائد. الربح المحقق يحتسب من SELL فقط، والتحويلات مستبعدة.',
     unrealizedPL: 'ربح/خسارة غير محققة',
     realizedPL: 'ربح/خسارة محققة',
     dividendInterest: 'توزيعات/فوائد',
