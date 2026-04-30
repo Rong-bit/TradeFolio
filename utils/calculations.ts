@@ -281,8 +281,6 @@ export const calculateHoldings = (
       const flowDate = new Date(tx.date).getTime();
        if (tx.type === TransactionType.BUY) {
           flows.push({ amount: -txCost, date: flowDate });
-       } else if (tx.type === TransactionType.TRANSFER_IN) {
-          flows.push({ amount: -txCost, date: flowDate });
        }
        
      } else if (tx.type === TransactionType.SELL || tx.type === TransactionType.TRANSFER_OUT) {
@@ -305,8 +303,6 @@ export const calculateHoldings = (
          const flowDate = new Date(tx.date).getTime();
          
          if (tx.type === TransactionType.SELL) {
-            flows.push({ amount: proceeds, date: flowDate });
-         } else {
             flows.push({ amount: proceeds, date: flowDate });
          }
        }
