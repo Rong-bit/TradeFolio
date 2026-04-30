@@ -1680,10 +1680,8 @@ export const calculateAccountPerformance = (
       incomeTWD += getCashFlowAmountTWD(cf);
     });
 
-    // 總損益維持與總覽「總資產 − 淨投入」一致。
     // 已實現採券商常見口徑：僅統計 SELL，且以「賣出淨額 - 對應成本」計算。
     // TRANSFER_OUT 只移轉成本，不認列已實現。
-    const profitTWD = totalAssetsTWD - netInvestedTWD;
     let realizedProfitTWD = 0;
     const positionMap = new Map<string, { quantity: number; totalCost: number }>();
     const accountTxs = transactions
@@ -1725,6 +1723,8 @@ export const calculateAccountPerformance = (
         }
       }
     });
+    // B 口徑：總損益由未實現 + 已實現 + 股利/利息組成。
+    const profitTWD = unrealizedProfitTWD + realizedProfitTWD + incomeTWD;
     const roi = netInvestedTWD > 0 ? (profitTWD / netInvestedTWD) * 100 : 0;
 
     // 計算原始幣種數值（用於切換顯示）
