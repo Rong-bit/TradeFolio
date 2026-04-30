@@ -498,9 +498,13 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   const bestBid = parseBestQuote(picked.b); // 最高買價
   const session = getTwseSession(new Date());
 
-  // 開盤前：只顯示昨收，不採五檔（避免集合競價委託簿讓「現價」跳動）。
+  // 開盤前：若 TWSE 仍提供最後成交 z，優先顯示 z；否則才退回昨收 y。
+  // 這可避免跨日凌晨（例如 00:xx）仍顯示成昨收，與實際最後成交不一致。
   // 週末：回傳 null，交由上層改走 Yahoo TW HTML fallback，盡量顯示最後成交。
   if (session === 'preopen') {
+    if (Number.isFinite(z) && z > 0) {
+      return { price: z, change: Number.isFinite(y) && y > 0 ? z - y : 0, changePercent: Number.isFinite(y) && y > 0 ? ((z - y) / y) * 100 : 0, currency: 'TWD' };
+    }
     if (Number.isFinite(y) && y > 0) {
       return { price: y, change: 0, changePercent: 0, currency: 'TWD' };
     }
