@@ -1681,16 +1681,49 @@ export const calculateAccountPerformance = (
     });
 
     // 總損益維持與總覽「總資產 − 淨投入」一致。
-    // 已實現採券商常見口徑：僅統計 SELL 交易，不把 TRANSFER_OUT 視為已實現。
+    // 已實現採券商常見口徑：僅統計 SELL，且以「賣出淨額 - 對應成本」計算。
+    // TRANSFER_OUT 只移轉成本，不認列已實現。
     const profitTWD = totalAssetsTWD - netInvestedTWD;
     let realizedProfitTWD = 0;
-    transactions.forEach(tx => {
-      if (tx.accountId !== acc.id) return;
-      if (tx.type !== TransactionType.SELL) return;
-      let baseVal = tx.price * tx.quantity;
-      if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
-      const realizedNative = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
-      realizedProfitTWD += transactionAmountNativeToTWD(realizedNative, tx, accounts, rates);
+    const positionMap = new Map<string, { quantity: number; totalCost: number }>();
+    const accountTxs = transactions
+      .filter(tx => tx.accountId === acc.id)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    accountTxs.forEach(tx => {
+      const key = `${tx.market}-${tx.ticker.toUpperCase()}`;
+      if (!positionMap.has(key)) {
+        positionMap.set(key, { quantity: 0, totalCost: 0 });
+      }
+      const pos = positionMap.get(key)!;
+
+      if (tx.type === TransactionType.BUY || tx.type === TransactionType.TRANSFER_IN || tx.type === TransactionType.DIVIDEND) {
+        let baseVal = tx.price * tx.quantity;
+        if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+        const txCost = tx.amount !== undefined ? tx.amount : (baseVal + (tx.fees || 0));
+        pos.quantity += tx.quantity;
+        pos.totalCost += txCost;
+        return;
+      }
+
+      if (tx.type === TransactionType.SELL || tx.type === TransactionType.TRANSFER_OUT) {
+        if (pos.quantity <= 0) return;
+        const ratio = tx.quantity / pos.quantity;
+        let costOfSold = pos.totalCost * ratio;
+        if (tx.market === Market.TW) {
+          costOfSold = Math.round(costOfSold);
+        }
+        pos.quantity -= tx.quantity;
+        pos.totalCost -= costOfSold;
+
+        if (tx.type === TransactionType.SELL) {
+          let baseVal = tx.price * tx.quantity;
+          if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+          const proceeds = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
+          const realizedNative = proceeds - costOfSold;
+          realizedProfitTWD += transactionAmountNativeToTWD(realizedNative, tx, accounts, rates);
+        }
+      }
     });
     const roi = netInvestedTWD > 0 ? (profitTWD / netInvestedTWD) * 100 : 0;
 
