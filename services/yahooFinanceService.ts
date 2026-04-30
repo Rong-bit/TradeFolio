@@ -533,9 +533,14 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
     } else if (Number.isFinite(y) && y > 0) {
       price = y;
     }
-  } else if (Number.isFinite(y) && y > 0) {
-    // postclose：z 無效時不取五檔、也不退回開盤價 o（易誤導），僅用昨收。
-    price = y;
+  } else if (session === 'postclose') {
+    // postclose：若 TWSE 沒有提供最新成交 z，不要直接退回昨收 y，
+    // 讓上層改走 Yahoo TW HTML fallback（成交價）避免顯示成昨收。
+    if (Number.isFinite(z) && z > 0) {
+      price = z;
+    } else {
+      return null;
+    }
   }
   if (price <= 0) return null;
 
