@@ -236,7 +236,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               amountTWD
           };
       }).filter((item): item is NonNullable<typeof item> => item !== null);
-  }, [cashFlows, accounts, summary.exchangeRateUsdToTwd]);
+  }, [cashFlows, accounts, summary.exchangeRateUsdToTwd, translations]);
 
   const verifyTotal = costDetails.reduce((acc, item) => {
       if (item.type === CashFlowType.DEPOSIT) return acc + item.amountTWD;
