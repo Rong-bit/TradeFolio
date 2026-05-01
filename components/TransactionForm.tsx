@@ -41,6 +41,17 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   const [pendingTransferInTransaction, setPendingTransferInTransaction] = useState<Transaction | null>(null);
   const [targetAccountId, setTargetAccountId] = useState('');
   const isTransferOutMode = formData.type === TransactionType.TRANSFER_OUT;
+  const transactionTypeOptions: TransactionType[] = [
+    TransactionType.BUY,
+    TransactionType.SELL,
+    TransactionType.DIVIDEND,
+    TransactionType.CASH_DIVIDEND,
+    TransactionType.TRANSFER_OUT,
+  ];
+  const canShowTransferInOption = isEditing && formData.type === TransactionType.TRANSFER_IN;
+  if (canShowTransferInOption) {
+    transactionTypeOptions.splice(4, 0, TransactionType.TRANSFER_IN);
+  }
 
   // 當進入編輯模式時，載入現有交易資料
   useEffect(() => {
@@ -609,12 +620,11 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 value={formData.type} onChange={handleChange}
                 className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
               >
-                <option value={TransactionType.BUY}>{tf.typeBuy}</option>
-                <option value={TransactionType.SELL}>{tf.typeSell}</option>
-                <option value={TransactionType.DIVIDEND}>{tf.typeDividend}</option>
-                <option value={TransactionType.CASH_DIVIDEND}>{tf.typeCashDividend}</option>
-                <option value={TransactionType.TRANSFER_IN}>{tf.typeTransferIn}</option>
-                <option value={TransactionType.TRANSFER_OUT}>{tf.typeTransferOut}</option>
+                {transactionTypeOptions.map(type => (
+                  <option key={type} value={type}>
+                    {getTypeName(type)}
+                  </option>
+                ))}
               </select>
             </div>
              <div>
