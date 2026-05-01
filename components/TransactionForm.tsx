@@ -100,26 +100,28 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     }
   }, [formData.type, editingTransaction]);
 
-  // 當選擇轉入/轉出且輸入代號時，自動填入平均成本
+  // 當選擇轉入/轉出且關鍵欄位變更時，重新填入平均成本（查無則清空）
   useEffect(() => {
-    if (
-      (formData.type === TransactionType.TRANSFER_IN || 
-       formData.type === TransactionType.TRANSFER_OUT) &&
-      formData.ticker &&
-      formData.accountId &&
-      formData.market &&
-      !editingTransaction && // 編輯模式不自動填入
-      !formData.price // 如果已經有價格，不覆蓋
-    ) {
-      const avgCost = findAvgCostFromHoldings(
-        formData.accountId,
-        formData.ticker,
-        formData.market
-      );
-      
-      if (avgCost !== null) {
-        setFormData(prev => ({ ...prev, price: avgCost.toFixed(2) }));
+    const isTransferType =
+      formData.type === TransactionType.TRANSFER_IN ||
+      formData.type === TransactionType.TRANSFER_OUT;
+    if (!isTransferType || editingTransaction) return;
+
+    if (!formData.ticker || !formData.accountId || !formData.market) {
+      if (formData.price !== '') {
+        setFormData(prev => ({ ...prev, price: '' }));
       }
+      return;
+    }
+
+    const avgCost = findAvgCostFromHoldings(
+      formData.accountId,
+      formData.ticker,
+      formData.market
+    );
+    const nextPrice = avgCost !== null ? avgCost.toFixed(2) : '';
+    if (formData.price !== nextPrice) {
+      setFormData(prev => ({ ...prev, price: nextPrice }));
     }
   }, [formData.type, formData.ticker, formData.accountId, formData.market, editingTransaction, holdings]);
 
@@ -368,10 +370,9 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
           newFormData.ticker,
           newFormData.market
         );
-        
-        if (avgCost !== null && !newFormData.price) {
-          newFormData.price = avgCost.toFixed(2);
-        }
+        newFormData.price = avgCost !== null ? avgCost.toFixed(2) : '';
+      } else if (!editingTransaction) {
+        newFormData.price = '';
       }
     }
     
