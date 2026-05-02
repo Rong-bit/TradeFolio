@@ -1735,7 +1735,6 @@ export const calculateAccountPerformance = (
     const profitTWD = unrealizedProfitTWD + realizedProfitTWD + incomeTWD;
     const roi = netInvestedTWD > 0 ? (profitTWD / netInvestedTWD) * 100 : 0;
 
-
     // 計算原始幣種數值（用於切換顯示）
     // stockValueNative 已經是原始幣種（美金帳戶=美金，台幣帳戶=台幣，日幣帳戶=日幣）
     const totalAssetsNative = totalAssetsTWD / normalizedAccountRate;
@@ -1829,7 +1828,7 @@ export const calculateXIRR = (
   cashFlows: CashFlow[],
   accounts: Account[],
   currentTotalValueTWD: number,
-  exchangeRate: number
+  rates: ExchangeRates
 ): number => {
   const xirrFlows: { amount: number, date: number }[] = [];
 
@@ -1841,8 +1840,8 @@ export const calculateXIRR = (
       amountTWD = cf.amountTWD;
     } else {
       const acc = accounts.find(a => a.id === cf.accountId);
-      const isUSD = acc?.currency === Currency.USD;
-      const rate = isUSD ? (cf.exchangeRate || exchangeRate) : 1;
+      const accountCurrency = acc?.currency ?? Currency.TWD;
+      const rate = cf.exchangeRate ?? currencyToTWDRate(accountCurrency, rates);
       amountTWD = cf.amount * rate;
     }
 
