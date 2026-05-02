@@ -32,7 +32,7 @@ import DarkModeToggle from './components/DarkModeToggle';
 import * as YahooFinance from './services/yahooFinanceService';
 import { autoSyncMissingHistoricalData, findYearsNeedingAutoHistoricalSync } from './utils/autoHistoricalSync';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
-import { Language, getLanguage, setLanguage as saveLanguage, t, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
+import { Language, getLanguage, setLanguage as saveLanguage, t, translate, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
 import { PortfolioContext } from './contexts/PortfolioContext';
 import type { View } from './contexts/UIContext';
 import { MarketContext } from './contexts/MarketContext';
@@ -72,7 +72,87 @@ const App: React.FC = () => {
 
   useLocalStorageDebouncedSimple('baseCurrency', baseCurrency, 500, userPrefix);
 
-  const showAlert = (message: string, title = '提示', type: 'info'|'success'|'error' = 'info') => setAlertDialog({ isOpen: true, title, message, type });
+  const isChinese = language === 'zh-TW' || language === 'zh-CN';
+  const tx = (key: string, fallback: string, params?: Record<string, string | number>) => {
+    const fullKey = `appMessages.${key}`;
+    const resolved = translate(fullKey, language, params);
+    return resolved === fullKey ? fallback : resolved;
+  };
+  const appText = {
+    alertTitleInfo: tx('alertTitleInfo', isChinese ? '提示' : 'Notice'),
+    loginErrorTitle: tx('loginErrorTitle', isChinese ? '登入錯誤' : 'Login Error'),
+    loginSuccessTitle: tx('loginSuccessTitle', isChinese ? '登入成功' : 'Login Success'),
+    loginFailedTitle: tx('loginFailedTitle', isChinese ? '登入失敗' : 'Login Failed'),
+    updateSuccessTitle: tx('updateSuccessTitle', isChinese ? '更新成功' : 'Updated'),
+    deleteSuccessTitle: tx('deleteSuccessTitle', isChinese ? '刪除成功' : 'Deleted'),
+    restoreSuccessTitle: tx('restoreSuccessTitle', isChinese ? '還原成功' : 'Restore Success'),
+    importFailedTitle: tx('importFailedTitle', isChinese ? '匯入失敗' : 'Import Failed'),
+    downloadErrorTitle: tx('downloadErrorTitle', isChinese ? '下載錯誤' : 'Download Error'),
+    genericErrorTitle: tx('genericErrorTitle', isChinese ? '錯誤' : 'Error'),
+    enterEmail: tx('enterEmail', isChinese ? '請輸入 Email 信箱' : 'Please enter your email address'),
+    adminWelcome: tx('adminWelcome', isChinese ? '歡迎回來，管理員！' : 'Welcome back, admin!'),
+    adminPasswordWrong: tx('adminPasswordWrong', isChinese ? '管理員密碼錯誤' : 'Incorrect admin password'),
+    guestLoginNotice: tx('guestLoginNotice', isChinese
+      ? '已為您登入「非會員模式」。\n\n您尚未註冊，若需開通會員模式，請按\'申請開通\'發送申請信通知管理員開通權限。'
+      : 'You are now logged in as a guest.\n\nIf you want full membership access, click "Upgrade" to send an application email to the administrator.'),
+    contactSubject: tx('contactSubject', isChinese ? 'TradeView 購買/權限開通申請' : 'TradeView Purchase / Access Request'),
+    contactBody: tx(
+      'contactBody',
+      isChinese
+        ? `Hi 管理員,\n\n我的帳號是: ${currentUser}\n\n我目前是非會員身份，希望申請/購買完整權限。\n\n請協助處理，謝謝。`
+        : `Hi Admin,\n\nMy account is: ${currentUser}\n\nI am currently on guest access and would like to apply/purchase full permissions.\n\nPlease assist. Thank you.`,
+      { user: currentUser }
+    ),
+    updatePriceSuccess: (count: number, rate: number) =>
+      rate > 0
+        ? tx(
+            'updatePriceSuccessWithRate',
+            isChinese ? `成功更新 ${count} 筆股價，並同步更新匯率為 ${rate}` : `Updated ${count} prices and synced exchange rate to ${rate}`,
+            { count, rate }
+          )
+        : tx('updatePriceSuccess', isChinese ? `成功更新 ${count} 筆股價` : `Updated ${count} prices`, { count }),
+    autoUpdateFailed: tx('autoUpdateFailed', isChinese ? '自動更新失敗' : 'Auto update failed'),
+    downloadFailed: tx('downloadFailed', isChinese ? '下載失敗：請嘗試使用瀏覽器開啟此頁面。' : 'Download failed. Please try opening this page in a browser.'),
+    shareTitle: tx('shareTitle', isChinese ? 'TradeView 備份檔案' : 'TradeView Backup File'),
+    backupFailed: (err: string) => tx('backupFailed', isChinese ? `備份失敗：${err}` : `Backup failed: ${err}`, { error: err }),
+    restoreSuccess: tx('restoreSuccess', isChinese ? '成功還原資料！' : 'Data restored successfully!'),
+    importFailed: tx('importFailed', isChinese ? '匯入失敗：檔案格式錯誤。' : 'Import failed: invalid file format.'),
+    txUpdated: tx('txUpdated', isChinese ? '交易記錄已更新' : 'Transaction updated'),
+    marketUpdated: (count: number) => tx('marketUpdated', isChinese ? `成功更新 ${count} 筆交易的市場設置` : `Updated market settings for ${count} transactions`, { count }),
+    txDeleted: tx('txDeleted', isChinese ? '交易記錄已刪除' : 'Transaction deleted'),
+    txCleared: (count: number) => tx('txCleared', isChinese ? `✅ 成功清空 ${count} 筆交易紀錄！` : `✅ Cleared ${count} transactions successfully!`, { count }),
+    accountUpdated: (name: string) => tx('accountUpdated', isChinese ? `帳戶「${name}」已更新` : `Account "${name}" updated`, { name }),
+    accountDeleted: (name?: string) => tx('accountDeleted', isChinese ? `帳戶「${name ?? ''}」已刪除` : `Account "${name ?? ''}" deleted`, { name: name ?? '' }),
+    cashFlowUpdated: tx('cashFlowUpdated', isChinese ? '資金記錄已更新' : 'Fund record updated'),
+    cashFlowDeleted: tx('cashFlowDeleted', isChinese ? '現金流紀錄已刪除' : 'Cash flow record deleted'),
+    cashFlowCleared: tx('cashFlowCleared', isChinese ? '✅ 成功清空所有資金紀錄！' : '✅ Cleared all fund records successfully!'),
+    historicalSaved: tx('historicalSaved', isChinese ? '歷史資產數據更新完成！報表已根據真實股價修正。' : 'Historical asset data updated. Reports are now corrected by real prices.'),
+    loginPasswordPlaceholder: tx('loginPasswordPlaceholder', isChinese ? '請輸入密碼' : 'Enter password'),
+    confirmClearTxTitle: tx('confirmClearTxTitle', isChinese ? '確認清空所有交易？' : 'Confirm clearing all transactions?'),
+    confirmClearTxMessage: tx('confirmClearTxMessage', isChinese ? '此操作無法復原，請確認您已備份資料。' : 'This action cannot be undone. Please make sure you have a backup.'),
+    confirmClearAction: tx('confirmClearAction', isChinese ? '確認清空' : 'Confirm Clear'),
+    deleteTxTitle: tx('deleteTxTitle', isChinese ? '刪除交易' : 'Delete Transaction'),
+    deleteTxMessage: tx('deleteTxMessage', isChinese ? '確定要刪除這筆交易紀錄嗎？' : 'Are you sure you want to delete this transaction?'),
+    cashFlowDeleteTitle: tx('cashFlowDeleteTitle', isChinese ? '確認刪除資金紀錄' : 'Confirm Delete Fund Record'),
+    unknownAccount: tx('unknownAccount', isChinese ? '未知帳戶' : 'Unknown Account'),
+    accountLabel: tx('accountLabel', isChinese ? '帳戶：' : 'Account:'),
+    dateLabel: tx('dateLabel', isChinese ? '日期：' : 'Date:'),
+    typeLabel: tx('typeLabel', isChinese ? '類型：' : 'Type:'),
+    amountLabel: tx('amountLabel', isChinese ? '金額：' : 'Amount:'),
+    cashFlowDeleteWarningTitle: tx('cashFlowDeleteWarningTitle', isChinese ? '⚠️ 注意' : '⚠️ Attention'),
+    cashFlowDeleteWarningBody: (count: number) =>
+      tx(
+        'cashFlowDeleteWarningBody',
+        isChinese
+          ? `此帳戶有 ${count} 筆相關交易記錄。刪除此資金紀錄可能會影響帳戶餘額計算的準確性。`
+          : `This account has ${count} related transactions. Deleting this fund record may affect account balance accuracy.`,
+        { count }
+      ),
+    cashFlowDeleteMessage: tx('cashFlowDeleteMessage', isChinese ? '確定要刪除這筆資金紀錄嗎？此操作無法復原。' : 'Are you sure you want to delete this fund record? This action cannot be undone.'),
+    confirmDeleteAction: tx('confirmDeleteAction', isChinese ? '確認刪除' : 'Confirm Delete'),
+  };
+
+  const showAlert = (message: string, title = appText.alertTitleInfo, type: 'info'|'success'|'error' = 'info') => setAlertDialog({ isOpen: true, title, message, type });
   const closeAlert = () => setAlertDialog(prev => ({ ...prev, isOpen: false }));
 
   useEffect(() => {
@@ -97,15 +177,15 @@ const App: React.FC = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const email = loginEmail.trim(), password = loginPassword.trim();
-    if (!email) return showAlert('請輸入 Email 信箱', '登入錯誤', 'error');
+    if (!email) return showAlert(appText.enterEmail, appText.loginErrorTitle, 'error');
     if (email === ADMIN_EMAIL) {
-      if (password === SYSTEM_ACCESS_CODE) { loginSuccess(email, false); showAlert('歡迎回來，管理員！', '登入成功', 'success'); }
-      else showAlert('管理員密碼錯誤', '登入失敗', 'error');
+      if (password === SYSTEM_ACCESS_CODE) { loginSuccess(email, false); showAlert(appText.adminWelcome, appText.loginSuccessTitle, 'success'); }
+      else showAlert(appText.adminPasswordWrong, appText.loginFailedTitle, 'error');
       return;
     }
     if (GLOBAL_AUTHORIZED_USERS.includes(email)) { loginSuccess(email, false); return; }
     loginSuccess(email, true);
-    showAlert('已為您登入「非會員模式」。\n\n您尚未註冊，若需開通會員模式，請按\'申請開通\'發送申請信通知管理員開通權限。', '登入成功', 'info');
+    showAlert(appText.guestLoginNotice, appText.loginSuccessTitle, 'info');
   };
 
   const handleLogout = () => {
@@ -116,8 +196,8 @@ const App: React.FC = () => {
   };
 
   const handleContactAdmin = () => {
-    const subject = encodeURIComponent('TradeView 購買/權限開通申請');
-    const body = encodeURIComponent(`Hi 管理員,\n\n我的帳號是: ${currentUser}\n\n我目前是非會員身份，希望申請/購買完整權限。\n\n請協助處理，謝謝。`);
+    const subject = encodeURIComponent(appText.contactSubject);
+    const body = encodeURIComponent(appText.contactBody);
     window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
   };
 
@@ -185,8 +265,8 @@ const App: React.FC = () => {
       if (result.sarExchangeRate  && result.sarExchangeRate  > 0) ru.sarExchangeRate  = result.sarExchangeRate;
       if (result.brlExchangeRate  && result.brlExchangeRate  > 0) ru.brlExchangeRate  = result.brlExchangeRate;
       if (Object.keys(ru).length) updateRates(ru);
-      if (!silent) showAlert(`成功更新 ${Object.keys(np).length} 筆股價${result.exchangeRate > 0 ? `，並同步更新匯率為 ${result.exchangeRate}` : ''}`, '更新完成', 'success');
-    } catch { if (!silent) showAlert('自動更新失敗', '錯誤', 'error'); }
+      if (!silent) showAlert(appText.updatePriceSuccess(Object.keys(np).length, result.exchangeRate), appText.updateSuccessTitle, 'success');
+    } catch { if (!silent) showAlert(appText.autoUpdateFailed, appText.genericErrorTitle, 'error'); }
   };
 
   // ─── 匯出/匯入 ──────────────────────────────────────────────
@@ -194,7 +274,7 @@ const App: React.FC = () => {
   const fallbackDownload = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob);
     try { const a = document.createElement('a'); a.href = url; a.download = filename; a.style.display='none'; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); return; } catch {}
-    URL.revokeObjectURL(url); showAlert('下載失敗：請嘗試使用瀏覽器開啟此頁面。', '下載錯誤', 'error');
+    URL.revokeObjectURL(url); showAlert(appText.downloadFailed, appText.downloadErrorTitle, 'error');
   };
 
   const handleExportData = async () => {
@@ -203,10 +283,10 @@ const App: React.FC = () => {
       const blob = new Blob([JSON.stringify(d,null,2)], { type:'application/json' });
       const filename = `TradeView_${(currentUser||'guest').replace(/[^a-zA-Z0-9@._-]/g,'_')}_${new Date().toISOString().split('T')[0]}.json`;
       if (navigator.share) {
-        try { const f = new File([blob], filename, { type:'application/json' }); if (navigator.canShare?.({files:[f]})) { await navigator.share({title:'TradeView 備份檔案',files:[f]}); return; } } catch(e:any) { if (e.name==='AbortError') return; }
+        try { const f = new File([blob], filename, { type:'application/json' }); if (navigator.canShare?.({files:[f]})) { await navigator.share({title: appText.shareTitle,files:[f]}); return; } } catch(e:any) { if (e.name==='AbortError') return; }
       }
       fallbackDownload(blob, filename);
-    } catch(err) { showAlert(`備份失敗：${err instanceof Error ? err.message : String(err)}`, '錯誤', 'error'); }
+    } catch(err) { showAlert(appText.backupFailed(err instanceof Error ? err.message : String(err)), appText.genericErrorTitle, 'error'); }
   };
 
   const handleImportData = (file: File) => {
@@ -232,8 +312,8 @@ const App: React.FC = () => {
         if (Object.keys(ru).length) updateRates(ru);
         const valid: BaseCurrency[] = ['TWD','USD','JPY','EUR','GBP','HKD','KRW','CAD','INR','CNY','AUD','SAR','BRL'];
         if (data.baseCurrency && valid.includes(data.baseCurrency)) setBaseCurrency(data.baseCurrency);
-        showAlert('成功還原資料！', '還原成功', 'success');
-      } catch { showAlert('匯入失敗：檔案格式錯誤。', '匯入失敗', 'error'); }
+        showAlert(appText.restoreSuccess, appText.restoreSuccessTitle, 'success');
+      } catch { showAlert(appText.importFailed, appText.importFailedTitle, 'error'); }
     };
     reader.readAsText(file);
   };
@@ -271,7 +351,7 @@ const App: React.FC = () => {
       totalCostTWD: 0, totalValueTWD, totalPLTWD,
       totalPLPercent: netInvestedTWD > 0 ? (totalPLTWD / netInvestedTWD) * 100 : 0,
       cashBalanceTWD: cashValueTWD, netInvestedTWD,
-      annualizedReturn: calculateXIRR(cashFlows, accounts, totalAssets, exchangeRate),
+      annualizedReturn: calculateXIRR(cashFlows, accounts, totalAssets, rates),
       exchangeRateUsdToTwd: exchangeRate,
       jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate,
       krwExchangeRate, cnyExchangeRate, inrExchangeRate, cadExchangeRate,
@@ -381,20 +461,20 @@ const App: React.FC = () => {
 
   // ─── Transaction 操作包裝 ────────────────────────────────────
 
-  const handleUpdateTransaction = (tx: Transaction) => { updateTransaction(tx); showAlert('交易記錄已更新', '更新成功', 'success'); };
-  const handleBatchUpdateMarket = (updates: {id:string;market:Market}[]) => { batchUpdateMarket(updates); showAlert(`成功更新 ${updates.length} 筆交易的市場設置`, '更新成功', 'success'); };
+  const handleUpdateTransaction = (tx: Transaction) => { updateTransaction(tx); showAlert(appText.txUpdated, appText.updateSuccessTitle, 'success'); };
+  const handleBatchUpdateMarket = (updates: {id:string;market:Market}[]) => { batchUpdateMarket(updates); showAlert(appText.marketUpdated(updates.length), appText.updateSuccessTitle, 'success'); };
   const handleRemoveTransaction = (id: string) => { setTransactionToDelete(id); setIsTransactionDeleteConfirmOpen(true); };
-  const confirmRemoveTransaction = () => { if (transactionToDelete) { removeTransaction(transactionToDelete); showAlert('交易記錄已刪除','刪除成功','success'); } setIsTransactionDeleteConfirmOpen(false); clearTransactionDelete(); };
+  const confirmRemoveTransaction = () => { if (transactionToDelete) { removeTransaction(transactionToDelete); showAlert(appText.txDeleted, appText.deleteSuccessTitle,'success'); } setIsTransactionDeleteConfirmOpen(false); clearTransactionDelete(); };
   const handleClearAllTransactions = () => setIsDeleteConfirmOpen(true);
-  const confirmDeleteAllTransactions = () => { const n=transactions.length; clearTransactions(); setIsDeleteConfirmOpen(false); setTimeout(()=>showAlert(`✅ 成功清空 ${n} 筆交易紀錄！`,'刪除成功','success'),100); };
-  const handleUpdateAccount = (acc: Account) => { updateAccount(acc); showAlert(`帳戶「${acc.name}」已更新`,'更新成功','success'); };
-  const handleRemoveAccount = (id: string) => { const acc=accounts.find(a=>a.id===id); removeAccount(id); showAlert(`帳戶「${acc?.name}」已刪除`,'刪除成功','success'); };
-  const handleUpdateCashFlow = (cf: CashFlow) => { updateCashFlow(cf); showAlert('資金記錄已更新','更新成功','success'); };
+  const confirmDeleteAllTransactions = () => { const n=transactions.length; clearTransactions(); setIsDeleteConfirmOpen(false); setTimeout(()=>showAlert(appText.txCleared(n),appText.deleteSuccessTitle,'success'),100); };
+  const handleUpdateAccount = (acc: Account) => { updateAccount(acc); showAlert(appText.accountUpdated(acc.name),appText.updateSuccessTitle,'success'); };
+  const handleRemoveAccount = (id: string) => { const acc=accounts.find(a=>a.id===id); removeAccount(id); showAlert(appText.accountDeleted(acc?.name),appText.deleteSuccessTitle,'success'); };
+  const handleUpdateCashFlow = (cf: CashFlow) => { updateCashFlow(cf); showAlert(appText.cashFlowUpdated,appText.updateSuccessTitle,'success'); };
   const handleRemoveCashFlow = (id: string) => { setCashFlowToDelete(id); setIsCashFlowDeleteConfirmOpen(true); };
-  const confirmRemoveCashFlow = () => { if (cashFlowToDelete) { removeCashFlow(cashFlowToDelete); showAlert('現金流紀錄已刪除','刪除成功','success'); } setIsCashFlowDeleteConfirmOpen(false); clearCashFlowDelete(); };
+  const confirmRemoveCashFlow = () => { if (cashFlowToDelete) { removeCashFlow(cashFlowToDelete); showAlert(appText.cashFlowDeleted,appText.deleteSuccessTitle,'success'); } setIsCashFlowDeleteConfirmOpen(false); clearCashFlowDelete(); };
   const cancelRemoveCashFlow = () => { setIsCashFlowDeleteConfirmOpen(false); clearCashFlowDelete(); };
-  const handleClearAllCashFlows = () => { clearCashFlows(); showAlert('✅ 成功清空所有資金紀錄！','刪除成功','success'); };
-  const handleSaveHistoricalData = (nd: HistoricalData) => { saveHistoricalData(nd); showAlert('歷史資產數據更新完成！報表已根據真實股價修正。','更新成功','success'); };
+  const handleClearAllCashFlows = () => { clearCashFlows(); showAlert(appText.cashFlowCleared,appText.deleteSuccessTitle,'success'); };
+  const handleSaveHistoricalData = (nd: HistoricalData) => { saveHistoricalData(nd); showAlert(appText.historicalSaved,appText.updateSuccessTitle,'success'); };
 
   const availableViews = isGuest
     ? (['dashboard','history','funds','accounts','simulator','help'] as View[])
@@ -459,7 +539,7 @@ const App: React.FC = () => {
               {loginEmail===ADMIN_EMAIL && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700">{t(language).login.password}</label>
-                  <input type="password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} className="mt-1 w-full border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" placeholder="請輸入密碼" />
+                  <input type="password" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} className="mt-1 w-full border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors" placeholder={appText.loginPasswordPlaceholder} />
                 </div>
               )}
               <button type="submit" className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors">{t(language).login.login}</button>
@@ -601,14 +681,14 @@ const App: React.FC = () => {
       {isHistoricalModalOpen&&<HistoricalDataModal onSave={handleSaveHistoricalData} onClose={()=>setIsHistoricalModalOpen(false)} />}
       {isBatchUpdateMarketOpen&&<BatchUpdateMarketModal onUpdate={handleBatchUpdateMarket} onClose={()=>setIsBatchUpdateMarketOpen(false)} />}
 
-      {isDeleteConfirmOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-sm"><h3 className="text-lg font-bold text-red-600 mb-2">確認清空所有交易？</h3><p className="text-slate-600 mb-6">此操作無法復原，請確認您已備份資料。</p><div className="flex justify-end gap-3"><button onClick={()=>setIsDeleteConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50">取消</button><button onClick={confirmDeleteAllTransactions} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">確認清空</button></div></div></div>}
-      {isTransactionDeleteConfirmOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-sm"><h3 className="text-lg font-bold text-slate-800 mb-2">刪除交易</h3><p className="text-slate-600 mb-6">確定要刪除這筆交易紀錄嗎？</p><div className="flex justify-end gap-3"><button onClick={()=>setIsTransactionDeleteConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50">取消</button><button onClick={confirmRemoveTransaction} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">刪除</button></div></div></div>}
+      {isDeleteConfirmOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-sm"><h3 className="text-lg font-bold text-red-600 mb-2">{appText.confirmClearTxTitle}</h3><p className="text-slate-600 mb-6">{appText.confirmClearTxMessage}</p><div className="flex justify-end gap-3"><button onClick={()=>setIsDeleteConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50">{t(language).common.cancel}</button><button onClick={confirmDeleteAllTransactions} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">{appText.confirmClearAction}</button></div></div></div>}
+      {isTransactionDeleteConfirmOpen&&<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-sm"><h3 className="text-lg font-bold text-slate-800 mb-2">{appText.deleteTxTitle}</h3><p className="text-slate-600 mb-6">{appText.deleteTxMessage}</p><div className="flex justify-end gap-3"><button onClick={()=>setIsTransactionDeleteConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50">{t(language).common.cancel}</button><button onClick={confirmRemoveTransaction} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">{t(language).common.delete}</button></div></div></div>}
       {isCashFlowDeleteConfirmOpen&&cashFlowToDelete&&(()=>{
         const cf=cashFlows.find(c=>c.id===cashFlowToDelete); if(!cf) return null;
         const acc=accounts.find(a=>a.id===cf.accountId);
         const rTx=transactions.filter(tx=>[cf.accountId,cf.targetAccountId].filter(Boolean).includes(tx.accountId)).length;
-        const gTN=(type: CashFlowType)=>({[CashFlowType.DEPOSIT]:'匯入',[CashFlowType.WITHDRAW]:'匯出',[CashFlowType.TRANSFER]:'轉帳',[CashFlowType.INTEREST]:'利息'}[type]??type);
-        return (<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-md"><h3 className="text-lg font-bold text-red-600 mb-2">確認刪除資金紀錄</h3><div className="mb-4"><p className="text-slate-700 mb-2"><span className="font-semibold">帳戶：</span>{acc?.name??'未知帳戶'}</p><p className="text-slate-700 mb-2"><span className="font-semibold">日期：</span>{cf.date}</p><p className="text-slate-700 mb-2"><span className="font-semibold">類型：</span>{gTN(cf.type)}</p><p className="text-slate-700"><span className="font-semibold">金額：</span>{acc?.currency===Currency.USD?`$${cf.amount.toLocaleString()}`:`NT$${cf.amount.toLocaleString()}`}</p></div>{rTx>0&&<div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4"><p className="text-sm text-amber-800 font-semibold mb-1">⚠️ 注意</p><p className="text-sm text-amber-700">此帳戶有 <span className="font-bold">{rTx}</span> 筆相關交易記錄。刪除此資金紀錄可能會影響帳戶餘額計算的準確性。</p></div>}<p className="text-slate-600 mb-6">確定要刪除這筆資金紀錄嗎？此操作無法復原。</p><div className="flex justify-end gap-3"><button onClick={cancelRemoveCashFlow} className="px-4 py-2 rounded border hover:bg-slate-50">取消</button><button onClick={confirmRemoveCashFlow} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">確認刪除</button></div></div></div>);
+        const gTN=(type: CashFlowType)=>({[CashFlowType.DEPOSIT]: t(language).funds.deposit,[CashFlowType.WITHDRAW]: t(language).funds.withdraw,[CashFlowType.TRANSFER]: t(language).funds.transfer,[CashFlowType.INTEREST]: t(language).funds.interest}[type]??type);
+        return (<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-md"><h3 className="text-lg font-bold text-red-600 mb-2">{appText.cashFlowDeleteTitle}</h3><div className="mb-4"><p className="text-slate-700 mb-2"><span className="font-semibold">{appText.accountLabel}</span>{acc?.name??appText.unknownAccount}</p><p className="text-slate-700 mb-2"><span className="font-semibold">{appText.dateLabel}</span>{cf.date}</p><p className="text-slate-700 mb-2"><span className="font-semibold">{appText.typeLabel}</span>{gTN(cf.type)}</p><p className="text-slate-700"><span className="font-semibold">{appText.amountLabel}</span>{acc?.currency===Currency.USD?`$${cf.amount.toLocaleString()}`:`NT$${cf.amount.toLocaleString()}`}</p></div>{rTx>0&&<div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4"><p className="text-sm text-amber-800 font-semibold mb-1">{appText.cashFlowDeleteWarningTitle}</p><p className="text-sm text-amber-700">{appText.cashFlowDeleteWarningBody(rTx)}</p></div>}<p className="text-slate-600 mb-6">{appText.cashFlowDeleteMessage}</p><div className="flex justify-end gap-3"><button onClick={cancelRemoveCashFlow} className="px-4 py-2 rounded border hover:bg-slate-50">{t(language).common.cancel}</button><button onClick={confirmRemoveCashFlow} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">{appText.confirmDeleteAction}</button></div></div></div>);
       })()}
 
       {alertDialog.isOpen && (
@@ -618,7 +698,7 @@ const App: React.FC = () => {
               {alertDialog.title}
             </h3>
             <p className="text-slate-600 mb-6 whitespace-pre-line">{alertDialog.message}</p>
-            <button onClick={closeAlert} className="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">確定</button>
+            <button onClick={closeAlert} className="bg-slate-900 text-white px-6 py-2 rounded hover:bg-slate-800">{t(language).common.confirm}</button>
           </div>
         </div>
       )}
