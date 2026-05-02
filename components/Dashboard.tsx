@@ -286,7 +286,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       estTotalAssets: toBase(item.estTotalAssets),
       isRealData: item.isRealData,
     }));
-  }, [chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData, toBase]);
+  }, [chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData, toBase, translations]);
 
   const hasAttributionMismatch = attributionSeries.some(item => !item.isConsistent);
 
@@ -1139,7 +1139,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     </span>
                   </span>
                 </th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.annualizedROI}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.totalReturnRate}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
