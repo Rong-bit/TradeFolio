@@ -19,7 +19,7 @@ zhCN.dashboard = {
   totalPLAmount: '总损益金额',
   accumulatedCashDividends: '累积配息现金',
   accumulatedStockDividends: '累积股息再投入',
-  annualizedReturn: '真实年化',
+  annualizedReturn: '真实年化（IRR）',
   annualizedReturnRate: '总市值年化报酬率',
   avgExchangeRate: '平均换汇成本',
   currentExchangeRate: '目前汇率',
@@ -430,7 +430,7 @@ TradeView 是一个支持台股与美股的资产管理工具，协助投资人�
 
 ## 4. 常见问题 (FAQ)
 Q: 如何计算年化报酬率？
-A: 系统采用资金加权报酬率概念，考虑资金进出的时间点进行估算。
+A: 仪表板「真实年化」为资金加权年化（IRR／XIRR），依汇入／汇出纪录与目前总资产计算；与「仅看价涨跌」的 CAGR 不同。资产配置模拟器内自动查询的年化为 CAGR。
 
 Q: 汇率如何设定？
 A: 可在右上角设定全域 USD/TWD 汇率，或在转账时指定当下汇率。
@@ -582,6 +582,107 @@ zhCN.historicalModal = {
   alertFetchFailed:
     '无法取得 {count} 只股票的历史股价，请检查网络连接或稍后再试。\n\n查询的代号：{tickers}',
   alertAiError: 'AI 更新失败，请稍后再试',
+};
+
+zhCN.purchaseModal = {
+  title: '选择会员方案',
+  subtitle: '选择适合您的方案，开通完整会员功能',
+  onlyAndroid: '此功能仅在 Android 应用中可用',
+  loadProductsFailed: '加载产品失败',
+  loginFirst: '请先登录',
+  purchaseFailed: '购买失败',
+  monthlyTitle: '月制会员',
+  monthlyDesc: '按月计费，可随时取消',
+  monthlyPrice: 'NT$ 60/月',
+  yearlyTitle: '年制会员',
+  yearlyDesc: '按年计费，更优惠',
+  yearlyPrice: 'NT$ 590/年',
+  loading: '加载中...',
+  popular: '推荐',
+  processing: '处理中...',
+  purchaseNow: '立即购买',
+  footer: '购买后将自动开通会员功能。订阅可随时在 Google Play 商店中取消。',
+};
+
+zhCN.batchCashFlowModal = {
+  title: '批次汇入资金 (Batch Cash Flow)',
+  guideTitle: '使用说明：',
+  guideBody: '请直接从 Excel 复制包含「日期、台币、美元、汇率、手续费、总计、账户、类别」的数据并贴上。',
+  parseFailed:
+    '无法解析数据。\n成功: 0 笔\n失败: {count} 笔\n请确认格式是否为 Tab 分隔（直接从 Excel 复制）。',
+  unmappedAccounts: '请先设置以下账户的对应关系：\n{accounts}',
+  mappingTitle: '1. 账户名称对应 (Account Mapping)',
+  mappingDesc: '请将「文件中的账户名称」对应到您「系统中的证券户」。',
+  fileNameLabel: '文件名称:',
+  selectAccount: '-- 请选择对应账户 --',
+  previewTitle: '2. 数据预览',
+  successLabel: '成功',
+  failedLabel: '未成功',
+  failedUnit: '笔',
+  colDate: '日期',
+  colType: '类别',
+  colAmount: '金额 (USD/TWD)',
+  colFee: '手续费',
+  colTwdCost: '实际台币成本',
+  colFileAccount: '文件账户',
+  colMappedAccount: '对应系统账户',
+  unmapped: '未对应',
+  cancel: '取消',
+  parseData: '解析数据',
+  confirmImport: '确认汇入',
+};
+
+zhCN.appMessages = {
+  alertTitleInfo: '提示',
+  loginErrorTitle: '登录错误',
+  loginSuccessTitle: '登录成功',
+  loginFailedTitle: '登录失败',
+  updateSuccessTitle: '更新成功',
+  deleteSuccessTitle: '删除成功',
+  restoreSuccessTitle: '还原成功',
+  importFailedTitle: '导入失败',
+  downloadErrorTitle: '下载错误',
+  genericErrorTitle: '错误',
+  enterEmail: '请输入 Email 信箱',
+  adminWelcome: '欢迎回来，管理员！',
+  adminPasswordWrong: '管理员密码错误',
+  guestLoginNotice: '已为您登录「非会员模式」。\n\n您尚未注册，若需开通会员模式，请按「升级」发送申请信通知管理员开通权限。',
+  contactSubject: 'TradeView 购买/权限开通申请',
+  contactBody: 'Hi 管理员,\n\n我的账号是: {user}\n\n我目前是非会员身份，希望申请/购买完整权限。\n\n请协助处理，谢谢。',
+  updatePriceSuccess: '成功更新 {count} 笔股价',
+  updatePriceSuccessWithRate: '成功更新 {count} 笔股价，并同步更新汇率为 {rate}',
+  autoUpdateFailed: '自动更新失败',
+  downloadFailed: '下载失败：请尝试使用浏览器打开此页面。',
+  shareTitle: 'TradeView 备份文件',
+  backupFailed: '备份失败：{error}',
+  restoreSuccess: '成功还原数据！',
+  importFailed: '导入失败：文件格式错误。',
+  txUpdated: '交易记录已更新',
+  marketUpdated: '成功更新 {count} 笔交易的市场设置',
+  txDeleted: '交易记录已删除',
+  txCleared: '✅ 成功清空 {count} 笔交易记录！',
+  accountUpdated: '账户「{name}」已更新',
+  accountDeleted: '账户「{name}」已删除',
+  cashFlowUpdated: '资金记录已更新',
+  cashFlowDeleted: '现金流记录已删除',
+  cashFlowCleared: '✅ 成功清空所有资金记录！',
+  historicalSaved: '历史资产数据更新完成！报表已根据真实股价修正。',
+  loginPasswordPlaceholder: '请输入密码',
+  confirmClearTxTitle: '确认清空所有交易？',
+  confirmClearTxMessage: '此操作无法恢复，请确认您已备份数据。',
+  confirmClearAction: '确认清空',
+  deleteTxTitle: '删除交易',
+  deleteTxMessage: '确定要删除这笔交易记录吗？',
+  cashFlowDeleteTitle: '确认删除资金记录',
+  unknownAccount: '未知账户',
+  accountLabel: '账户：',
+  dateLabel: '日期：',
+  typeLabel: '类型：',
+  amountLabel: '金额：',
+  cashFlowDeleteWarningTitle: '⚠️ 注意',
+  cashFlowDeleteWarningBody: '此账户有 {count} 笔相关交易记录。删除此资金记录可能会影响账户余额计算的准确性。',
+  cashFlowDeleteMessage: '确定要删除这笔资金记录吗？此操作无法恢复。',
+  confirmDeleteAction: '确认删除',
 };
 
 export { zhCN };

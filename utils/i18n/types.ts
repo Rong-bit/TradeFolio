@@ -769,6 +769,106 @@ export interface Translations {
     alertFetchFailed: string;
     alertAiError: string;
   };
+  /** 付費方案彈窗（可選，缺省時由元件 fallback） */
+  purchaseModal?: {
+    title: string;
+    subtitle: string;
+    onlyAndroid: string;
+    loadProductsFailed: string;
+    loginFirst: string;
+    purchaseFailed: string;
+    monthlyTitle: string;
+    monthlyDesc: string;
+    monthlyPrice: string;
+    yearlyTitle: string;
+    yearlyDesc: string;
+    yearlyPrice: string;
+    loading: string;
+    popular: string;
+    processing: string;
+    purchaseNow: string;
+    footer: string;
+  };
+  /** 批次匯入資金彈窗（可選，缺省時由元件 fallback） */
+  batchCashFlowModal?: {
+    title: string;
+    guideTitle: string;
+    guideBody: string;
+    parseFailed: string;
+    unmappedAccounts: string;
+    mappingTitle: string;
+    mappingDesc: string;
+    fileNameLabel: string;
+    selectAccount: string;
+    previewTitle: string;
+    successLabel: string;
+    failedLabel: string;
+    failedUnit: string;
+    colDate: string;
+    colType: string;
+    colAmount: string;
+    colFee: string;
+    colTwdCost: string;
+    colFileAccount: string;
+    colMappedAccount: string;
+    unmapped: string;
+    cancel: string;
+    parseData: string;
+    confirmImport: string;
+  };
+  /** App 全域訊息（可選，缺省時由元件 fallback） */
+  appMessages?: {
+    alertTitleInfo: string;
+    loginErrorTitle: string;
+    loginSuccessTitle: string;
+    loginFailedTitle: string;
+    updateSuccessTitle: string;
+    deleteSuccessTitle: string;
+    restoreSuccessTitle: string;
+    importFailedTitle: string;
+    downloadErrorTitle: string;
+    genericErrorTitle: string;
+    enterEmail: string;
+    adminWelcome: string;
+    adminPasswordWrong: string;
+    guestLoginNotice: string;
+    contactSubject: string;
+    contactBody: string;
+    updatePriceSuccess: string;
+    updatePriceSuccessWithRate: string;
+    autoUpdateFailed: string;
+    downloadFailed: string;
+    shareTitle: string;
+    backupFailed: string;
+    restoreSuccess: string;
+    importFailed: string;
+    txUpdated: string;
+    marketUpdated: string;
+    txDeleted: string;
+    txCleared: string;
+    accountUpdated: string;
+    accountDeleted: string;
+    cashFlowUpdated: string;
+    cashFlowDeleted: string;
+    cashFlowCleared: string;
+    historicalSaved: string;
+    loginPasswordPlaceholder: string;
+    confirmClearTxTitle: string;
+    confirmClearTxMessage: string;
+    confirmClearAction: string;
+    deleteTxTitle: string;
+    deleteTxMessage: string;
+    cashFlowDeleteTitle: string;
+    unknownAccount: string;
+    accountLabel: string;
+    dateLabel: string;
+    typeLabel: string;
+    amountLabel: string;
+    cashFlowDeleteWarningTitle: string;
+    cashFlowDeleteWarningBody: string;
+    cashFlowDeleteMessage: string;
+    confirmDeleteAction: string;
+  };
 }
 
 // 繁體中文翻譯
