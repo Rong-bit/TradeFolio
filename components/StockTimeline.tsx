@@ -50,12 +50,12 @@ const MARKET_TEXT: Record<string, string> = {
 };
 
 const EVENT_CONFIG = {
-  [TransactionType.BUY]:          { label: '買', bg: 'bg-rose-500',    text: 'text-rose-700',    border: 'border-rose-200',    fill: 'bg-rose-50'    },
-  [TransactionType.SELL]:         { label: '賣', bg: 'bg-emerald-500', text: 'text-emerald-700', border: 'border-emerald-200', fill: 'bg-emerald-50' },
-  [TransactionType.DIVIDEND]:     { label: '股', bg: 'bg-violet-500',  text: 'text-violet-700',  border: 'border-violet-200',  fill: 'bg-violet-50'  },
-  [TransactionType.CASH_DIVIDEND]:{ label: '息', bg: 'bg-amber-500',   text: 'text-amber-700',   border: 'border-amber-200',   fill: 'bg-amber-50'   },
-  [TransactionType.TRANSFER_IN]:  { label: '轉入', bg: 'bg-blue-500', text: 'text-blue-700',    border: 'border-blue-200',    fill: 'bg-blue-50'    },
-  [TransactionType.TRANSFER_OUT]: { label: '轉出', bg: 'bg-slate-400', text: 'text-slate-600',   border: 'border-slate-200',   fill: 'bg-slate-50'   },
+  [TransactionType.BUY]:          { label: 'B', bg: 'bg-rose-500',    text: 'text-rose-700',    border: 'border-rose-200',    fill: 'bg-rose-50'    },
+  [TransactionType.SELL]:         { label: 'S', bg: 'bg-emerald-500', text: 'text-emerald-700', border: 'border-emerald-200', fill: 'bg-emerald-50' },
+  [TransactionType.DIVIDEND]:     { label: 'D', bg: 'bg-violet-500',  text: 'text-violet-700',  border: 'border-violet-200',  fill: 'bg-violet-50'  },
+  [TransactionType.CASH_DIVIDEND]:{ label: 'C', bg: 'bg-amber-500',   text: 'text-amber-700',   border: 'border-amber-200',   fill: 'bg-amber-50'   },
+  [TransactionType.TRANSFER_IN]:  { label: 'IN', bg: 'bg-blue-500', text: 'text-blue-700',    border: 'border-blue-200',    fill: 'bg-blue-50'    },
+  [TransactionType.TRANSFER_OUT]: { label: 'OUT', bg: 'bg-slate-400', text: 'text-slate-600',   border: 'border-slate-200',   fill: 'bg-slate-50'   },
 };
 
 function datePct(date: string, minMs: number, maxMs: number): number {
