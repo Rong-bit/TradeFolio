@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Product, Purchase } from './BillingBridge';
 import BillingBridge from './BillingBridge';
-import { Language } from '../utils/i18n';
+import { Language, translate } from '../utils/i18n';
 
 // 產品 ID
 const PRODUCT_IDS = {
@@ -18,6 +18,36 @@ interface Props {
 }
 
 const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, language, userEmail }) => {
+  const isChinese = language === 'zh-TW' || language === 'zh-CN';
+  const tx = (key: string, fallback: string) => {
+    const resolved = translate(`purchaseModal.${key}`, language);
+    return resolved === `purchaseModal.${key}` ? fallback : resolved;
+  };
+  const text = {
+    onlyAndroid: tx('onlyAndroid', isChinese ? '此功能僅在 Android 應用中可用' : 'This feature is only available in Android app'),
+    loadProductsFailed: tx('loadProductsFailed', isChinese ? '載入產品失敗' : 'Failed to load products'),
+    loginFirst: tx('loginFirst', isChinese ? '請先登入' : 'Please login first'),
+    purchaseFailed: tx('purchaseFailed', isChinese ? '購買失敗' : 'Purchase failed'),
+    monthlyTitle: tx('monthlyTitle', isChinese ? '月制會員' : 'Monthly Subscription'),
+    monthlyDesc: tx('monthlyDesc', isChinese ? '按月計費，可隨時取消' : 'Billed monthly, cancel anytime'),
+    monthlyPrice: tx('monthlyPrice', isChinese ? 'NT$ 60/月' : 'NT$ 60/mo'),
+    yearlyTitle: tx('yearlyTitle', isChinese ? '年制會員' : 'Yearly Subscription'),
+    yearlyDesc: tx('yearlyDesc', isChinese ? '按年計費，更優惠' : 'Billed yearly, best value'),
+    yearlyPrice: tx('yearlyPrice', isChinese ? 'NT$ 590/年' : 'NT$ 590/yr'),
+    title: tx('title', isChinese ? '選擇會員方案' : 'Choose Membership Plan'),
+    subtitle: tx('subtitle', isChinese ? '選擇適合您的方案，開通完整會員功能' : 'Choose a plan that suits you to unlock all premium features'),
+    loading: tx('loading', isChinese ? '載入中...' : 'Loading...'),
+    popular: tx('popular', isChinese ? '推薦' : 'POPULAR'),
+    processing: tx('processing', isChinese ? '處理中...' : 'Processing...'),
+    purchaseNow: tx('purchaseNow', isChinese ? '立即購買' : 'Purchase Now'),
+    footer: tx(
+      'footer',
+      isChinese
+        ? '購買後將自動開通會員功能。訂閱可隨時在 Google Play 商店中取消。'
+        : 'Membership will be activated automatically after purchase. Subscriptions can be cancelled anytime in Google Play Store.'
+    ),
+  };
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,9 +57,7 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
     if (isOpen && BillingBridge.isAvailable()) {
       loadProducts();
     } else if (isOpen && !BillingBridge.isAvailable()) {
-      setError(language === 'zh-TW' 
-        ? '此功能僅在 Android 應用中可用' 
-        : 'This feature is only available in Android app');
+      setError(text.onlyAndroid);
     }
   }, [isOpen, language]);
 
@@ -40,7 +68,7 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
       const fetchedProducts = await BillingBridge.queryProducts();
       setProducts(fetchedProducts);
     } catch (err: any) {
-      setError(err.message || (language === 'zh-TW' ? '載入產品失敗' : 'Failed to load products'));
+      setError(err.message || text.loadProductsFailed);
       console.error('Failed to load products:', err);
     } finally {
       setLoading(false);
@@ -49,7 +77,7 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
 
   const handlePurchase = async (productId: string) => {
     if (!userEmail) {
-      setError(language === 'zh-TW' ? '請先登入' : 'Please login first');
+      setError(text.loginFirst);
       return;
     }
 
@@ -64,7 +92,7 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
         // 用戶取消，不顯示錯誤
         setError(null);
       } else {
-        setError(err.message || (language === 'zh-TW' ? '購買失敗' : 'Purchase failed'));
+        setError(err.message || text.purchaseFailed);
         console.error('Purchase failed:', err);
       }
     } finally {
@@ -86,19 +114,15 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
     // 如果沒有從 Google Play 獲取到，使用本地配置
     if (productId === PRODUCT_IDS.MONTHLY) {
       return {
-        title: language === 'zh-TW' ? '月制會員' : 'Monthly Subscription',
-        description: language === 'zh-TW' 
-          ? '按月計費，可隨時取消' 
-          : 'Billed monthly, cancel anytime',
-        price: 'NT$ 60/月',
+        title: text.monthlyTitle,
+        description: text.monthlyDesc,
+        price: text.monthlyPrice,
       };
     } else if (productId === PRODUCT_IDS.YEARLY) {
       return {
-        title: language === 'zh-TW' ? '年制會員' : 'Yearly Subscription',
-        description: language === 'zh-TW' 
-          ? '按年計費，更優惠' 
-          : 'Billed yearly, best value',
-        price: 'NT$ 590/年',
+        title: text.yearlyTitle,
+        description: text.yearlyDesc,
+        price: text.yearlyPrice,
       };
     }
     return { title: '', description: '', price: '' };
@@ -118,7 +142,7 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
         <div className="p-6 border-b border-slate-700">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold text-white">
-              {language === 'zh-TW' ? '選擇會員方案' : 'Choose Membership Plan'}
+              {text.title}
             </h2>
             <button
               onClick={onClose}
@@ -130,9 +154,7 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
             </button>
           </div>
           <p className="text-slate-400 mt-2">
-            {language === 'zh-TW' 
-              ? '選擇適合您的方案，開通完整會員功能' 
-              : 'Choose a plan that suits you to unlock all premium features'}
+            {text.subtitle}
           </p>
         </div>
 
@@ -149,7 +171,7 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
               <span className="ml-3 text-slate-400">
-                {language === 'zh-TW' ? '載入中...' : 'Loading...'}
+                {text.loading}
               </span>
             </div>
           ) : (
@@ -170,7 +192,7 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
                     {plan.highlight && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                         <span className="bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                          {language === 'zh-TW' ? '推薦' : 'POPULAR'}
+                          {text.popular}
                         </span>
                       </div>
                     )}
@@ -196,10 +218,10 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          {language === 'zh-TW' ? '處理中...' : 'Processing...'}
+                          {text.processing}
                         </span>
                       ) : (
-                        language === 'zh-TW' ? '立即購買' : 'Purchase Now'
+                        text.purchaseNow
                       )}
                     </button>
                   </div>
@@ -212,9 +234,7 @@ const PurchaseModal: React.FC<Props> = ({ isOpen, onClose, onPurchaseSuccess, la
         {/* Footer */}
         <div className="p-6 border-t border-slate-700 bg-slate-800/50">
           <p className="text-xs text-slate-400 text-center">
-            {language === 'zh-TW' 
-              ? '購買後將自動開通會員功能。訂閱可隨時在 Google Play 商店中取消。' 
-              : 'Membership will be activated automatically after purchase. Subscriptions can be cancelled anytime in Google Play Store.'}
+            {text.footer}
           </p>
         </div>
       </div>
