@@ -25,16 +25,6 @@ import {
 
 interface Props {}
 
-/** 資金入出金需填「對台幣成本匯率」之帳戶幣（內部存 TWD/帳戶幣） */
-function isFundNativeRateCurrency(c: Currency | undefined): boolean {
-  return (
-    c === Currency.USD ||
-    c === Currency.JPY ||
-    c === Currency.GBP ||
-    c === Currency.EUR
-  );
-}
-
 /** 證券戶幣別與儀表板基準幣相同（例：基準幣 JPY 且帳戶為日幣帳） */
 function fundAccountMatchesBaseCurrency(
   accountCurrency: Currency | undefined,
@@ -105,7 +95,7 @@ const FundManager: React.FC<Props> = () => {
         const acc = accounts.find(a => a.id === rule.accountId);
         if (acc && fundAccountMatchesBaseCurrency(acc.currency, baseCurrency)) {
           setRecEx('');
-        } else if (acc && isFundNativeRateCurrency(acc.currency)) {
+        } else if (acc && acc.currency !== Currency.TWD) {
           const v = fundFormTwdPerNativeToAccountBasePair(rule.exchangeRate, baseCurrency, rates);
           setRecEx(v != null ? String(v) : String(rule.exchangeRate));
         } else {
@@ -147,11 +137,7 @@ const FundManager: React.FC<Props> = () => {
     const recAccForSave = accounts.find(a => a.id === recAccountId);
     let storedEx: number | undefined =
       exNum !== undefined && Number.isFinite(exNum) && exNum > 0 ? exNum : undefined;
-    if (
-      recAccForSave &&
-      isFundNativeRateCurrency(recAccForSave.currency) &&
-      fundAccountMatchesBaseCurrency(recAccForSave.currency, baseCurrency)
-    ) {
+    if (recAccForSave && fundAccountMatchesBaseCurrency(recAccForSave.currency, baseCurrency)) {
       const r = currencyToTWDRate(recAccForSave.currency, rates);
       if (!Number.isFinite(r) || r <= 0) {
         alert(ff.exchangeRateInvalid);
@@ -162,7 +148,7 @@ const FundManager: React.FC<Props> = () => {
       storedEx !== undefined &&
       recAccForSave &&
       !fundAccountMatchesBaseCurrency(recAccForSave.currency, baseCurrency) &&
-      isFundNativeRateCurrency(recAccForSave.currency)
+      recAccForSave.currency !== Currency.TWD
     ) {
       const conv = fundFormAccountBasePairToTwdPerNative(storedEx, baseCurrency, rates);
       if (!Number.isFinite(conv) || conv <= 0) {
@@ -193,7 +179,6 @@ const FundManager: React.FC<Props> = () => {
   const recSelectedAccount = accounts.find(a => a.id === recAccountId);
   const recShowExchange =
     !!recSelectedAccount &&
-    isFundNativeRateCurrency(recSelectedAccount.currency) &&
     !fundAccountMatchesBaseCurrency(recSelectedAccount.currency, baseCurrency);
 
   // 當帳戶列表變更或初始化時，確保 accountId 有效
@@ -226,7 +211,7 @@ const FundManager: React.FC<Props> = () => {
           setExchangeRate(String(editingCashFlow.exchangeRate));
         } else if (acc && fundAccountMatchesBaseCurrency(acc.currency, baseCurrency)) {
           setExchangeRate('');
-        } else if (acc && isFundNativeRateCurrency(acc.currency)) {
+        } else if (acc && acc.currency !== Currency.TWD) {
           const v = fundFormTwdPerNativeToAccountBasePair(
             editingCashFlow.exchangeRate,
             baseCurrency,
@@ -287,8 +272,8 @@ const FundManager: React.FC<Props> = () => {
         Number.isFinite(raw) &&
         raw > 0 &&
         account &&
-        isFundNativeRateCurrency(account.currency) &&
-        !fundAccountMatchesBaseCurrency(account.currency, baseCurrency)
+        !fundAccountMatchesBaseCurrency(account.currency, baseCurrency) &&
+        account.currency !== Currency.TWD
       ) {
         const conv = fundFormAccountBasePairToTwdPerNative(raw, baseCurrency, rates);
         if (!Number.isFinite(conv) || conv <= 0) {
@@ -296,18 +281,23 @@ const FundManager: React.FC<Props> = () => {
           return;
         }
         numRate = conv;
+      } else if (account?.currency === Currency.TWD && baseCurrency !== 'TWD') {
+        if (raw === undefined || !Number.isFinite(raw) || raw <= 0) {
+          alert(ff.exchangeRateInvalid);
+          return;
+        }
+        numRate = raw;
       } else {
         numRate = raw;
       }
     } else if (isSameCurrency) {
        numRate = 1; // Same currency transfer implies rate 1
     } else if (account?.currency === Currency.TWD && !isTransfer) {
-       numRate = 1; // TWD Deposit/Withdraw implies rate 1
+       numRate = 1; // TWD Deposit/Withdraw（基準幣為台幣、未顯示匯率欄）
     } else if (
       !isTransfer &&
       !isInterest &&
       account &&
-      isFundNativeRateCurrency(account.currency) &&
       fundAccountMatchesBaseCurrency(account.currency, baseCurrency)
     ) {
       // 帳戶幣＝基準幣：不顯示匯率欄，改以設定之 TWD/帳戶幣換算
@@ -317,7 +307,7 @@ const FundManager: React.FC<Props> = () => {
     // Determine amountTWD
     let calculatedTWD: number | undefined = undefined;
     
-    if (account && isFundNativeRateCurrency(account.currency) && numRate) {
+    if (account && account.currency !== Currency.TWD && numRate) {
        if (type === CashFlowType.DEPOSIT) {
           calculatedTWD = (numAmount * numRate) + numFee;
        } else if (type === CashFlowType.WITHDRAW) {
@@ -400,13 +390,13 @@ const FundManager: React.FC<Props> = () => {
   const isCrossCurrencyTransfer = isTransfer && selectedAccount && targetAccount && selectedAccount.currency !== targetAccount.currency;
   const isSameCurrencyTransfer = isTransfer && selectedAccount && targetAccount && selectedAccount.currency === targetAccount.currency;
 
-  const showExchangeRateInput = 
-    // Case 1: 外幣帳且「帳戶幣 ≠ 基準幣」時才顯示匯率（同幣時用設定之 TWD/帳戶幣，不顯示欄位）
+  const showExchangeRateInput =
+    // 帳戶幣 ≠ 基準幣：顯示 匯率(帳戶幣/基準幣)；同幣時不顯示（改以設定之 TWD/帳戶幣）
     (!isTransfer &&
       !isInterest &&
-      isFundNativeRateCurrency(selectedAccount?.currency) &&
-      !fundAccountMatchesBaseCurrency(selectedAccount?.currency, baseCurrency)) ||
-    // Case 2: Transfer between DIFFERENT currencies
+      !!selectedAccount &&
+      !fundAccountMatchesBaseCurrency(selectedAccount.currency, baseCurrency)) ||
+    // 跨幣轉帳
     (isTransfer && targetAccountId !== '' && isCrossCurrencyTransfer);
 
   // 跨幣別轉帳匯率標籤：統一為 匯率 (A/B) = 1 A = 多少 B，故有 USD 時顯示 (USD/他幣)
@@ -474,11 +464,13 @@ const FundManager: React.FC<Props> = () => {
   }, [selectedAccount, baseCurrency, language, ff]);
 
   const fundEntryRatePlaceholder = useMemo(() => {
-    if (!selectedAccount || !isFundNativeRateCurrency(selectedAccount.currency)) {
-      return currentExchangeRate.toString();
-    }
+    if (!selectedAccount) return currentExchangeRate.toString();
     if (fundAccountMatchesBaseCurrency(selectedAccount.currency, baseCurrency)) {
       return currentExchangeRate.toString();
+    }
+    if (selectedAccount.currency === Currency.TWD && baseCurrency !== 'TWD') {
+      const twdPerBase = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
+      return twdPerBase > 0 ? String(twdPerBase) : currentExchangeRate.toString();
     }
     const twdPerBase = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
     const twdPerAcct = currencyToTWDRate(selectedAccount.currency, rates);
@@ -683,7 +675,14 @@ const FundManager: React.FC<Props> = () => {
                     placeholder={
                       (() => {
                         const rec = recSelectedAccount;
-                        if (!rec || !isFundNativeRateCurrency(rec.currency)) return currentExchangeRate.toString();
+                        if (!rec) return currentExchangeRate.toString();
+                        if (fundAccountMatchesBaseCurrency(rec.currency, baseCurrency)) {
+                          return currentExchangeRate.toString();
+                        }
+                        if (rec.currency === Currency.TWD && baseCurrency !== 'TWD') {
+                          const twdB = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
+                          return twdB > 0 ? String(twdB) : currentExchangeRate.toString();
+                        }
                         const twdB = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
                         const twdA = currencyToTWDRate(rec.currency, rates);
                         if (twdB > 0 && twdA > 0) return (twdA / twdB).toFixed(4);
@@ -912,7 +911,7 @@ const FundManager: React.FC<Props> = () => {
                      !!tgtAcc &&
                      !!account &&
                      account.currency !== tgtAcc.currency;
-                   const usesNativeRate = isFundNativeRateCurrency(account?.currency);
+                   const needsTwdPerAccountForCost = account && account.currency !== Currency.TWD;
 
                    // 總計成本 (TWD)，用於換算為基準幣顯示
                    let displayTotalTWD = 0;
@@ -921,8 +920,8 @@ const FundManager: React.FC<Props> = () => {
                    } else {
                        const rate =
                          cf.exchangeRate ??
-                         (usesNativeRate ? currencyToTWDRate(accountCurrency, rates) : 1);
-                       const baseAmt = usesNativeRate ? cf.amount * (rate || 1) : cf.amount;
+                         (needsTwdPerAccountForCost ? currencyToTWDRate(accountCurrency, rates) : 1);
+                       const baseAmt = needsTwdPerAccountForCost ? cf.amount * (rate || 1) : cf.amount;
                        const feeVal = cf.fee || 0;
                        if (cf.type === CashFlowType.DEPOSIT) {
                            displayTotalTWD = baseAmt + feeVal;
@@ -939,15 +938,18 @@ const FundManager: React.FC<Props> = () => {
                        displayExRateStr = String(cf.exchangeRate);
                      } else if (
                        account &&
-                       usesNativeRate &&
                        !fundAccountMatchesBaseCurrency(account.currency, baseCurrency)
                      ) {
-                       const v = fundFormTwdPerNativeToAccountBasePair(
-                         cf.exchangeRate,
-                         baseCurrency,
-                         rates
-                       );
-                       displayExRateStr = v != null ? v.toFixed(4) : String(cf.exchangeRate);
+                       if (account.currency === Currency.TWD) {
+                         displayExRateStr = String(cf.exchangeRate);
+                       } else {
+                         const v = fundFormTwdPerNativeToAccountBasePair(
+                           cf.exchangeRate,
+                           baseCurrency,
+                           rates
+                         );
+                         displayExRateStr = v != null ? v.toFixed(4) : String(cf.exchangeRate);
+                       }
                      } else {
                        displayExRateStr = String(cf.exchangeRate);
                      }
@@ -1074,15 +1076,18 @@ const FundManager: React.FC<Props> = () => {
                   if (
                     !pCross &&
                     pAcc &&
-                    isFundNativeRateCurrency(pAcc.currency) &&
                     !fundAccountMatchesBaseCurrency(pAcc.currency, baseCurrency)
                   ) {
-                    const v = fundFormTwdPerNativeToAccountBasePair(
-                      pendingCashFlow.exchangeRate,
-                      baseCurrency,
-                      rates
-                    );
-                    if (v != null) shown = v.toFixed(4);
+                    if (pAcc.currency === Currency.TWD) {
+                      shown = String(pendingCashFlow.exchangeRate);
+                    } else {
+                      const v = fundFormTwdPerNativeToAccountBasePair(
+                        pendingCashFlow.exchangeRate,
+                        baseCurrency,
+                        rates
+                      );
+                      if (v != null) shown = v.toFixed(4);
+                    }
                   }
                   return (
                     <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
