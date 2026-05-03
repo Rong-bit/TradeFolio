@@ -21,6 +21,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   const isEditing = !!editingTransaction;
   const translations = t(language);
   const tf = translations.transactionForm;
+  const isChinese = language === 'zh-TW' || language === 'zh-CN';
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -266,16 +267,19 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
 
   const getPriceCurrencyOptions = (market: Market): { value: string; label: string }[] => {
     const base = marketToCurrency(market);
-    const opts: { value: string; label: string }[] = [{ value: '', label: `預設（${base}）` }];
+    const opts: { value: string; label: string }[] = [{
+      value: '',
+      label: isChinese ? `預設（${base}）` : `Default (${base})`,
+    }];
     if (market === Market.UK) {
-      opts.push({ value: 'GBP', label: 'GBP（英鎊）' });
-      opts.push({ value: 'USD', label: 'USD（美元 ETF，如 VWRA）' });
+      opts.push({ value: 'GBP', label: isChinese ? 'GBP（英鎊）' : 'GBP (British Pound)' });
+      opts.push({ value: 'USD', label: isChinese ? 'USD（美元 ETF，如 VWRA）' : 'USD (USD-denominated ETF, e.g. VWRA)' });
     } else if (market === Market.DE || market === Market.FR) {
-      opts.push({ value: 'EUR', label: 'EUR（歐元）' });
-      opts.push({ value: 'USD', label: 'USD（美元計價 ETF）' });
+      opts.push({ value: 'EUR', label: isChinese ? 'EUR（歐元）' : 'EUR (Euro)' });
+      opts.push({ value: 'USD', label: isChinese ? 'USD（美元計價 ETF）' : 'USD (USD-denominated ETF)' });
     } else if (market === Market.AU || market === Market.CA) {
       opts.push({ value: base, label: base });
-      opts.push({ value: 'USD', label: 'USD（美元計價 ETF）' });
+      opts.push({ value: 'USD', label: isChinese ? 'USD（美元計價 ETF）' : 'USD (USD-denominated ETF)' });
     }
     return opts;
   };
@@ -589,8 +593,10 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
             formData.market === Market.CA) && (
             <div>
               <label className="block text-sm font-medium text-slate-700">
-                報價幣別
-                <span className="ml-1 text-xs text-slate-400">（選填，覆蓋預設）</span>
+                {isChinese ? '報價幣別' : 'Quote Currency'}
+                <span className="ml-1 text-xs text-slate-400">
+                  {isChinese ? '（選填，覆蓋預設）' : '(Optional, overrides default)'}
+                </span>
               </label>
               <select
                 value={formData.priceCurrency}
