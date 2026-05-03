@@ -726,7 +726,7 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     pasteFormat: '💡 "이체" 카테고리: 수량이 음수이면 이체 출금, 양수이면 이체 입금으로 처리됩니다.',
     pasteTip: '',
     pastePlaceholder:
-      '2022/3/30\tBuy\tVT\t103.23\t1.00\t0.00\n2025/2/11\tTransfer\tVT\t93.41\t-167.73\t0.00',
+      '2022/3/30\tBuy\tVT\t103.23\t1.00\t0.00\t103.23\n2025/2/11\tTransfer\tVT\t93.41\t-167.73\t0.00\t15667.99',
     parseButton: '붙여넣은 내용 분석',
     uploadLabel: '지원 CSV 내보내기 파일: Charles Schwab, Firstrade',
     uploadSupported: '',

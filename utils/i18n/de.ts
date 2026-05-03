@@ -589,7 +589,7 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     pasteFormat: '💡 "Übertragung"-Kategorie: Negative Menge wird als Ausgang, positive als Eingang behandelt.',
     pasteTip: '',
     pastePlaceholder:
-      '2022/3/30\tBuy\tVT\t103.23\t1.00\t0.00\n2025/2/11\tTransfer\tVT\t93.41\t-167.73\t0.00',
+      '2022/3/30\tBuy\tVT\t103.23\t1.00\t0.00\t103.23\n2025/2/11\tTransfer\tVT\t93.41\t-167.73\t0.00\t15667.99',
     parseButton: 'Eingefügten Inhalt analysieren',
     uploadLabel: 'Unterstützte CSV-Exportdateien: Charles Schwab, Firstrade',
     uploadSupported: '',
