@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useUI } from '../contexts/UIContext';
 
 interface RefreshCountdownProps {
   intervalMs: number;       // 刷新週期（毫秒）
@@ -15,8 +16,12 @@ const RefreshCountdown: React.FC<RefreshCountdownProps> = ({
   intervalMs,
   onManualRefresh,
   isRefreshing = false,
-  label = '更新股價',
+  label,
 }) => {
+  const { language } = useUI();
+  const isChinese = language === 'zh-TW' || language === 'zh-CN';
+  const defaultLabel = isChinese ? '更新股價' : 'Update Prices';
+  const refreshingLabel = isChinese ? '更新中...' : 'Refreshing...';
   const [secondsLeft, setSecondsLeft] = useState(Math.floor(intervalMs / 1000));
   const startRef = useRef(Date.now());
 
@@ -53,7 +58,7 @@ const RefreshCountdown: React.FC<RefreshCountdownProps> = ({
     <button
       onClick={handleClick}
       disabled={isRefreshing}
-      title={`自動刷新倒數 ${countdownStr}，點擊立即更新`}
+      title={isChinese ? `自動刷新倒數 ${countdownStr}，點擊立即更新` : `Auto refresh in ${countdownStr}, click to update now`}
       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
         bg-indigo-50 text-indigo-700 border border-indigo-200
         hover:bg-indigo-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -79,7 +84,7 @@ const RefreshCountdown: React.FC<RefreshCountdownProps> = ({
           />
         </svg>
       )}
-      <span>{isRefreshing ? '更新中...' : label}</span>
+      <span>{isRefreshing ? refreshingLabel : (label || defaultLabel)}</span>
       {!isRefreshing && (
         <span className="text-indigo-400 font-mono tabular-nums">{countdownStr}</span>
       )}
