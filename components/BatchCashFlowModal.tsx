@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { Account, CashFlow, CashFlowType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+import { useUI } from '../contexts/UIContext';
+import { translate } from '../utils/i18n';
 
 interface Props {
   onImport: (flows: CashFlow[]) => void;
@@ -12,12 +14,63 @@ interface Props {
 
 const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
   const { accounts } = usePortfolio();
+  const { language } = useUI();
+  const isChinese = language === 'zh-TW' || language === 'zh-CN';
+  const tx = (key: string, fallback: string, params?: Record<string, string | number>) => {
+    const fullKey = `batchCashFlowModal.${key}`;
+    const resolved = translate(fullKey, language, params);
+    return resolved === fullKey ? fallback : resolved;
+  };
   const [step, setStep] = useState<1 | 2>(1); // 1: Paste & Parse, 2: Map Accounts & Preview
   const [inputText, setInputText] = useState('');
   const [parsedRows, setParsedRows] = useState<any[]>([]);
   const [accountMapping, setAccountMapping] = useState<Record<string, string>>({});
   const [detectedAccountNames, setDetectedAccountNames] = useState<string[]>([]);
   const [failCount, setFailCount] = useState(0);
+  const text = {
+    title: tx('title', isChinese ? '批次匯入資金 (Batch Cash Flow)' : 'Batch Cash Flow Import'),
+    guideTitle: tx('guideTitle', isChinese ? '使用說明：' : 'Instructions:'),
+    guideBody: tx('guideBody', isChinese
+      ? '請直接從 Excel 複製包含「日期、台幣、美元、匯率、手續費、總計、帳戶、類別」的資料並貼上。'
+      : 'Paste data copied from Excel containing Date, TWD, USD, Rate, Fee, Total, Account, Category.'),
+    parseFailed: (failed: number) =>
+      tx(
+        'parseFailed',
+        isChinese
+          ? `無法解析資料。\n成功: 0 筆\n失敗: ${failed} 筆\n請確認格式是否為 Tab 分隔 (直接從 Excel 複製)。`
+          : `Unable to parse data.\nSuccess: 0\nFailed: ${failed}\nPlease ensure the format is tab-separated (copy directly from Excel).`,
+        { count: failed }
+      ),
+    unmappedAccounts: (names: string[]) =>
+      tx(
+        'unmappedAccounts',
+        isChinese
+          ? `請先設定以下帳戶的對應關係：\n${names.join(', ')}`
+          : `Please map these accounts first:\n${names.join(', ')}`,
+        { accounts: names.join(', ') }
+      ),
+    mappingTitle: tx('mappingTitle', isChinese ? '1. 帳戶名稱對應 (Account Mapping)' : '1. Account Mapping'),
+    mappingDesc: tx('mappingDesc', isChinese
+      ? '請將「檔案中的帳戶名稱」對應到您「系統中的證券戶」。'
+      : 'Map account names from file to your existing system accounts.'),
+    fileNameLabel: tx('fileNameLabel', isChinese ? '檔案名稱:' : 'File account:'),
+    selectAccount: tx('selectAccount', isChinese ? '-- 請選擇對應帳戶 --' : '-- Select mapped account --'),
+    previewTitle: tx('previewTitle', isChinese ? '2. 資料預覽' : '2. Data Preview'),
+    successLabel: tx('successLabel', isChinese ? '成功' : 'Success'),
+    failedLabel: tx('failedLabel', isChinese ? '未成功' : 'Failed'),
+    failedUnit: tx('failedUnit', isChinese ? '筆' : 'rows'),
+    colDate: tx('colDate', isChinese ? '日期' : 'Date'),
+    colType: tx('colType', isChinese ? '類別' : 'Category'),
+    colAmount: tx('colAmount', isChinese ? '金額 (USD/TWD)' : 'Amount (USD/TWD)'),
+    colFee: tx('colFee', isChinese ? '手續費' : 'Fee'),
+    colTwdCost: tx('colTwdCost', isChinese ? '實際台幣成本' : 'Actual TWD Cost'),
+    colFileAccount: tx('colFileAccount', isChinese ? '檔案帳戶' : 'File Account'),
+    colMappedAccount: tx('colMappedAccount', isChinese ? '對應系統帳戶' : 'Mapped Account'),
+    unmapped: tx('unmapped', isChinese ? '未對應' : 'Unmapped'),
+    cancel: tx('cancel', isChinese ? '取消' : 'Cancel'),
+    parseData: tx('parseData', isChinese ? '解析資料' : 'Parse Data'),
+    confirmImport: tx('confirmImport', isChinese ? '確認匯入' : 'Confirm Import'),
+  };
 
   // Helper to parse currency string "NT$30,000" -> 30000
   const parseNumber = (str: string) => {
@@ -153,7 +206,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
       setParsedRows(rows);
       setStep(2);
     } else {
-      alert(`無法解析資料。\n成功: 0 筆\n失敗: ${currentFailures} 筆\n請確認格式是否為 Tab 分隔 (直接從 Excel 複製)。`);
+      alert(text.parseFailed(currentFailures));
     }
   };
 
@@ -161,7 +214,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
     // Validation: All accounts must be mapped
     const unmapped = detectedAccountNames.filter(name => !accountMapping[name]);
     if (unmapped.length > 0) {
-      alert(`請先設定以下帳戶的對應關係：\n${unmapped.join(', ')}`);
+      alert(text.unmappedAccounts(unmapped));
       return;
     }
 
@@ -185,7 +238,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
         <div className="bg-slate-900 p-4 flex justify-between items-center shrink-0">
-          <h2 className="text-white font-bold text-lg">批次匯入資金 (Batch Cash Flow)</h2>
+          <h2 className="text-white font-bold text-lg">{text.title}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">&times;</button>
         </div>
 
@@ -193,8 +246,8 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
           {step === 1 && (
             <div className="space-y-4">
               <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800 border border-blue-200">
-                <p className="font-bold mb-1">使用說明：</p>
-                <p>請直接從 Excel 複製包含「日期、台幣、美元、匯率、手續費、總計、帳戶、類別」的資料並貼上。</p>
+                <p className="font-bold mb-1">{text.guideTitle}</p>
+                <p>{text.guideBody}</p>
                 <p className="mt-1 text-xs opacity-75 font-mono bg-blue-100 p-1 rounded inline-block">
                   日期 | 台幣 | 美元 | 匯率 | 手續費 | 總計 | 帳戶 | 類別
                 </p>
@@ -212,18 +265,18 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
             <div className="space-y-6">
               {/* Account Mapping Section */}
               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h3 className="font-bold text-slate-800 mb-3 text-sm">1. 帳戶名稱對應 (Account Mapping)</h3>
-                <p className="text-xs text-slate-500 mb-4">請將「檔案中的帳戶名稱」對應到您「系統中的證券戶」。</p>
+                <h3 className="font-bold text-slate-800 mb-3 text-sm">{text.mappingTitle}</h3>
+                <p className="text-xs text-slate-500 mb-4">{text.mappingDesc}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {detectedAccountNames.map(name => (
                     <div key={name} className="flex flex-col gap-1">
-                      <label className="text-xs font-bold text-slate-500">檔案名稱: <span className="text-slate-800">{name}</span></label>
+                      <label className="text-xs font-bold text-slate-500">{text.fileNameLabel} <span className="text-slate-800">{name}</span></label>
                       <select 
                         className={`text-sm border rounded p-2 ${FORM_FIELD_THEME} ${!accountMapping[name] ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : 'border-slate-300'}`}
                         value={accountMapping[name] || ''}
                         onChange={e => setAccountMapping(prev => ({...prev, [name]: e.target.value}))}
                       >
-                        <option value="">-- 請選擇對應帳戶 --</option>
+                        <option value="">{text.selectAccount}</option>
                         {accounts.map(acc => (
                           <option key={acc.id} value={acc.id}>{acc.name} ({acc.currency})</option>
                         ))}
@@ -237,13 +290,13 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
               <div>
                 <h3 className="font-bold text-slate-800 mb-3 text-sm flex items-center">
                   <span>
-                    2. 資料預覽 
+                    {text.previewTitle}
                     <span className="ml-2 font-normal text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">
-                      成功: <span className="text-green-600 font-bold">{parsedRows.length}</span>
+                      {text.successLabel}: <span className="text-green-600 font-bold">{parsedRows.length}</span>
                     </span>
                     {failCount > 0 && (
                         <span className="ml-2 font-normal text-xs bg-red-50 px-2 py-0.5 rounded text-red-600 border border-red-100">
-                            未成功: <strong>{failCount}</strong> 筆
+                            {text.failedLabel}: <strong>{failCount}</strong> {text.failedUnit}
                         </span>
                     )}
                   </span>
@@ -252,13 +305,13 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
                   <table className="min-w-full text-xs sm:text-sm text-left">
                     <thead className="bg-slate-100 sticky top-0">
                       <tr>
-                        <th className="px-3 py-2">日期</th>
-                        <th className="px-3 py-2">類別</th>
-                        <th className="px-3 py-2 text-right">金額 (USD/TWD)</th>
-                        <th className="px-3 py-2 text-right">手續費</th>
-                        <th className="px-3 py-2 text-right">實際台幣成本</th>
-                        <th className="px-3 py-2">檔案帳戶</th>
-                        <th className="px-3 py-2">對應系統帳戶</th>
+                        <th className="px-3 py-2">{text.colDate}</th>
+                        <th className="px-3 py-2">{text.colType}</th>
+                        <th className="px-3 py-2 text-right">{text.colAmount}</th>
+                        <th className="px-3 py-2 text-right">{text.colFee}</th>
+                        <th className="px-3 py-2 text-right">{text.colTwdCost}</th>
+                        <th className="px-3 py-2">{text.colFileAccount}</th>
+                        <th className="px-3 py-2">{text.colMappedAccount}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -283,7 +336,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
                           </td>
                           <td className="px-3 py-2 text-slate-500">{row.originalAccountName}</td>
                           <td className="px-3 py-2 font-medium text-slate-700">
-                            {accounts.find(a => a.id === accountMapping[row.originalAccountName])?.name || <span className="text-red-500">未對應</span>}
+                            {accounts.find(a => a.id === accountMapping[row.originalAccountName])?.name || <span className="text-red-500">{text.unmapped}</span>}
                           </td>
                         </tr>
                       ))}
@@ -296,11 +349,11 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
         </div>
 
         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
-          <button onClick={onClose} className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-white transition">取消</button>
+          <button onClick={onClose} className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-white transition">{text.cancel}</button>
           {step === 1 ? (
-            <button onClick={handleParse} disabled={!inputText.trim()} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition shadow-lg">解析資料</button>
+            <button onClick={handleParse} disabled={!inputText.trim()} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition shadow-lg">{text.parseData}</button>
           ) : (
-            <button onClick={handleImportConfirm} className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-lg">確認匯入</button>
+            <button onClick={handleImportConfirm} className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition shadow-lg">{text.confirmImport}</button>
           )}
         </div>
       </div>
