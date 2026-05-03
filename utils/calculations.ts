@@ -225,6 +225,53 @@ export function getDisplayRateForBaseCurrency(
   return { label: 'USD/TWD', value: usdToTwd };
 }
 
+/** BaseCurrency 與 Currency 枚舉對應（基準幣清單皆為 Currency 子集） */
+export function baseCurrencyToCurrency(bc: BaseCurrency): Currency {
+  return bc as unknown as Currency;
+}
+
+/**
+ * 資金管理表單：基準幣非 TWD/USD 時，使用者輸入與儀表板相同的「基準幣/USD」（= getDisplayRateForBaseCurrency 的 value），
+ * 換算為內部儲存用的「每 1 帳戶幣 = 多少 TWD」。
+ * 基準幣為 TWD 或 USD 時請勿呼叫，應直接以 TWD/帳戶幣輸入。
+ */
+export function fundFormUsdPerBaseToTwdPerNative(
+  usdPerBaseDisplay: number,
+  baseCurrency: BaseCurrency,
+  accountCurrency: Currency,
+  rates: ExchangeRates
+): number {
+  if (!Number.isFinite(usdPerBaseDisplay) || usdPerBaseDisplay <= 0) return NaN;
+  const usdToTwd = rates.exchangeRateUsdToTwd;
+  if (usdToTwd <= 0) return NaN;
+  const nativeTwd = currencyToTWDRate(accountCurrency, rates);
+  const twdPerBase = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
+  if (nativeTwd <= 0 || twdPerBase <= 0) return NaN;
+  return (usdPerBaseDisplay * twdPerBase * nativeTwd) / usdToTwd;
+}
+
+/** 內部 TWD/帳戶幣 → 表單顯示用的「基準幣/USD」；無法換算時回傳 undefined */
+export function fundFormTwdPerNativeToUsdPerBase(
+  twdPerNative: number,
+  baseCurrency: BaseCurrency,
+  accountCurrency: Currency,
+  rates: ExchangeRates
+): number | undefined {
+  if (!Number.isFinite(twdPerNative) || twdPerNative <= 0) return undefined;
+  const usdToTwd = rates.exchangeRateUsdToTwd;
+  if (usdToTwd <= 0) return undefined;
+  const nativeTwd = currencyToTWDRate(accountCurrency, rates);
+  const twdPerBase = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
+  if (nativeTwd <= 0 || twdPerBase <= 0) return undefined;
+  const v = (twdPerNative * usdToTwd) / (nativeTwd * twdPerBase);
+  return Number.isFinite(v) && v > 0 ? v : undefined;
+}
+
+/** 是否使用「USD/基準幣」輸入語意（排除 TWD、USD 基準，兩者仍用 TWD/帳戶幣） */
+export function fundFormUsesUsdPerBaseSemantics(baseCurrency: BaseCurrency): boolean {
+  return baseCurrency !== 'TWD' && baseCurrency !== 'USD';
+}
+
 export const calculateHoldings = (
   transactions: Transaction[], 
   currentPrices: Record<string, number>,
