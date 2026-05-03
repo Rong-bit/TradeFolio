@@ -592,7 +592,10 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     recurringNoRules: 'Noch keine Dauer-Regeln',
     recurringDeleteConfirm: 'Diese Regel löschen? Bereits erfasste Einzahlungen bleiben erhalten.',
     recurringInvalidAmount: 'Bitte Konto wählen und gültigen Betrag eingeben',
-    recurringAmountTwdOptional: 'TWD-Kosten (optional; setzt kursbasierte Schätzung außer Kraft)',
+    recurringAmountTwdOptional: 'Gebuchter TWD-Betrag (optional)',
+    recurringAmountTwdHelp:
+      'Fremdwährung: TWD wird als Betrag × Kurs ± Gebühren geschätzt. Weicht der Auszug ab, tragen Sie den TWD-Betrag ein. Leer = Schätzung. TWD-Konten: meist leer lassen.',
+    recurringNoteBadge: 'Dauer',
   },
   batchImportModal: {
     title: 'Stapelimport von Transaktionen',

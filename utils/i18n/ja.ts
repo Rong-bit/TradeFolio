@@ -729,7 +729,10 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     recurringNoRules: '定期ルールなし',
     recurringDeleteConfirm: 'このルールを削除しますか？（作成済みの入金は残ります）',
     recurringInvalidAmount: '口座と有効な金額を入力してください',
-    recurringAmountTwdOptional: 'TWDコスト（任意・入力時は為替計算より優先）',
+    recurringAmountTwdOptional: '実際のTWD計上額（任意）',
+    recurringAmountTwdHelp:
+      '外貨口座：通常は金額×為替±手数料でTWDを見積もります。明細のTWDが異なる場合はここに入力して上書き。空欄は自動計算。TWD口座は空欄で可。',
+    recurringNoteBadge: '定期',
   },
   batchImportModal: {
     title: '一括取引入力',

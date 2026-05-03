@@ -645,7 +645,10 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     recurringNoRules: 'अभी कोई आवर्ती नियम नहीं',
     recurringDeleteConfirm: 'यह नियम हटाएं? मौजूदा जमा रिकॉर्ड बने रहेंगे।',
     recurringInvalidAmount: 'कृपया खाता चुनें और वैध राशि दर्ज करें',
-    recurringAmountTwdOptional: 'TWD लागत (वैकल्पिक; दर आधारित अनुमान को ओवरराइड करता है)',
+    recurringAmountTwdOptional: 'वास्तविक TWD राशि (वैकल्पिक)',
+    recurringAmountTwdHelp:
+      'विदेशी मुद्रा: TWD = राशि × दर ± शुल्क अनुमानित। स्टेटमेंट अलग हो तो TWD यहाँ भरें; खाली = अनुमान। TWD खाते: आमतौर पर खाली।',
+    recurringNoteBadge: 'नियमित',
   },
   batchImportModal: {
     ...en.batchImportModal,

@@ -684,7 +684,10 @@ zhCN.fundForm = {
   recurringNoRules: '尚未设定定期汇入',
   recurringDeleteConfirm: '确定删除此规则？（已产生的入金记录不会删除）',
   recurringInvalidAmount: '请选择账户并输入有效金额',
-  recurringAmountTwdOptional: '台币成本（选填，有填则优先于汇率推算）',
+  recurringAmountTwdOptional: '实际新台币入账金额（选填）',
+  recurringAmountTwdHelp:
+    '外币账户：一般用「金额 × 汇率 ± 手续费」估算新台币成本；若与银行对账单上的新台币不同，请填对账单金额以覆盖换算。留空则完全按汇率计算。台币账户通常不必填。',
+  recurringNoteBadge: '定期',
 };
 
 export { zhCN };

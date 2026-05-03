@@ -700,6 +700,10 @@ export interface Translations {
     recurringDeleteConfirm: string;
     recurringInvalidAmount: string;
     recurringAmountTwdOptional: string;
+    /** 定期匯入：台幣成本欄位下方說明（外幣帳戶時優先於匯率換算） */
+    recurringAmountTwdHelp: string;
+    /** 資金列表：僅含內部標記時顯示的短標籤 */
+    recurringNoteBadge: string;
   };
   // 批次匯入模組
   batchImportModal: {

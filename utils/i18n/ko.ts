@@ -729,7 +729,10 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     recurringNoRules: '정기 규칙 없음',
     recurringDeleteConfirm: '이 규칙을 삭제할까요? (생성된 입금 내역은 유지)',
     recurringInvalidAmount: '계좌와 유효한 금액을 입력하세요',
-    recurringAmountTwdOptional: 'TWD 비용 (선택, 입력 시 환율 계산보다 우선)',
+    recurringAmountTwdOptional: '실제 TWD 입금액 (선택)',
+    recurringAmountTwdHelp:
+      '외화 계좌: 보통 금액×환율±수수료로 TWD를 추정합니다. 은행 명세서 금액이 다르면 여기 입력해 덮어씁니다. 비우면 자동 계산. TWD 계좌는 비워도 됩니다.',
+    recurringNoteBadge: '정기',
   },
   batchImportModal: {
     title: '일괄 거래 입력',

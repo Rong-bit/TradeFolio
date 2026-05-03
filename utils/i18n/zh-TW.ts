@@ -728,7 +728,10 @@ A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」
     recurringNoRules: '尚未設定定期匯入',
     recurringDeleteConfirm: '確定刪除此規則？（已產生的入金紀錄不會刪除）',
     recurringInvalidAmount: '請輸入有效帳戶與金額',
-    recurringAmountTwdOptional: '台幣成本（選填，有填則優先於匯率推算）',
+    recurringAmountTwdOptional: '實際台幣入帳金額（選填）',
+    recurringAmountTwdHelp:
+      '外幣帳戶：程式會用「金額 × 匯率 ± 手續費」估算台幣成本；若與銀行對帳單上的台幣不同，請填對帳單金額以覆蓋換算。留空則完全依匯率計算。台幣帳戶通常不必填。',
+    recurringNoteBadge: '定期',
   },
   batchImportModal: {
     title: '批次匯入交易 (Batch Import)',

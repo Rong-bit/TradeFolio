@@ -732,7 +732,10 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     recurringNoRules: 'No recurring rules yet',
     recurringDeleteConfirm: 'Delete this rule? Existing deposit entries will stay.',
     recurringInvalidAmount: 'Please select an account and enter a valid amount',
-    recurringAmountTwdOptional: 'TWD cost (optional; overrides rate-based estimate)',
+    recurringAmountTwdOptional: 'TWD amount booked (optional)',
+    recurringAmountTwdHelp:
+      'Foreign currency: we estimate TWD as amount × rate ± fees. If your bank statement shows a different TWD figure, enter it here to override. Leave blank to use the estimate. TWD accounts: usually leave blank.',
+    recurringNoteBadge: 'Recurring',
   },
   batchImportModal: {
     title: 'Batch Import Transactions',

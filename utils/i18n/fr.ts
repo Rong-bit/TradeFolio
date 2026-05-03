@@ -620,7 +620,10 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     recurringNoRules: 'Aucune règle récurrente pour le moment',
     recurringDeleteConfirm: 'Supprimer cette règle ? Les dépôts déjà créés restent.',
     recurringInvalidAmount: 'Veuillez sélectionner un compte et saisir un montant valide',
-    recurringAmountTwdOptional: 'Coût TWD (facultatif ; remplace l’estimation basée sur le cours)',
+    recurringAmountTwdOptional: 'Montant TWD réel (facultatif)',
+    recurringAmountTwdHelp:
+      'Devise étrangère : nous estimons le TWD (montant × taux ± frais). Si le relevé diffère, saisissez le TWD ici. Vide = estimation. Comptes TWD : laisser vide en général.',
+    recurringNoteBadge: 'Récurrent',
   },
   batchImportModal: {
     title: 'Import groupé de transactions',

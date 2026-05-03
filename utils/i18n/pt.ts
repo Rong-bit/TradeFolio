@@ -620,7 +620,10 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     recurringNoRules: 'Ainda sem regras recorrentes',
     recurringDeleteConfirm: 'Eliminar esta regra? Os depósitos já criados mantêm-se.',
     recurringInvalidAmount: 'Selecione uma conta e introduza um montante válido',
-    recurringAmountTwdOptional: 'Custo em TWD (opcional; substitui a estimativa por taxa)',
+    recurringAmountTwdOptional: 'Montante TWD real (opcional)',
+    recurringAmountTwdHelp:
+      'Moeda estrangeira: estimamos TWD = montante × taxa ± taxas. Se o extrato for diferente, introduza o TWD aqui. Vazio = estimativa. Contas TWD: normalmente vazio.',
+    recurringNoteBadge: 'Recorrente',
   },
   batchImportModal: {
     ...en.batchImportModal,

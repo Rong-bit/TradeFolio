@@ -645,7 +645,10 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     recurringNoRules: 'لا توجد قواعد متكررة بعد',
     recurringDeleteConfirm: 'حذف هذه القاعدة؟ سجلات الإيداع الحالية تبقى.',
     recurringInvalidAmount: 'يرجى اختيار حساب وإدخال مبلغ صالح',
-    recurringAmountTwdOptional: 'تكلفة TWD (اختياري؛ يتجاوز تقدير السعر)',
+    recurringAmountTwdOptional: 'مبلغ TWD الفعلي (اختياري)',
+    recurringAmountTwdHelp:
+      'عملة أجنبية: نُقدّر TWD = المبلغ × السعر ± الرسوم. إذا اختلف كشف الحساب، أدخل TWD هنا. فارغ = التقدير. حسابات TWD: اتركه فارغاً عادة.',
+    recurringNoteBadge: 'شهري',
   },
   batchImportModal: {
     ...en.batchImportModal,
