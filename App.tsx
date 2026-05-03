@@ -68,7 +68,7 @@ const App: React.FC = () => {
   const { rates, loadRates, saveRates, updateRates, setUsdRate, resetRates, exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cadExchangeRate, inrExchangeRate, cnyExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate } = useExchangeRates();
 
   const userPrefix = isAuthenticated && currentUser ? `tf_${currentUser}` : undefined;
-  const { transactions, accounts, cashFlows, currentPrices, priceDetails, rebalanceTargets, rebalanceEnabledItems, historicalData, loadData, resetData, importData, addTransaction, updateTransaction, removeTransaction, addBatchTransactions, clearTransactions, batchUpdateMarket, addAccount, updateAccount, removeAccount, addCashFlow, updateCashFlow, removeCashFlow, addBatchCashFlows, clearCashFlows, updatePrice, updatePricesAndDetails, updateRebalanceTargets, setRebalanceEnabledItems, saveHistoricalData } = usePortfolioData(userPrefix);
+  const { transactions, accounts, cashFlows, currentPrices, priceDetails, rebalanceTargets, rebalanceEnabledItems, historicalData, recurringDepositRules, loadData, resetData, importData, addTransaction, updateTransaction, removeTransaction, addBatchTransactions, clearTransactions, batchUpdateMarket, addAccount, updateAccount, removeAccount, addCashFlow, updateCashFlow, removeCashFlow, addBatchCashFlows, clearCashFlows, addRecurringDepositRule, updateRecurringDepositRule, removeRecurringDepositRule, setRecurringDepositRules, syncRecurringDeposits, updatePrice, updatePricesAndDetails, updateRebalanceTargets, setRebalanceEnabledItems, saveHistoricalData } = usePortfolioData(userPrefix);
 
   useLocalStorageDebouncedSimple('baseCurrency', baseCurrency, 500, userPrefix);
 
@@ -215,6 +215,11 @@ const App: React.FC = () => {
   }, [isAuthenticated, currentUser]);
 
   useEffect(() => {
+    if (!userPrefix || !isAuthenticated) return;
+    syncRecurringDeposits();
+  }, [userPrefix, isAuthenticated, recurringDepositRules, accounts, cashFlows, syncRecurringDeposits]);
+
+  useEffect(() => {
     if (!userPrefix) return;
     const timer = setTimeout(() => saveRates(rates, `tf_${currentUser}`), 500);
     return () => clearTimeout(timer);
@@ -279,7 +284,7 @@ const App: React.FC = () => {
 
   const handleExportData = async () => {
     try {
-      const d = { version:'2.0', user:currentUser, timestamp:new Date().toISOString(), transactions, accounts, cashFlows, currentPrices, priceDetails, ...rates, exchangeRate:rates.exchangeRateUsdToTwd, baseCurrency, rebalanceTargets, rebalanceEnabledItems, historicalData };
+      const d = { version:'2.0', user:currentUser, timestamp:new Date().toISOString(), transactions, accounts, cashFlows, currentPrices, priceDetails, ...rates, exchangeRate:rates.exchangeRateUsdToTwd, baseCurrency, rebalanceTargets, rebalanceEnabledItems, historicalData, recurringDepositRules };
       const blob = new Blob([JSON.stringify(d,null,2)], { type:'application/json' });
       const filename = `TradeView_${(currentUser||'guest').replace(/[^a-zA-Z0-9@._-]/g,'_')}_${new Date().toISOString().split('T')[0]}.json`;
       if (navigator.share) {
@@ -295,7 +300,7 @@ const App: React.FC = () => {
       try {
         const data = JSON.parse(e.target?.result as string);
         if (!data.transactions && !data.accounts) throw new Error('Invalid format');
-        importData({ transactions:data.transactions??[], accounts:data.accounts??[], cashFlows:data.cashFlows??[], currentPrices:data.currentPrices??{}, priceDetails:data.priceDetails??{}, rebalanceTargets:data.rebalanceTargets??{}, rebalanceEnabledItems:data.rebalanceEnabledItems??[], historicalData:data.historicalData??{} });
+        importData({ transactions:data.transactions??[], accounts:data.accounts??[], cashFlows:data.cashFlows??[], currentPrices:data.currentPrices??{}, priceDetails:data.priceDetails??{}, rebalanceTargets:data.rebalanceTargets??{}, rebalanceEnabledItems:data.rebalanceEnabledItems??[], historicalData:data.historicalData??{}, recurringDepositRules:data.recurringDepositRules??[] });
         const ru: Partial<ExchangeRateState> = {};
         const usd = data.exchangeRate ?? data.exchangeRateUsdToTwd; if (usd) ru.exchangeRateUsdToTwd = usd;
         if (data.jpyExchangeRate) ru.jpyExchangeRate = data.jpyExchangeRate;
@@ -483,7 +488,7 @@ const App: React.FC = () => {
   // ─── Context Values ────────────────────────────────────────────
   const portfolioValue = {
     transactions, accounts, cashFlows, currentPrices, priceDetails,
-    historicalData, rebalanceTargets, rebalanceEnabledItems,
+    historicalData, rebalanceTargets, rebalanceEnabledItems, recurringDepositRules,
     holdings, computedAccounts, summary, chartData,
     assetAllocation, annualPerformance, accountPerformance,
     addTransaction, updateTransaction, removeTransaction,
@@ -492,6 +497,7 @@ const App: React.FC = () => {
     addCashFlow, updateCashFlow: handleUpdateCashFlow,
     removeCashFlow: handleRemoveCashFlow,
     addBatchCashFlows, clearCashFlows: handleClearAllCashFlows,
+    addRecurringDepositRule, updateRecurringDepositRule, removeRecurringDepositRule,
     updatePrice, updatePricesAndDetails,
     saveHistoricalData: handleSaveHistoricalData,
     updateRebalanceTargets, setRebalanceEnabledItems,
