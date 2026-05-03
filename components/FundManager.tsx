@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Account, CashFlow, CashFlowType, Currency } from '../types';
+import { CashFlow, CashFlowType, Currency, RecurringDepositRule } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import BatchCashFlowModal from './BatchCashFlowModal';
@@ -9,12 +9,15 @@ import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+import { currentYearMonth } from '../utils/recurringDeposits';
 
 interface Props {}
 
 const FundManager: React.FC<Props> = () => {
   const { accounts, cashFlows, addCashFlow, updateCashFlow: onUpdate,
-    addBatchCashFlows, removeCashFlow, clearCashFlows } = usePortfolio();
+    addBatchCashFlows, removeCashFlow, clearCashFlows,
+    recurringDepositRules, addRecurringDepositRule, updateRecurringDepositRule, removeRecurringDepositRule,
+  } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { exchangeRateUsdToTwd: currentExchangeRate, jpyExchangeRate: currentJpyExchangeRate, eurExchangeRate: currentEurExchangeRate, gbpExchangeRate: currentGbpExchangeRate, hkdExchangeRate: currentHkdExchangeRate, krwExchangeRate: currentKrwExchangeRate, cadExchangeRate: currentCadExchangeRate, inrExchangeRate: currentInrExchangeRate } = rates;
   const { language } = useUI();
@@ -48,6 +51,80 @@ const FundManager: React.FC<Props> = () => {
   const [filterType, setFilterType] = useState<string>('');
   const [filterDateFrom, setFilterDateFrom] = useState<string>('');
   const [filterDateTo, setFilterDateTo] = useState<string>('');
+
+  const [recModalOpen, setRecModalOpen] = useState(false);
+  const [recEditing, setRecEditing] = useState<RecurringDepositRule | null>(null);
+  const [recDay, setRecDay] = useState('1');
+  const [recAccountId, setRecAccountId] = useState('');
+  const [recAmount, setRecAmount] = useState('');
+  const [recFee, setRecFee] = useState('');
+  const [recEx, setRecEx] = useState('');
+  const [recNote, setRecNote] = useState('');
+  const [recStartMonth, setRecStartMonth] = useState('');
+  const [recAmountTwd, setRecAmountTwd] = useState('');
+  const [recEnabled, setRecEnabled] = useState(true);
+
+  const openRecModal = (rule?: RecurringDepositRule) => {
+    if (rule) {
+      setRecEditing(rule);
+      setRecDay(String(rule.dayOfMonth));
+      setRecAccountId(rule.accountId);
+      setRecAmount(String(rule.amount));
+      setRecFee(rule.fee != null ? String(rule.fee) : '');
+      setRecEx(rule.exchangeRate != null ? String(rule.exchangeRate) : '');
+      setRecNote((rule.note ?? '').replace(/\s*__recurring:[^:]+:[^_]+__/g, '').trim());
+      setRecStartMonth(rule.startMonth ?? '');
+      setRecAmountTwd(rule.amountTWD != null ? String(rule.amountTWD) : '');
+      setRecEnabled(rule.enabled);
+    } else {
+      setRecEditing(null);
+      setRecDay('1');
+      setRecAccountId(accounts[0]?.id ?? '');
+      setRecAmount('');
+      setRecFee('');
+      setRecEx('');
+      setRecNote('');
+      setRecStartMonth('');
+      setRecAmountTwd('');
+      setRecEnabled(true);
+    }
+    setRecModalOpen(true);
+  };
+
+  const saveRecRule = (e: React.FormEvent) => {
+    e.preventDefault();
+    const numAmt = parseFloat(recAmount);
+    if (!recAccountId || !Number.isFinite(numAmt) || numAmt <= 0) {
+      alert(ff.recurringInvalidAmount);
+      return;
+    }
+    const day = Math.min(31, Math.max(1, parseInt(recDay, 10) || 1));
+    const feeNum = recFee ? parseFloat(recFee) : 0;
+    const exNum = recEx ? parseFloat(recEx) : undefined;
+    const amtTwdNum = recAmountTwd.trim() ? parseFloat(recAmountTwd) : undefined;
+    const rule: RecurringDepositRule = {
+      id: recEditing?.id ?? uuidv4(),
+      enabled: recEnabled,
+      dayOfMonth: day,
+      accountId: recAccountId,
+      amount: numAmt,
+      fee: Number.isFinite(feeNum) && feeNum > 0 ? feeNum : undefined,
+      exchangeRate: exNum !== undefined && Number.isFinite(exNum) && exNum > 0 ? exNum : undefined,
+      note: recNote.trim() || undefined,
+      amountTWD: amtTwdNum !== undefined && Number.isFinite(amtTwdNum) ? amtTwdNum : undefined,
+      startMonth: recStartMonth.trim() || undefined,
+      lastAppliedPeriod: recEditing?.lastAppliedPeriod,
+      createdMonth: recEditing?.createdMonth ?? currentYearMonth(new Date()),
+    };
+    if (recEditing) updateRecurringDepositRule(rule);
+    else addRecurringDepositRule(rule);
+    setRecModalOpen(false);
+  };
+
+  const recSelectedAccount = accounts.find(a => a.id === recAccountId);
+  const recShowExchange =
+    !!recSelectedAccount &&
+    (recSelectedAccount.currency === Currency.USD || recSelectedAccount.currency === Currency.JPY);
 
   // 當帳戶列表變更或初始化時，確保 accountId 有效
   useEffect(() => {
@@ -304,6 +381,221 @@ const FundManager: React.FC<Props> = () => {
             </div>
           </div>
       </div>
+
+      {/* 1b. 每月定期匯入 */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+          <div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-700">{ff.recurringSectionTitle}</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-2xl">{ff.recurringDisclaimer}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => openRecModal()}
+            disabled={accounts.length === 0}
+            className="shrink-0 bg-indigo-600 text-white px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {ff.recurringAddRule}
+          </button>
+        </div>
+        {recurringDepositRules.length === 0 ? (
+          <p className="text-sm text-slate-400 py-2">{ff.recurringNoRules}</p>
+        ) : (
+          <ul className="divide-y divide-slate-100 border border-slate-100 rounded-lg">
+            {recurringDepositRules.map(r => {
+              const acc = accounts.find(a => a.id === r.accountId);
+              return (
+                <li key={r.id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                  <label className="flex items-center gap-2 text-sm shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={r.enabled}
+                      onChange={() => updateRecurringDepositRule({ ...r, enabled: !r.enabled })}
+                      className="rounded border-slate-300"
+                    />
+                    <span className="text-slate-600">{ff.recurringEnabled}</span>
+                  </label>
+                  <span className="text-sm font-medium text-slate-800 flex-1">
+                    {translate('fundForm.recurringDayShort', language, {
+                      day: r.dayOfMonth,
+                      account: acc?.name ?? r.accountId,
+                      amount: r.amount.toLocaleString(),
+                      ccy: acc?.currency ?? '',
+                    })}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {r.lastAppliedPeriod
+                      ? translate('fundForm.recurringLastApplied', language, { period: r.lastAppliedPeriod })
+                      : '—'}
+                  </span>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => openRecModal(r)}
+                      className="text-indigo-600 text-sm hover:underline"
+                    >
+                      {ff.recurringEditRule}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm(ff.recurringDeleteConfirm)) removeRecurringDepositRule(r.id);
+                      }}
+                      className="text-red-600 text-sm hover:underline"
+                    >
+                      {ff.recurringDeleteRule}
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      {recModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-[55] animate-fade-in">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
+            <div className="bg-slate-900 p-3 sm:p-4 flex justify-between items-center shrink-0">
+              <h2 className="text-white font-bold text-base sm:text-lg">
+                {recEditing ? ff.recurringEditRule : ff.recurringAddRule}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setRecModalOpen(false)}
+                className="text-slate-400 hover:text-white text-2xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            <form onSubmit={saveRecRule} className="p-4 sm:p-6 overflow-y-auto space-y-3 text-sm">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={recEnabled}
+                  onChange={e => setRecEnabled(e.target.checked)}
+                  className="rounded"
+                />
+                <span>{ff.recurringEnabled}</span>
+              </label>
+              <div>
+                <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.recurringDayOfMonth}</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={31}
+                  required
+                  value={recDay}
+                  onChange={e => setRecDay(e.target.value)}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                />
+              </div>
+              <div>
+                <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.account}</label>
+                <select
+                  value={recAccountId}
+                  onChange={e => setRecAccountId(e.target.value)}
+                  required
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                >
+                  {accounts.map(a => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.currency})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-slate-700 dark:text-slate-200 font-medium">
+                  {ff.amount} ({recSelectedAccount?.currency ?? 'TWD'})
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  required
+                  value={recAmount}
+                  onChange={e => setRecAmount(e.target.value)}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                />
+              </div>
+              {recShowExchange && (
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-200 font-medium">
+                    {recSelectedAccount?.currency === Currency.USD ? ff.exchangeRateUsdTwd : ff.exchangeRateJPY}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    placeholder={
+                      recSelectedAccount?.currency === Currency.USD
+                        ? currentExchangeRate.toString()
+                        : (currentJpyExchangeRate ?? currentExchangeRate).toString()
+                    }
+                    value={recEx}
+                    onChange={e => setRecEx(e.target.value)}
+                    className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-slate-700 dark:text-slate-200 font-medium">
+                  {translate('fundForm.fees', language, { currency: baseCurrency })}{' '}
+                  <span className="text-xs font-normal text-slate-400">{ff.feesNote}</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={recFee}
+                  onChange={e => setRecFee(e.target.value)}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                />
+              </div>
+              <div>
+                <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.recurringAmountTwdOptional}</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={recAmountTwd}
+                  onChange={e => setRecAmountTwd(e.target.value)}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                />
+              </div>
+              <div>
+                <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.recurringStartMonth}</label>
+                <input
+                  type="month"
+                  value={recStartMonth}
+                  onChange={e => setRecStartMonth(e.target.value)}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                />
+                <p className="text-xs text-slate-500 mt-1">{ff.recurringStartMonthHint}</p>
+              </div>
+              <div>
+                <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.note}</label>
+                <input
+                  type="text"
+                  value={recNote}
+                  onChange={e => setRecNote(e.target.value)}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRecModalOpen(false)}
+                  className="flex-1 px-4 py-2 border border-slate-300 rounded-md"
+                >
+                  {ff.cancel}
+                </button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800">
+                  {ff.recurringSaveRule}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* 2. Filters */}
       <div className="bg-white rounded-lg shadow p-6 space-y-4">
