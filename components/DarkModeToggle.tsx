@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useUI } from '../contexts/UIContext';
 
 const DarkModeToggle: React.FC = () => {
+  const { language } = useUI();
+  const isChinese = language === 'zh-TW' || language === 'zh-CN';
   const [dark, setDark] = useState(() => {
     if (typeof window === 'undefined') return false;
     const stored = localStorage.getItem('tf-dark-mode');
@@ -26,7 +29,11 @@ const DarkModeToggle: React.FC = () => {
         ${dark ? 'bg-indigo-600' : 'bg-slate-200'}
       `}
       aria-label="Toggle dark mode"
-      title={dark ? '切換淺色模式' : '切換暗色模式'}
+      title={
+        dark
+          ? (isChinese ? '切換淺色模式' : 'Switch to light mode')
+          : (isChinese ? '切換暗色模式' : 'Switch to dark mode')
+      }
     >
       {/* Thumb */}
       <span className={`
