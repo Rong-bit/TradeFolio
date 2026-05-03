@@ -151,7 +151,6 @@ export interface Translations {
     displayCurrency: string;
     ntd: string;
     usd: string;
-    annualizedROI: string;
     portfolioHoldings: string;
     mergedDisplay: string;
     detailedDisplay: string;

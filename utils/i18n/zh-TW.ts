@@ -64,7 +64,7 @@ export const zhTW: Translations = {
     netCost: '淨投入成本',
     totalAssets: '目前總資產',
     totalPL: '總損益',
-    annualizedReturn: '真實年化（IRR）',
+    annualizedReturn: '真實年化（XIRR）',
     detail: '明細',
     includeCash: '含現金',
     detailedStatistics: '詳細統計數據',
@@ -119,7 +119,6 @@ export const zhTW: Translations = {
     unrealizedPL: '未實現損益',
     realizedPL: '已實現損益',
     dividendInterest: '累積股利/利息',
-    annualizedROI: '年化報酬率',
     displayCurrency: '顯示幣種',
     ntd: '台幣',
     usd: '美金',
@@ -302,8 +301,8 @@ export const zhTW: Translations = {
     legendSell: '賣',
     legendStockDividend: '股',
     legendCashDividend: '息',
-    legendTransferIn: '轉入',
-    legendTransferOut: '轉出',
+    legendTransferIn: '匯入持股',
+    legendTransferOut: '匯出持股',
     legendHolding: '持有中',
   },
   labels: {
@@ -543,14 +542,14 @@ TradeView 是一個支援台股與美股的資產管理工具，協助投資人�
 
 ### 交易類別
 * **Buy/Sell**: 一般買賣。
-* **Dividend**: 股票股息 (股數增加)。
-* **Cash Dividend**: 現金股息 (餘額增加)。
-* **Transfer Out (轉出)**: 股票從證券戶轉出（如轉移到其他證券戶）。
-* **Transfer In (轉入)**: 股票轉入證券戶（如從其他證券戶轉入）。
+* **股息再投入 (DRIP)**：股票股利或股息再投入，持股數增加。
+* **現金股息 (Cash)**：現金配發，帳戶餘額增加。
+* **匯出持股 (TRANSFER_OUT)**：股票自該證券戶轉出至其他證券戶。
+* **匯入持股 (TRANSFER_IN)**：股票自其他證券戶轉入該證券戶。
 
 ## 4. 常見問題 (FAQ)
 Q: 如何計算年化報酬率？
-A: 儀表板「真實年化」為資金加權年化（IRR／XIRR），依匯入／匯出紀錄與目前總資產計算；與「僅看價漲跌幅」的 CAGR 不同。資產配置模擬器內自動查詢的年化為 CAGR。
+A: 儀表板「真實年化（XIRR）」為資金加權年化，依匯入／匯出紀錄與目前總資產計算（不定期現金流）；與「僅看價漲跌幅」的 CAGR 不同。資產配置模擬器內自動查詢的年化為 CAGR。
 
 Q: 匯率如何設定？
 A: 可在右上角設定全域 USD/TWD 匯率，或在轉帳時指定當下匯率。
@@ -574,35 +573,9 @@ Q: 股價與匯率為何與按「AI聯網更新股價&匯率」得到現價為�
 A: 股價與匯率因為是抓取網頁現值，故現值會慢三分鐘至五分鐘不等，所以勿拿來當買賣的參考值，建議買賣的參考仍以証券公司為主，此軟體僅適用作統計資產功能，例如有緊急預備金、旅遊基金、退休金、定存、股債券等統計參考，並無証券交易買賣功能；另外投資有賺有賠，記得預留緊急預備金，感謝您的使用。
 
 Q: 如何登打股票轉移（從甲證券轉到乙證券）？
-A: 股票轉移需要建立兩筆交易記錄：
-   1. **轉出交易（TRANSFER_OUT）**：
-      - 日期：轉移日期
-      - 帳戶：選擇「甲證券」
-      - 市場：該股票的市場（如 TW、US）
-      - 代號：股票代號
-      - 類別：選擇「轉出 (Transfer Out)」
-      - 價格：系統會自動填入該股票的**平均成本**（可在持倉表中查看「平均成本」欄位），您也可以手動修改
-      - 數量：轉移的股數
-      - 手續費：轉移手續費（如有）
-      - 備註：可註記「轉移至乙證券」
-   
-   2. **轉入交易（TRANSFER_IN）**：
-      - 日期：與轉出交易相同的日期
-      - 帳戶：選擇「乙證券」
-      - 市場：與轉出交易相同
-      - 代號：與轉出交易相同
-      - 類別：選擇「轉入 (Transfer In)」
-      - 價格：與轉出交易相同的**平均成本**（系統會自動填入，您也可以手動修改）
-      - 數量：與轉出交易相同的股數
-      - 手續費：轉入手續費（如有）
-      - 備註：可註記「從甲證券轉入」
-   
-   **重要提醒**：
-   - 價格欄位請輸入「平均成本」，而非市價，這樣才能正確計算成本基礎
-   - 系統會在您選擇轉入/轉出類型並輸入股票代號時，自動填入該股票的平均成本
-   - 兩筆交易的價格、數量必須相同
-   - 手續費會從對應帳戶的現金餘額扣除
-   - 轉移後，股票會從甲證券的持倉中移除，並加入乙證券的持倉
+A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」→ 交易帳戶選來源（甲證券）→ 填日期、市場、代號、股數 → 於畫面選擇**匯入持股目標帳戶**（乙證券）→ 確認儲存。系統會**同時建立**「匯出持股」與「匯入持股」兩筆紀錄，不必再手動新增第二筆；自動建立的匯入持股筆**手續費為 0**，有手續費時請在**匯出持股**這筆填寫。價格預設為該帳戶該標的平均成本，請以成本為準、勿用市價。
+
+**提醒**：轉移後持倉會自甲方減少並計入乙方；兩邊現金餘額會依手續費各自更新。
 
 ## 5. 重要免責聲明
 
@@ -682,12 +655,12 @@ A: 股票轉移需要建立兩筆交易記錄：
     typeTransferIn: '匯入持股 (Transfer In)',
     typeTransferOut: '匯出持股 (Transfer Out)',
     transferInSectionTitle: '匯入持股資訊',
-    targetAccount: '目標交易帳戶',
-    targetAccountPlaceholder: '請選擇目標帳戶...',
+    targetAccount: '匯入持股目標帳戶',
+    targetAccountPlaceholder: '請選擇匯入持股之帳戶…',
     placeholderPrice: '單價',
     placeholderQuantity: '股息總額',
     errorNoAccount: '請先建立並選擇證券帳戶',
-    errorNoTargetAccount: '請選擇目標交易帳戶',
+    errorNoTargetAccount: '請選擇匯入持股目標帳戶',
     errorSameTransferAccount: '來源帳戶與目標帳戶不可相同',
     errorInsufficientTransferOutQuantity: '匯出股數超過目前可用持股',
     availableTransferOutQuantity: '可用：{quantity} {shares}',
@@ -749,7 +722,7 @@ A: 股票轉移需要建立兩筆交易記錄：
     tabPaste: '直接貼上文字 (Paste)',
     tabUpload: '上傳 CSV 檔案 (Upload)',
     pasteLabel: '請將 Excel 或表格資料複製貼上於此 (支援格式: 日期 | 買/賣/股息/轉移 | 代號 | 價格 | 數量 | 手續費 | 總金額)',
-    pasteFormat: '💡 「轉移」類別：若數量為負視為轉出，正則視為轉入。',
+    pasteFormat: '💡 「轉移」類別：若數量為負視為匯出持股，正則視為匯入持股。',
     pasteTip: '',
     parseButton: '解析貼上內容',
     uploadLabel: '支援 CSV 匯出檔：嘉信 (Charles Schwab)、Firstrade',

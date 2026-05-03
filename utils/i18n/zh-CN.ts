@@ -19,7 +19,7 @@ zhCN.dashboard = {
   totalPLAmount: '总损益金额',
   accumulatedCashDividends: '累积配息现金',
   accumulatedStockDividends: '累积股息再投入',
-  annualizedReturn: '真实年化（IRR）',
+  annualizedReturn: '真实年化（XIRR）',
   annualizedReturnRate: '总市值年化报酬率',
   avgExchangeRate: '平均换汇成本',
   currentExchangeRate: '目前汇率',
@@ -60,7 +60,6 @@ zhCN.dashboard = {
   unrealizedPL: '未实现损益',
   realizedPL: '已实现损益',
   dividendInterest: '累计股息/利息',
-  annualizedROI: '年化报酬率',
   displayCurrency: '显示币种',
   ntd: '台币',
   usd: '美金',
@@ -281,8 +280,8 @@ zhCN.stockTimeline = {
   legendSell: '卖',
   legendStockDividend: '股',
   legendCashDividend: '息',
-  legendTransferIn: '转入',
-  legendTransferOut: '转出',
+  legendTransferIn: '汇入持股',
+  legendTransferOut: '汇出持股',
   legendHolding: '持有中',
 };
 zhCN.holdings = { ...zhTW.holdings, portfolioHoldings: '资产配置明细', mergedDisplay: '合并显示 (依标的)', detailedDisplay: '明细显示 (依账户)', aiUpdatePrices: 'AI 联网更新股价 & 汇率', aiSearching: 'AI 搜寻中...', market: '市场', ticker: '代号', quantity: '数量', currentPrice: '现价', weight: '比重', cost: '总成本', marketValue: '市值', profitLoss: '损益', annualizedROI: '年化', dailyChange: '今日涨跌', avgPrice: '均价', noHoldings: '尚无持仓资料，请新增交易。' };
@@ -423,14 +422,14 @@ TradeView 是一个支持台股与美股的资产管理工具，协助投资人�
 
 ### 交易类别
 * **Buy/Sell**：一般买卖。
-* **Dividend**：股票股息（股数增加）。
-* **Cash Dividend**：现金股息（余额增加）。
-* **Transfer Out (转出)**：股票从证券户转出（如转移到其他证券户）。
-* **Transfer In (转入)**：股票转入证券户（如从其他证券户转入）。
+* **股息再投入 (DRIP)**：股票股利或股息再投入，持股数增加。
+* **现金股息 (Cash)**：现金派发，账户余额增加。
+* **汇出持股 (TRANSFER_OUT)**：股票自该证券户转出至其他证券户。
+* **汇入持股 (TRANSFER_IN)**：股票自其他证券户转入该证券户。
 
 ## 4. 常见问题 (FAQ)
 Q: 如何计算年化报酬率？
-A: 仪表板「真实年化」为资金加权年化（IRR／XIRR），依汇入／汇出纪录与目前总资产计算；与「仅看价涨跌」的 CAGR 不同。资产配置模拟器内自动查询的年化为 CAGR。
+A: 仪表板「真实年化（XIRR）」为资金加权年化，依汇入／汇出纪录与目前总资产计算（不定期现金流）；与「仅看价涨跌」的 CAGR 不同。资产配置模拟器内自动查询的年化为 CAGR。
 
 Q: 汇率如何设定？
 A: 可在右上角设定全域 USD/TWD 汇率，或在转账时指定当下汇率。
@@ -454,35 +453,9 @@ Q: 股价与汇率为何与按「AI 联网更新股价与汇率」得到的现�
 A: 股价与汇率因抓取网页现值，故现值会延迟三至五分钟不等，请勿作为买卖参考，建议买卖仍以证券公司为主。本软件仅适合作统计资产功能，如紧急预备金、旅游基金、退休金、定存、股债券等统计参考，并无证券交易买卖功能；另外投资有赚有赔，请预留紧急预备金，感谢您的使用。
 
 Q: 如何登打股票转移（从甲证券转到乙证券）？
-A: 股票转移需要建立两笔交易记录：
-   1. **转出交易（TRANSFER_OUT）**：
-      - 日期：转移日期
-      - 账户：选择「甲证券」
-      - 市场：该股票的市场（如 TW、US）
-      - 代号：股票代号
-      - 类别：选择「转出 (Transfer Out)」
-      - 价格：系统会自动填入该股票的**平均成本**（可在持仓表中查看「平均成本」栏位），您也可以手动修改
-      - 数量：转移的股数
-      - 手续费：转移手续费（如有）
-      - 备注：可注记「转移至乙证券」
-   
-   2. **转入交易（TRANSFER_IN）**：
-      - 日期：与转出交易相同的日期
-      - 账户：选择「乙证券」
-      - 市场：与转出交易相同
-      - 代号：与转出交易相同
-      - 类别：选择「转入 (Transfer In)」
-      - 价格：与转出交易相同的**平均成本**（系统会自动填入，您也可以手动修改）
-      - 数量：与转出交易相同的股数
-      - 手续费：转入手续费（如有）
-      - 备注：可注记「从甲证券转入」
-   
-   **重要提醒**：
-   - 价格栏位请输入「平均成本」，而非市价，这样才能正确计算成本基础
-   - 系统会在您选择转入/转出类型并输入股票代号时，自动填入该股票的平均成本
-   - 两笔交易的价格、数量必须相同
-   - 手续费会从对应账户的现金余额扣除
-   - 转移后，股票会从甲证券的持仓中移除，并加入乙证券的持仓
+A: **建议（一次完成）**：「记一笔」→ 类别选「汇出持股」→ 交易账户选来源（甲证券）→ 填日期、市场、代号、股数 → 在界面选择**汇入持股目标账户**（乙证券）→ 确认保存。系统会**同时建立**汇出持股与汇入持股两笔记录，不必再手动新增第二笔；自动建立的汇入持股笔**手续费为 0**，有手续费时请在**汇出持股**这笔填写。价格默认为该户该标的平均成本，请以成本为准、勿用市价。
+
+**提醒**：转移后持仓会自甲方减少并计入乙方；两边现金余额会依手续费各自更新。
 
 ## 5. 重要免责声明
 
@@ -515,7 +488,7 @@ zhCN.batchImportModal = {
   tabPaste: '直接贴上文字 (Paste)',
   tabUpload: '上传 CSV 文件 (Upload)',
   pasteLabel: '请将 Excel 或表格数据复制贴于此 (支持格式: 日期 | 买/卖/股息/转移 | 代号 | 价格 | 数量 | 手续费 | 总金额)',
-  pasteFormat: '💡 「转移」类别：若数量为负视为转出，正则视为转入。',
+  pasteFormat: '💡 「转移」类别：若数量为负视为汇出持股，正则视为汇入持股。',
   pasteTip: '',
   parseButton: '解析贴上内容',
   uploadLabel: '支持 CSV 汇出档：嘉信 (Charles Schwab)、Firstrade',

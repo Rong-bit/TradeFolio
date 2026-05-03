@@ -13,7 +13,7 @@ export const pt: Translations = {
     netCost: 'Investimento líquido',
     totalAssets: 'Patrimônio total',
     totalPL: 'Lucro/Perda',
-    annualizedReturn: 'Retorno anualizado (IRR)',
+    annualizedReturn: 'Retorno anualizado (XIRR)',
     detail: 'Detalhe',
     includeCash: 'Incl. Dinheiro',
     detailedStatistics: 'Estatísticas Detalhadas',
@@ -61,7 +61,6 @@ export const pt: Translations = {
     unrealizedPL: 'P/L Não Realizado',
     realizedPL: 'P/L Realizado',
     dividendInterest: 'Dividendos/Juros',
-    annualizedROI: 'ROI Anualizado',
     displayCurrency: 'Moeda de Exibição',
     ntd: 'Dólar de Taiwan',
     usd: 'Dólar Americano',
@@ -433,8 +432,8 @@ TradeView é uma ferramenta de gestão de ativos para ações de Taiwan e EUA qu
 
 ### Tipos de Transações
 * **Buy/Sell**: Compra/venda geral.
-* **Dividend**: Dividendo em ações (o número de ações aumenta).
-* **Cash Dividend**: Dividendo em dinheiro (o saldo aumenta).
+* **Reinvestimento de dividendos (DRIP)**: aumenta o número de ações (dividendo em ações ou reinvestimento).
+* **Dividendo em dinheiro**: crédito em dinheiro; o saldo aumenta.
 * **Transfer Out (Saída)**: Transferência de ações de uma conta de corretagem (por exemplo, transferência para outra conta de corretagem).
 * **Transfer In (Entrada)**: Transferência de ações para uma conta de corretagem (por exemplo, transferência de outra conta de corretagem).
 
@@ -464,35 +463,9 @@ P: Por que os preços das ações e as taxas de câmbio diferem dos preços atua
 R: Como os preços das ações e as taxas de câmbio são obtidos a partir dos valores atuais das páginas web, os valores atuais podem estar atrasados de três a cinco minutos. Portanto, não os use como valores de referência para compra e venda. É recomendado referir-se principalmente a empresas de valores mobiliários para compra e venda. Este software é adequado apenas para funções estatísticas de ativos, como reservas de emergência, fundos de viagem, fundos de reforma, depósitos a prazo, ações e obrigações, etc. Não tem funções de negociação de valores mobiliários. Além disso, os investimentos têm ganhos e perdas. Lembre-se de reservar reservas de emergência. Obrigado pelo seu uso.
 
 P: Como registar transferências de ações (da Corretora A para a Corretora B)?
-R: As transferências de ações requerem a criação de dois registos de transação:
-   1. **Transação de Saída (TRANSFER_OUT)**:
-      - Data: Data da transferência
-      - Conta: Selecione "Corretora A"
-      - Mercado: O mercado da ação (por exemplo, TW, US)
-      - Símbolo: Símbolo da ação
-      - Tipo: Selecione "Saída (Transfer Out)"
-      - Preço: O sistema preencherá automaticamente o**custo médio**da ação (pode visualizá-lo na coluna "Custo médio" na tabela de posições). Também pode modificá-lo manualmente
-      - Quantidade: Número de ações a transferir
-      - Taxas: Taxas de transferência (se houver)
-      - Nota: Pode anotar "Transferência para Corretora B"
-   
-   2. **Transação de Entrada (TRANSFER_IN)**:
-      - Data: Mesma data da transação de saída
-      - Conta: Selecione "Corretora B"
-      - Mercado: Igual à transação de saída
-      - Símbolo: Igual à transação de saída
-      - Tipo: Selecione "Entrada (Transfer In)"
-      - Preço: Mesmo**custo médio**que a transação de saída (o sistema preencherá automaticamente, também pode modificar manualmente)
-      - Quantidade: Igual à transação de saída
-      - Taxas: Taxas de entrada (se houver)
-      - Nota: Pode anotar "Transferido da Corretora A"
-   
-   **Notas importantes**:
-   - Por favor, introduza o "custo médio" no campo de preço, não o preço de mercado, para garantir o cálculo correto da base de custo
-   - O sistema preencherá automaticamente o custo médio quando selecionar o tipo Entrada/Saída e introduzir o símbolo da ação
-   - O preço e a quantidade de ambas as transações devem ser iguais
-   - As taxas serão deduzidas do saldo de dinheiro da conta correspondente
-   - Após a transferência, a ação será removida das posições da Corretora A e adicionada às posições da Corretora B
+R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → conta de origem (A) → data, mercado, símbolo, quantidade → escolher **conta de destino** (B) → confirmar. A aplicação grava **TRANSFER_OUT e TRANSFER_IN em par**—não precisa do segundo lançamento manual. A entrada automática tem **taxas = 0**; indique **taxas na Saída**. Preço predefinido = custo médio (não o preço de mercado).
+
+**Após a transferência**: posições saem de A e entram em B; saldos em dinheiro atualizam conforme as taxas.
 
 ## 5. Avisos legais importantes
 

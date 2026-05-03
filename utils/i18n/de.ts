@@ -12,7 +12,7 @@ export const de: Translations = {
     netCost: 'Nettokosten',
     totalAssets: 'Gesamtvermögen',
     totalPL: 'Gewinn/Verlust',
-    annualizedReturn: 'Annualisierte Rendite (IRR)',
+    annualizedReturn: 'Annualisierte Rendite (XIRR)',
     detail: 'Details',
     includeCash: 'Inkl. Bargeld',
     detailedStatistics: 'Detaillierte Statistiken',
@@ -60,7 +60,6 @@ export const de: Translations = {
     unrealizedPL: 'Nicht real. G/V',
     realizedPL: 'Real. G/V',
     dividendInterest: 'Div./Zinsen',
-    annualizedROI: 'Annualisierte ROI',
     displayCurrency: 'Anzeigewährung',
     ntd: 'Taiwan-Dollar',
     usd: 'US-Dollar',
@@ -405,14 +404,14 @@ TradeView ist ein Vermögensverwaltungstool für Taiwan- und US-Aktien, das Anle
 
 ### Transaktionstypen
 * **Buy/Sell**: Allgemeine Käufe/Verkäufe.
-* **Dividend**: Aktiendividende (Anzahl der Aktien erhöht sich).
-* **Cash Dividend**: Bardividende (Guthaben erhöht sich).
+* **Dividenden-Reinvestition (DRIP)**: Erhöht die Stückzahl (Aktiendividende/Reinvestition).
+* **Bardividende**: Geld wird gutgeschrieben; Kontostand steigt.
 * **Transfer Out (Ausbuchung)**: Aktienübertragung aus einem Depotkonto (z.B. Übertragung zu einem anderen Depotkonto).
 * **Transfer In (Einbuchung)**: Aktienübertragung in ein Depotkonto (z.B. Übertragung von einem anderen Depotkonto).
 
 ## 4. Häufig gestellte Fragen (FAQ)
 Q: Wie wird die annualisierte Rendite berechnet?
-A: Die „Annualisierte Rendite (IRR)" im Dashboard ist eine geldgewichtete IRR/XIRR aus Ein-/Auszahlungen und aktuellem Gesamtvermögen—nicht dasselbe wie eine rein preisbasierte CAGR. Der Asset-Allokations-Simulator verwendet bei Auto-Abfrage CAGR.
+A: Die „Annualisierte Rendite (XIRR)" im Dashboard ist eine geldgewichtete Rendite aus datierten Ein-/Auszahlungen und aktuellem Gesamtvermögen—nicht dasselbe wie eine rein preisbasierte CAGR. Der Asset-Allokations-Simulator verwendet bei Auto-Abfrage CAGR.
 
 Q: Wie wird der Wechselkurs festgelegt?
 A: Sie können den globalen USD/TWD-Wechselkurs oben rechts festlegen oder beim Überweisen den aktuellen Wechselkurs angeben.
@@ -436,35 +435,9 @@ Q: Warum unterscheiden sich Aktienkurse und Wechselkurse von den aktuellen Preis
 A: Da Aktienkurse und Wechselkurse von Webseiten aktueller Werte abgerufen werden, können die aktuellen Werte um drei bis fünf Minuten verzögert sein. Verwenden Sie sie daher nicht als Referenzwerte für Kauf und Verkauf. Es wird empfohlen, sich bei Kauf und Verkauf hauptsächlich auf Wertpapierfirmen zu beziehen. Diese Software eignet sich nur für statistische Vermögensfunktionen wie Notfallreserven, Reisefonds, Rentenfonds, Festgeld, Aktien und Anleihen usw. Sie hat keine Wertpapierhandelsfunktionen. Außerdem haben Investitionen Gewinne und Verluste. Denken Sie daran, Notfallreserven bereitzustellen. Vielen Dank für Ihre Nutzung.
 
 Q: Wie zeichnet man Aktienübertragungen (von Depot A zu Depot B) auf?
-A: Aktienübertragungen erfordern die Erstellung von zwei Transaktionsaufzeichnungen:
-   1. **Ausbuchungstransaktion (TRANSFER_OUT)**:
-      - Datum: Übertragungsdatum
-      - Konto: Wählen Sie "Depot A"
-      - Markt: Der Markt der Aktie (z.B. TW, US)
-      - Symbol: Aktiensymbol
-      - Typ: Wählen Sie "Ausbuchung (Transfer Out)"
-      - Preis: Das System füllt automatisch die**durchschnittlichen Kosten**der Aktie aus (Sie können sie in der Spalte "Durchschnittskosten" in der Bestandstabelle anzeigen). Sie können sie auch manuell ändern
-      - Menge: Anzahl der zu übertragenden Aktien
-      - Gebühren: Übertragungsgebühren (falls vorhanden)
-      - Notiz: Sie können "Übertragung zu Depot B" notieren
-   
-   2. **Einbuchungstransaktion (TRANSFER_IN)**:
-      - Datum: Gleiches Datum wie die Ausbuchungstransaktion
-      - Konto: Wählen Sie "Depot B"
-      - Markt: Gleich wie Ausbuchungstransaktion
-      - Symbol: Gleich wie Ausbuchungstransaktion
-      - Typ: Wählen Sie "Einbuchung (Transfer In)"
-      - Preis: Gleiche**durchschnittliche Kosten**wie Ausbuchungstransaktion (System füllt automatisch aus, Sie können auch manuell ändern)
-      - Menge: Gleich wie Ausbuchungstransaktion
-      - Gebühren: Einbuchungsgebühren (falls vorhanden)
-      - Notiz: Sie können "Von Depot A übertragen" notieren
-   
-   **Wichtige Hinweise**:
-   - Bitte geben Sie die "durchschnittlichen Kosten" im Preis Feld ein, nicht den Marktpreis, um die korrekte Kostenbasis zu berechnen
-   - Das System füllt automatisch die durchschnittlichen Kosten aus, wenn Sie den Typ Einbuchung/Ausbuchung auswählen und das Aktiensymbol eingeben
-   - Preis und Menge beider Transaktionen müssen gleich sein
-   - Gebühren werden vom entsprechenden Kontoguthaben abgezogen
-   - Nach der Übertragung wird die Aktie aus den Beständen von Depot A entfernt und zu den Beständen von Depot B hinzugefügt
+A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out** → Konto = Quelle (A) → Datum, Markt, Symbol, Stückzahl → **Zielkonto** (B) wählen → speichern. Die App legt **TRANSFER_OUT und TRANSFER_IN paarweise** an—kein zweiter manueller Eintrag nötig. Die automatisch erzeugte Einbuchung hat **Gebühren = 0**; Übertragungsgebühren nur bei der **Ausbuchung** erfassen. Preis = durchschnittliche Anschaffungskosten (nicht Marktpreis).
+
+**Hinweis**: Bestände wandern von A nach B; Kontostände werden gebührenbedingt je Konto angepasst.
 
 ## 5. Wichtige Haftungsausschlüsse
 

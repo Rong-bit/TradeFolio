@@ -13,7 +13,7 @@ export const fr: Translations = {
     netCost: 'Investi net',
     totalAssets: 'Actif total',
     totalPL: 'Gain/Perte',
-    annualizedReturn: 'Rendement annualisé (IRR)',
+    annualizedReturn: 'Rendement annualisé (XIRR)',
     detail: 'Détail',
     includeCash: 'Incl. Espèces',
     detailedStatistics: 'Statistiques Détaillées',
@@ -61,7 +61,6 @@ export const fr: Translations = {
     unrealizedPL: 'P/L non realise',
     realizedPL: 'P/L realise',
     dividendInterest: 'Div./Interets',
-    annualizedROI: 'ROI Annualisé',
     displayCurrency: 'Devise d\'Affichage',
     ntd: 'Dollar taïwanais',
     usd: 'Dollar américain',
@@ -433,8 +432,8 @@ TradeView est un outil de gestion d'actifs pour actions Taiwan et US qui aide le
 
 ### Types de transactions
 * **Buy/Sell** : Achat/vente général.
-* **Dividend** : Dividende en actions (le nombre d'actions augmente).
-* **Cash Dividend** : Dividende en espèces (le solde augmente).
+* **Réinvestissement des dividendes (DRIP)** : augmente le nombre d'actions (dividende en actions ou réinvestissement).
+* **Dividende en espèces** : crédit en espèces ; le solde augmente.
 * **Transfer Out (Sortie)** : Transfert d'actions hors d'un compte de courtage (par exemple, transfert vers un autre compte de courtage).
 * **Transfer In (Entrée)** : Transfert d'actions dans un compte de courtage (par exemple, transfert depuis un autre compte de courtage).
 
@@ -464,35 +463,9 @@ Q : Pourquoi les prix des actions et les taux de change diffèrent-ils des prix 
 R : Comme les prix des actions et les taux de change sont récupérés à partir des valeurs actuelles des pages Web, les valeurs actuelles peuvent être retardées de trois à cinq minutes. Ne les utilisez donc pas comme valeurs de référence pour l'achat et la vente. Il est recommandé de se référer principalement aux sociétés de valeurs mobilières pour l'achat et la vente. Ce logiciel convient uniquement aux fonctions statistiques d'actifs telles que les réserves d'urgence, les fonds de voyage, les fonds de retraite, les dépôts à terme, les actions et obligations, etc. Il n'a pas de fonctions de trading de valeurs mobilières. De plus, les investissements ont des gains et des pertes. N'oubliez pas de prévoir des réserves d'urgence. Merci de votre utilisation.
 
 Q : Comment enregistrer les transferts d'actions (du courtier A au courtier B) ?
-R : Les transferts d'actions nécessitent la création de deux enregistrements de transaction :
-   1. **Transaction de sortie (TRANSFER_OUT)** :
-      - Date : Date du transfert
-      - Compte : Sélectionnez "Courtier A"
-      - Marché : Le marché de l'action (par exemple, TW, US)
-      - Symbole : Symbole de l'action
-      - Type : Sélectionnez "Sortie (Transfer Out)"
-      - Prix : Le système remplira automatiquement le**coût moyen**de l'action (vous pouvez le voir dans la colonne "Coût moyen" du tableau des positions). Vous pouvez également le modifier manuellement
-      - Quantité : Nombre d'actions à transférer
-      - Frais : Frais de transfert (le cas échéant)
-      - Note : Vous pouvez noter "Transfert vers le courtier B"
-   
-   2. **Transaction d'entrée (TRANSFER_IN)** :
-      - Date : Même date que la transaction de sortie
-      - Compte : Sélectionnez "Courtier B"
-      - Marché : Identique à la transaction de sortie
-      - Symbole : Identique à la transaction de sortie
-      - Type : Sélectionnez "Entrée (Transfer In)"
-      - Prix : Même**coût moyen**que la transaction de sortie (le système remplira automatiquement, vous pouvez également modifier manuellement)
-      - Quantité : Identique à la transaction de sortie
-      - Frais : Frais d'entrée (le cas échéant)
-      - Note : Vous pouvez noter "Transféré depuis le courtier A"
-   
-   **Notes importantes** :
-   - Veuillez entrer le "coût moyen" dans le champ prix, pas le prix du marché, pour garantir un calcul correct de la base de coût
-   - Le système remplira automatiquement le coût moyen lorsque vous sélectionnez le type Entrée/Sortie et entrez le symbole de l'action
-   - Le prix et la quantité des deux transactions doivent être identiques
-   - Les frais seront déduits du solde de trésorerie du compte correspondant
-   - Après le transfert, l'action sera retirée des positions du courtier A et ajoutée aux positions du courtier B
+R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sortie** → compte source (A) → date, marché, symbole, quantité → choisir le **compte cible** (B) → valider. L'application crée **TRANSFER_OUT et TRANSFER_IN ensemble**—pas besoin d'ajouter la 2e ligne à la main. L'entrée auto a **frais = 0** ; saisissez les **frais sur la sortie**. Prix par défaut = coût moyen (pas le cours du marché).
+
+**Après transfert** : positions déplacées de A vers B ; soldes espèces mis à jour selon les frais.
 
 ## 5. Avertissements importants
 

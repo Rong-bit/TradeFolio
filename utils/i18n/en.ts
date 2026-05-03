@@ -65,7 +65,7 @@ export const en: Translations = {
     netCost: 'Net Cost',
     totalAssets: 'Total Assets',
     totalPL: 'Total P/L',
-    annualizedReturn: 'Annualized Return (IRR)',
+    annualizedReturn: 'Annualized Return (XIRR)',
     detail: 'Detail',
     includeCash: 'Incl. Cash',
     detailedStatistics: 'Detailed Statistics',
@@ -121,7 +121,6 @@ export const en: Translations = {
     unrealizedPL: 'Unrealized P/L',
     realizedPL: 'Realized P/L',
     dividendInterest: 'Div/Interest',
-    annualizedROI: 'Annualized ROI',
     displayCurrency: 'Display Currency',
     ntd: 'NTD',
     usd: 'USD',
@@ -547,14 +546,14 @@ TradeView is an asset management tool that supports Taiwan and US stocks, helpin
 
 ### Transaction Types
 * **Buy/Sell**: General buy/sell transactions.
-* **Dividend**: Stock dividend (number of shares increases).
-* **Cash Dividend**: Cash dividend (balance increases).
+* **Dividend Reinvestment (DRIP)**: Increases share count (stock dividend / reinvestment).
+* **Cash Dividend**: Cash credited; account balance increases.
 * **Transfer Out**: Stock transfer out from a brokerage account (e.g., transferring to another brokerage account).
 * **Transfer In**: Stock transfer into a brokerage account (e.g., transferring from another brokerage account).
 
 ## 4. Frequently Asked Questions (FAQ)
 Q: How is the annualized return rate calculated?
-A: Dashboard “Annualized Return (IRR)” is a money-weighted annualized return (IRR/XIRR) from deposits/withdrawals and current total assets—not the same as price-only CAGR. The asset allocation simulator’s auto-fetched rate uses CAGR.
+A: Dashboard “Annualized Return (XIRR)” is a money-weighted annualized return from dated deposits/withdrawals and current total assets—not the same as price-only CAGR. The asset allocation simulator’s auto-fetched rate uses CAGR.
 
 Q: How to set the exchange rate?
 A: You can set the global USD/TWD exchange rate in the top right corner, or specify the current exchange rate when transferring funds.
@@ -578,35 +577,9 @@ Q: Why are stock prices and exchange rates different from the current prices obt
 A: Stock prices and exchange rates are scraped from web current values, so the current values may lag by three to five minutes. Therefore, do not use them as references for buying and selling. It is recommended to use securities companies as the main reference for buying and selling. This software is only suitable for statistical asset functions, such as emergency funds, travel funds, retirement funds, fixed deposits, stocks and bonds, etc. It does not have securities trading functions. Additionally, investments have profits and losses. Remember to reserve emergency funds. Thank you for using.
 
 Q: How to record stock transfers (from Brokerage A to Brokerage B)?
-A: Stock transfers require creating two transaction records:
-   1. **Transfer Out Transaction (TRANSFER_OUT)**:
-      - Date: Transfer date
-      - Account: Select "Brokerage A"
-      - Market: The stock's market (e.g., TW, US)
-      - Ticker: Stock ticker
-      - Type: Select "Transfer Out"
-      - Price: The system will automatically fill in the stock's **average cost** (you can view it in the "Avg Cost" column in the holdings table), or you can manually modify it
-      - Quantity: Number of shares to transfer
-      - Fees: Transfer fees (if any)
-      - Note: You can note "Transferring to Brokerage B"
-   
-   2. **Transfer In Transaction (TRANSFER_IN)**:
-      - Date: Same date as the transfer out transaction
-      - Account: Select "Brokerage B"
-      - Market: Same as transfer out transaction
-      - Ticker: Same as transfer out transaction
-      - Type: Select "Transfer In"
-      - Price: Same **average cost** as transfer out transaction (system will automatically fill it in, or you can manually modify it)
-      - Quantity: Same as transfer out transaction
-      - Fees: Transfer-in fees (if any)
-      - Note: You can note "Transferred from Brokerage A"
-   
-   **Important Notes**:
-   - Please enter the "average cost" in the price field, not the market price, to ensure correct cost basis calculation
-   - The system will automatically fill in the average cost when you select Transfer In/Out type and enter the stock ticker
-   - The price and quantity of both transactions must be the same
-   - Fees will be deducted from the corresponding account's cash balance
-   - After the transfer, the stock will be removed from Brokerage A's holdings and added to Brokerage B's holdings
+A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → account = source (A) → date, market, ticker, quantity → choose **Target brokerage account** (B) → confirm. The app saves **both** a TRANSFER_OUT and a paired TRANSFER_IN for you—no need to add the second leg manually. The auto-created Transfer In has **fees = 0**; enter any transfer **fees on the Transfer Out** row. Price defaults to average cost—use cost basis, not market price.
+
+**Note**: Holdings move from A to B; each account's cash balance updates according to fees.
 
 ## 5. Important Disclaimers
 
