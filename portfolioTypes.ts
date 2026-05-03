@@ -98,6 +98,22 @@ export interface CashFlow {
   category?: CashFlowCategory; // 資金用途類別
 }
 
+export interface RecurringDepositRule {
+  id: string;
+  enabled: boolean;
+  dayOfMonth: number;
+  accountId: string;
+  amount: number;
+  fee?: number;
+  note?: string;
+  category?: CashFlowCategory;
+  exchangeRate?: number;
+  amountTWD?: number;
+  startMonth?: string;
+  lastAppliedPeriod?: string;
+  createdMonth?: string;
+}
+
 export interface Transaction {
   id: string;
   date: string; // ISO Date string
