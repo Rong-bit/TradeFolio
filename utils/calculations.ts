@@ -926,13 +926,17 @@ export const generateAdvancedChartData = (
   return data;
 };
 
-export const formatCurrency = (val: number, currency: string): string => {
+export const formatCurrency = (
+  val: number,
+  currency: string,
+  locale: string = 'zh-TW'
+): string => {
   // 將 -0 或接近 0 的值轉換為 0，避免顯示 "-0" 或 "-$0.00"
   const normalizedVal = Math.abs(val) < 0.0001 ? 0 : val;
-  
+
   try {
     if (!currency || currency.trim() === '' || currency.length !== 3) {
-      return new Intl.NumberFormat('zh-TW', {
+      return new Intl.NumberFormat(locale, {
         style: 'decimal',
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
@@ -944,7 +948,7 @@ export const formatCurrency = (val: number, currency: string): string => {
     // TWD, JPY, KRW: 0 decimals
     const twoDecimals = ['USD', 'EUR', 'GBP', 'HKD'].includes(currency);
 
-    return new Intl.NumberFormat('zh-TW', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: twoDecimals ? 2 : 0,
