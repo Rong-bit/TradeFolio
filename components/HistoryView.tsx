@@ -58,6 +58,7 @@ const HistoryView: React.FC<Props> = ({
   const { transactions, accounts, cashFlows } = usePortfolio();
   const { language } = useUI();
   const tr = t(language);
+  const isChinese = language === 'zh-TW' || language === 'zh-CN';
 
   return (
     <>
@@ -155,7 +156,7 @@ const HistoryView: React.FC<Props> = ({
               type="text"
               value={filterTicker}
               onChange={e => setFilterTicker(e.target.value)}
-              placeholder="例如: 0050, AAPL"
+              placeholder={isChinese ? '例如: 0050, AAPL' : 'e.g. 0050, AAPL'}
               className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${FORM_FIELD_THEME}`}
             />
           </div>
