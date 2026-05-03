@@ -704,7 +704,7 @@ export interface Translations {
     recurringDeleteConfirm: string;
     recurringInvalidAmount: string;
     recurringAmountTwdOptional: string;
-    /** 定期匯入：台幣成本欄位下方說明（外幣帳戶時優先於匯率換算） */
+    /** 定期匯入：實際入帳金額（選填）欄位下方說明（可覆蓋依匯率換算之成本） */
     recurringAmountTwdHelp: string;
     /** 資金列表：僅含內部標記時顯示的短標籤 */
     recurringNoteBadge: string;

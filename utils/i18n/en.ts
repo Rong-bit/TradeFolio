@@ -737,7 +737,7 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     recurringInvalidAmount: 'Please select an account and enter a valid amount',
     recurringAmountTwdOptional: 'TWD amount booked (optional)',
     recurringAmountTwdHelp:
-      'Foreign currency: we estimate TWD as amount × rate ± fees. If your bank statement shows a different TWD figure, enter it here to override. Leave blank to use the estimate. TWD accounts: usually leave blank.',
+      'Foreign currency: we estimate cost as amount × rate + fees. If your bank statement amount differs, enter the statement figure to override the conversion. Leave blank to rely entirely on the exchange rate.',
     recurringNoteBadge: 'Recurring',
   },
   batchImportModal: {

@@ -732,7 +732,7 @@ A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」
     recurringInvalidAmount: '請輸入有效帳戶與金額',
     recurringAmountTwdOptional: '實際台幣入帳金額（選填）',
     recurringAmountTwdHelp:
-      '外幣帳戶：程式會用「金額 × 匯率 ± 手續費」估算台幣成本；若與銀行對帳單上的台幣不同，請填對帳單金額以覆蓋換算。留空則完全依匯率計算。台幣帳戶通常不必填。',
+      '外幣帳戶：程式會用「金額 × 匯率 + 手續費」估算成本；若與銀行對帳單上的數額不同，請填對帳單金額以覆蓋換算。留空則完全依匯率計算。',
     recurringNoteBadge: '定期',
   },
   batchImportModal: {

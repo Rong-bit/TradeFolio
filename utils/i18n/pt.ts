@@ -624,7 +624,7 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     recurringInvalidAmount: 'Selecione uma conta e introduza um montante válido',
     recurringAmountTwdOptional: 'Montante TWD real (opcional)',
     recurringAmountTwdHelp:
-      'Moeda estrangeira: estimamos TWD = montante × taxa ± taxas. Se o extrato for diferente, introduza o TWD aqui. Vazio = estimativa. Contas TWD: normalmente vazio.',
+      'Moeda estrangeira: custo estimado como montante × taxa + encargos. Se o valor do extrato for diferente, introduza-o para substituir a conversão. Vazio = só pela taxa.',
     recurringNoteBadge: 'Recorrente',
   },
   batchImportModal: {

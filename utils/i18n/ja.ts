@@ -733,7 +733,7 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     recurringInvalidAmount: '口座と有効な金額を入力してください',
     recurringAmountTwdOptional: '実際のTWD計上額（任意）',
     recurringAmountTwdHelp:
-      '外貨口座：通常は金額×為替±手数料でTWDを見積もります。明細のTWDが異なる場合はここに入力して上書き。空欄は自動計算。TWD口座は空欄で可。',
+      '外貨口座：金額×為替+手数料でコストを見積もります。明細の金額が異なる場合はその金額を入力して換算を上書きしてください。空欄の場合は為替レートのみに従います。',
     recurringNoteBadge: '定期',
   },
   batchImportModal: {

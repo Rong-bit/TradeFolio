@@ -733,7 +733,7 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     recurringInvalidAmount: '계좌와 유효한 금액을 입력하세요',
     recurringAmountTwdOptional: '실제 TWD 입금액 (선택)',
     recurringAmountTwdHelp:
-      '외화 계좌: 보통 금액×환율±수수료로 TWD를 추정합니다. 은행 명세서 금액이 다르면 여기 입력해 덮어씁니다. 비우면 자동 계산. TWD 계좌는 비워도 됩니다.',
+      '외화 계좌: 금액×환율+수수료로 비용을 추정합니다. 명세서 금액이 다르면 해당 금액을 입력해 환산을 덮어씁니다. 비우면 환율만으로 계산합니다.',
     recurringNoteBadge: '정기',
   },
   batchImportModal: {

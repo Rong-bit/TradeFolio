@@ -686,7 +686,7 @@ zhCN.fundForm = {
   recurringInvalidAmount: '请选择账户并输入有效金额',
   recurringAmountTwdOptional: '实际新台币入账金额（选填）',
   recurringAmountTwdHelp:
-    '外币账户：一般用「金额 × 汇率 ± 手续费」估算新台币成本；若与银行对账单上的新台币不同，请填对账单金额以覆盖换算。留空则完全按汇率计算。台币账户通常不必填。',
+    '外币账户：程序会用「金额 × 汇率 + 手续费」估算成本；若与银行对账单上的数额不同，请填对账单金额以覆盖换算。留空则完全依汇率计算。',
   recurringNoteBadge: '定期',
 };
 

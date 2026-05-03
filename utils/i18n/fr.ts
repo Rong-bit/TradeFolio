@@ -624,7 +624,7 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     recurringInvalidAmount: 'Veuillez sélectionner un compte et saisir un montant valide',
     recurringAmountTwdOptional: 'Montant TWD réel (facultatif)',
     recurringAmountTwdHelp:
-      'Devise étrangère : nous estimons le TWD (montant × taux ± frais). Si le relevé diffère, saisissez le TWD ici. Vide = estimation. Comptes TWD : laisser vide en général.',
+      'Devise étrangère : coût estimé par montant × taux + frais. Si le montant du relevé diffère, saisissez-le pour remplacer le calcul. Vide = uniquement le taux.',
     recurringNoteBadge: 'Récurrent',
   },
   batchImportModal: {

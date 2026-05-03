@@ -596,7 +596,7 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     recurringInvalidAmount: 'Bitte Konto wählen und gültigen Betrag eingeben',
     recurringAmountTwdOptional: 'Gebuchter TWD-Betrag (optional)',
     recurringAmountTwdHelp:
-      'Fremdwährung: TWD wird als Betrag × Kurs ± Gebühren geschätzt. Weicht der Auszug ab, tragen Sie den TWD-Betrag ein. Leer = Schätzung. TWD-Konten: meist leer lassen.',
+      'Fremdwährung: Kosten = Betrag × Kurs + Gebühren. Weicht der Auszugsbetrag ab, tragen Sie den Betrag ein, um die Umrechnung zu überschreiben. Leer = nur nach Kurs rechnen.',
     recurringNoteBadge: 'Dauer',
   },
   batchImportModal: {
