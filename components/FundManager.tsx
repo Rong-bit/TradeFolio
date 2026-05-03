@@ -1,8 +1,16 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { CashFlow, CashFlowType, Currency, RecurringDepositRule } from '../types';
+import { BaseCurrency, CashFlow, CashFlowType, Currency, RecurringDepositRule } from '../types';
 import { v4 as uuidv4 } from 'uuid';
-import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
+import {
+  formatCurrency,
+  valueInBaseCurrency,
+  currencyToTWDRate,
+  fundFormUsdPerBaseToTwdPerNative,
+  fundFormTwdPerNativeToUsdPerBase,
+  fundFormUsesUsdPerBaseSemantics,
+  getDisplayRateForBaseCurrency,
+} from '../utils/calculations';
 import BatchCashFlowModal from './BatchCashFlowModal';
 import { t, translate } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
@@ -17,6 +25,24 @@ import {
 } from '../utils/recurringDeposits';
 
 interface Props {}
+
+/** 資金入出金需填「對台幣成本匯率」之帳戶幣（內部存 TWD/帳戶幣） */
+function isFundNativeRateCurrency(c: Currency | undefined): boolean {
+  return (
+    c === Currency.USD ||
+    c === Currency.JPY ||
+    c === Currency.GBP ||
+    c === Currency.EUR
+  );
+}
+
+/** 證券戶幣別與儀表板基準幣相同（例：基準幣 JPY 且帳戶為日幣帳） */
+function fundAccountMatchesBaseCurrency(
+  accountCurrency: Currency | undefined,
+  baseCurrency: BaseCurrency
+): boolean {
+  return !!accountCurrency && (accountCurrency as string) === baseCurrency;
+}
 
 const FundManager: React.FC<Props> = () => {
   const { accounts, cashFlows, addCashFlow, updateCashFlow: onUpdate,
@@ -76,7 +102,23 @@ const FundManager: React.FC<Props> = () => {
       setRecAccountId(rule.accountId);
       setRecAmount(String(rule.amount));
       setRecFee(rule.fee != null ? String(rule.fee) : '');
-      setRecEx(rule.exchangeRate != null ? String(rule.exchangeRate) : '');
+      if (rule.exchangeRate != null && rule.exchangeRate > 0) {
+        const acc = accounts.find(a => a.id === rule.accountId);
+        if (acc && fundAccountMatchesBaseCurrency(acc.currency, baseCurrency)) {
+          setRecEx('');
+        } else if (
+          fundFormUsesUsdPerBaseSemantics(baseCurrency) &&
+          acc &&
+          isFundNativeRateCurrency(acc.currency)
+        ) {
+          const v = fundFormTwdPerNativeToUsdPerBase(rule.exchangeRate, baseCurrency, acc.currency, rates);
+          setRecEx(v != null ? String(v) : String(rule.exchangeRate));
+        } else {
+          setRecEx(String(rule.exchangeRate));
+        }
+      } else {
+        setRecEx('');
+      }
       setRecNote((rule.note ?? '').replace(/\s*__recurring:[^:]+:[^_]+__/g, '').trim());
       setRecStartMonth(rule.startMonth ?? '');
       setRecAmountTwd(rule.amountTWD != null ? String(rule.amountTWD) : '');
@@ -107,6 +149,33 @@ const FundManager: React.FC<Props> = () => {
     const feeNum = recFee ? parseFloat(recFee) : 0;
     const exNum = recEx ? parseFloat(recEx) : undefined;
     const amtTwdNum = recAmountTwd.trim() ? parseFloat(recAmountTwd) : undefined;
+    const recAccForSave = accounts.find(a => a.id === recAccountId);
+    let storedEx: number | undefined =
+      exNum !== undefined && Number.isFinite(exNum) && exNum > 0 ? exNum : undefined;
+    if (
+      recAccForSave &&
+      isFundNativeRateCurrency(recAccForSave.currency) &&
+      fundAccountMatchesBaseCurrency(recAccForSave.currency, baseCurrency)
+    ) {
+      const r = currencyToTWDRate(recAccForSave.currency, rates);
+      if (!Number.isFinite(r) || r <= 0) {
+        alert(ff.exchangeRateInvalid);
+        return;
+      }
+      storedEx = r;
+    } else if (
+      storedEx !== undefined &&
+      recAccForSave &&
+      fundFormUsesUsdPerBaseSemantics(baseCurrency) &&
+      isFundNativeRateCurrency(recAccForSave.currency)
+    ) {
+      const conv = fundFormUsdPerBaseToTwdPerNative(storedEx, baseCurrency, recAccForSave.currency, rates);
+      if (!Number.isFinite(conv) || conv <= 0) {
+        alert(ff.exchangeRateInvalid);
+        return;
+      }
+      storedEx = conv;
+    }
     const rule: RecurringDepositRule = {
       id: recEditing?.id ?? uuidv4(),
       enabled: recEnabled,
@@ -114,7 +183,7 @@ const FundManager: React.FC<Props> = () => {
       accountId: recAccountId,
       amount: numAmt,
       fee: Number.isFinite(feeNum) && feeNum > 0 ? feeNum : undefined,
-      exchangeRate: exNum !== undefined && Number.isFinite(exNum) && exNum > 0 ? exNum : undefined,
+      exchangeRate: storedEx,
       note: recNote.trim() || undefined,
       amountTWD: amtTwdNum !== undefined && Number.isFinite(amtTwdNum) ? amtTwdNum : undefined,
       startMonth: recStartMonth.trim() || undefined,
@@ -129,7 +198,8 @@ const FundManager: React.FC<Props> = () => {
   const recSelectedAccount = accounts.find(a => a.id === recAccountId);
   const recShowExchange =
     !!recSelectedAccount &&
-    (recSelectedAccount.currency === Currency.USD || recSelectedAccount.currency === Currency.JPY);
+    isFundNativeRateCurrency(recSelectedAccount.currency) &&
+    !fundAccountMatchesBaseCurrency(recSelectedAccount.currency, baseCurrency);
 
   // 當帳戶列表變更或初始化時，確保 accountId 有效
   useEffect(() => {
@@ -147,7 +217,38 @@ const FundManager: React.FC<Props> = () => {
       setFee(editingCashFlow.fee?.toString() || '');
       setAccountId(editingCashFlow.accountId);
       setTargetAccountId(editingCashFlow.targetAccountId || '');
-      setExchangeRate(editingCashFlow.exchangeRate?.toString() || '');
+      const acc = accounts.find(a => a.id === editingCashFlow.accountId);
+      const tgt = editingCashFlow.targetAccountId
+        ? accounts.find(a => a.id === editingCashFlow.targetAccountId)
+        : undefined;
+      const isEditCrossXfer =
+        editingCashFlow.type === CashFlowType.TRANSFER &&
+        !!tgt &&
+        !!acc &&
+        acc.currency !== tgt.currency;
+      if (editingCashFlow.exchangeRate != null && editingCashFlow.exchangeRate > 0) {
+        if (isEditCrossXfer) {
+          setExchangeRate(String(editingCashFlow.exchangeRate));
+        } else if (acc && fundAccountMatchesBaseCurrency(acc.currency, baseCurrency)) {
+          setExchangeRate('');
+        } else if (
+          fundFormUsesUsdPerBaseSemantics(baseCurrency) &&
+          acc &&
+          isFundNativeRateCurrency(acc.currency)
+        ) {
+          const v = fundFormTwdPerNativeToUsdPerBase(
+            editingCashFlow.exchangeRate,
+            baseCurrency,
+            acc.currency,
+            rates
+          );
+          setExchangeRate(v != null ? String(v) : String(editingCashFlow.exchangeRate));
+        } else {
+          setExchangeRate(String(editingCashFlow.exchangeRate));
+        }
+      } else {
+        setExchangeRate('');
+      }
       {
         const raw = editingCashFlow.note ?? '';
         const stripped = stripRecurringMarkersFromNote(raw);
@@ -165,7 +266,7 @@ const FundManager: React.FC<Props> = () => {
       setExchangeRate('');
       setNote('');
     }
-  }, [editingCashFlow, accounts, ff.recurringNoteBadge]);
+  }, [editingCashFlow, accounts, ff.recurringNoteBadge, baseCurrency, rates]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,39 +283,56 @@ const FundManager: React.FC<Props> = () => {
     const targetAccount = accounts.find(a => a.id === targetAccountId);
     
     const isTransfer = type === CashFlowType.TRANSFER;
+    const isInterest = type === CashFlowType.INTEREST;
     const isSameCurrency = isTransfer && account && targetAccount && account.currency === targetAccount.currency;
+    const isCrossXfer =
+      isTransfer && account && targetAccount && account.currency !== targetAccount.currency;
     
     if (showExchangeRateInput) {
-       numRate = exchangeRate ? parseFloat(exchangeRate) : undefined;
+      const raw = exchangeRate ? parseFloat(exchangeRate) : undefined;
+      if (isCrossXfer) {
+        numRate = raw;
+      } else if (
+        raw !== undefined &&
+        Number.isFinite(raw) &&
+        raw > 0 &&
+        account &&
+        isFundNativeRateCurrency(account.currency) &&
+        fundFormUsesUsdPerBaseSemantics(baseCurrency)
+      ) {
+        const conv = fundFormUsdPerBaseToTwdPerNative(raw, baseCurrency, account.currency, rates);
+        if (!Number.isFinite(conv) || conv <= 0) {
+          alert(ff.exchangeRateInvalid);
+          return;
+        }
+        numRate = conv;
+      } else {
+        numRate = raw;
+      }
     } else if (isSameCurrency) {
        numRate = 1; // Same currency transfer implies rate 1
     } else if (account?.currency === Currency.TWD && !isTransfer) {
        numRate = 1; // TWD Deposit/Withdraw implies rate 1
+    } else if (
+      !isTransfer &&
+      !isInterest &&
+      account &&
+      isFundNativeRateCurrency(account.currency) &&
+      fundAccountMatchesBaseCurrency(account.currency, baseCurrency)
+    ) {
+      // 帳戶幣＝基準幣：不顯示匯率欄，改以設定之 TWD/帳戶幣換算
+      numRate = currencyToTWDRate(account.currency, rates);
     }
 
     // Determine amountTWD
     let calculatedTWD: number | undefined = undefined;
     
-    if (account?.currency === Currency.USD && numRate) {
-       // Logic: 
-       // If Deposit: Total Cost = Principal(TWD) + Fee(TWD)
-       // If Withdraw: Total Received = Principal(TWD) - Fee(TWD)
+    if (account && isFundNativeRateCurrency(account.currency) && numRate) {
        if (type === CashFlowType.DEPOSIT) {
           calculatedTWD = (numAmount * numRate) + numFee;
        } else if (type === CashFlowType.WITHDRAW) {
           calculatedTWD = (numAmount * numRate) - numFee;
        } else {
-          // Transfer from USD -> TWD or USD -> USD
-          calculatedTWD = (numAmount * numRate);
-       }
-    } else if (account?.currency === Currency.JPY && numRate) {
-       // JPY Logic: Similar to USD
-       if (type === CashFlowType.DEPOSIT) {
-          calculatedTWD = (numAmount * numRate) + numFee;
-       } else if (type === CashFlowType.WITHDRAW) {
-          calculatedTWD = (numAmount * numRate) - numFee;
-       } else {
-          // Transfer from JPY -> TWD or JPY -> JPY
           calculatedTWD = (numAmount * numRate);
        }
     } else if (account?.currency === Currency.TWD) {
@@ -293,9 +411,11 @@ const FundManager: React.FC<Props> = () => {
   const isSameCurrencyTransfer = isTransfer && selectedAccount && targetAccount && selectedAccount.currency === targetAccount.currency;
 
   const showExchangeRateInput = 
-    // Case 1: USD/JPY Account doing non-transfer operations (Need rate to calculate TWD cost)
-    // 排除利息收入，因為利息不計入成本，不需要匯率轉換
-    (!isTransfer && !isInterest && (selectedAccount?.currency === Currency.USD || selectedAccount?.currency === Currency.JPY)) || 
+    // Case 1: 外幣帳且「帳戶幣 ≠ 基準幣」時才顯示匯率（同幣時用設定之 TWD/帳戶幣，不顯示欄位）
+    (!isTransfer &&
+      !isInterest &&
+      isFundNativeRateCurrency(selectedAccount?.currency) &&
+      !fundAccountMatchesBaseCurrency(selectedAccount?.currency, baseCurrency)) ||
     // Case 2: Transfer between DIFFERENT currencies
     (isTransfer && targetAccountId !== '' && isCrossCurrencyTransfer);
 
@@ -354,6 +474,50 @@ const FundManager: React.FC<Props> = () => {
     }
     return undefined;
   }, [isCrossCurrencyTransfer, selectedAccount, targetAccount, twdPerCurrency, currentExchangeRate]);
+
+  const fundNonTransferRateLabel = useMemo(() => {
+    if (!selectedAccount) return ff.exchangeRate;
+    if (fundFormUsesUsdPerBaseSemantics(baseCurrency)) {
+      return translate('fundForm.exchangeRateUsdBase', language, { base: baseCurrency });
+    }
+    if (selectedAccount.currency === Currency.USD) return ff.exchangeRateUsdTwd;
+    if (selectedAccount.currency === Currency.JPY) return ff.exchangeRateJPY;
+    if (selectedAccount.currency === Currency.GBP) {
+      return translate('fundForm.exchangeRatePair', language, { quote: 'TWD', base: Currency.GBP });
+    }
+    if (selectedAccount.currency === Currency.EUR) {
+      return translate('fundForm.exchangeRatePair', language, { quote: 'TWD', base: Currency.EUR });
+    }
+    return ff.exchangeRate;
+  }, [selectedAccount, baseCurrency, language, ff]);
+
+  const fundEntryRatePlaceholder = useMemo(() => {
+    if (!selectedAccount || !isFundNativeRateCurrency(selectedAccount.currency)) {
+      return currentExchangeRate.toString();
+    }
+    if (fundFormUsesUsdPerBaseSemantics(baseCurrency)) {
+      return getDisplayRateForBaseCurrency(baseCurrency, rates).value.toFixed(4);
+    }
+    if (selectedAccount.currency === Currency.USD) return currentExchangeRate.toString();
+    if (selectedAccount.currency === Currency.JPY) {
+      return (currentJpyExchangeRate ?? currentExchangeRate).toString();
+    }
+    if (selectedAccount.currency === Currency.GBP) {
+      return String(currentGbpExchangeRate && currentGbpExchangeRate > 0 ? currentGbpExchangeRate : 40);
+    }
+    if (selectedAccount.currency === Currency.EUR) {
+      return String(currentEurExchangeRate && currentEurExchangeRate > 0 ? currentEurExchangeRate : 34);
+    }
+    return currentExchangeRate.toString();
+  }, [
+    selectedAccount,
+    baseCurrency,
+    rates,
+    currentExchangeRate,
+    currentJpyExchangeRate,
+    currentGbpExchangeRate,
+    currentEurExchangeRate,
+  ]);
 
   // Filter Logic
   const filteredFlows = useMemo(() => {
@@ -537,15 +701,33 @@ const FundManager: React.FC<Props> = () => {
               {recShowExchange && (
                 <div>
                   <label className="block text-slate-700 dark:text-slate-200 font-medium">
-                    {recSelectedAccount?.currency === Currency.USD ? ff.exchangeRateUsdTwd : ff.exchangeRateJPY}
+                    {fundFormUsesUsdPerBaseSemantics(baseCurrency)
+                      ? translate('fundForm.exchangeRateUsdBase', language, { base: baseCurrency })
+                      : recSelectedAccount?.currency === Currency.USD
+                        ? ff.exchangeRateUsdTwd
+                        : recSelectedAccount?.currency === Currency.JPY
+                          ? ff.exchangeRateJPY
+                          : recSelectedAccount?.currency === Currency.GBP
+                            ? translate('fundForm.exchangeRatePair', language, { quote: 'TWD', base: Currency.GBP })
+                            : recSelectedAccount?.currency === Currency.EUR
+                              ? translate('fundForm.exchangeRatePair', language, { quote: 'TWD', base: Currency.EUR })
+                              : ff.exchangeRate}
                   </label>
                   <input
                     type="number"
                     step="0.0001"
                     placeholder={
-                      recSelectedAccount?.currency === Currency.USD
-                        ? currentExchangeRate.toString()
-                        : (currentJpyExchangeRate ?? currentExchangeRate).toString()
+                      recSelectedAccount && isFundNativeRateCurrency(recSelectedAccount.currency)
+                        ? fundFormUsesUsdPerBaseSemantics(baseCurrency)
+                          ? getDisplayRateForBaseCurrency(baseCurrency, rates).value.toFixed(4)
+                          : recSelectedAccount.currency === Currency.USD
+                            ? currentExchangeRate.toString()
+                            : recSelectedAccount.currency === Currency.JPY
+                              ? (currentJpyExchangeRate ?? currentExchangeRate).toString()
+                              : recSelectedAccount.currency === Currency.GBP
+                                ? String(currentGbpExchangeRate && currentGbpExchangeRate > 0 ? currentGbpExchangeRate : 40)
+                                : String(currentEurExchangeRate && currentEurExchangeRate > 0 ? currentEurExchangeRate : 34)
+                        : currentExchangeRate.toString()
                     }
                     value={recEx}
                     onChange={e => setRecEx(e.target.value)}
@@ -763,16 +945,23 @@ const FundManager: React.FC<Props> = () => {
                    const showRecurringBadgeOnly =
                      noteContainsRecurringMarker(cf.note) && !categoryNoteDisplay;
 
-                   const isUSD = account?.currency === Currency.USD;
-                   const isJPY = account?.currency === Currency.JPY;
+                   const tgtAcc = cf.targetAccountId ? accounts.find(a => a.id === cf.targetAccountId) : undefined;
+                   const isCfCrossXfer =
+                     cf.type === CashFlowType.TRANSFER &&
+                     !!tgtAcc &&
+                     !!account &&
+                     account.currency !== tgtAcc.currency;
+                   const usesNativeRate = isFundNativeRateCurrency(account?.currency);
 
                    // 總計成本 (TWD)，用於換算為基準幣顯示
                    let displayTotalTWD = 0;
                    if (cf.amountTWD != null) {
                        displayTotalTWD = cf.amountTWD;
                    } else {
-                       const rate = cf.exchangeRate || (isUSD ? currentExchangeRate : (isJPY ? currentJpyExchangeRate : 1));
-                       const baseAmt = (isUSD || isJPY) ? cf.amount * (rate ?? 1) : cf.amount;
+                       const rate =
+                         cf.exchangeRate ??
+                         (usesNativeRate ? currencyToTWDRate(accountCurrency, rates) : 1);
+                       const baseAmt = usesNativeRate ? cf.amount * (rate || 1) : cf.amount;
                        const feeVal = cf.fee || 0;
                        if (cf.type === CashFlowType.DEPOSIT) {
                            displayTotalTWD = baseAmt + feeVal;
@@ -781,6 +970,27 @@ const FundManager: React.FC<Props> = () => {
                        } else {
                            displayTotalTWD = baseAmt;
                        }
+                   }
+
+                   let displayExRateStr = '-';
+                   if (cf.exchangeRate != null && cf.exchangeRate > 0) {
+                     if (isCfCrossXfer) {
+                       displayExRateStr = String(cf.exchangeRate);
+                     } else if (
+                       fundFormUsesUsdPerBaseSemantics(baseCurrency) &&
+                       account &&
+                       usesNativeRate
+                     ) {
+                       const v = fundFormTwdPerNativeToUsdPerBase(
+                         cf.exchangeRate,
+                         baseCurrency,
+                         account.currency,
+                         rates
+                       );
+                       displayExRateStr = v != null ? v.toFixed(4) : String(cf.exchangeRate);
+                     } else {
+                       displayExRateStr = String(cf.exchangeRate);
+                     }
                    }
 
                    return (
@@ -792,7 +1002,7 @@ const FundManager: React.FC<Props> = () => {
                        </td>
 
                        <td className="px-2 sm:px-3 py-2 text-right text-slate-500 dark:text-slate-300 hidden sm:table-cell">
-                         {cf.exchangeRate != null && cf.exchangeRate > 0 ? cf.exchangeRate : '-'}
+                         {displayExRateStr}
                        </td>
 
                        <td className="px-2 sm:px-3 py-2 text-right text-slate-400 dark:text-slate-500 hidden sm:table-cell">
@@ -890,12 +1100,38 @@ const FundManager: React.FC<Props> = () => {
                     {pendingCashFlow.amount.toLocaleString()} {accounts.find(a => a.id === pendingCashFlow.accountId)?.currency || ''}
                   </span>
                 </div>
-                {pendingCashFlow.exchangeRate && (
-                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
-                    <span className="text-slate-600 dark:text-slate-300">{ff.exchangeRateLabel}</span>
-                    <span className="font-medium text-slate-900 dark:text-slate-100">{pendingCashFlow.exchangeRate}</span>
-                  </div>
-                )}
+                {pendingCashFlow.exchangeRate != null && pendingCashFlow.exchangeRate > 0 && (() => {
+                  const pAcc = accounts.find(a => a.id === pendingCashFlow.accountId);
+                  const pTgt = pendingCashFlow.targetAccountId
+                    ? accounts.find(a => a.id === pendingCashFlow.targetAccountId)
+                    : undefined;
+                  const pCross =
+                    pendingCashFlow.type === CashFlowType.TRANSFER &&
+                    !!pTgt &&
+                    !!pAcc &&
+                    pAcc.currency !== pTgt.currency;
+                  let shown = String(pendingCashFlow.exchangeRate);
+                  if (
+                    !pCross &&
+                    fundFormUsesUsdPerBaseSemantics(baseCurrency) &&
+                    pAcc &&
+                    isFundNativeRateCurrency(pAcc.currency)
+                  ) {
+                    const v = fundFormTwdPerNativeToUsdPerBase(
+                      pendingCashFlow.exchangeRate,
+                      baseCurrency,
+                      pAcc.currency,
+                      rates
+                    );
+                    if (v != null) shown = v.toFixed(4);
+                  }
+                  return (
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                      <span className="text-slate-600 dark:text-slate-300">{ff.exchangeRateLabel}</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{shown}</span>
+                    </div>
+                  );
+                })()}
                 {pendingCashFlow.fee && (
                   <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
                     <span className="text-slate-600 dark:text-slate-300">{ff.feesLabel}</span>
@@ -1004,7 +1240,7 @@ const FundManager: React.FC<Props> = () => {
                      {showExchangeRateInput ? (
                        <div>
                          <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                            {transferRateLabel ?? (selectedAccount?.currency === Currency.USD ? ff.exchangeRateUsdTwd : selectedAccount?.currency === Currency.JPY ? ff.exchangeRateJPY : ff.exchangeRate)}
+                            {transferRateLabel ?? fundNonTransferRateLabel}
                             {isCrossCurrencyTransfer && <span className="text-xs text-blue-600 ml-1">{ff.crossCurrencyTransfer}</span>}
                             {!isTransfer && selectedAccount?.currency === Currency.USD && <span className="text-xs text-green-600 ml-1">{ff.usdConversion}</span>}
                             {!isTransfer && selectedAccount?.currency === Currency.JPY && <span className="text-xs text-orange-600 ml-1">{ff.jpyConversion}</span>}
@@ -1012,10 +1248,7 @@ const FundManager: React.FC<Props> = () => {
                          <input 
                            type="number" 
                            step="0.0001" 
-                           placeholder={
-                             transferRatePlaceholder ??
-                             (selectedAccount?.currency === Currency.USD ? currentExchangeRate.toString() : selectedAccount?.currency === Currency.JPY ? (currentJpyExchangeRate ?? currentExchangeRate).toString() : currentExchangeRate.toString())
-                           } 
+                           placeholder={transferRatePlaceholder ?? fundEntryRatePlaceholder} 
                            value={exchangeRate} 
                            onChange={e => setExchangeRate(e.target.value)} 
                            className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
