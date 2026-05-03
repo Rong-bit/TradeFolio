@@ -9,7 +9,12 @@ import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
-import { currentYearMonth, stripRecurringMarkersFromNote, noteContainsRecurringMarker } from '../utils/recurringDeposits';
+import {
+  currentYearMonth,
+  stripRecurringMarkersFromNote,
+  noteContainsRecurringMarker,
+  mergeNotePreserveRecurringMarkers,
+} from '../utils/recurringDeposits';
 
 interface Props {}
 
@@ -143,7 +148,12 @@ const FundManager: React.FC<Props> = () => {
       setAccountId(editingCashFlow.accountId);
       setTargetAccountId(editingCashFlow.targetAccountId || '');
       setExchangeRate(editingCashFlow.exchangeRate?.toString() || '');
-      setNote(editingCashFlow.note || '');
+      {
+        const raw = editingCashFlow.note ?? '';
+        const stripped = stripRecurringMarkersFromNote(raw);
+        const hasTag = noteContainsRecurringMarker(raw);
+        setNote(hasTag && !stripped ? ff.recurringNoteBadge : stripped);
+      }
     } else {
       // 重置為預設值
       setType(CashFlowType.DEPOSIT);
@@ -155,7 +165,7 @@ const FundManager: React.FC<Props> = () => {
       setExchangeRate('');
       setNote('');
     }
-  }, [editingCashFlow, accounts]);
+  }, [editingCashFlow, accounts, ff.recurringNoteBadge]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,6 +224,11 @@ const FundManager: React.FC<Props> = () => {
         else calculatedTWD = numAmount;
     }
     
+    let finalNote = note.trim();
+    if (editingCashFlow && noteContainsRecurringMarker(editingCashFlow.note)) {
+      finalNote = mergeNotePreserveRecurringMarkers(editingCashFlow.note, note);
+    }
+
     const cashFlow: CashFlow = {
       id: editingCashFlow ? editingCashFlow.id : uuidv4(),
       date,
@@ -224,7 +239,7 @@ const FundManager: React.FC<Props> = () => {
       accountId,
       targetAccountId: type === CashFlowType.TRANSFER ? targetAccountId : undefined,
       exchangeRate: numRate,
-      note
+      note: finalNote
     };
 
     // 顯示確認對話框，不直接儲存
