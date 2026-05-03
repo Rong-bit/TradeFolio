@@ -9,7 +9,7 @@ import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
-import { currentYearMonth } from '../utils/recurringDeposits';
+import { currentYearMonth, stripRecurringMarkersFromNote, noteContainsRecurringMarker } from '../utils/recurringDeposits';
 
 interface Props {}
 
@@ -553,6 +553,7 @@ const FundManager: React.FC<Props> = () => {
               </div>
               <div>
                 <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.recurringAmountTwdOptional}</label>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-1 leading-relaxed">{ff.recurringAmountTwdHelp}</p>
                 <input
                   type="number"
                   step="0.01"
@@ -742,6 +743,11 @@ const FundManager: React.FC<Props> = () => {
                    const noteFeeMatch = cf.note?.match(/手續費:\s*(\d+(\.\d+)?)/);
                    const displayFee = cf.fee !== undefined ? cf.fee : (noteFeeMatch ? noteFeeMatch[1] : '-');
 
+                   const noteAfterFeeStrip = cf.note?.replace(/\(手續費:.*?\)/, '').trim() ?? '';
+                   const categoryNoteDisplay = stripRecurringMarkersFromNote(noteAfterFeeStrip);
+                   const showRecurringBadgeOnly =
+                     noteContainsRecurringMarker(cf.note) && !categoryNoteDisplay;
+
                    const isUSD = account?.currency === Currency.USD;
                    const isJPY = account?.currency === Currency.JPY;
 
@@ -797,7 +803,16 @@ const FundManager: React.FC<Props> = () => {
                              {getTypeName(cf.type)}
                            </span>
                            {cf.note && (
-                             <span className="text-xs text-slate-500 dark:text-slate-400">{cf.note.replace(/\(手續費:.*?\)/, '').trim()}</span>
+                             <span className="text-xs text-slate-500 dark:text-slate-400">
+                               {categoryNoteDisplay}
+                               {showRecurringBadgeOnly ? (
+                                 <span className="text-indigo-600 dark:text-indigo-400 font-medium">{ff.recurringNoteBadge}</span>
+                               ) : (
+                                 noteContainsRecurringMarker(cf.note) && (
+                                   <span className="ml-1 text-indigo-500 dark:text-indigo-400">· {ff.recurringNoteBadge}</span>
+                                 )
+                               )}
+                             </span>
                            )}
                          </div>
                        </td>
@@ -872,12 +887,19 @@ const FundManager: React.FC<Props> = () => {
                     <span className="font-medium text-slate-900 dark:text-slate-100">{pendingCashFlow.fee.toLocaleString()} {baseCurrency}</span>
                   </div>
                 )}
-                {pendingCashFlow.note && (
-                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
-                    <span className="text-slate-600 dark:text-slate-300">{ff.noteLabel}</span>
-                    <span className="font-medium text-slate-900 dark:text-slate-100 text-right max-w-[60%]">{pendingCashFlow.note}</span>
-                  </div>
-                )}
+                {pendingCashFlow.note && (() => {
+                  const stripped = stripRecurringMarkersFromNote(pendingCashFlow.note ?? '');
+                  const hasR = noteContainsRecurringMarker(pendingCashFlow.note);
+                  const displayNoteConfirm = hasR
+                    ? (stripped ? `${stripped} · ${ff.recurringNoteBadge}` : ff.recurringNoteBadge)
+                    : stripped;
+                  return (
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                      <span className="text-slate-600 dark:text-slate-300">{ff.noteLabel}</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100 text-right max-w-[60%]">{displayNoteConfirm}</span>
+                    </div>
+                  );
+                })()}
                 {pendingCashFlow.amountTWD != null && (
                   <div className="border-t-2 border-slate-300 pt-2 mt-2">
                     <div className="flex justify-between">
