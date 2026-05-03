@@ -670,14 +670,10 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     title: 'Importação em lote de fluxo de caixa',
     guideTitle: 'Instruções:',
     guideBody:
-      'Cole os dados copiados do Excel contendo Data, TWD, USD, Taxa, Taxa/Comissão, Total, Conta e Categoria.',
+      'Cole dados separados por tab do Excel: Data, TWD, USD, Taxa, Comissão, Total, Conta, Categoria. A última coluna é Categoria; a anterior é Conta.',
     guideNoteFx:
       'Nota: (1) Só TWD: preencha TWD e Total; USD e taxa vazios. (2) TWD→USD transfronteiriço: preencha a taxa. (3) USD doméstico EUA (ACH): sem câmbio, taxa vazia.',
     columnHeaderExample: 'Data | TWD | USD | Taxa de câmbio | Comissão | Total | Conta | Categoria',
-    pastePlaceholderLine2:
-      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tTransferência (TWD→USD)',
-    pastePlaceholderLine3:
-      '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\tDepósito USD doméstico',
     pasteDemoRow1Account: 'Banco local',
     pastePlaceholderApprox: '(≈ {approx}; moeda base e taxas)',
     parseFailed:

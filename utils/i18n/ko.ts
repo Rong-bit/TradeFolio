@@ -819,10 +819,6 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     guideNoteFx:
       '※ (1) 첫 줄: TWD만—TWD·합계에 금액, USD·환율 칸 비움. (2) 둘째 줄: 해외 TWD→USD—환율 기입. (3) 셋째 줄: 미국 국내 USD(ACH 등)—환율 비움.',
     columnHeaderExample: '날짜 | TWD | USD | 환율 | 수수료 | 합계 | 계좌 | 분류',
-    pastePlaceholderLine2:
-      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\t해외송금(TWD→USD)',
-    pastePlaceholderLine3:
-      '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\t미국 국내 USD 입금',
     pasteDemoRow1Account: '국泰',
     pastePlaceholderApprox: '(약 {approx}, 기준 통화·환율 기준)',
     parseFailed:

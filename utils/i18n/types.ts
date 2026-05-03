@@ -797,10 +797,6 @@ export interface Translations {
     guideNoteFx: string;
     /** Tab 分隔欄位範例（與 Excel 欄位順序一致，供說明區顯示） */
     columnHeaderExample: string;
-    /** 範例第二列：跨境（台幣→美金）含匯率 */
-    pastePlaceholderLine2: string;
-    /** 範例第三列：美國境內美金入帳（無跨境換匯，匯率欄留白） */
-    pastePlaceholderLine3: string;
     /** 範例第一列：帳戶欄示意文字 */
     pasteDemoRow1Account: string;
     /** 基準幣非 TWD 時附加一行：{approx} 為已格式化基準幣金額 */

@@ -819,10 +819,6 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     guideNoteFx:
       '※ (1) 1行目＝TWD のみ：TWD・合計に金額、USD・為替は空欄。(2) 2行目＝越境 TWD→USD：為替を記入。(3) 3行目＝米国内 USD（ACH 等）：為替不要・空欄。',
     columnHeaderExample: '日付 | TWD | USD | 為替 | 手数料 | 合計 | 口座 | カテゴリ',
-    pastePlaceholderLine2:
-      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\t海外送金(TWD→USD)',
-    pastePlaceholderLine3:
-      '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\t米国内USD入金',
     pasteDemoRow1Account: '三菱UFJ',
     pastePlaceholderApprox: '（参考: {approx}・基準通貨レート）',
     parseFailed:

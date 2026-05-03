@@ -818,14 +818,10 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     title: 'Batch Cash Flow Import',
     guideTitle: 'Instructions:',
     guideBody:
-      'Paste data copied from Excel containing Date, TWD, USD, Rate, Fee, Total, Account, Category.',
+      'Paste tab-separated data from Excel: Date, TWD, USD, Rate, Fee, Total, Account, Category. The last column is Category; the column before it is Account.',
     guideNoteFx:
       'Note: (1) First line—TWD only: fill TWD & Total; leave USD & Rate empty. (2) Cross-border TWD→USD: fill Rate. (3) US domestic USD (e.g. ACH): no FX, leave Rate empty.',
     columnHeaderExample: 'Date | TWD | USD | Rate | Fee | Total | Account | Category',
-    pastePlaceholderLine2:
-      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tWire (TWD→USD)',
-    pastePlaceholderLine3:
-      '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\tDeposit',
     pasteDemoRow1Account: 'Local Bank',
     pastePlaceholderApprox: '(≈ {approx}; base currency & exchange rates)',
     parseFailed:

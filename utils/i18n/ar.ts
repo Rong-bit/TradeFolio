@@ -699,10 +699,6 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     guideNoteFx:
       'ملاحظة: (1) TWD فقط: املأ TWD والإجمالي؛ اترك USD والسعر فارغين. (2) عبر الحدود TWD→USD: املأ السعر. (3) USD داخل الولايات المتحدة (ACH): لا صرف، السعر فارغ.',
     columnHeaderExample: 'التاريخ | TWD | USD | السعر | الرسوم | الإجمالي | الحساب | الفئة',
-    pastePlaceholderLine2:
-      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tتحويل (TWD→USD)',
-    pastePlaceholderLine3:
-      '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\tDeposit',
     pasteDemoRow1Account: 'بنك محلي',
     pastePlaceholderApprox: '(≈ {approx}؛ العملة الأساسية والأسعار)',
     parseFailed:
