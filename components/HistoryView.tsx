@@ -6,6 +6,7 @@ import StockTimeline from './StockTimeline';
 import { useUI } from '../contexts/UIContext';
 import { useFilters } from '../hooks/useFilters';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+import { noteContainsRecurringMarker, stripRecurringMarkersFromNote } from '../utils/recurringDeposits';
 
 interface Props {
   onAddTransaction: () => void;
@@ -300,7 +301,29 @@ const HistoryView: React.FC<Props> = ({
                       </div>
                     ) : (
                       <div className="flex flex-col">
-                        <span className="text-slate-600 dark:text-slate-300">{record.description}</span>
+                        {(() => {
+                          const raw = record.description ?? '';
+                          const stripped = stripRecurringMarkersFromNote(raw);
+                          const hasRec = noteContainsRecurringMarker(raw);
+                          return (
+                            <span className="text-slate-600 dark:text-slate-300">
+                              {hasRec && !stripped ? (
+                                <span className="text-indigo-600 dark:text-indigo-400 font-medium">
+                                  {tr.fundForm.recurringNoteBadge}
+                                </span>
+                              ) : (
+                                <>
+                                  <span>{stripped || '—'}</span>
+                                  {hasRec && !!stripped && (
+                                    <span className="text-indigo-500 dark:text-indigo-400 text-[10px] sm:text-xs ml-1">
+                                      · {tr.fundForm.recurringNoteBadge}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </span>
+                          );
+                        })()}
                         {tAN && record.subType === 'TRANSFER' && (
                           <span className="text-[10px] text-slate-400">→ {tAN}</span>
                         )}
