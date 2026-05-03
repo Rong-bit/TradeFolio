@@ -3,9 +3,11 @@ import React, { useState, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Account, CashFlow, CashFlowType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
+import { useMarket } from '../contexts/MarketContext';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 import { useUI } from '../contexts/UIContext';
-import { translate } from '../utils/i18n';
+import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
+import { languageToLocale, translate } from '../utils/i18n';
 
 interface Props {
   onImport: (flows: CashFlow[]) => void;
@@ -29,6 +31,7 @@ function isCashFlowPasteHeaderFirstCell(raw: string): boolean {
 
 const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
   const { accounts } = usePortfolio();
+  const { baseCurrency, rates } = useMarket();
   const { language } = useUI();
   const isChinese = language === 'zh-TW' || language === 'zh-CN';
   const tx = (key: string, fallback: string, params?: Record<string, string | number>) => {
@@ -36,6 +39,35 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
     const resolved = translate(fullKey, language, params);
     return resolved === fullKey ? fallback : resolved;
   };
+
+  const pastePlaceholder = useMemo(() => {
+    const loc = languageToLocale(language);
+    const fmt = (v: number, ccy: string) => formatCurrency(v, ccy, loc);
+    const acc = translate('batchCashFlowModal.pasteDemoRow1Account', language);
+    const line2 = translate('batchCashFlowModal.pastePlaceholderLine2', language);
+    const accTxt = acc.startsWith('batchCashFlowModal.') ? (isChinese ? '國泰' : 'Local Bank') : acc;
+    const catFund = translate('fundForm.typeDeposit', language);
+    const catTxt = catFund.startsWith('fundForm.')
+      ? isChinese
+        ? '匯入資金 (Import/Salary)'
+        : 'Deposit'
+      : catFund;
+    const line2Txt = line2.startsWith('batchCashFlowModal.')
+      ? '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tUSD wire-in'
+      : line2;
+    const row1 = `2025/12/1\t${fmt(30000, 'TWD')}\t\t\t\t${fmt(-30000, 'TWD')}\t${accTxt}\t${catTxt}`;
+    let out = `${row1}\n${line2Txt}`;
+    if (baseCurrency !== 'TWD') {
+      const approxVal = valueInBaseCurrency(30000, baseCurrency, rates);
+      const approx = fmt(approxVal, baseCurrency);
+      let approxLine = translate('batchCashFlowModal.pastePlaceholderApprox', language, { approx });
+      if (approxLine.startsWith('batchCashFlowModal.')) {
+        approxLine = `(≈ ${approx})`;
+      }
+      out += `\n${approxLine}`;
+    }
+    return out;
+  }, [language, isChinese, baseCurrency, rates]);
   const [step, setStep] = useState<1 | 2>(1); // 1: Paste & Parse, 2: Map Accounts & Preview
   const [inputText, setInputText] = useState('');
   const [parsedRows, setParsedRows] = useState<any[]>([]);
@@ -93,12 +125,15 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
     confirmImport: tx('confirmImport', isChinese ? '確認匯入' : 'Confirm Import'),
   };
 
-  // Helper to parse currency string "NT$30,000" -> 30000
+  /** 解析貼上儲存格中的數字（支援 Intl 格式之千分位、貨幣符號） */
   const parseNumber = (str: string) => {
     if (!str) return 0;
-    // Remove NT$, $, commas, spaces
-    const cleanStr = str.replace(/[NT$$,\s]/g, '');
-    return parseFloat(cleanStr) || 0;
+    const normalized = str.replace(/\u00a0/g, '').replace(/,/g, '').trim();
+    const hasMinus = normalized.includes('-');
+    const numPart = normalized.replace(/[^0-9.]/g, '');
+    const v = parseFloat(numPart);
+    if (!Number.isFinite(v)) return 0;
+    return hasMinus ? -Math.abs(v) : v;
   };
 
   const parseDate = (dateStr: string) => {
@@ -275,7 +310,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
               </div>
               <textarea 
                 className="w-full h-96 border border-slate-300 rounded-lg p-4 font-mono text-xs focus:ring-2 focus:ring-accent outline-none whitespace-pre overflow-auto"
-                placeholder={`2025/12/1\tNT$30,000\t\t\t\t-NT$30,000\t國泰\t轉入資金\n2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\t嘉信\t匯入資金`}
+                placeholder={pastePlaceholder}
                 value={inputText}
                 onChange={e => setInputText(e.target.value)}
               />
