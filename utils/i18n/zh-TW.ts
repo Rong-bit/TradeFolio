@@ -724,6 +724,8 @@ A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」
     pasteLabel: '請將 Excel 或表格資料複製貼上於此 (支援格式: 日期 | 買/賣/股息/轉移 | 代號 | 價格 | 數量 | 手續費 | 總金額)',
     pasteFormat: '💡 「轉移」類別：若數量為負視為匯出持股，正則視為匯入持股。',
     pasteTip: '',
+    pastePlaceholder:
+      '2022/3/30\t買\tVT\t103.23\t1.00\t0.00\n2025/2/11\t轉移\tVT\t93.41\t-167.73\t0.00',
     parseButton: '解析貼上內容',
     uploadLabel: '支援 CSV 匯出檔：嘉信 (Charles Schwab)、Firstrade',
     uploadSupported: '',

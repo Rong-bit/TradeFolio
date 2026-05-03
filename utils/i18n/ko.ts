@@ -725,6 +725,8 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     pasteLabel: 'Excel 또는 표 데이터를 여기에 붙여넣으세요 (지원 형식: 날짜 | 매수/매도/배당/이체 | 티커 | 가격 | 수량 | 수수료 | 총액)',
     pasteFormat: '💡 "이체" 카테고리: 수량이 음수이면 이체 출금, 양수이면 이체 입금으로 처리됩니다.',
     pasteTip: '',
+    pastePlaceholder:
+      '2022/3/30\tBuy\tVT\t103.23\t1.00\t0.00\n2025/2/11\tTransfer\tVT\t93.41\t-167.73\t0.00',
     parseButton: '붙여넣은 내용 분석',
     uploadLabel: '지원 CSV 내보내기 파일: Charles Schwab, Firstrade',
     uploadSupported: '',

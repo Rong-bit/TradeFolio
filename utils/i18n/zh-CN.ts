@@ -490,6 +490,8 @@ zhCN.batchImportModal = {
   pasteLabel: '请将 Excel 或表格数据复制贴于此 (支持格式: 日期 | 买/卖/股息/转移 | 代号 | 价格 | 数量 | 手续费 | 总金额)',
   pasteFormat: '💡 「转移」类别：若数量为负视为汇出持股，正则视为汇入持股。',
   pasteTip: '',
+  pastePlaceholder:
+    '2022/3/30\t买\tVT\t103.23\t1.00\t0.00\n2025/2/11\t转移\tVT\t93.41\t-167.73\t0.00',
   parseButton: '解析贴上内容',
   uploadLabel: '支持 CSV 汇出档：嘉信 (Charles Schwab)、Firstrade',
   uploadSupported: '',

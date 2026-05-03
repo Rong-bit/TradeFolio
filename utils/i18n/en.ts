@@ -728,6 +728,8 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     pasteLabel: 'Paste Excel or table data here (Supported format: Date | Buy/Sell/Dividend/Transfer | Ticker | Price | Quantity | Fees | Total Amount)',
     pasteFormat: '💡 "Transfer" category: Negative quantity is treated as transfer out, positive as transfer in.',
     pasteTip: '',
+    pastePlaceholder:
+      '2022/3/30\tBuy\tVT\t103.23\t1.00\t0.00\n2025/2/11\tTransfer\tVT\t93.41\t-167.73\t0.00',
     parseButton: 'Parse Pasted Content',
     uploadLabel: 'Supported CSV export files: Charles Schwab, Firstrade',
     uploadSupported: '',

@@ -697,6 +697,8 @@ export interface Translations {
     pasteLabel: string;
     pasteFormat: string;
     pasteTip: string;
+    /** Tab 分隔之兩列範例（日期｜動作｜代號｜價格｜數量｜手續費），動作須與解析器支援之關鍵字一致 */
+    pastePlaceholder: string;
     parseButton: string;
     uploadLabel: string;
     uploadSupported: string;

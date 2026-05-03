@@ -588,6 +588,8 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     pasteLabel: 'Excel- oder Tabellendaten hier einfügen (Unterstütztes Format: Datum | Kauf/Verkauf/Dividende/Übertragung | Ticker | Preis | Menge | Gebühren | Gesamtbetrag)',
     pasteFormat: '💡 "Übertragung"-Kategorie: Negative Menge wird als Ausgang, positive als Eingang behandelt.',
     pasteTip: '',
+    pastePlaceholder:
+      '2022/3/30\tBuy\tVT\t103.23\t1.00\t0.00\n2025/2/11\tTransfer\tVT\t93.41\t-167.73\t0.00',
     parseButton: 'Eingefügten Inhalt analysieren',
     uploadLabel: 'Unterstützte CSV-Exportdateien: Charles Schwab, Firstrade',
     uploadSupported: '',

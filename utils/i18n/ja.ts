@@ -725,6 +725,8 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     pasteLabel: 'Excelまたは表データをここに貼り付けてください (対応形式: 日付 | 買/売/配当/転送 | ティッカー | 価格 | 数量 | 手数料 | 合計金額)',
     pasteFormat: '💡 「転送」カテゴリ：数量が負の場合は転出、正の場合は転入として扱われます。',
     pasteTip: '',
+    pastePlaceholder:
+      '2022/3/30\tBuy\tVT\t103.23\t1.00\t0.00\n2025/2/11\tTransfer\tVT\t93.41\t-167.73\t0.00',
     parseButton: '貼り付け内容を解析',
     uploadLabel: '対応CSVエクスポートファイル：Charles Schwab、Firstrade',
     uploadSupported: '',
