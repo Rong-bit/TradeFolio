@@ -15,6 +15,16 @@ export function hasRecurringTag(note: string | undefined, ruleId: string, period
   return (note ?? '').includes(recurringTag(ruleId, period));
 }
 
+/** 列表／對話框顯示用：移除 note 尾端或其中供程式用的 __recurring:…__ */
+export function stripRecurringMarkersFromNote(note: string | undefined): string {
+  if (!note) return '';
+  return note.replace(/\s*__recurring:[^:]+:[^_]+__/g, '').trim();
+}
+
+export function noteContainsRecurringMarker(note: string | undefined): boolean {
+  return /__recurring:[^:]+:[^_]+__/.test(note ?? '');
+}
+
 /** YYYY-MM-DD（本地） */
 export function formatLocalYmd(d: Date): string {
   const y = d.getFullYear();
