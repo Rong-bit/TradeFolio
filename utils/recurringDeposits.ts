@@ -25,6 +25,18 @@ export function noteContainsRecurringMarker(note: string | undefined): boolean {
   return /__recurring:[^:]+:[^_]+__/.test(note ?? '');
 }
 
+/** 儲存備註時：保留原錄之 __recurring 標記（供定期去重用），接在使用者可見文字後 */
+export function mergeNotePreserveRecurringMarkers(
+  originalNote: string | undefined,
+  userFacingNote: string
+): string {
+  const tags = originalNote?.match(/__recurring:[^:]+:[^_]+__/g) ?? [];
+  if (tags.length === 0) return userFacingNote.trim();
+  const userPart = userFacingNote.trim();
+  if (!userPart) return tags.join(' ').trim();
+  return `${userPart} ${tags.join(' ')}`.trim();
+}
+
 /** YYYY-MM-DD（本地） */
 export function formatLocalYmd(d: Date): string {
   const y = d.getFullYear();
@@ -78,7 +90,7 @@ export function computeDepositAmountTWD(
   exchangeRate?: number,
   explicitAmountTWD?: number
 ): number | undefined {
-  if (explicitAmountTWD !== undefined && Number.isFinite(explicitAmountTWD)) {
+  if (explicitAmountTWD !== undefined && Number.isFinite(explicitAmountTWD) && explicitAmountTWD > 0) {
     return explicitAmountTWD;
   }
   const f = fee || 0;
@@ -117,9 +129,6 @@ export interface ApplyRecurringDepositsResult {
   updatedRules: RecurringDepositRule[];
 }
 
-/**
- * 產生應補入之入金與更新後規則（不重複寫入 state；由呼叫端批次套用）。
- */
 export function applyRecurringDeposits(input: ApplyRecurringDepositsInput): ApplyRecurringDepositsResult {
   const today = input.today ?? new Date();
   const todayYmd = formatLocalYmd(today);
@@ -176,7 +185,7 @@ export function applyRecurringDeposits(input: ApplyRecurringDepositsInput): Appl
         date: scheduledYmd,
         type: CashFlowType.DEPOSIT,
         amount: rule.amount,
-        amountTWD,
+        amountTWD: amountTWD !== undefined && amountTWD > 0 ? amountTWD : undefined,
         fee: fee > 0 ? fee : undefined,
         accountId: rule.accountId,
         exchangeRate:
