@@ -684,6 +684,22 @@ export interface Translations {
     backToEdit: string;
     confirmSave: string;
     errorNoAccount: string;
+    recurringSectionTitle: string;
+    recurringDisclaimer: string;
+    recurringDayShort: string;
+    recurringDayOfMonth: string;
+    recurringStartMonth: string;
+    recurringStartMonthHint: string;
+    recurringAddRule: string;
+    recurringEditRule: string;
+    recurringSaveRule: string;
+    recurringDeleteRule: string;
+    recurringEnabled: string;
+    recurringLastApplied: string;
+    recurringNoRules: string;
+    recurringDeleteConfirm: string;
+    recurringInvalidAmount: string;
+    recurringAmountTwdOptional: string;
   };
   // 批次匯入模組
   batchImportModal: {

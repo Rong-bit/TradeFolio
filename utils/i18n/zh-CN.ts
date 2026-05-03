@@ -666,4 +666,25 @@ zhCN.appMessages = {
   confirmDeleteAction: '确认删除',
 };
 
+zhCN.fundForm = {
+  ...zhCN.fundForm,
+  recurringSectionTitle: '每月定期汇入',
+  recurringDayShort: '每月 {day} 日 · {account} · {amount} {ccy}',
+  recurringDisclaimer:
+    '仅在打开本应用时检查并入账；若长期未开启，下次开启会尝试补上应入账的月份。不含后台排程。',
+  recurringDayOfMonth: '每月几号',
+  recurringStartMonth: '起始月份（选填）',
+  recurringStartMonthHint: '留空则从规则创建当月起算',
+  recurringAddRule: '新增规则',
+  recurringEditRule: '编辑规则',
+  recurringSaveRule: '保存规则',
+  recurringDeleteRule: '删除规则',
+  recurringEnabled: '启用',
+  recurringLastApplied: '上次已套用：{period}',
+  recurringNoRules: '尚未设定定期汇入',
+  recurringDeleteConfirm: '确定删除此规则？（已产生的入金记录不会删除）',
+  recurringInvalidAmount: '请选择账户并输入有效金额',
+  recurringAmountTwdOptional: '台币成本（选填，有填则优先于汇率推算）',
+};
+
 export { zhCN };
