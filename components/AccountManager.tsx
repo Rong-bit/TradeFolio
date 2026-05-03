@@ -13,6 +13,7 @@ interface Props {}
 const AccountManager: React.FC<Props> = () => {
   const { computedAccounts: accounts, addAccount, updateAccount: onUpdate, removeAccount: onDelete } = usePortfolio();
   const { language } = useUI();
+  const isChinese = language === 'zh-TW' || language === 'zh-CN';
   const onAdd = addAccount;
   const translations = t(language);
   const [name, setName] = useState('');
@@ -43,7 +44,7 @@ const AccountManager: React.FC<Props> = () => {
     
     // 檢查名稱是否重複
     if (isNameDuplicate(name)) {
-      const errorMsg = language === 'zh-TW' 
+      const errorMsg = isChinese
         ? `帳戶名稱「${name}」已存在，請使用不同的名稱。`
         : `Account name "${name}" already exists. Please use a different name.`;
       alert(errorMsg);
@@ -218,7 +219,7 @@ const AccountManager: React.FC<Props> = () => {
                   type="button"
                   onClick={(e) => handleDeleteClick(e, acc.id, acc.name)}
                   className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors relative z-20 cursor-pointer border border-transparent"
-                  title={language === 'zh-TW' ? '刪除帳戶' : 'Delete Account'}
+                  title={isChinese ? '刪除帳戶' : 'Delete Account'}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -339,7 +340,7 @@ const AccountManager: React.FC<Props> = () => {
                 onClick={() => setDeleteTarget(null)}
                 className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded transition"
               >
-                取消
+                {translations.common.cancel}
               </button>
               <button 
                 onClick={confirmDelete}
