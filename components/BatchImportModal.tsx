@@ -705,12 +705,17 @@ const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
             feesVal = cols.length > 5 && cols[5] ? parseNumber(cols[5]) : 0;
             amountVal = cols.length > 6 && cols[6] ? parseNumber(cols[6]) : 0;
             
-            // Map Chinese / English Types
-            if (typeStr.includes('買') || typeStrLower === 'buy') type = TransactionType.BUY;
-            else if (typeStr.includes('賣') || typeStr.toLowerCase() === 'sell') type = TransactionType.SELL;
+            // Map Chinese / English Types（含簡體：买／卖／转移）
+            if (typeStr.includes('買') || typeStr.includes('买') || typeStrLower === 'buy') type = TransactionType.BUY;
+            else if (typeStr.includes('賣') || typeStr.includes('卖') || typeStr.toLowerCase() === 'sell') type = TransactionType.SELL;
             
             // --- New Logic for Transfer (嘉信/Schwab 格式) ---
-            else if (typeStr.includes('轉移') || typeStr.toLowerCase().includes('transfer') || typeStr.includes('journal')) {
+            else if (
+              typeStr.includes('轉移') ||
+              typeStr.includes('转移') ||
+              typeStr.toLowerCase().includes('transfer') ||
+              typeStr.includes('journal')
+            ) {
                 // 邏輯：股數為負 -> 轉出 (TRANSFER_OUT)；股數為正 -> 轉入 (TRANSFER_IN)
                 if (rawQty < 0) {
                     type = TransactionType.TRANSFER_OUT;
@@ -952,7 +957,7 @@ const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
                 </label>
                 <textarea 
                   className="w-full h-40 border border-slate-300 rounded-lg p-3 font-mono text-xs bg-white text-slate-900 focus:ring-2 focus:ring-accent outline-none dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
-                  placeholder={`2022/3/30	買	VT	103.23	1.00	0.00\n2025/2/11	轉移	VT	93.41	-167.73	0.00`}
+                  placeholder={tr.pastePlaceholder}
                   value={inputText}
                   onChange={handleTextChange}
                 />
