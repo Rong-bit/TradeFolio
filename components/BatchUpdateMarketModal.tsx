@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { usePortfolio } from '../contexts/PortfolioContext';
+import { useUI } from '../contexts/UIContext';
 import { Transaction, Market } from '../types';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+import { t } from '../utils/i18n';
 
 interface Props {
   onUpdate: (updates: { id: string; market: Market }[]) => void;
@@ -10,8 +12,44 @@ interface Props {
 
 const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
   const { transactions } = usePortfolio();
+  const { language } = useUI();
+  const isChinese = language === 'zh-TW' || language === 'zh-CN';
+  const tr = t(language);
+  const tf = tr.transactionForm;
   const [ticker, setTicker] = useState('');
   const [newMarket, setNewMarket] = useState<Market>(Market.US);
+
+  const text = {
+    title: isChinese ? '批量修改市場' : 'Batch Update Market',
+    tickerLabel: isChinese ? '股票代號' : 'Ticker Symbol',
+    tickerPlaceholder: isChinese ? '例如：VWRA' : 'e.g. VWRA',
+    marketLabel: isChinese ? '新的市場設置' : 'New Market',
+    foundRecords: (count: number) =>
+      isChinese ? `找到 ${count} 筆交易記錄` : `Found ${count} matching transactions`,
+    updateTargetPrefix: isChinese ? '將把這些記錄的市場設置更新為：' : 'These records will be updated to market:',
+    noMatchesAlert: isChinese
+      ? '找不到匹配的交易記錄，請確認股票代號是否正確。'
+      : 'No matching transactions found. Please verify the ticker symbol.',
+    confirmUpdate: isChinese ? '確認修改' : 'Confirm Update',
+  };
+
+  const marketLabelMap: Record<Market, string> = {
+    [Market.US]: tf.marketUS,
+    [Market.TW]: tf.marketTW,
+    [Market.UK]: tf.marketUK,
+    [Market.JP]: tf.marketJP,
+    [Market.CN]: tf.marketCN,
+    [Market.SZ]: tf.marketSZ,
+    [Market.IN]: tf.marketIN,
+    [Market.CA]: tf.marketCA,
+    [Market.FR]: tf.marketFR,
+    [Market.HK]: tf.marketHK,
+    [Market.KR]: tf.marketKR,
+    [Market.DE]: tf.marketDE,
+    [Market.AU]: tf.marketAU,
+    [Market.SA]: tf.marketSA,
+    [Market.BR]: tf.marketBR,
+  };
 
   // 根據輸入的股票代號找到匹配的交易記錄
   const matchingTransactions = useMemo(() => {
@@ -22,7 +60,7 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
 
   const handleConfirm = () => {
     if (matchingTransactions.length === 0) {
-      alert('找不到匹配的交易記錄，請確認股票代號是否正確。');
+      alert(text.noMatchesAlert);
       return;
     }
 
@@ -40,7 +78,7 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
         {/* Header */}
         <div className="bg-purple-600 p-4 flex justify-between items-center rounded-t-xl">
-          <h2 className="text-white font-bold text-lg">批量修改市場</h2>
+          <h2 className="text-white font-bold text-lg">{text.title}</h2>
           <button onClick={onClose} className="text-purple-200 hover:text-white text-2xl">&times;</button>
         </div>
 
@@ -49,13 +87,13 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
           {/* 股票代號輸入 */}
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">
-              股票代號
+              {text.tickerLabel}
             </label>
             <input
               type="text"
               value={ticker}
               onChange={(e) => setTicker(e.target.value)}
-              placeholder="例如：VWRA"
+              placeholder={text.tickerPlaceholder}
               className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm ${FORM_FIELD_THEME}`}
             />
           </div>
@@ -63,28 +101,28 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
           {/* 市場選擇 */}
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">
-              新的市場設置
+              {text.marketLabel}
             </label>
             <select
               value={newMarket}
               onChange={(e) => setNewMarket(e.target.value as Market)}
               className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm ${FORM_FIELD_THEME}`}
             >
-              <option value={Market.US}>美股 (US)</option>
-              <option value={Market.TW}>台股 (TW)</option>
-              <option value={Market.UK}>英國股 (UK)</option>
-              <option value={Market.JP}>日本股 (JP)</option>
-              <option value={Market.CN}>中國滬 (CN)</option>
-              <option value={Market.SZ}>中國深 (SZ)</option>
-              <option value={Market.IN}>印度 (IN)</option>
-              <option value={Market.CA}>加拿大 (CA)</option>
-              <option value={Market.FR}>法國 (FR)</option>
-              <option value={Market.HK}>香港 (HK)</option>
-              <option value={Market.KR}>韓國 (KR)</option>
-              <option value={Market.DE}>德國 (DE)</option>
-              <option value={Market.AU}>澳洲 (AU)</option>
-              <option value={Market.SA}>沙烏地 (SA)</option>
-              <option value={Market.BR}>巴西 (BR)</option>
+              <option value={Market.US}>{tf.marketUS}</option>
+              <option value={Market.TW}>{tf.marketTW}</option>
+              <option value={Market.UK}>{tf.marketUK}</option>
+              <option value={Market.JP}>{tf.marketJP}</option>
+              <option value={Market.CN}>{tf.marketCN}</option>
+              <option value={Market.SZ}>{tf.marketSZ}</option>
+              <option value={Market.IN}>{tf.marketIN}</option>
+              <option value={Market.CA}>{tf.marketCA}</option>
+              <option value={Market.FR}>{tf.marketFR}</option>
+              <option value={Market.HK}>{tf.marketHK}</option>
+              <option value={Market.KR}>{tf.marketKR}</option>
+              <option value={Market.DE}>{tf.marketDE}</option>
+              <option value={Market.AU}>{tf.marketAU}</option>
+              <option value={Market.SA}>{tf.marketSA}</option>
+              <option value={Market.BR}>{tf.marketBR}</option>
             </select>
           </div>
 
@@ -93,28 +131,11 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
             <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
               <p className="text-sm text-slate-700">
                 <span className="font-bold text-purple-600">
-                  找到 {matchingTransactions.length} 筆交易記錄
+                  {text.foundRecords(matchingTransactions.length)}
                 </span>
                 {matchingTransactions.length > 0 && (
                   <span className="block mt-2 text-xs text-slate-500">
-                    將把這些記錄的市場設置更新為：<strong>{
-                      newMarket === Market.US ? '美股 (US)' : 
-                      newMarket === Market.TW ? '台股 (TW)' : 
-                      newMarket === Market.UK ? '英國股 (UK)' : 
-                      newMarket === Market.JP ? '日本股 (JP)' :
-                      newMarket === Market.CN ? '中國滬 (CN)' :
-                      newMarket === Market.SZ ? '中國深 (SZ)' :
-                      newMarket === Market.IN ? '印度 (IN)' :
-                      newMarket === Market.CA ? '加拿大 (CA)' :
-                      newMarket === Market.FR ? '法國 (FR)' :
-                      newMarket === Market.HK ? '香港 (HK)' :
-                      newMarket === Market.KR ? '韓國 (KR)' :
-                      newMarket === Market.DE ? '德國 (DE)' :
-                      newMarket === Market.AU ? '澳洲 (AU)' :
-                      newMarket === Market.SA ? '沙烏地 (SA)' :
-                      newMarket === Market.BR ? '巴西 (BR)' :
-                      '美股 (US)'
-                    }</strong>
+                    {text.updateTargetPrefix}<strong>{marketLabelMap[newMarket] ?? tf.marketUS}</strong>
                   </span>
                 )}
               </p>
@@ -128,7 +149,7 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
             onClick={onClose}
             className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-white transition"
           >
-            取消
+            {tr.common.cancel}
           </button>
           <button
             onClick={handleConfirm}
@@ -139,7 +160,7 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
                 : 'bg-slate-400 cursor-not-allowed'
             }`}
           >
-            確認修改
+            {text.confirmUpdate}
           </button>
         </div>
       </div>
