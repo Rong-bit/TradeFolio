@@ -98,6 +98,29 @@ export interface CashFlow {
   category?: CashFlowCategory; // 資金用途類別
 }
 
+/** 每月固定某日自動建立 DEPOSIT 入金（僅在開啟 App 時套用） */
+export interface RecurringDepositRule {
+  id: string;
+  enabled: boolean;
+  /** 1–31；若該月無該日則用該月最後一日 */
+  dayOfMonth: number;
+  accountId: string;
+  amount: number;
+  fee?: number;
+  note?: string;
+  category?: CashFlowCategory;
+  /** USD/JPY 等入金時用於推算 amountTWD（與手動入金一致） */
+  exchangeRate?: number;
+  /** 若填寫則優先於依匯率推算 */
+  amountTWD?: number;
+  /** 僅從此 YYYY-MM 起產生 */
+  startMonth?: string;
+  /** 內部：最後已掃描到的 YYYY-MM */
+  lastAppliedPeriod?: string;
+  /** 建立時 YYYY-MM；舊備份可省略 */
+  createdMonth?: string;
+}
+
 export interface Transaction {
   id: string;
   date: string; // ISO Date string
