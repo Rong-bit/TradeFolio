@@ -6,10 +6,9 @@ import {
   formatCurrency,
   valueInBaseCurrency,
   currencyToTWDRate,
-  fundFormUsdPerBaseToTwdPerNative,
-  fundFormTwdPerNativeToUsdPerBase,
-  fundFormUsesUsdPerBaseSemantics,
-  getDisplayRateForBaseCurrency,
+  baseCurrencyToCurrency,
+  fundFormAccountBasePairToTwdPerNative,
+  fundFormTwdPerNativeToAccountBasePair,
 } from '../utils/calculations';
 import BatchCashFlowModal from './BatchCashFlowModal';
 import { t, translate } from '../utils/i18n';
@@ -106,12 +105,8 @@ const FundManager: React.FC<Props> = () => {
         const acc = accounts.find(a => a.id === rule.accountId);
         if (acc && fundAccountMatchesBaseCurrency(acc.currency, baseCurrency)) {
           setRecEx('');
-        } else if (
-          fundFormUsesUsdPerBaseSemantics(baseCurrency) &&
-          acc &&
-          isFundNativeRateCurrency(acc.currency)
-        ) {
-          const v = fundFormTwdPerNativeToUsdPerBase(rule.exchangeRate, baseCurrency, acc.currency, rates);
+        } else if (acc && isFundNativeRateCurrency(acc.currency)) {
+          const v = fundFormTwdPerNativeToAccountBasePair(rule.exchangeRate, baseCurrency, rates);
           setRecEx(v != null ? String(v) : String(rule.exchangeRate));
         } else {
           setRecEx(String(rule.exchangeRate));
@@ -166,10 +161,10 @@ const FundManager: React.FC<Props> = () => {
     } else if (
       storedEx !== undefined &&
       recAccForSave &&
-      fundFormUsesUsdPerBaseSemantics(baseCurrency) &&
+      !fundAccountMatchesBaseCurrency(recAccForSave.currency, baseCurrency) &&
       isFundNativeRateCurrency(recAccForSave.currency)
     ) {
-      const conv = fundFormUsdPerBaseToTwdPerNative(storedEx, baseCurrency, recAccForSave.currency, rates);
+      const conv = fundFormAccountBasePairToTwdPerNative(storedEx, baseCurrency, rates);
       if (!Number.isFinite(conv) || conv <= 0) {
         alert(ff.exchangeRateInvalid);
         return;
@@ -231,15 +226,10 @@ const FundManager: React.FC<Props> = () => {
           setExchangeRate(String(editingCashFlow.exchangeRate));
         } else if (acc && fundAccountMatchesBaseCurrency(acc.currency, baseCurrency)) {
           setExchangeRate('');
-        } else if (
-          fundFormUsesUsdPerBaseSemantics(baseCurrency) &&
-          acc &&
-          isFundNativeRateCurrency(acc.currency)
-        ) {
-          const v = fundFormTwdPerNativeToUsdPerBase(
+        } else if (acc && isFundNativeRateCurrency(acc.currency)) {
+          const v = fundFormTwdPerNativeToAccountBasePair(
             editingCashFlow.exchangeRate,
             baseCurrency,
-            acc.currency,
             rates
           );
           setExchangeRate(v != null ? String(v) : String(editingCashFlow.exchangeRate));
@@ -298,9 +288,9 @@ const FundManager: React.FC<Props> = () => {
         raw > 0 &&
         account &&
         isFundNativeRateCurrency(account.currency) &&
-        fundFormUsesUsdPerBaseSemantics(baseCurrency)
+        !fundAccountMatchesBaseCurrency(account.currency, baseCurrency)
       ) {
-        const conv = fundFormUsdPerBaseToTwdPerNative(raw, baseCurrency, account.currency, rates);
+        const conv = fundFormAccountBasePairToTwdPerNative(raw, baseCurrency, rates);
         if (!Number.isFinite(conv) || conv <= 0) {
           alert(ff.exchangeRateInvalid);
           return;
@@ -477,47 +467,26 @@ const FundManager: React.FC<Props> = () => {
 
   const fundNonTransferRateLabel = useMemo(() => {
     if (!selectedAccount) return ff.exchangeRate;
-    if (fundFormUsesUsdPerBaseSemantics(baseCurrency)) {
-      return translate('fundForm.exchangeRateUsdBase', language, { base: baseCurrency });
-    }
-    if (selectedAccount.currency === Currency.USD) return ff.exchangeRateUsdTwd;
-    if (selectedAccount.currency === Currency.JPY) return ff.exchangeRateJPY;
-    if (selectedAccount.currency === Currency.GBP) {
-      return translate('fundForm.exchangeRatePair', language, { quote: 'TWD', base: Currency.GBP });
-    }
-    if (selectedAccount.currency === Currency.EUR) {
-      return translate('fundForm.exchangeRatePair', language, { quote: 'TWD', base: Currency.EUR });
-    }
-    return ff.exchangeRate;
+    return translate('fundForm.exchangeRatePair', language, {
+      quote: selectedAccount.currency,
+      base: baseCurrency,
+    });
   }, [selectedAccount, baseCurrency, language, ff]);
 
   const fundEntryRatePlaceholder = useMemo(() => {
     if (!selectedAccount || !isFundNativeRateCurrency(selectedAccount.currency)) {
       return currentExchangeRate.toString();
     }
-    if (fundFormUsesUsdPerBaseSemantics(baseCurrency)) {
-      return getDisplayRateForBaseCurrency(baseCurrency, rates).value.toFixed(4);
+    if (fundAccountMatchesBaseCurrency(selectedAccount.currency, baseCurrency)) {
+      return currentExchangeRate.toString();
     }
-    if (selectedAccount.currency === Currency.USD) return currentExchangeRate.toString();
-    if (selectedAccount.currency === Currency.JPY) {
-      return (currentJpyExchangeRate ?? currentExchangeRate).toString();
-    }
-    if (selectedAccount.currency === Currency.GBP) {
-      return String(currentGbpExchangeRate && currentGbpExchangeRate > 0 ? currentGbpExchangeRate : 40);
-    }
-    if (selectedAccount.currency === Currency.EUR) {
-      return String(currentEurExchangeRate && currentEurExchangeRate > 0 ? currentEurExchangeRate : 34);
+    const twdPerBase = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
+    const twdPerAcct = currencyToTWDRate(selectedAccount.currency, rates);
+    if (twdPerBase > 0 && twdPerAcct > 0) {
+      return (twdPerAcct / twdPerBase).toFixed(4);
     }
     return currentExchangeRate.toString();
-  }, [
-    selectedAccount,
-    baseCurrency,
-    rates,
-    currentExchangeRate,
-    currentJpyExchangeRate,
-    currentGbpExchangeRate,
-    currentEurExchangeRate,
-  ]);
+  }, [selectedAccount, baseCurrency, rates, currentExchangeRate]);
 
   // Filter Logic
   const filteredFlows = useMemo(() => {
@@ -701,33 +670,25 @@ const FundManager: React.FC<Props> = () => {
               {recShowExchange && (
                 <div>
                   <label className="block text-slate-700 dark:text-slate-200 font-medium">
-                    {fundFormUsesUsdPerBaseSemantics(baseCurrency)
-                      ? translate('fundForm.exchangeRateUsdBase', language, { base: baseCurrency })
-                      : recSelectedAccount?.currency === Currency.USD
-                        ? ff.exchangeRateUsdTwd
-                        : recSelectedAccount?.currency === Currency.JPY
-                          ? ff.exchangeRateJPY
-                          : recSelectedAccount?.currency === Currency.GBP
-                            ? translate('fundForm.exchangeRatePair', language, { quote: 'TWD', base: Currency.GBP })
-                            : recSelectedAccount?.currency === Currency.EUR
-                              ? translate('fundForm.exchangeRatePair', language, { quote: 'TWD', base: Currency.EUR })
-                              : ff.exchangeRate}
+                    {recSelectedAccount
+                      ? translate('fundForm.exchangeRatePair', language, {
+                          quote: recSelectedAccount.currency,
+                          base: baseCurrency,
+                        })
+                      : ff.exchangeRate}
                   </label>
                   <input
                     type="number"
                     step="0.0001"
                     placeholder={
-                      recSelectedAccount && isFundNativeRateCurrency(recSelectedAccount.currency)
-                        ? fundFormUsesUsdPerBaseSemantics(baseCurrency)
-                          ? getDisplayRateForBaseCurrency(baseCurrency, rates).value.toFixed(4)
-                          : recSelectedAccount.currency === Currency.USD
-                            ? currentExchangeRate.toString()
-                            : recSelectedAccount.currency === Currency.JPY
-                              ? (currentJpyExchangeRate ?? currentExchangeRate).toString()
-                              : recSelectedAccount.currency === Currency.GBP
-                                ? String(currentGbpExchangeRate && currentGbpExchangeRate > 0 ? currentGbpExchangeRate : 40)
-                                : String(currentEurExchangeRate && currentEurExchangeRate > 0 ? currentEurExchangeRate : 34)
-                        : currentExchangeRate.toString()
+                      (() => {
+                        const rec = recSelectedAccount;
+                        if (!rec || !isFundNativeRateCurrency(rec.currency)) return currentExchangeRate.toString();
+                        const twdB = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
+                        const twdA = currencyToTWDRate(rec.currency, rates);
+                        if (twdB > 0 && twdA > 0) return (twdA / twdB).toFixed(4);
+                        return currentExchangeRate.toString();
+                      })()
                     }
                     value={recEx}
                     onChange={e => setRecEx(e.target.value)}
@@ -977,14 +938,13 @@ const FundManager: React.FC<Props> = () => {
                      if (isCfCrossXfer) {
                        displayExRateStr = String(cf.exchangeRate);
                      } else if (
-                       fundFormUsesUsdPerBaseSemantics(baseCurrency) &&
                        account &&
-                       usesNativeRate
+                       usesNativeRate &&
+                       !fundAccountMatchesBaseCurrency(account.currency, baseCurrency)
                      ) {
-                       const v = fundFormTwdPerNativeToUsdPerBase(
+                       const v = fundFormTwdPerNativeToAccountBasePair(
                          cf.exchangeRate,
                          baseCurrency,
-                         account.currency,
                          rates
                        );
                        displayExRateStr = v != null ? v.toFixed(4) : String(cf.exchangeRate);
@@ -1113,14 +1073,13 @@ const FundManager: React.FC<Props> = () => {
                   let shown = String(pendingCashFlow.exchangeRate);
                   if (
                     !pCross &&
-                    fundFormUsesUsdPerBaseSemantics(baseCurrency) &&
                     pAcc &&
-                    isFundNativeRateCurrency(pAcc.currency)
+                    isFundNativeRateCurrency(pAcc.currency) &&
+                    !fundAccountMatchesBaseCurrency(pAcc.currency, baseCurrency)
                   ) {
-                    const v = fundFormTwdPerNativeToUsdPerBase(
+                    const v = fundFormTwdPerNativeToAccountBasePair(
                       pendingCashFlow.exchangeRate,
                       baseCurrency,
-                      pAcc.currency,
                       rates
                     );
                     if (v != null) shown = v.toFixed(4);
