@@ -45,6 +45,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
     const fmt = (v: number, ccy: string) => formatCurrency(v, ccy, loc);
     const acc = translate('batchCashFlowModal.pasteDemoRow1Account', language);
     const line2 = translate('batchCashFlowModal.pastePlaceholderLine2', language);
+    const line3 = translate('batchCashFlowModal.pastePlaceholderLine3', language);
     const accTxt = acc.startsWith('batchCashFlowModal.') ? (isChinese ? '國泰' : 'Local Bank') : acc;
     const catFund = translate('fundForm.typeDeposit', language);
     const catTxt = catFund.startsWith('fundForm.')
@@ -53,10 +54,13 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
         : 'Deposit'
       : catFund;
     const line2Txt = line2.startsWith('batchCashFlowModal.')
-      ? '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tUSD wire-in'
+      ? '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tWire (TWD→USD)'
       : line2;
+    const line3Txt = line3.startsWith('batchCashFlowModal.')
+      ? '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\tDeposit'
+      : line3;
     const row1 = `2025/12/1\t${fmt(30000, 'TWD')}\t\t\t\t${fmt(-30000, 'TWD')}\t${accTxt}\t${catTxt}`;
-    let out = `${row1}\n${line2Txt}`;
+    let out = `${row1}\n${line2Txt}\n${line3Txt}`;
     if (baseCurrency !== 'TWD') {
       const approxVal = valueInBaseCurrency(30000, baseCurrency, rates);
       const approx = fmt(approxVal, baseCurrency);
@@ -80,6 +84,12 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
     guideBody: tx('guideBody', isChinese
       ? '請直接從 Excel 複製包含「日期、台幣、美元、匯率、手續費、總計、帳戶、類別」的資料並貼上。'
       : 'Paste data copied from Excel containing Date, TWD, USD, Rate, Fee, Total, Account, Category.'),
+    guideNoteFx: tx(
+      'guideNoteFx',
+      isChinese
+        ? '※ 第一列：純台幣入帳—台幣與總計填金額，美元與匯率欄留空。第二列：跨境 TWD→美金 時填匯率。第三列：美國境內美金入帳（如 ACH）無需換匯，匯率欄留空。'
+        : 'Note: (1) First line—TWD only: fill TWD & Total; leave USD & Rate empty. (2) Cross-border TWD→USD: fill Rate. (3) US domestic USD (e.g. ACH): no FX, leave Rate empty.'
+    ),
     columnHeaderExample: tx(
       'columnHeaderExample',
       isChinese
@@ -304,6 +314,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
               <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800 border border-blue-200">
                 <p className="font-bold mb-1">{text.guideTitle}</p>
                 <p>{text.guideBody}</p>
+                <p className="mt-2 text-xs text-blue-900/90 leading-relaxed">{text.guideNoteFx}</p>
                 <p className="mt-1 text-xs opacity-75 font-mono bg-blue-100 p-1 rounded inline-block">
                   {text.columnHeaderExample}
                 </p>
