@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useLocalStorageDebounced } from './useLocalStorageDebounced';
-import { Transaction, Account, CashFlow, HistoricalData, Market } from '../types';
+import { Transaction, Account, CashFlow, HistoricalData, Market, RecurringDepositRule } from '../types';
+import { applyRecurringDeposits } from '../utils/recurringDeposits';
 
 interface PortfolioDataState {
   transactions: Transaction[];
@@ -11,6 +12,7 @@ interface PortfolioDataState {
   rebalanceTargets: Record<string, number>;
   rebalanceEnabledItems: string[];
   historicalData: HistoricalData;
+  recurringDepositRules: RecurringDepositRule[];
 }
 
 const INITIAL_STATE: PortfolioDataState = {
@@ -22,6 +24,7 @@ const INITIAL_STATE: PortfolioDataState = {
   rebalanceTargets: {},
   rebalanceEnabledItems: [],
   historicalData: {},
+  recurringDepositRules: [],
 };
 
 export function usePortfolioData(userPrefix: string | undefined) {
@@ -36,6 +39,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
   useLocalStorageDebounced('rebalanceTargets', data.rebalanceTargets, 500, userPrefix);
   useLocalStorageDebounced('rebalanceEnabledItems', data.rebalanceEnabledItems, 500, userPrefix);
   useLocalStorageDebounced('historicalData', data.historicalData, 500, userPrefix);
+  useLocalStorageDebounced('recurringDepositRules', data.recurringDepositRules, 500, userPrefix);
 
   /** 從 localStorage 載入所有投資組合資料 */
   const loadData = useCallback((getKey: (k: string) => string) => {
@@ -53,6 +57,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
       rebalanceTargets: parse('rebalanceTargets', {}),
       rebalanceEnabledItems: parse('rebalanceEnabledItems', []),
       historicalData: parse('historicalData', {}),
+      recurringDepositRules: parse('recurringDepositRules', []),
     });
   }, []);
 
@@ -161,6 +166,53 @@ export function usePortfolioData(userPrefix: string | undefined) {
     setData(prev => ({ ...prev, cashFlows: [] }));
   }, []);
 
+  // ── Recurring deposit rules ───────────────────────────────────
+
+  const addRecurringDepositRule = useCallback((rule: RecurringDepositRule) => {
+    setData(prev => ({ ...prev, recurringDepositRules: [...prev.recurringDepositRules, rule] }));
+  }, []);
+
+  const updateRecurringDepositRule = useCallback((rule: RecurringDepositRule) => {
+    setData(prev => ({
+      ...prev,
+      recurringDepositRules: prev.recurringDepositRules.map(r => (r.id === rule.id ? rule : r)),
+    }));
+  }, []);
+
+  const removeRecurringDepositRule = useCallback((id: string) => {
+    setData(prev => ({
+      ...prev,
+      recurringDepositRules: prev.recurringDepositRules.filter(r => r.id !== id),
+    }));
+  }, []);
+
+  const setRecurringDepositRules = useCallback((rules: RecurringDepositRule[]) => {
+    setData(prev => ({ ...prev, recurringDepositRules: rules }));
+  }, []);
+
+  /** 登入後套用每月定期入金（函式式更新，避免 Strict Mode 重複入帳） */
+  const syncRecurringDeposits = useCallback(() => {
+    setData(prev => {
+      const result = applyRecurringDeposits({
+        rules: prev.recurringDepositRules,
+        cashFlows: prev.cashFlows,
+        accounts: prev.accounts,
+        today: new Date(),
+      });
+      if (
+        result.newCashFlows.length === 0 &&
+        result.updatedRules === prev.recurringDepositRules
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        cashFlows: [...prev.cashFlows, ...result.newCashFlows],
+        recurringDepositRules: result.updatedRules,
+      };
+    });
+  }, []);
+
   // ── Prices ────────────────────────────────────────────────────
 
   const updatePrice = useCallback((key: string, price: number) => {
@@ -223,6 +275,11 @@ export function usePortfolioData(userPrefix: string | undefined) {
     removeCashFlow,
     addBatchCashFlows,
     clearCashFlows,
+    addRecurringDepositRule,
+    updateRecurringDepositRule,
+    removeRecurringDepositRule,
+    setRecurringDepositRules,
+    syncRecurringDeposits,
     // prices
     updatePrice,
     updatePricesAndDetails,
