@@ -29,6 +29,17 @@ function isCashFlowPasteHeaderFirstCell(raw: string): boolean {
   return false;
 }
 
+/**
+ * 佔位範例第 2、3 列（Tab 分隔、固定 8 欄），必須與 handleParse 欄位索引一致：
+ * 0 日期 | 1 台幣 | 2 美元 | 3 匯率 | 4 手續費 | 5 總計 | 6 帳戶 | 7 類別
+ * 第 7 欄（類別）會寫入 note，與手動建檔的「類型」文案一致即可；是否跨境以匯率欄有無為準，勿用系統不存在的類別名。
+ * — 第 2 列：valUsd>0 且 Total 為台幣成本；第 3 列：僅美金、匯率空白。
+ */
+const DEMO_ROW2_CROSS_BORDER =
+  '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\t匯入資金 (Import/Salary)';
+const DEMO_ROW3_US_DOMESTIC =
+  '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\tDeposit';
+
 const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
   const { accounts } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
@@ -44,8 +55,6 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
     const loc = languageToLocale(language);
     const fmt = (v: number, ccy: string) => formatCurrency(v, ccy, loc);
     const acc = translate('batchCashFlowModal.pasteDemoRow1Account', language);
-    const line2 = translate('batchCashFlowModal.pastePlaceholderLine2', language);
-    const line3 = translate('batchCashFlowModal.pastePlaceholderLine3', language);
     const accTxt = acc.startsWith('batchCashFlowModal.') ? (isChinese ? '國泰' : 'Local Bank') : acc;
     const catFund = translate('fundForm.typeDeposit', language);
     const catTxt = catFund.startsWith('fundForm.')
@@ -53,14 +62,9 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
         ? '匯入資金 (Import/Salary)'
         : 'Deposit'
       : catFund;
-    const line2Txt = line2.startsWith('batchCashFlowModal.')
-      ? '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tWire (TWD→USD)'
-      : line2;
-    const line3Txt = line3.startsWith('batchCashFlowModal.')
-      ? '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\tDeposit'
-      : line3;
-    const row1 = `2025/12/1\t${fmt(30000, 'TWD')}\t\t\t\t${fmt(-30000, 'TWD')}\t${accTxt}\t${catTxt}`;
-    let out = `${row1}\n${line2Txt}\n${line3Txt}`;
+    // 第一列：純台幣—cols[1] 與 cols[5] 同為入金金額（與 TWD 分支 valTotal 邏輯一致）
+    const row1 = `2025/12/1\t${fmt(30000, 'TWD')}\t\t\t\t${fmt(30000, 'TWD')}\t${accTxt}\t${catTxt}`;
+    let out = `${row1}\n${DEMO_ROW2_CROSS_BORDER}\n${DEMO_ROW3_US_DOMESTIC}`;
     if (baseCurrency !== 'TWD') {
       const approxVal = valueInBaseCurrency(30000, baseCurrency, rates);
       const approx = fmt(approxVal, baseCurrency);
@@ -82,8 +86,8 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
     title: tx('title', isChinese ? '批次匯入資金 (Batch Cash Flow)' : 'Batch Cash Flow Import'),
     guideTitle: tx('guideTitle', isChinese ? '使用說明：' : 'Instructions:'),
     guideBody: tx('guideBody', isChinese
-      ? '請直接從 Excel 複製包含「日期、台幣、美元、匯率、手續費、總計、帳戶、類別」的資料並貼上。'
-      : 'Paste data copied from Excel containing Date, TWD, USD, Rate, Fee, Total, Account, Category.'),
+      ? '請直接從 Excel 複製包含「日期、台幣、美元、匯率、手續費、總計、帳戶、類別」的資料並貼上。最後一欄為類別，倒數第二欄為帳戶。'
+      : 'Paste tab-separated data from Excel: Date, TWD, USD, Rate, Fee, Total, Account, Category. The last column is Category; the column before it is Account.'),
     guideNoteFx: tx(
       'guideNoteFx',
       isChinese
