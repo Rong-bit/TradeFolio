@@ -2,7 +2,7 @@ import React, { createContext, useContext } from 'react';
 import {
   Transaction, Account, CashFlow, Holding, PortfolioSummary,
   ChartDataPoint, AssetAllocationItem, AnnualPerformanceItem,
-  AccountPerformance, HistoricalData, Market,
+  AccountPerformance, HistoricalData, Market, RecurringDepositRule,
 } from '../types';
 
 export interface PortfolioContextValue {
@@ -15,6 +15,7 @@ export interface PortfolioContextValue {
   historicalData: HistoricalData;
   rebalanceTargets: Record<string, number>;
   rebalanceEnabledItems: string[];
+  recurringDepositRules: RecurringDepositRule[];
 
   // 計算結果
   holdings: Holding[];
@@ -44,6 +45,9 @@ export interface PortfolioContextValue {
   removeCashFlow: (id: string) => void;
   addBatchCashFlows: (cfs: CashFlow[]) => void;
   clearCashFlows: () => void;
+  addRecurringDepositRule: (rule: RecurringDepositRule) => void;
+  updateRecurringDepositRule: (rule: RecurringDepositRule) => void;
+  removeRecurringDepositRule: (id: string) => void;
 
   // 操作：prices / historical
   updatePrice: (key: string, price: number) => void;
