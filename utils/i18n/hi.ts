@@ -696,9 +696,13 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     guideTitle: 'निर्देश:',
     guideBody:
       'Excel से कॉपी किया गया डेटा पेस्ट करें जिसमें Date, TWD, USD, Rate, Fee, Total, Account, Category शामिल हों।',
+    guideNoteFx:
+      'नोट: (1) केवल TWD: TWD व कुल भरें; USD व दर खाली। (2) सीमा पार TWD→USD: दर भरें। (3) यूएस घरेलू USD (ACH): FX नहीं, दर खाली।',
     columnHeaderExample: 'तारीख | TWD | USD | दर | शुल्क | कुल | खाता | श्रेणी',
     pastePlaceholderLine2:
-      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tUSD वायर-इन',
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tWire (TWD→USD)',
+    pastePlaceholderLine3:
+      '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\tDeposit',
     pasteDemoRow1Account: 'स्थानीय बैंक',
     pastePlaceholderApprox: '(≈ {approx}; आधार मुद्रा और दरें)',
     parseFailed:

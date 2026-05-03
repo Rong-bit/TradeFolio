@@ -707,9 +707,13 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     guideTitle: 'Instructions :',
     guideBody:
       'Collez les données copiées depuis Excel contenant Date, TWD, USD, Taux, Frais, Total, Compte et Catégorie.',
+    guideNoteFx:
+      'Remarque : (1) TWD seul : remplir TWD & Total ; USD & Taux vides. (2) TWD→USD transfrontalier : remplir le Taux. (3) USD aux USA (ACH, etc.) : pas de change, Taux vide.',
     columnHeaderExample: 'Date | TWD | USD | Taux | Frais | Total | Compte | Catégorie',
     pastePlaceholderLine2:
-      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tVirement USD',
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tVirement (TWD→USD)',
+    pastePlaceholderLine3:
+      '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\tDépôt USD domestique',
     pasteDemoRow1Account: 'Banque locale',
     pastePlaceholderApprox: '(≈ {approx}, devise de base & cours)',
     parseFailed:

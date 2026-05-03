@@ -679,9 +679,13 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     guideTitle: 'Anleitung:',
     guideBody:
       'Fügen Sie aus Excel kopierte Daten ein, die Datum, TWD, USD, Kurs, Gebühr, Summe, Konto und Kategorie enthalten.',
+    guideNoteFx:
+      'Hinweis: (1) Nur TWD: TWD & Summe ausfüllen; USD & Kurs leer. (2) Grenzüberschreitend TWD→USD: Kurs ausfüllen. (3) US-inländisch USD (z. B. ACH): kein FX, Kurs leer.',
     columnHeaderExample: 'Datum | TWD | USD | Kurs | Gebühr | Summe | Konto | Kategorie',
     pastePlaceholderLine2:
-      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tUSD-Eingang',
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tÜberweisung (TWD→USD)',
+    pastePlaceholderLine3:
+      '2025/10/15\t\t$5,000\t\t\t$5,000\tSchwab US\tUSD Inland',
     pasteDemoRow1Account: 'Lokalbank',
     pastePlaceholderApprox: '(≈ {approx}; Basiswährung & Kurse)',
     parseFailed:
