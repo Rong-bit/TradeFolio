@@ -819,6 +819,11 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     guideTitle: 'Instructions:',
     guideBody:
       'Paste data copied from Excel containing Date, TWD, USD, Rate, Fee, Total, Account, Category.',
+    columnHeaderExample: 'Date | TWD | USD | Rate | Fee | Total | Account | Category',
+    pastePlaceholderLine2:
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tUSD wire-in',
+    pasteDemoRow1Account: 'Local Bank',
+    pastePlaceholderApprox: '(≈ {approx}; base currency & exchange rates)',
     parseFailed:
       'Unable to parse data.\nSuccess: 0\nFailed: {count}\nPlease ensure the format is tab-separated (copy directly from Excel).',
     unmappedAccounts: 'Please map these accounts first:\n{accounts}',

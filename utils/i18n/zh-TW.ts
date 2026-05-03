@@ -813,6 +813,11 @@ A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」
     title: '批次匯入資金 (Batch Cash Flow)',
     guideTitle: '使用說明：',
     guideBody: '請直接從 Excel 複製包含「日期、台幣、美元、匯率、手續費、總計、帳戶、類別」的資料並貼上。',
+    columnHeaderExample: '日期 | 台幣 | 美元 | 匯率 | 手續費 | 總計 | 帳戶 | 類別',
+    pastePlaceholderLine2:
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\t嘉信\t匯入資金',
+    pasteDemoRow1Account: '國泰',
+    pastePlaceholderApprox: '（約 {approx}，依基準幣與匯率）',
     parseFailed:
       '無法解析資料。\n成功: 0 筆\n失敗: {count} 筆\n請確認格式是否為 Tab 分隔 (直接從 Excel 複製)。',
     unmappedAccounts: '請先設定以下帳戶的對應關係：\n{accounts}',

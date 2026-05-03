@@ -816,6 +816,11 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     guideTitle: '사용 방법:',
     guideBody:
       'Excel에서 복사한 날짜, TWD, USD, 환율, 수수료, 합계, 계좌, 분류 데이터를 붙여 넣어 주세요.',
+    columnHeaderExample: '날짜 | TWD | USD | 환율 | 수수료 | 합계 | 계좌 | 분류',
+    pastePlaceholderLine2:
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\t해외송금',
+    pasteDemoRow1Account: '국泰',
+    pastePlaceholderApprox: '(약 {approx}, 기준 통화·환율 기준)',
     parseFailed:
       '데이터를 파싱할 수 없습니다.\n성공: 0\n실패: {count}\n형식이 탭으로 구분되어 있는지 확인해 주세요(Excel에서 직접 복사).',
     unmappedAccounts: '다음 계좌를 먼저 매핑해 주세요:\n{accounts}',

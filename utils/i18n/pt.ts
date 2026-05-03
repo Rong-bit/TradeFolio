@@ -671,6 +671,11 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     guideTitle: 'Instruções:',
     guideBody:
       'Cole os dados copiados do Excel contendo Data, TWD, USD, Taxa, Taxa/Comissão, Total, Conta e Categoria.',
+    columnHeaderExample: 'Data | TWD | USD | Taxa de câmbio | Comissão | Total | Conta | Categoria',
+    pastePlaceholderLine2:
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tTransferência USD',
+    pasteDemoRow1Account: 'Banco local',
+    pastePlaceholderApprox: '(≈ {approx}; moeda base e taxas)',
     parseFailed:
       'Não foi possível analisar os dados.\nSucesso: 0\nFalha: {count}\nVerifique se o formato está separado por tabulação (copiar diretamente do Excel).',
     unmappedAccounts: 'Associe primeiro estas contas:\n{accounts}',

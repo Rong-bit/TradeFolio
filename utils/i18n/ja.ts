@@ -816,6 +816,11 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     guideTitle: '使い方:',
     guideBody:
       'Excel からコピーした、日付・TWD・USD・為替・手数料・合計・口座・カテゴリを含むデータを貼り付けてください。',
+    columnHeaderExample: '日付 | TWD | USD | 為替 | 手数料 | 合計 | 口座 | カテゴリ',
+    pastePlaceholderLine2:
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\t外貨送金',
+    pasteDemoRow1Account: '三菱UFJ',
+    pastePlaceholderApprox: '（参考: {approx}・基準通貨レート）',
     parseFailed:
       'データを解析できませんでした。\n成功: 0\n失敗: {count}\n形式がタブ区切りか確認してください（Excel から直接コピー）。',
     unmappedAccounts: '以下の口座を先にマッピングしてください:\n{accounts}',

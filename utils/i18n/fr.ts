@@ -707,6 +707,11 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     guideTitle: 'Instructions :',
     guideBody:
       'Collez les données copiées depuis Excel contenant Date, TWD, USD, Taux, Frais, Total, Compte et Catégorie.',
+    columnHeaderExample: 'Date | TWD | USD | Taux | Frais | Total | Compte | Catégorie',
+    pastePlaceholderLine2:
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tVirement USD',
+    pasteDemoRow1Account: 'Banque locale',
+    pastePlaceholderApprox: '(≈ {approx}, devise de base & cours)',
     parseFailed:
       'Impossible d’analyser les données.\nSuccès : 0\nÉchec : {count}\nVérifiez que le format est séparé par des tabulations (copie directe depuis Excel).',
     unmappedAccounts: 'Veuillez d’abord associer ces comptes :\n{accounts}',

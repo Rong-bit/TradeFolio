@@ -581,6 +581,11 @@ zhCN.batchCashFlowModal = {
   title: '批次汇入资金 (Batch Cash Flow)',
   guideTitle: '使用说明：',
   guideBody: '请直接从 Excel 复制包含「日期、台币、美元、汇率、手续费、总计、账户、类别」的数据并贴上。',
+  columnHeaderExample: '日期 | 台币 | 美元 | 汇率 | 手续费 | 总计 | 账户 | 类别',
+  pastePlaceholderLine2:
+    '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\t嘉信\t汇入资金',
+  pasteDemoRow1Account: '国泰',
+  pastePlaceholderApprox: '（约 {approx}，按基准币与汇率）',
   parseFailed:
     '无法解析数据。\n成功: 0 笔\n失败: {count} 笔\n请确认格式是否为 Tab 分隔（直接从 Excel 复制）。',
   unmappedAccounts: '请先设置以下账户的对应关系：\n{accounts}',

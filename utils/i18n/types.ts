@@ -793,6 +793,14 @@ export interface Translations {
     title: string;
     guideTitle: string;
     guideBody: string;
+    /** Tab 分隔欄位範例（與 Excel 欄位順序一致，供說明區顯示） */
+    columnHeaderExample: string;
+    /** 範例第二列（Tab；固定為常見匯入格式示意） */
+    pastePlaceholderLine2: string;
+    /** 範例第一列：帳戶欄示意文字 */
+    pasteDemoRow1Account: string;
+    /** 基準幣非 TWD 時附加一行：{approx} 為已格式化基準幣金額 */
+    pastePlaceholderApprox: string;
     parseFailed: string;
     unmappedAccounts: string;
     mappingTitle: string;

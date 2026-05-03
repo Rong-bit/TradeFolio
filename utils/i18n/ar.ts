@@ -696,6 +696,11 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     guideTitle: 'تعليمات:',
     guideBody:
       'ألصق البيانات المنسوخة من Excel والتي تتضمن التاريخ وTWD وUSD والسعر والرسوم والإجمالي والحساب والفئة.',
+    columnHeaderExample: 'التاريخ | TWD | USD | السعر | الرسوم | الإجمالي | الحساب | الفئة',
+    pastePlaceholderLine2:
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tتحويل USD',
+    pasteDemoRow1Account: 'بنك محلي',
+    pastePlaceholderApprox: '(≈ {approx}؛ العملة الأساسية والأسعار)',
     parseFailed:
       'تعذر تحليل البيانات.\nالناجح: 0\nالفاشل: {count}\nتأكد أن التنسيق مفصول بعلامات تبويب (نسخ مباشر من Excel).',
     unmappedAccounts: 'يرجى ربط هذه الحسابات أولاً:\n{accounts}',

@@ -52,6 +52,23 @@ export const setLanguage = (lang: Language): void => {
 export const t = (lang: Language): Translations =>
   translations[lang] ?? translations['zh-TW'];
 
+/** UI 語言 → Intl.NumberFormat / formatCurrency 用的 BCP 47 locale */
+export function languageToLocale(lang: Language): string {
+  const map: Record<Language, string> = {
+    'zh-TW': 'zh-TW',
+    'zh-CN': 'zh-CN',
+    en: 'en-US',
+    ja: 'ja-JP',
+    ko: 'ko-KR',
+    de: 'de-DE',
+    fr: 'fr-FR',
+    hi: 'hi-IN',
+    ar: 'ar',
+    pt: 'pt-BR',
+  };
+  return map[lang] ?? 'en-US';
+}
+
 export const translate = (
   key: string,
   lang: Language,

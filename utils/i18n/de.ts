@@ -679,6 +679,11 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     guideTitle: 'Anleitung:',
     guideBody:
       'Fügen Sie aus Excel kopierte Daten ein, die Datum, TWD, USD, Kurs, Gebühr, Summe, Konto und Kategorie enthalten.',
+    columnHeaderExample: 'Datum | TWD | USD | Kurs | Gebühr | Summe | Konto | Kategorie',
+    pastePlaceholderLine2:
+      '2025/9/16\t1300000\t$45,410.72\t28.628\t950\t1300950\tSchwab\tUSD-Eingang',
+    pasteDemoRow1Account: 'Lokalbank',
+    pastePlaceholderApprox: '(≈ {approx}; Basiswährung & Kurse)',
     parseFailed:
       'Daten konnten nicht analysiert werden.\nErfolgreich: 0\nFehlgeschlagen: {count}\nBitte prüfen Sie, ob das Format tab-getrennt ist (direkt aus Excel kopieren).',
     unmappedAccounts: 'Bitte ordnen Sie zuerst diese Konten zu:\n{accounts}',
