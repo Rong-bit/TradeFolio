@@ -12,6 +12,21 @@ interface Props {
   onClose: () => void;
 }
 
+/** 略過 Excel 貼上時的第一列表頭列（支援中英文等常見標題） */
+function isCashFlowPasteHeaderFirstCell(raw: string): boolean {
+  const s = raw.trim();
+  if (!s) return false;
+  if (/^date$/i.test(s)) return true;
+  if (/^datum$/i.test(s)) return true;
+  if (/^data$/i.test(s)) return true;
+  if (s.includes('日期')) return true;
+  if (s === '日付' || s.startsWith('日付')) return true;
+  if (s === '날짜') return true;
+  if (s.includes('तारीख')) return true;
+  if (s.includes('التاريخ')) return true;
+  return false;
+}
+
 const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
   const { accounts } = usePortfolio();
   const { language } = useUI();
@@ -33,6 +48,12 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
     guideBody: tx('guideBody', isChinese
       ? '請直接從 Excel 複製包含「日期、台幣、美元、匯率、手續費、總計、帳戶、類別」的資料並貼上。'
       : 'Paste data copied from Excel containing Date, TWD, USD, Rate, Fee, Total, Account, Category.'),
+    columnHeaderExample: tx(
+      'columnHeaderExample',
+      isChinese
+        ? '日期 | 台幣 | 美元 | 匯率 | 手續費 | 總計 | 帳戶 | 類別'
+        : 'Date | TWD | USD | Rate | Fee | Total | Account | Category'
+    ),
     parseFailed: (failed: number) =>
       tx(
         'parseFailed',
@@ -105,7 +126,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
       const cols = line.replace(/\r/g, '').split('\t');
       
       // Skip header row or malformed lines
-      if (cols.length < 3 || cols[0].includes('日期')) return;
+      if (cols.length < 3 || isCashFlowPasteHeaderFirstCell(cols[0])) return;
 
       const dateStr = cols[0];
       
@@ -249,7 +270,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
                 <p className="font-bold mb-1">{text.guideTitle}</p>
                 <p>{text.guideBody}</p>
                 <p className="mt-1 text-xs opacity-75 font-mono bg-blue-100 p-1 rounded inline-block">
-                  日期 | 台幣 | 美元 | 匯率 | 手續費 | 總計 | 帳戶 | 類別
+                  {text.columnHeaderExample}
                 </p>
               </div>
               <textarea 
