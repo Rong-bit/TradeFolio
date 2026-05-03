@@ -576,6 +576,8 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     exchangeRateUsdTwd: 'Taxa (USD/TWD)',
     exchangeRateUsdJpy: 'Taxa (USD/JPY)',
     exchangeRatePair: 'Taxa ({quote}/{base})',
+    exchangeRateUsdBase: 'Taxa (USD/{base})',
+    exchangeRateInvalid: 'Não foi possível converter a taxa. Verifique a moeda base e as taxas vs TWD.',
     crossCurrencyTransfer: 'Transferência multi-moeda',
     usdConversion: 'Conversão USD',
     jpyConversion: 'Conversão JPY',

@@ -601,6 +601,8 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     exchangeRateUsdTwd: 'विनिमय दर (USD/TWD)',
     exchangeRateUsdJpy: 'विनिमय दर (USD/JPY)',
     exchangeRatePair: 'विनिमय दर ({quote}/{base})',
+    exchangeRateUsdBase: 'विनिमय दर (USD/{base})',
+    exchangeRateInvalid: 'दर परिवर्तित नहीं किया जा सका। आधार मुद्रा और TWD दरें जाँचें।',
     crossCurrencyTransfer: 'क्रॉस-करेंसी ट्रांसफर',
     usdConversion: 'USD रूपांतरण',
     jpyConversion: 'JPY रूपांतरण',

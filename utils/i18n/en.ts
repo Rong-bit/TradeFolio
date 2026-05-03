@@ -688,6 +688,9 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     exchangeRateUsdTwd: 'Exchange Rate (USD/TWD)',
     exchangeRateUsdJpy: 'Exchange Rate (USD/JPY)',
     exchangeRatePair: 'Exchange Rate ({quote}/{base})',
+    exchangeRateUsdBase: 'Exchange Rate (USD/{base})',
+    exchangeRateInvalid:
+      'Cannot convert this rate. Check that your base currency and TWD cross-rates are set correctly.',
     crossCurrencyTransfer: 'Cross-currency Transfer',
     usdConversion: 'USD Conversion',
     jpyConversion: 'JPY Conversion',

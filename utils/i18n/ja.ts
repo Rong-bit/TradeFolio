@@ -685,6 +685,8 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     exchangeRateUsdTwd: '為替(USD/TWD)',
     exchangeRateUsdJpy: '為替(USD/JPY)',
     exchangeRatePair: '為替({quote}/{base})',
+    exchangeRateUsdBase: '為替(USD/{base})',
+    exchangeRateInvalid: '為替を換算できません。基準通貨と各通貨のTWDレートを確認してください。',
     crossCurrencyTransfer: '異通貨送金',
     usdConversion: '米ドル換算',
     jpyConversion: '日本円換算',

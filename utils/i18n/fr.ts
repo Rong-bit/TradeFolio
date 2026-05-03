@@ -576,6 +576,8 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     exchangeRateUsdTwd: 'Taux (USD/TWD)',
     exchangeRateUsdJpy: 'Taux (USD/JPY)',
     exchangeRatePair: 'Taux ({quote}/{base})',
+    exchangeRateUsdBase: 'Taux (USD/{base})',
+    exchangeRateInvalid: 'Impossible de convertir le taux. Vérifiez la devise de base et les taux vs TWD.',
     crossCurrencyTransfer: 'Transfert multi-devises',
     usdConversion: 'Conversion USD',
     jpyConversion: 'Conversion JPY',

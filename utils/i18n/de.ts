@@ -548,6 +548,8 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     exchangeRateUsdTwd: 'Kurs (USD/TWD)',
     exchangeRateUsdJpy: 'Kurs (USD/JPY)',
     exchangeRatePair: 'Kurs ({quote}/{base})',
+    exchangeRateUsdBase: 'Kurs (USD/{base})',
+    exchangeRateInvalid: 'Kurs kann nicht umgerechnet werden. Bitte Basiswährung und TWD-Kreuze prüfen.',
     crossCurrencyTransfer: 'Währungsübertrag',
     usdConversion: 'USD-Umrechnung',
     jpyConversion: 'JPY-Umrechnung',

@@ -684,6 +684,8 @@ A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」
     exchangeRateUsdTwd: '匯率 (USD/TWD)',
     exchangeRateUsdJpy: '匯率 (USD/JPY)',
     exchangeRatePair: '匯率 ({quote}/{base})',
+    exchangeRateUsdBase: '匯率 (USD/{base})',
+    exchangeRateInvalid: '無法換算匯率，請確認基準幣與各幣別對台幣匯率設定是否完整。',
     crossCurrencyTransfer: '不同幣別轉帳',
     usdConversion: '美金換算',
     jpyConversion: '日幣換算',

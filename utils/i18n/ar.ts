@@ -601,6 +601,8 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     exchangeRateUsdTwd: 'سعر الصرف (USD/TWD)',
     exchangeRateUsdJpy: 'سعر الصرف (USD/JPY)',
     exchangeRatePair: 'سعر الصرف ({quote}/{base})',
+    exchangeRateUsdBase: 'سعر الصرف (USD/{base})',
+    exchangeRateInvalid: 'تعذّر تحويل السعر. تحقّق من عملة العرض وأسعار الصرف مقابل TWD.',
     crossCurrencyTransfer: 'تحويل بعملات مختلفة',
     usdConversion: 'تحويل USD',
     jpyConversion: 'تحويل JPY',

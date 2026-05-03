@@ -685,6 +685,8 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     exchangeRateUsdTwd: '환율(USD/TWD)',
     exchangeRateUsdJpy: '환율(USD/JPY)',
     exchangeRatePair: '환율({quote}/{base})',
+    exchangeRateUsdBase: '환율(USD/{base})',
+    exchangeRateInvalid: '환율을 환산할 수 없습니다. 기준 통화 및 TWD 환율 설정을 확인하세요.',
     crossCurrencyTransfer: '다른 통화 송금',
     usdConversion: '미국 달러 환산',
     jpyConversion: '일본 엔 환산',

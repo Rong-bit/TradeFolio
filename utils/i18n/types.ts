@@ -656,6 +656,10 @@ export interface Translations {
     exchangeRateUsdTwd: string;
     exchangeRateUsdJpy: string;
     exchangeRatePair: string;
+    /** 基準幣非 TWD/USD 時，與儀表板一致之 USD/基準幣欄位標籤；{base} 為基準幣代碼 */
+    exchangeRateUsdBase: string;
+    /** 由 USD/基準幣換算為內部 TWD/帳戶幣失敗 */
+    exchangeRateInvalid: string;
     crossCurrencyTransfer: string;
     usdConversion: string;
     jpyConversion: string;
