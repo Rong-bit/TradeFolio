@@ -159,7 +159,7 @@ export const zhTW: Translations = {
       profit: '盈利',
       loss: '虧損',
       barName: '累積損益：綠色=盈利 紅色=虧損',
-      yearlyPeriodRoi: '年度報酬率（該曆年／今年至今）',
+      yearlyPeriodRoi: '年度報酬率',
       chartLegendYearlyPeriodRoi: '右軸折線：僅各年 Q4（當年則為「至今」）一點，同年度績效表算法（非年化）。',
     },
     noHoldingsData: '尚無持倉資料',

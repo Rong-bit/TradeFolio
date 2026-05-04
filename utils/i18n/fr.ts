@@ -96,7 +96,7 @@ export const fr: Translations = {
       profit: 'Gain',
       loss: 'Perte',
       barName: 'Gain/Perte Accumulé: Vert=Gain Rouge=Perte',
-      yearlyPeriodRoi: 'Rendement annuel (année civile / YTD)',
+      yearlyPeriodRoi: 'Rendement annuel',
       chartLegendYearlyPeriodRoi:
         'Ligne rose (axe droit %) : un point par an au T4 (année en cours : « à ce jour » si pas de T4). Comme le tableau annuel.',
     },

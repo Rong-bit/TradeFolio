@@ -101,7 +101,7 @@ export const hi: Translations = {
       profit: 'लाभ',
       loss: 'हानि',
       barName: 'संचित लाभ/हानि: हरा=लाभ लाल=हानि',
-      yearlyPeriodRoi: 'वार्षिक रिटर्न (कैलेंडर वर्ष / YTD)',
+      yearlyPeriodRoi: 'वार्षिक रिटर्न',
       chartLegendYearlyPeriodRoi:
         'गुलाबी रेखा (दायाँ %): प्रति वर्ष Q4 पर एक बिंदु (चालू वर्ष: Q4 न हो तो “आज तक”)। वार्षिक तालिका जैसा।',
     },

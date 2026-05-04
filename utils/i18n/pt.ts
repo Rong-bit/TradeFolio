@@ -96,7 +96,7 @@ export const pt: Translations = {
       profit: 'Lucro',
       loss: 'Perda',
       barName: 'Lucro/Perda Acumulado: Verde=Lucro Vermelho=Perda',
-      yearlyPeriodRoi: 'Retorno anual (ano civil / YTD)',
+      yearlyPeriodRoi: 'Retorno anual',
       chartLegendYearlyPeriodRoi:
         'Linha rosa (eixo direito %): um ponto por ano no Q4 (ano atual: “até hoje” se não houver Q4). Igual à tabela anual.',
     },

@@ -160,7 +160,7 @@ export const ko: Translations = {
       profit: '이익',
       loss: '손실',
       barName: '누적 손익: 녹색=이익 빨강=손실',
-      yearlyPeriodRoi: '연간 수익률(해당 연도/연초 이후)',
+      yearlyPeriodRoi: '연간 수익률',
       chartLegendYearlyPeriodRoi:
         '우측 축 꺾은선: 연도별 Q4 한 점(당해는 Q4 없으면 「현재」). 연간 표와 동일(연율화 아님).',
     },

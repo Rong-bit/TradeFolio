@@ -100,7 +100,7 @@ zhCN.dashboard = {
     profit: '盈利',
     loss: '亏损',
     barName: '累积损益：绿色=盈利 红色=亏损',
-    yearlyPeriodRoi: '年度报酬率（该历年／今年至今）',
+    yearlyPeriodRoi: '年度报酬率',
     chartLegendYearlyPeriodRoi: '右轴折线：仅各年 Q4（当年则为「至今」）一点，与年度绩效表算法相同（非年化）。',
   },
   noHoldingsData: '尚无持仓资料',
