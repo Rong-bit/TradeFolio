@@ -99,6 +99,10 @@ export interface Translations {
     totalPLAmount: string;
     accumulatedCashDividends: string;
     accumulatedStockDividends: string;
+    yearDividendTaxTitle: string;
+    yearWithheldNhi: string;
+    yearUsWithholding: string;
+    yearUsWithholdingHint: string;
     annualizedReturnRate: string;
     avgExchangeRate: string;
     currentExchangeRate: string;
@@ -257,6 +261,28 @@ export interface Translations {
     monthlyBreakdown: string;
     yearTotal: string;
     monthTotal: string;
+  };
+  /** 配息試算：台股二代健保、美股預扣、未來除息清單 */
+  dividendTax: {
+    twTooltipTitle: string;
+    estSinglePayout: string;
+    estNhiFee: string;
+    splitHint0050: string;
+    usNetTooltipTitle: string;
+    estGrossPerPayout: string;
+    estNetAfterWithholding: string;
+    upcomingTitle: string;
+    upcomingSubtitle: string;
+    upcomingEmpty: string;
+    upcomingExDate: string;
+    upcomingEstTwd: string;
+    upcomingEstUsd: string;
+    dataFromYahoo: string;
+    disclaimerShort: string;
+    usBadgeShort: string;
+    nhiForecastTag: string;
+    twYieldPlaceholder: string;
+    twYieldHint: string;
   };
   // 資金管理
   funds: {
@@ -642,6 +668,18 @@ export interface Translations {
     transferInConfirmHint: string;
     feesShort: string;
     formulaNote: string;
+    divAssistantTitle: string;
+    divAssistantGross: string;
+    divAssistantOther: string;
+    divAssistantNhiMode: string;
+    divAssistantNhiFloor: string;
+    divAssistantNhiRound: string;
+    divAssistantComputedNet: string;
+    divAssistantApplyNet: string;
+    divAssistantUsTitle: string;
+    divWithheldNhiOptional: string;
+    divWithheldUsOptional: string;
+    divYieldHintShort: string;
   };
   // 資金管理表單
   fundForm: {
