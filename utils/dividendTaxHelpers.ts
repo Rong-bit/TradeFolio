@@ -14,52 +14,6 @@ export const TW_NHI_SUPPLEMENT_RATE = 0.0211;
 export const US_DIVIDEND_NET_FACTOR = 0.7;
 /** 台股配息輔助器：預設其他入帳扣款（匯費等，可改） */
 export const TW_DIV_ASSISTANT_DEFAULT_OTHER_FEE_TWD = 10;
-/** 以殖利率推估單次配息時，預設每年配息次數（半年配 = 2） */
-export const TW_YIELD_DEFAULT_PAYMENTS_PER_YEAR = 2;
-
-const TW_YIELD_LS_KEY = 'tf-tw-estimated-yield-pct-by-ticker';
-
-export function readTwEstimatedYieldPctMap(): Record<string, number> {
-  try {
-    const raw = localStorage.getItem(TW_YIELD_LS_KEY);
-    if (!raw) return {};
-    const o = JSON.parse(raw) as Record<string, number>;
-    if (!o || typeof o !== 'object') return {};
-    const out: Record<string, number> = {};
-    for (const [k, v] of Object.entries(o)) {
-      const n = Number(v);
-      if (Number.isFinite(n) && n > 0) out[k.toUpperCase()] = n;
-    }
-    return out;
-  } catch {
-    return {};
-  }
-}
-
-export function writeTwEstimatedYieldPct(ticker: string, pct: number | null | undefined): void {
-  try {
-    const map = readTwEstimatedYieldPctMap();
-    const key = ticker.trim().toUpperCase();
-    if (pct == null || !Number.isFinite(pct) || pct <= 0) {
-      delete map[key];
-    } else {
-      map[key] = pct;
-    }
-    localStorage.setItem(TW_YIELD_LS_KEY, JSON.stringify(map));
-  } catch {
-    /* ignore */
-  }
-}
-
-/** 以市值與年殖利率% 推估「單次」現金配息（TWD） */
-export function estimateTwSingleCashDividendFromYieldTwd(
-  currentValueTwd: number,
-  annualYieldPct: number,
-  paymentsPerYear: number = TW_YIELD_DEFAULT_PAYMENTS_PER_YEAR
-): number {
-  if (currentValueTwd <= 0 || annualYieldPct <= 0 || paymentsPerYear <= 0) return 0;
-  return (currentValueTwd * (annualYieldPct / 100)) / paymentsPerYear;
-}
 
 /** 台股：應發毛額 → 試算實領（二代健保 2.11% + 其他扣款） */
 export function computeTwNetFromGrossDividendAssistant(
