@@ -269,6 +269,15 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     }));
   }, [attributionSeries, chartData, toBase]);
 
+  const roiByCalendarYear = useMemo(() => {
+    const m = new Map<number, number>();
+    annualPerformance.forEach(ap => {
+      const match = String(ap.year).match(/^(\d{4})/);
+      if (match) m.set(Number(match[1]), ap.roi);
+    });
+    return m;
+  }, [annualPerformance]);
+
   const quarterlyTrendData = useMemo(() => {
     const formatQuarterLabel = (period: string): string => {
       const quarterMatch = period.match(/^(\d{4})-Q([1-4])$/);
@@ -278,15 +287,21 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       return period;
     };
 
-    return buildQuarterlyTrendData(chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData).map(item => ({
-      year: formatQuarterLabel(item.period),
-      cost: toBase(item.cost),
-      profit: toBase(item.profit),
-      totalAssets: toBase(item.totalAssets),
-      estTotalAssets: toBase(item.estTotalAssets),
-      isRealData: item.isRealData,
-    }));
-  }, [chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData, toBase, translations]);
+    return buildQuarterlyTrendData(chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData).map(item => {
+      const yearMatch = item.period.match(/^(\d{4})(?:-Q[1-4]|-NOW)$/);
+      const calYear = yearMatch ? Number(yearMatch[1]) : NaN;
+      const yearlyPeriodRoi = Number.isFinite(calYear) ? (roiByCalendarYear.get(calYear) ?? undefined) : undefined;
+      return {
+        year: formatQuarterLabel(item.period),
+        cost: toBase(item.cost),
+        profit: toBase(item.profit),
+        totalAssets: toBase(item.totalAssets),
+        estTotalAssets: toBase(item.estTotalAssets),
+        isRealData: item.isRealData,
+        yearlyPeriodRoi,
+      };
+    });
+  }, [chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData, toBase, translations, roiByCalendarYear]);
 
   const hasAttributionMismatch = attributionSeries.some(item => !item.isConsistent);
 
@@ -542,7 +557,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={quarterlyTrendData}
-                        margin={{ top: 10, right: 30, left: 10, bottom: 60 }}
+                        margin={{ top: 10, right: 52, left: 10, bottom: 60 }}
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
@@ -575,11 +590,31 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             return val.toFixed(0);
                           }}
                         />
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          stroke={isDarkMode ? '#f472b6' : '#db2777'}
+                          tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 10 }}
+                          axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
+                          tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
+                          fontSize={10}
+                          width={46}
+                          domain={['auto', 'auto']}
+                          tickFormatter={(val: number) => `${Number(val).toFixed(0)}%`}
+                        />
                         <Tooltip
                           contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                           labelStyle={{ color: '#0f172a', fontWeight: 700 }}
                           separator=""
                           formatter={(value: number, name: string, props: any) => {
+                            if (name === translations.dashboard.chartLabels.yearlyPeriodRoi && typeof value === 'number' && Number.isFinite(value)) {
+                              return [
+                                <span style={{ color: '#db2777', fontWeight: 700 }} key="yroi">
+                                  {value.toFixed(2)}%
+                                </span>,
+                                '',
+                              ];
+                            }
                             const isReal = props.payload.isRealData;
                             let suffix = '';
                             if (name === translations.dashboard.chartLabels.totalAssets && isReal)
@@ -695,6 +730,16 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           strokeWidth={2}
                           dot={false}
                         />
+                        <Line
+                          yAxisId="right"
+                          type="monotone"
+                          dataKey="yearlyPeriodRoi"
+                          name={translations.dashboard.chartLabels.yearlyPeriodRoi}
+                          stroke="#db2777"
+                          strokeWidth={2}
+                          dot={{ r: 3, fill: '#db2777', strokeWidth: 0 }}
+                          connectNulls
+                        />
                         <Brush
                           dataKey="year"
                           height={28}
@@ -725,6 +770,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 <div className="mt-2 text-xs text-slate-400 dark:text-slate-300 flex flex-wrap gap-x-2 gap-y-1 items-baseline">
                   <span>{translations.dashboard.chartLegendQuarterSnapshot}</span>
                   <span>{translations.dashboard.chartLegendLinearInterpolation}</span>
+                  <span>{translations.dashboard.chartLabels.chartLegendYearlyPeriodRoi}</span>
                 </div>
               </>
             ) : (
