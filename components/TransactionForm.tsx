@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Market, Transaction, TransactionType, Holding, Account } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { t } from '../utils/i18n';
@@ -7,11 +7,6 @@ import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 import { marketToCurrency } from '../utils/calculations';
-import {
-  computeTwNetFromGrossDividendAssistant,
-  computeUsNetFromGrossDividendAssistant,
-  TW_DIV_ASSISTANT_DEFAULT_OTHER_FEE_TWD,
-} from '../utils/dividendTaxHelpers';
 
 interface Props {
   onAdd: (tx: Transaction) => void;
@@ -39,14 +34,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     accountId: accounts[0]?.id || '',
     note: '',
     priceCurrency: '',
-    withheldNhi: '',
-    withheldUs: '',
   });
-
-  const [divAsstGross, setDivAsstGross] = useState('');
-  const [divAsstOther, setDivAsstOther] = useState(String(TW_DIV_ASSISTANT_DEFAULT_OTHER_FEE_TWD));
-  const [divAsstNhiMode, setDivAsstNhiMode] = useState<'floor' | 'round'>('floor');
-  const [usAsstGross, setUsAsstGross] = useState('');
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [transferValidationMessage, setTransferValidationMessage] = useState<string | null>(null);
@@ -80,14 +68,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         accountId: editingTransaction.accountId,
         note: editingTransaction.note || '',
         priceCurrency: editingTransaction.priceCurrency || '',
-        withheldNhi:
-          editingTransaction.withheldNhiTwd != null && editingTransaction.withheldNhiTwd > 0
-            ? String(editingTransaction.withheldNhiTwd)
-            : '',
-        withheldUs:
-          editingTransaction.withheldUsTaxNative != null && editingTransaction.withheldUsTaxNative > 0
-            ? String(editingTransaction.withheldUsTaxNative)
-            : '',
       });
       setTargetAccountId('');
     } else {
@@ -103,8 +83,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         accountId: accounts[0]?.id || '',
         note: '',
         priceCurrency: '',
-        withheldNhi: '',
-        withheldUs: '',
       });
       setTargetAccountId('');
     }
@@ -218,14 +196,16 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
       amount: finalAmount // 儲存計算後的總金額
     };
 
-    if (formData.type === TransactionType.CASH_DIVIDEND) {
-      const wn = parseFloat(formData.withheldNhi);
-      const wu = parseFloat(formData.withheldUs);
-      if (formData.market === Market.TW && Number.isFinite(wn) && wn > 0) {
-        newTx.withheldNhiTwd = Math.round(wn);
+    if (
+      isEditing &&
+      editingTransaction?.type === TransactionType.CASH_DIVIDEND &&
+      formData.type === TransactionType.CASH_DIVIDEND
+    ) {
+      if (editingTransaction.withheldNhiTwd != null) {
+        newTx.withheldNhiTwd = editingTransaction.withheldNhiTwd;
       }
-      if (formData.market === Market.US && Number.isFinite(wu) && wu > 0) {
-        newTx.withheldUsTaxNative = wu;
+      if (editingTransaction.withheldUsTaxNative != null) {
+        newTx.withheldUsTaxNative = editingTransaction.withheldUsTaxNative;
       }
     }
 
@@ -449,22 +429,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
 
   const selectedAccountCurrency = getAccountCurrencyCode(formData.accountId);
 
-  const twAssistPreview = useMemo(() => {
-    const g = parseFloat(String(divAsstGross).replace(/,/g, ''));
-    if (!Number.isFinite(g) || g <= 0) return null;
-    const other = parseFloat(divAsstOther);
-    return computeTwNetFromGrossDividendAssistant(g, {
-      otherDeductionTwd: Number.isFinite(other) && other >= 0 ? other : TW_DIV_ASSISTANT_DEFAULT_OTHER_FEE_TWD,
-      nhiRounding: divAsstNhiMode,
-    });
-  }, [divAsstGross, divAsstOther, divAsstNhiMode]);
-
-  const usAssistPreview = useMemo(() => {
-    const g = parseFloat(String(usAsstGross).replace(/,/g, ''));
-    if (!Number.isFinite(g) || g <= 0) return null;
-    return computeUsNetFromGrossDividendAssistant(g);
-  }, [usAsstGross]);
-
   const availableTransferOutQuantity = isTransferOutMode
     ? getAvailableHoldingQuantity(formData.accountId, formData.ticker, formData.market)
     : 0;
@@ -540,20 +504,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                     {pendingTransaction.fees.toFixed(2)} {getAccountCurrencyCode(pendingTransaction.accountId)}
                   </span>
                 </div>
-                {pendingTransaction.type === TransactionType.CASH_DIVIDEND && pendingTransaction.withheldNhiTwd != null && pendingTransaction.withheldNhiTwd > 0 && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{tf.divWithheldNhiOptional}</span>
-                    <span className="font-medium">{pendingTransaction.withheldNhiTwd.toFixed(0)} TWD</span>
-                  </div>
-                )}
-                {pendingTransaction.type === TransactionType.CASH_DIVIDEND && pendingTransaction.withheldUsTaxNative != null && pendingTransaction.withheldUsTaxNative > 0 && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{tf.divWithheldUsOptional}</span>
-                    <span className="font-medium">
-                      {pendingTransaction.withheldUsTaxNative.toFixed(4)} {getAccountCurrencyCode(pendingTransaction.accountId)}
-                    </span>
-                  </div>
-                )}
                 {pendingTransaction.note && (
                   <div className="flex justify-between py-1 border-b border-slate-100">
                     <span className="text-slate-600">{tf.noteLabel}</span>
@@ -761,155 +711,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               />
             </div>
           </div>
-
-          {formData.type === TransactionType.CASH_DIVIDEND && formData.market === Market.TW && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-4 space-y-3 text-sm">
-              <div className="font-semibold text-emerald-900">{tf.divAssistantTitle}</div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-medium text-emerald-900">{tf.divAssistantGross}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={divAsstGross}
-                    onChange={e => setDivAsstGross(e.target.value)}
-                    className={`mt-1 w-full border border-emerald-200 rounded-md p-2 ${FORM_FIELD_THEME}`}
-                  />
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-xs font-medium text-emerald-900">{tf.divAssistantOther}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={divAsstOther}
-                    onChange={e => setDivAsstOther(e.target.value)}
-                    className={`mt-1 w-full border border-emerald-200 rounded-md p-2 ${FORM_FIELD_THEME}`}
-                  />
-                </div>
-              </div>
-              <div>
-                <span className="text-xs font-medium text-emerald-900 mr-2">{tf.divAssistantNhiMode}</span>
-                <label className="inline-flex items-center gap-1 mr-3 text-xs">
-                  <input
-                    type="radio"
-                    name="divNhiMode"
-                    checked={divAsstNhiMode === 'floor'}
-                    onChange={() => setDivAsstNhiMode('floor')}
-                  />
-                  {tf.divAssistantNhiFloor}
-                </label>
-                <label className="inline-flex items-center gap-1 text-xs">
-                  <input
-                    type="radio"
-                    name="divNhiMode"
-                    checked={divAsstNhiMode === 'round'}
-                    onChange={() => setDivAsstNhiMode('round')}
-                  />
-                  {tf.divAssistantNhiRound}
-                </label>
-              </div>
-              {twAssistPreview && (
-                <div className="text-xs text-emerald-800 space-y-1">
-                  <div>
-                    {tf.divAssistantComputedNet}：<span className="font-mono font-bold text-base">{twAssistPreview.net.toLocaleString()}</span> TWD
-                  </div>
-                  <div className="text-emerald-700/90">
-                    NHI −{twAssistPreview.nhiWithheld.toLocaleString()} / {tf.divAssistantOther} −{twAssistPreview.otherDeduction.toLocaleString()}
-                  </div>
-                </div>
-              )}
-              <button
-                type="button"
-                disabled={!twAssistPreview}
-                onClick={() => {
-                  if (!twAssistPreview) return;
-                  const feesNum = parseFloat(formData.fees) || 0;
-                  setFormData(prev => ({
-                    ...prev,
-                    price: String(twAssistPreview.net + feesNum),
-                    withheldNhi: String(twAssistPreview.nhiWithheld),
-                  }));
-                }}
-                className="w-full py-2 rounded-md bg-emerald-700 text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-800"
-              >
-                {tf.divAssistantApplyNet}
-              </button>
-            </div>
-          )}
-
-          {formData.type === TransactionType.CASH_DIVIDEND && formData.market === Market.US && (
-            <div className="rounded-lg border border-sky-200 bg-sky-50/70 p-4 space-y-3 text-sm">
-              <div className="font-semibold text-sky-900">{tf.divAssistantUsTitle}</div>
-              <div>
-                <label className="block text-xs font-medium text-sky-900">{tf.divAssistantGross}</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.0001"
-                  value={usAsstGross}
-                  onChange={e => setUsAsstGross(e.target.value)}
-                  className={`mt-1 w-full border border-sky-200 rounded-md p-2 ${FORM_FIELD_THEME}`}
-                />
-              </div>
-              {usAssistPreview && (
-                <div className="text-xs text-sky-800 space-y-1">
-                  <div>
-                    {tf.divAssistantComputedNet}：<span className="font-mono font-bold text-base">{usAssistPreview.net.toFixed(4)}</span> {selectedAccountCurrency}
-                  </div>
-                  <div>
-                    30% est.：{usAssistPreview.withheldNative.toFixed(4)} {selectedAccountCurrency}
-                  </div>
-                </div>
-              )}
-              <button
-                type="button"
-                disabled={!usAssistPreview}
-                onClick={() => {
-                  if (!usAssistPreview) return;
-                  const feesNum = parseFloat(formData.fees) || 0;
-                  setFormData(prev => ({
-                    ...prev,
-                    price: String(Number((usAssistPreview.net + feesNum).toFixed(6))),
-                    withheldUs: String(Number(usAssistPreview.withheldNative.toFixed(6))),
-                  }));
-                }}
-                className="w-full py-2 rounded-md bg-sky-700 text-white text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-sky-800"
-              >
-                {tf.divAssistantApplyNet}
-              </button>
-            </div>
-          )}
-
-          {formData.type === TransactionType.CASH_DIVIDEND && formData.market === Market.TW && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700">{tf.divWithheldNhiOptional}</label>
-              <input
-                type="number"
-                name="withheldNhi"
-                min="0"
-                step="1"
-                value={formData.withheldNhi}
-                onChange={handleChange}
-                className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
-              />
-            </div>
-          )}
-          {formData.type === TransactionType.CASH_DIVIDEND && formData.market === Market.US && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700">{tf.divWithheldUsOptional}</label>
-              <input
-                type="number"
-                name="withheldUs"
-                min="0"
-                step="0.0001"
-                value={formData.withheldUs}
-                onChange={handleChange}
-                className={`mt-1 w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
-              />
-            </div>
-          )}
 
           <div>
             <label className="block text-sm font-medium text-slate-700">{tf.note}</label>
