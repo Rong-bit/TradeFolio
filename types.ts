@@ -135,6 +135,10 @@ export interface Transaction {
   amount?: number;
   category?: CashFlowCategory; // 股票用途類別
   priceCurrency?: string; // 報價幣別（覆蓋 market 推斷，例如 USD、GBP）
+  /** 現金股利：二代健保補充保費已扣金額（台幣），供統計；與實領入帳分開紀錄 */
+  withheldNhiTwd?: number;
+  /** 現金股利：美股預扣稅金額（證券戶幣別，多為 USD），供統計 */
+  withheldUsTaxNative?: number;
 }
 
 export interface Holding {
@@ -182,6 +186,10 @@ export interface PortfolioSummary {
   accumulatedCashDividendsTWD: number;
   accumulatedStockDividendsTWD: number;
   avgExchangeRate: number;
+  /** 當曆年累計：現金股利紀錄之二代健保補充保費（僅加總有填 withheldNhiTwd 者） */
+  yearWithheldNhiTwd: number;
+  /** 當曆年：美股現金股利預扣稅合計（TWD）：有填 withheldUsTaxNative 者加總，否則以實領金額用 30% 回推 */
+  yearUsWithholdingTwd: number;
 }
 
 export interface ChartDataPoint {
