@@ -614,9 +614,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           separator=""
                           formatter={(value: number, name: string, props: any) => {
                             if (name === translations.dashboard.chartLabels.yearlyPeriodRoi && typeof value === 'number' && Number.isFinite(value)) {
+                              const roiLabel = translations.dashboard.chartLabels.yearlyPeriodRoi;
                               return [
                                 <span style={{ color: '#db2777', fontWeight: 700 }} key="yroi">
-                                  {value.toFixed(2)}%
+                                  {roiLabel}：{value.toFixed(2)}%
                                 </span>,
                                 '',
                               ];
