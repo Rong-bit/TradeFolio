@@ -127,6 +127,9 @@ export interface Transaction {
   note?: string;
   amount?: number;
   category?: CashFlowCategory; // 股票用途類別
+  priceCurrency?: string;
+  withheldNhiTwd?: number;
+  withheldUsTaxNative?: number;
 }
 
 export interface Holding {
@@ -173,6 +176,8 @@ export interface PortfolioSummary {
   accumulatedCashDividendsTWD: number;
   accumulatedStockDividendsTWD: number;
   avgExchangeRate: number;
+  yearWithheldNhiTwd: number;
+  yearUsWithholdingTwd: number;
 }
 
 export interface ChartDataPoint {
