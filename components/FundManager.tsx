@@ -468,10 +468,7 @@ const FundManager: React.FC<Props> = () => {
     if (fundAccountMatchesBaseCurrency(selectedAccount.currency, baseCurrency)) {
       return currentExchangeRate.toString();
     }
-    if (selectedAccount.currency === Currency.TWD && baseCurrency !== 'TWD') {
-      const twdPerBase = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
-      return twdPerBase > 0 ? String(twdPerBase) : currentExchangeRate.toString();
-    }
+    // 每 1 帳戶幣 = 多少基準幣（TWD+JPY 為 twdPerAcct/twdPerBase，勿用「每 1 JPY 幾 TWD」當 placeholder）
     const twdPerBase = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
     const twdPerAcct = currencyToTWDRate(selectedAccount.currency, rates);
     if (twdPerBase > 0 && twdPerAcct > 0) {
@@ -678,10 +675,6 @@ const FundManager: React.FC<Props> = () => {
                         if (!rec) return currentExchangeRate.toString();
                         if (fundAccountMatchesBaseCurrency(rec.currency, baseCurrency)) {
                           return currentExchangeRate.toString();
-                        }
-                        if (rec.currency === Currency.TWD && baseCurrency !== 'TWD') {
-                          const twdB = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
-                          return twdB > 0 ? String(twdB) : currentExchangeRate.toString();
                         }
                         const twdB = currencyToTWDRate(baseCurrencyToCurrency(baseCurrency), rates);
                         const twdA = currencyToTWDRate(rec.currency, rates);
