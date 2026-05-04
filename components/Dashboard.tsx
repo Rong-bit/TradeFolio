@@ -287,10 +287,16 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       return period;
     };
 
+    const calendarYearNow = new Date().getFullYear();
     return buildQuarterlyTrendData(chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData).map(item => {
       const yearMatch = item.period.match(/^(\d{4})(?:-Q[1-4]|-NOW)$/);
       const calYear = yearMatch ? Number(yearMatch[1]) : NaN;
-      const yearlyPeriodRoi = Number.isFinite(calYear) ? (roiByCalendarYear.get(calYear) ?? undefined) : undefined;
+      const roi = Number.isFinite(calYear) ? roiByCalendarYear.get(calYear) : undefined;
+      // 年度報酬折線：僅在曆年 Q4 畫點；當年尚無 Q4 列時改在「至今」點（與 buildQuarterlyTrendData 一致）
+      const isQ4Point = /^\d{4}-Q4$/.test(item.period);
+      const isCurrentYearNowPoint =
+        /^\d{4}-NOW$/.test(item.period) && Number.isFinite(calYear) && calYear === calendarYearNow;
+      const yearlyPeriodRoi = roi !== undefined && (isQ4Point || isCurrentYearNowPoint) ? roi : undefined;
       return {
         year: formatQuarterLabel(item.period),
         cost: toBase(item.cost),
