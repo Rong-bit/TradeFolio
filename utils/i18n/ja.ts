@@ -244,8 +244,6 @@ export const ja: Translations = {
     disclaimerShort: '参考情報であり税務アドバイスではありません。',
     usBadgeShort: '~70%',
     nhiForecastTag: '単発配当で二代健保の可能性',
-    twYieldPlaceholder: '年利%',
-    twYieldHint: '半年配想定：単発≈時価×年利%÷2',
   },
   funds: {
     title: '資金管理',
@@ -707,7 +705,6 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     divAssistantUsTitle: '米国配当の税引後（30%想定）',
     divWithheldNhiOptional: '二代健保の控除額（任意・TWD）',
     divWithheldUsOptional: '米国税引額（任意・口座通貨）',
-    divYieldHintShort: '明細の試算用。空欄はYahooの直近配当',
   },
   fundForm: {
     addFundRecord: '資金記録追加',

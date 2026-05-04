@@ -241,8 +241,6 @@ export const zhTW: Translations = {
     disclaimerShort: '僅供參考，非報稅或法律建議。',
     usBadgeShort: '70%',
     nhiForecastTag: '預估單次配息將觸發二代健保扣費',
-    twYieldPlaceholder: '年殖%',
-    twYieldHint: '半年配假設：單次≈市值×年殖%÷2',
   },
   funds: {
     title: '資金管理',
@@ -705,7 +703,6 @@ A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」
     divAssistantUsTitle: '美股稅後試算（假設 30% 預扣）',
     divWithheldNhiOptional: '本次二代健保已扣（可選，台幣）',
     divWithheldUsOptional: '本次美股預扣稅（可選，證券戶幣別）',
-    divYieldHintShort: '用於明細預估；留空則用 Yahoo 最近配息',
   },
   fundForm: {
     addFundRecord: '新增資金紀錄',

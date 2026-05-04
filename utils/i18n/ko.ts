@@ -244,8 +244,6 @@ export const ko: Translations = {
     disclaimerShort: 'For reference only; not tax or legal advice.',
     usBadgeShort: '~70%',
     nhiForecastTag: 'Est. payout may trigger NHI supplement fee',
-    twYieldPlaceholder: 'Yield %',
-    twYieldHint: 'Semi-annual assumption: per payout ≈ MV × yield% ÷ 2',
   },
   funds: {
     title: '자금 관리',
@@ -707,7 +705,6 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     divAssistantUsTitle: 'US net helper (assume 30% withholding)',
     divWithheldNhiOptional: 'NHI withheld this time (optional, TWD)',
     divWithheldUsOptional: 'US tax withheld (optional, account currency)',
-    divYieldHintShort: 'For holdings estimate; blank uses Yahoo last dividend',
   },
   fundForm: {
     addFundRecord: '자금 기록 추가',

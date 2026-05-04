@@ -172,8 +172,6 @@ export const de: Translations = {
     disclaimerShort: 'For reference only; not tax or legal advice.',
     usBadgeShort: '~70%',
     nhiForecastTag: 'Est. payout may trigger NHI supplement fee',
-    twYieldPlaceholder: 'Yield %',
-    twYieldHint: 'Semi-annual assumption: per payout ≈ MV × yield% ÷ 2',
   },
   funds: { title: 'Fondsverwaltung', operations: 'Aktionen', clearAll: 'Alle löschen', batchImport: 'Import', addRecord: '+ Eintrag', filter: 'Filter', clearFilters: 'Zurücksetzen', accountFilter: 'Konto', typeFilter: 'Typ', dateFrom: 'Von', dateTo: 'Bis', allAccounts: 'Alle', allTypes: 'Alle', deposit: 'Einzahlung', withdraw: 'Auszahlung', transfer: 'Überweisung', interest: 'Zinsen', showRecords: '{count} Einträge', totalRecords: 'Gesamt {total}', last30Days: 'Letzte 30 Tage', thisYear: 'Dieses Jahr', confirmClearAll: 'Alle Fondsdaten löschen?', confirmClearAllMessage: 'Ein- und Auszahlungen werden gelöscht.', confirmClear: 'Löschen' },
   history: {

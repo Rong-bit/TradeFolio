@@ -281,8 +281,6 @@ export interface Translations {
     disclaimerShort: string;
     usBadgeShort: string;
     nhiForecastTag: string;
-    twYieldPlaceholder: string;
-    twYieldHint: string;
   };
   // 資金管理
   funds: {
@@ -679,7 +677,6 @@ export interface Translations {
     divAssistantUsTitle: string;
     divWithheldNhiOptional: string;
     divWithheldUsOptional: string;
-    divYieldHintShort: string;
   };
   // 資金管理表單
   fundForm: {

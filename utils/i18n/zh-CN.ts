@@ -183,8 +183,6 @@ zhCN.dividendTax = {
   disclaimerShort: '仅供参考，非报税或法律建议。',
   usBadgeShort: '70%',
   nhiForecastTag: '预估单次配息将触发二代健保扣费',
-  twYieldPlaceholder: '年殖%',
-  twYieldHint: '半年配假设：单次≈市值×年殖%÷2',
 };
 zhCN.funds = {
   ...zhTW.funds,
