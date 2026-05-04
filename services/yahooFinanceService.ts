@@ -1087,3 +1087,93 @@ export const fetchAnnualizedReturn = async (
 
   return (Math.pow(latestPrice / earliestPrice, 1 / years) - 1) * 100;
 };
+
+// ── 除息／配息（供台股二代健保與美股預扣試算）──────────────────────────────────
+
+/** Yahoo chart events=div 與 quoteSummary 彙整後之最近一次配息與可選的下次除息日 */
+export interface DividendScheduleInfo {
+  /** 最近一次每股現金股利（Yahoo 標的幣別，台股多為 TWD） */
+  lastAmountPerShare: number;
+  /** 最近除息日 YYYY-MM-DD */
+  lastExDate: string;
+  /** Yahoo calendar 若提供且為未來之除息日（YYYY-MM-DD） */
+  nextExDate?: string;
+  currency?: string;
+}
+
+function parseYahooEpochToYmd(raw: unknown): string | undefined {
+  const n = typeof raw === 'number' ? raw : Number((raw as { raw?: number })?.raw);
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  const ms = n > 1e12 ? n : n * 1000;
+  const d = new Date(ms);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * 自 Yahoo Finance 取得最近現金股利與（若有）下次除息日。
+ * 走既有 tryFetch／proxy 鏈，與股價更新一致。
+ */
+export async function fetchDividendSchedule(
+  ticker: string,
+  market: YahooMarket
+): Promise<DividendScheduleInfo | null> {
+  const symbol = toYahoo(ticker, market);
+  const enc = encodeURIComponent(symbol);
+  const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${enc}?events=div&interval=1d&range=5y`;
+  const summaryUrl = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${enc}?modules=calendarEvents,summaryDetail`;
+
+  const [chartPack, sumPack] = await Promise.all([tryFetch(chartUrl), tryFetch(summaryUrl)]);
+
+  let lastAmount = 0;
+  let lastTs = 0;
+  const divObj = (chartPack?.json as any)?.chart?.result?.[0]?.events?.dividends;
+  if (divObj && typeof divObj === 'object') {
+    for (const v of Object.values(divObj) as any[]) {
+      const amt = Number(v?.amount);
+      const dRaw = v?.date != null ? Number(v.date) : NaN;
+      const ts = Number.isFinite(dRaw) ? (dRaw > 1e12 ? Math.floor(dRaw / 1000) : dRaw) : 0;
+      if (Number.isFinite(amt) && amt > 0 && ts > lastTs) {
+        lastAmount = amt;
+        lastTs = ts;
+      }
+    }
+  }
+
+  let lastExDate = '';
+  if (lastTs > 0) {
+    lastExDate = new Date(lastTs * 1000).toISOString().slice(0, 10);
+  }
+
+  let nextExDate: string | undefined;
+  const cal = (sumPack?.json as any)?.quoteSummary?.result?.[0]?.calendarEvents;
+  const exRaw = cal?.exDividendDate;
+  const nextYmd = parseYahooEpochToYmd(exRaw);
+  const now = Date.now();
+  const in90d = 90 * 24 * 60 * 60 * 1000;
+  if (nextYmd) {
+    const t = new Date(nextYmd + 'T12:00:00').getTime();
+    if (!Number.isNaN(t) && t >= now - 24 * 60 * 60 * 1000 && t <= now + in90d) {
+      nextExDate = nextYmd;
+    }
+  }
+
+  const curHint = normalizeYahooCurrency((sumPack?.json as any)?.quoteSummary?.result?.[0]?.summaryDetail?.currency);
+
+  if (lastAmount <= 0 && !nextExDate) return null;
+  if (lastAmount <= 0 && nextExDate) {
+    return {
+      lastAmountPerShare: 0,
+      lastExDate: '',
+      nextExDate,
+      currency: curHint,
+    };
+  }
+
+  return {
+    lastAmountPerShare: lastAmount,
+    lastExDate: lastExDate || '',
+    nextExDate,
+    currency: curHint,
+  };
+}
