@@ -583,64 +583,6 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
         </div>
 
       </div>
-      <div className="bg-white p-4 sm:p-5 rounded-xl shadow border border-slate-100">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h4 className="text-slate-700 text-sm sm:text-base font-bold">
-            海外所得稅務進度（{overseasTaxProgress.reportYear}）
-          </h4>
-          <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
-            {overseasTaxProgress.statusText}
-          </span>
-        </div>
-        <p className="text-xs text-slate-500 mt-1">
-          {overseasTaxProgress.hintText}
-        </p>
-        <div className="mt-3">
-          <div className="relative w-full h-3 rounded-full bg-slate-100 overflow-hidden">
-            <div
-              className={`h-full ${overseasTaxProgress.barClass} transition-all duration-500`}
-              style={{ width: `${overseasTaxProgress.progressPct}%` }}
-            />
-            <div className="absolute inset-y-0 border-l border-slate-400/70" style={{ left: `${(1_000_000 / 6_700_000) * 100}%` }} />
-            <div className="absolute inset-y-0 border-l border-slate-500" style={{ left: '100%' }} />
-          </div>
-          <div className="mt-1 flex justify-between text-[10px] text-slate-500">
-            <span>0</span>
-            <span>100 萬（申報門檻）</span>
-            <span>670 萬（免稅額）</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 text-sm">
-          <div className="rounded-lg bg-slate-50 p-3">
-            <p className="text-slate-500 text-xs">海外已實現損益（非台灣市場）</p>
-            <p className="font-bold text-slate-800 tabular-nums">
-              {formatCurrency(toBase(overseasTaxProgress.overseasRealizedPLTwd), baseCurrency)}
-            </p>
-          </div>
-          <div className="rounded-lg bg-slate-50 p-3">
-            <p className="text-slate-500 text-xs">海外累積股利（非台灣市場）</p>
-            <p className="font-bold text-slate-800 tabular-nums">
-              {formatCurrency(toBase(overseasTaxProgress.overseasDividendTwd), baseCurrency)}
-            </p>
-          </div>
-          <div className="rounded-lg bg-blue-50 p-3">
-            <p className="text-slate-600 text-xs">海外所得合計（損益 + 股利）</p>
-            <p className="font-bold text-blue-700 tabular-nums">
-              {formatCurrency(toBase(overseasTaxProgress.overseasIncomeTwd), baseCurrency)}
-            </p>
-          </div>
-          <div className="rounded-lg bg-rose-50 p-3">
-            <p className="text-slate-600 text-xs">最低稅負試算（參考）</p>
-            <p className="font-bold text-rose-700 tabular-nums">
-              {formatCurrency(toBase(overseasTaxProgress.estimatedAmtTaxTwd), baseCurrency)}
-            </p>
-          </div>
-        </div>
-        <p className="text-[11px] text-slate-500 mt-3">
-          公式：{`(基本所得額 - 670 萬) × 20%`}，目前以「海外所得」作為基本所得額試算（未含保險給付等其他項目）。
-        </p>
-      </div>
-
       {/* Detailed Statistics Toggle */}
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <button 
@@ -697,6 +639,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 {summary.totalPLPercent.toFixed(2)}%
               </p>
             </div>
+            {baseCurrency === 'TWD' && (
             <div className="col-span-2 md:col-span-4 mt-2 pt-4 border-t border-slate-100 dark:border-slate-700">
               <p className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">
                 {translations.dashboard.yearDividendTaxTitle}{' '}
@@ -718,6 +661,64 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 </div>
               </div>
             </div>
+            )}
+            {baseCurrency === 'TWD' && (
+            <div className="col-span-2 md:col-span-4 mt-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  海外所得稅務進度（{overseasTaxProgress.reportYear}）
+                </p>
+                <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-medium w-fit">
+                  {overseasTaxProgress.statusText}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">{overseasTaxProgress.hintText}</p>
+              <div className="mt-3">
+                <div className="relative w-full h-3 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className={`h-full ${overseasTaxProgress.barClass} transition-all duration-500`}
+                    style={{ width: `${overseasTaxProgress.progressPct}%` }}
+                  />
+                  <div className="absolute inset-y-0 border-l border-slate-400/70" style={{ left: `${(1_000_000 / 6_700_000) * 100}%` }} />
+                  <div className="absolute inset-y-0 border-l border-slate-500" style={{ left: '100%' }} />
+                </div>
+                <div className="mt-1 flex justify-between text-[10px] text-slate-500">
+                  <span>0</span>
+                  <span>100 萬（申報門檻）</span>
+                  <span>670 萬（免稅額）</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-slate-500 text-xs">海外已實現損益（非台灣市場）</p>
+                  <p className="font-bold text-slate-800 tabular-nums">
+                    {formatCurrency(toBase(overseasTaxProgress.overseasRealizedPLTwd), baseCurrency)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-slate-500 text-xs">海外累積股利（非台灣市場）</p>
+                  <p className="font-bold text-slate-800 tabular-nums">
+                    {formatCurrency(toBase(overseasTaxProgress.overseasDividendTwd), baseCurrency)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-blue-50 p-3">
+                  <p className="text-slate-600 text-xs">海外所得合計（損益 + 股利）</p>
+                  <p className="font-bold text-blue-700 tabular-nums">
+                    {formatCurrency(toBase(overseasTaxProgress.overseasIncomeTwd), baseCurrency)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-rose-50 p-3">
+                  <p className="text-slate-600 text-xs">最低稅負試算（參考）</p>
+                  <p className="font-bold text-rose-700 tabular-nums">
+                    {formatCurrency(toBase(overseasTaxProgress.estimatedAmtTaxTwd), baseCurrency)}
+                  </p>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-3">
+                公式：{`(基本所得額 - 670 萬) × 20%`}，目前以「海外所得」作為基本所得額試算（未含保險給付等其他項目）。
+              </p>
+            </div>
+            )}
           </div>
         )}
       </div>
