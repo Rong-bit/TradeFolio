@@ -102,7 +102,8 @@ export const hi: Translations = {
       loss: 'हानि',
       barName: 'संचित लाभ/हानि: हरा=लाभ लाल=हानि',
       yearlyPeriodRoi: 'वार्षिक रिटर्न (कैलेंडर वर्ष / YTD)',
-      chartLegendYearlyPeriodRoi: 'गुलाबी रेखा (दायाँ %): वार्षिक प्रदर्शन तालिका जैसा सूत्र (वार्षिकीकृत नहीं).',
+      chartLegendYearlyPeriodRoi:
+        'गुलाबी रेखा (दायाँ %): प्रति वर्ष Q4 पर एक बिंदु (चालू वर्ष: Q4 न हो तो “आज तक”)। वार्षिक तालिका जैसा।',
     },
     noHoldingsData: 'कोई होल्डिंग डेटा नहीं',
     realHistoricalData: 'वास्तविक ऐतिहासिक डेटा',

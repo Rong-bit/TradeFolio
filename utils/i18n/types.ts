@@ -191,7 +191,7 @@ export interface Translations {
       barName: string;
       /** 累積損益圖：與年度績效表相同算法之折線（右軸 %） */
       yearlyPeriodRoi: string;
-      /** 圖表下方說明：年度報酬折線 */
+      /** 圖表下方說明：年度報酬折線（僅 Q4／當年至今端點） */
       chartLegendYearlyPeriodRoi: string;
     };
     noHoldingsData: string;

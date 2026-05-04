@@ -97,7 +97,8 @@ export const pt: Translations = {
       loss: 'Perda',
       barName: 'Lucro/Perda Acumulado: Verde=Lucro Vermelho=Perda',
       yearlyPeriodRoi: 'Retorno anual (ano civil / YTD)',
-      chartLegendYearlyPeriodRoi: 'Linha rosa (eixo direito %): mesma fórmula da tabela anual (não anualizada).',
+      chartLegendYearlyPeriodRoi:
+        'Linha rosa (eixo direito %): um ponto por ano no Q4 (ano atual: “até hoje” se não houver Q4). Igual à tabela anual.',
     },
     noHoldingsData: 'Sem dados de posições',
     realHistoricalData: 'Dados históricos reais',

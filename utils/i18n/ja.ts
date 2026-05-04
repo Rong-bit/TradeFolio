@@ -161,7 +161,8 @@ export const ja: Translations = {
       loss: '損失',
       barName: '累積損益：緑=利益 赤=損失',
       yearlyPeriodRoi: '年次リターン（暦年／年初来）',
-      chartLegendYearlyPeriodRoi: '右軸の折れ線：年次パフォーマンス表と同じ計算（年率換算ではありません）。',
+      chartLegendYearlyPeriodRoi:
+        '右軸の折れ線：各年Q4のみ（当年はQ4が無い場合は「現在」）。年次表と同じ計算（年率換算ではありません）。',
     },
     noHoldingsData: '保有データなし',
     realHistoricalData: '実績データ',

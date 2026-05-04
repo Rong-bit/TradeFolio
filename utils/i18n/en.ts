@@ -162,7 +162,8 @@ export const en: Translations = {
       loss: 'Loss',
       barName: 'Accumulated P/L: Green=Profit Red=Loss',
       yearlyPeriodRoi: 'Yearly return (calendar year / YTD)',
-      chartLegendYearlyPeriodRoi: 'Pink line (right %): same formula as annual performance table (not annualized).',
+      chartLegendYearlyPeriodRoi:
+        'Pink line (right %): one point per year at Q4 (current year: “to date” if Q4 not in series); same formula as annual table (not annualized).',
     },
     noHoldingsData: 'No holdings data',
     realHistoricalData: 'Real historical data',
