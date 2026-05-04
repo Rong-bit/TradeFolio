@@ -2,11 +2,28 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import RefreshCountdown from './RefreshCountdown';
 import { Holding, Market, Account, Currency } from '../types';
-import { formatCurrency, convertAccountCurrencyToMarketQuote, valuationCurrencyForHolding } from '../utils/calculations';
+import {
+  formatCurrency,
+  convertAccountCurrencyToMarketQuote,
+  valuationCurrencyForHolding,
+  holdingValueToTWD,
+} from '../utils/calculations';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
+import { useDividendSchedules } from '../hooks/useDividendSchedules';
+import {
+  dividendScheduleMapKey,
+  estimateTwSingleCashDividendFromYieldTwd,
+  isHighDividendTwEtfTicker,
+  readTwEstimatedYieldPctMap,
+  twEstimatedSingleDividendTwd,
+  twNhiSupplementFloorTwd,
+  TW_NHI_SUPPLEMENT_THRESHOLD_TWD,
+  usEstimatedNetDividendNative,
+  writeTwEstimatedYieldPct,
+} from '../utils/dividendTaxHelpers';
 
 interface Props {}
 
@@ -18,6 +35,21 @@ const HoldingsTable: React.FC<Props> = () => {
   const { rates } = useMarket();
   const { language } = useUI();
   const translations = t(language);
+  const dt = translations.dividendTax;
+
+  const dividendFetchRequests = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Array<{ ticker: string; market: Market }> = [];
+    for (const h of holdings) {
+      const k = dividendScheduleMapKey(h.market, h.ticker);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push({ ticker: h.ticker, market: h.market });
+    }
+    return out;
+  }, [holdings]);
+
+  const dividendSchedules = useDividendSchedules(dividendFetchRequests);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('merged');
@@ -25,6 +57,7 @@ const HoldingsTable: React.FC<Props> = () => {
   type SortKey = 'weight' | 'unrealizedPL' | 'unrealizedPLPercent' | 'annualizedReturn' | 'dailyChangePercent' | 'currentValue';
   const [sortKey, setSortKey] = useState<SortKey>('weight');
   const [sortAsc, setSortAsc] = useState(false);
+  const [twYieldDraftTick, setTwYieldDraftTick] = useState(0);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(a => !a);
@@ -166,6 +199,76 @@ const HoldingsTable: React.FC<Props> = () => {
 
   const MS_ROW = '\x1e';
 
+  const renderDividendTaxIcons = (h: Holding) => {
+    const key = dividendScheduleMapKey(h.market, h.ticker);
+    const info = dividendSchedules[key];
+    if (info === 'loading' || info === undefined) return null;
+    if (info === null) return null;
+    if (info.lastAmountPerShare <= 0 && !info.nextExDate) return null;
+
+    const nodes: React.ReactNode[] = [];
+
+    if (h.market === Market.TW) {
+      const yieldMap = readTwEstimatedYieldPctMap();
+      const yPct = yieldMap[h.ticker.toUpperCase()];
+      const valueTwd = holdingValueToTWD(h, accounts, rates);
+      let gross = 0;
+      if (yPct != null && yPct > 0) {
+        gross = estimateTwSingleCashDividendFromYieldTwd(valueTwd, yPct);
+      } else if (info.lastAmountPerShare > 0) {
+        gross = twEstimatedSingleDividendTwd(h.quantity, info.lastAmountPerShare);
+      }
+      const nhi = twNhiSupplementFloorTwd(gross);
+      if (gross >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD) {
+        const lines = [
+          dt.nhiForecastTag,
+          '',
+          `${dt.estSinglePayout}: ${Math.round(gross).toLocaleString()} TWD`,
+          `${dt.estNhiFee}: ${nhi.toLocaleString()} TWD`,
+          yPct != null && yPct > 0 ? `${dt.twYieldHint}` : dt.dataFromYahoo,
+          '',
+          dt.disclaimerShort,
+        ];
+        if (isHighDividendTwEtfTicker(h.ticker)) lines.push('', dt.splitHint0050);
+        nodes.push(
+          <span
+            key="tw-nhi"
+            className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold cursor-help border border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-900/30 dark:text-amber-100 dark:border-amber-600 max-w-[11rem] leading-tight"
+            title={lines.join('\n')}
+            aria-label={dt.nhiForecastTag}
+          >
+            {dt.nhiForecastTag}
+          </span>
+        );
+      }
+    }
+
+    if (h.market === Market.US && info.lastAmountPerShare > 0) {
+      const gross = h.quantity * info.lastAmountPerShare;
+      const net = usEstimatedNetDividendNative(h.quantity, info.lastAmountPerShare);
+      const lines = [
+        dt.usNetTooltipTitle,
+        '',
+        `${dt.estGrossPerPayout}: ${gross.toFixed(4)} USD`,
+        `${dt.estNetAfterWithholding}: ${net.toFixed(4)} USD`,
+        '',
+        dt.disclaimerShort,
+      ];
+      nodes.push(
+        <span
+          key="us-wh"
+          className="inline-flex text-[10px] font-semibold text-slate-500 dark:text-slate-400 cursor-help ml-0.5 px-1 rounded bg-slate-100 dark:bg-slate-700 tabular-nums"
+          title={lines.join('\n')}
+        >
+          {dt.usBadgeShort}
+        </span>
+      );
+    }
+
+    if (nodes.length === 0) return null;
+    return <span className="inline-flex items-center gap-0.5 shrink-0">{nodes}</span>;
+  };
+
   function renderHoldingRow(h: Holding, isDetailedMode: boolean = false) {
     const isProfit = h.unrealizedPL >= 0;
     const acc = accounts.find(a => a.id === h.accountId);
@@ -226,18 +329,46 @@ const HoldingsTable: React.FC<Props> = () => {
         </td>
 
         <td className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100">
-          {h.ticker}
+          <div className="flex flex-col gap-0.5">
+            <span>{h.ticker}</span>
+            {h.market === Market.TW && (
+              <div className="flex items-center gap-1" title={dt.twYieldHint}>
+                <input
+                  key={`${h.ticker}-${twYieldDraftTick}`}
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  placeholder={dt.twYieldPlaceholder}
+                  defaultValue={readTwEstimatedYieldPctMap()[h.ticker.toUpperCase()] ?? ''}
+                  onBlur={e => {
+                    const v = parseFloat(e.target.value);
+                    writeTwEstimatedYieldPct(h.ticker, Number.isFinite(v) && v > 0 ? v : null);
+                    setTwYieldDraftTick(t => t + 1);
+                  }}
+                  className="w-[4.5rem] text-[10px] font-normal font-mono border border-slate-200 dark:border-slate-600 rounded px-1 py-0.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                />
+                <span className="text-[9px] font-normal text-slate-400 whitespace-nowrap">
+                  {translations.transactionForm.divYieldHintShort}
+                </span>
+              </div>
+            )}
+          </div>
         </td>
 
         <td className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-100 text-xs sm:text-sm">
-          {(() => {
-            const num = h.quantity;
-            if (num % 1 === 0) {
-              return num.toLocaleString('en-US');
-            }
-            const fixed = num.toFixed(5);
-            return fixed.replace(/\.?0+$/, '');
-          })()}
+          <div className="flex items-center justify-end gap-1 flex-wrap">
+            <span>
+              {(() => {
+                const num = h.quantity;
+                if (num % 1 === 0) {
+                  return num.toLocaleString('en-US');
+                }
+                const fixed = num.toFixed(5);
+                return fixed.replace(/\.?0+$/, '');
+              })()}
+            </span>
+            {renderDividendTaxIcons(h)}
+          </div>
         </td>
 
         <td className="px-3 py-2 text-right">

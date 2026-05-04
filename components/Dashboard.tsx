@@ -501,6 +501,27 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 {summary.totalPLPercent.toFixed(2)}%
               </p>
             </div>
+            <div className="col-span-2 md:col-span-4 mt-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+              <p className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">
+                {translations.dashboard.yearDividendTaxTitle}{' '}
+                <span className="font-normal text-slate-400">({new Date().getFullYear()})</span>
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">{translations.dashboard.yearWithheldNhi}</p>
+                  <p className="text-lg font-bold text-teal-700 tabular-nums">
+                    {formatCurrency(toBase(summary.yearWithheldNhiTwd), baseCurrency)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">{translations.dashboard.yearUsWithholding}</p>
+                  <p className="text-lg font-bold text-indigo-700 tabular-nums">
+                    {formatCurrency(toBase(summary.yearUsWithholdingTwd), baseCurrency)}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-1">{translations.dashboard.yearUsWithholdingHint}</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
