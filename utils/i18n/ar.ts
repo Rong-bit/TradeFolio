@@ -101,6 +101,8 @@ export const ar: Translations = {
       profit: 'ربح',
       loss: 'خسارة',
       barName: 'الربح/الخسارة المتراكم: أخضر=ربح أحمر=خسارة',
+      yearlyPeriodRoi: 'العائد السنوي (السنة الميلادية / منذ بداية العام)',
+      chartLegendYearlyPeriodRoi: 'خط وردي (المحور الأيمن %): نفس صيغة جدول الأداء السنوي (غير مُسَنَّوَر).',
     },
     noHoldingsData: 'لا توجد بيانات عن الحيازات',
     realHistoricalData: 'بيانات تاريخية حقيقية',

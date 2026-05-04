@@ -160,6 +160,8 @@ export const ko: Translations = {
       profit: '이익',
       loss: '손실',
       barName: '누적 손익: 녹색=이익 빨강=손실',
+      yearlyPeriodRoi: '연간 수익률(해당 연도/연초 이후)',
+      chartLegendYearlyPeriodRoi: '우측 축 꺾은선: 연간 성과표와 동일한 방식(연율화 아님).',
     },
     noHoldingsData: '보유 데이터 없음',
     realHistoricalData: '실적 데이터',

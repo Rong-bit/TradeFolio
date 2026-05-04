@@ -96,6 +96,8 @@ export const pt: Translations = {
       profit: 'Lucro',
       loss: 'Perda',
       barName: 'Lucro/Perda Acumulado: Verde=Lucro Vermelho=Perda',
+      yearlyPeriodRoi: 'Retorno anual (ano civil / YTD)',
+      chartLegendYearlyPeriodRoi: 'Linha rosa (eixo direito %): mesma fórmula da tabela anual (não anualizada).',
     },
     noHoldingsData: 'Sem dados de posições',
     realHistoricalData: 'Dados históricos reais',

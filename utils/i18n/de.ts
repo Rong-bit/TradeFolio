@@ -95,6 +95,8 @@ export const de: Translations = {
       profit: 'Gewinn',
       loss: 'Verlust',
       barName: 'Kumuliertes Gewinn/Verlust: Grün=Gewinn Rot=Verlust',
+      yearlyPeriodRoi: 'Jahresrendite (Kalenderjahr / YTD)',
+      chartLegendYearlyPeriodRoi: 'Rosa Linie (rechts %): gleiche Formel wie Jahresleistungstabelle (nicht annualisiert).',
     },
     noHoldingsData: 'Keine Positionsdaten',
     realHistoricalData: 'Echte historische Daten',
