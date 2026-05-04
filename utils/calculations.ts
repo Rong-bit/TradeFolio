@@ -139,22 +139,27 @@ export function transactionAmountNativeToTWD(
   return nativeValueInAccountCurrencyToTWD(amountNative, ccy, rates);
 }
 
+/** 1 外幣 = 幾 TWD；缺值時與 valueInBaseCurrency 使用相同正數預設，避免回傳 0 導致換算／資金匯率 placeholder 誤用他幣 */
+function twdPerUnitOrFallback(rate: number | undefined, fallback: number): number {
+  return rate && rate > 0 ? rate : fallback;
+}
+
 /** 將幣別對應到 TWD 匯率 */
 export function currencyToTWDRate(currency: Currency, rates: ExchangeRates): number {
   switch (currency) {
     case Currency.USD: return rates.exchangeRateUsdToTwd;
-    case Currency.JPY: return rates.jpyExchangeRate ?? rates.exchangeRateUsdToTwd;
-    case Currency.EUR: return rates.eurExchangeRate ?? 0;
-    case Currency.GBP: return rates.gbpExchangeRate ?? 0;
-    case Currency.HKD: return rates.hkdExchangeRate ?? 0;
-    case Currency.KRW: return rates.krwExchangeRate ?? 0;
-    case Currency.CNY: return rates.cnyExchangeRate ?? 0;
-    case Currency.INR: return rates.inrExchangeRate ?? 0;
-    case Currency.CAD: return rates.cadExchangeRate ?? 0;
-    case Currency.AUD: return rates.audExchangeRate ?? 0;
-    case Currency.SAR: return rates.sarExchangeRate ?? 0;
-    case Currency.BRL: return rates.brlExchangeRate ?? 0;
-    default:           return 1; // TWD
+    case Currency.JPY: return twdPerUnitOrFallback(rates.jpyExchangeRate, 0.21);
+    case Currency.EUR: return twdPerUnitOrFallback(rates.eurExchangeRate, 34);
+    case Currency.GBP: return twdPerUnitOrFallback(rates.gbpExchangeRate, 40);
+    case Currency.HKD: return twdPerUnitOrFallback(rates.hkdExchangeRate, 4);
+    case Currency.KRW: return twdPerUnitOrFallback(rates.krwExchangeRate, 0.023);
+    case Currency.CNY: return twdPerUnitOrFallback(rates.cnyExchangeRate, 4.4);
+    case Currency.INR: return twdPerUnitOrFallback(rates.inrExchangeRate, 0.38);
+    case Currency.CAD: return twdPerUnitOrFallback(rates.cadExchangeRate, 23);
+    case Currency.AUD: return twdPerUnitOrFallback(rates.audExchangeRate, 20.5);
+    case Currency.SAR: return twdPerUnitOrFallback(rates.sarExchangeRate, 8.3);
+    case Currency.BRL: return twdPerUnitOrFallback(rates.brlExchangeRate, 6.2);
+    default: return 1; // TWD
   }
 }
 
