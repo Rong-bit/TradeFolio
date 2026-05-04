@@ -640,7 +640,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               </p>
             </div>
             {baseCurrency === 'TWD' && (
-            <div className="col-span-2 md:col-span-4 mt-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <div className="col-span-2 md:col-span-4 mt-3 pt-5 border-t-2 border-slate-300 dark:border-slate-500">
               <p className="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">
                 {translations.dashboard.yearDividendTaxTitle}{' '}
                 <span className="font-normal text-slate-400">({new Date().getFullYear()})</span>
@@ -663,7 +663,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             </div>
             )}
             {baseCurrency === 'TWD' && (
-            <div className="col-span-2 md:col-span-4 mt-2 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <div className="col-span-2 md:col-span-4 mt-3 pt-5 border-t-2 border-slate-300 dark:border-slate-500">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
                   海外所得稅務進度（{overseasTaxProgress.reportYear}）
