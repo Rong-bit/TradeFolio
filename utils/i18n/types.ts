@@ -666,17 +666,6 @@ export interface Translations {
     transferInConfirmHint: string;
     feesShort: string;
     formulaNote: string;
-    divAssistantTitle: string;
-    divAssistantGross: string;
-    divAssistantOther: string;
-    divAssistantNhiMode: string;
-    divAssistantNhiFloor: string;
-    divAssistantNhiRound: string;
-    divAssistantComputedNet: string;
-    divAssistantApplyNet: string;
-    divAssistantUsTitle: string;
-    divWithheldNhiOptional: string;
-    divWithheldUsOptional: string;
   };
   // 資金管理表單
   fundForm: {
