@@ -6,7 +6,6 @@ import {
   formatCurrency,
   convertAccountCurrencyToMarketQuote,
   valuationCurrencyForHolding,
-  holdingValueToTWD,
 } from '../utils/calculations';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
@@ -15,14 +14,11 @@ import { useUI } from '../contexts/UIContext';
 import { useDividendSchedules } from '../hooks/useDividendSchedules';
 import {
   dividendScheduleMapKey,
-  estimateTwSingleCashDividendFromYieldTwd,
   isHighDividendTwEtfTicker,
-  readTwEstimatedYieldPctMap,
   twEstimatedSingleDividendTwd,
   twNhiSupplementFloorTwd,
   TW_NHI_SUPPLEMENT_THRESHOLD_TWD,
   usEstimatedNetDividendNative,
-  writeTwEstimatedYieldPct,
 } from '../utils/dividendTaxHelpers';
 
 interface Props {}
@@ -57,7 +53,6 @@ const HoldingsTable: React.FC<Props> = () => {
   type SortKey = 'weight' | 'unrealizedPL' | 'unrealizedPLPercent' | 'annualizedReturn' | 'dailyChangePercent' | 'currentValue';
   const [sortKey, setSortKey] = useState<SortKey>('weight');
   const [sortAsc, setSortAsc] = useState(false);
-  const [twYieldDraftTick, setTwYieldDraftTick] = useState(0);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(a => !a);
@@ -209,15 +204,10 @@ const HoldingsTable: React.FC<Props> = () => {
     const nodes: React.ReactNode[] = [];
 
     if (h.market === Market.TW) {
-      const yieldMap = readTwEstimatedYieldPctMap();
-      const yPct = yieldMap[h.ticker.toUpperCase()];
-      const valueTwd = holdingValueToTWD(h, accounts, rates);
-      let gross = 0;
-      if (yPct != null && yPct > 0) {
-        gross = estimateTwSingleCashDividendFromYieldTwd(valueTwd, yPct);
-      } else if (info.lastAmountPerShare > 0) {
-        gross = twEstimatedSingleDividendTwd(h.quantity, info.lastAmountPerShare);
-      }
+      const gross =
+        info.lastAmountPerShare > 0
+          ? twEstimatedSingleDividendTwd(h.quantity, info.lastAmountPerShare)
+          : 0;
       const nhi = twNhiSupplementFloorTwd(gross);
       if (gross >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD) {
         const lines = [
@@ -225,7 +215,7 @@ const HoldingsTable: React.FC<Props> = () => {
           '',
           `${dt.estSinglePayout}: ${Math.round(gross).toLocaleString()} TWD`,
           `${dt.estNhiFee}: ${nhi.toLocaleString()} TWD`,
-          yPct != null && yPct > 0 ? `${dt.twYieldHint}` : dt.dataFromYahoo,
+          dt.dataFromYahoo,
           '',
           dt.disclaimerShort,
         ];
@@ -329,30 +319,7 @@ const HoldingsTable: React.FC<Props> = () => {
         </td>
 
         <td className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100">
-          <div className="flex flex-col gap-0.5">
-            <span>{h.ticker}</span>
-            {h.market === Market.TW && (
-              <div className="flex items-center gap-1" title={dt.twYieldHint}>
-                <input
-                  key={`${h.ticker}-${twYieldDraftTick}`}
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder={dt.twYieldPlaceholder}
-                  defaultValue={readTwEstimatedYieldPctMap()[h.ticker.toUpperCase()] ?? ''}
-                  onBlur={e => {
-                    const v = parseFloat(e.target.value);
-                    writeTwEstimatedYieldPct(h.ticker, Number.isFinite(v) && v > 0 ? v : null);
-                    setTwYieldDraftTick(t => t + 1);
-                  }}
-                  className="w-[4.5rem] text-[10px] font-normal font-mono border border-slate-200 dark:border-slate-600 rounded px-1 py-0.5 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                />
-                <span className="text-[9px] font-normal text-slate-400 whitespace-nowrap">
-                  {translations.transactionForm.divYieldHintShort}
-                </span>
-              </div>
-            )}
-          </div>
+          {h.ticker}
         </td>
 
         <td className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-100 text-xs sm:text-sm">
