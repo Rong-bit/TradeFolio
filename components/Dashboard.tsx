@@ -811,7 +811,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={quarterlyTrendData}
-                        margin={{ top: 10, right: 52, left: 20, bottom: 60 }}
+                        margin={{ top: 10, right: 20, left: 68, bottom: 60 }}
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
@@ -832,13 +832,14 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         />
                         <YAxis
                           yAxisId="left"
-                          orientation="right"
+                          orientation="left"
                           stroke={isDarkMode ? '#cbd5e1' : '#64748b'}
                           tick={{ fill: isDarkMode ? '#cbd5e1' : '#64748b', fontSize: 10 }}
                           axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           fontSize={10}
                           className="text-xs"
+                          width={42}
                           tickFormatter={(val: number) => {
                             if (Math.abs(val) >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
                             if (Math.abs(val) >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
@@ -854,6 +855,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           fontSize={10}
                           width={46}
+                          dx={-40}
                           domain={['auto', 'auto']}
                           tickFormatter={(val: number) => `${Number(val).toFixed(0)}%`}
                         />
