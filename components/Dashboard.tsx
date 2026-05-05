@@ -25,49 +25,6 @@ const SEGMENT_PILL_CLASS =
 const SEGMENT_BTN_CLASS =
   'px-3 py-1.5 text-sm rounded-none transition whitespace-nowrap focus:outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400/90';
 
-/** 資產／成本趨勢圖左軸：較小字級以配合雙左軸緊湊排版 */
-function TrendChartCurrencyYTick(props: {
-  x?: number;
-  y?: number;
-  payload?: { value?: number };
-  stroke?: string;
-  fill?: string;
-}) {
-  const { x = 0, y = 0, payload, stroke, fill } = props;
-  const color = stroke ?? fill ?? '#64748b';
-  const val = payload?.value;
-  let text = '';
-  if (typeof val === 'number' && Number.isFinite(val)) {
-    if (Math.abs(val) >= 1_000_000) text = `${(val / 1_000_000).toFixed(1)}M`;
-    else if (Math.abs(val) >= 1_000) text = `${(val / 1_000).toFixed(0)}k`;
-    else text = val.toFixed(0);
-  }
-  return (
-    <text x={x} y={y} dy={4} fill={color} fontSize={9} textAnchor="end">
-      {text}
-    </text>
-  );
-}
-
-/** ROI% 左軸：整數 %、較小字級 */
-function TrendChartRoiYTick(props: {
-  x?: number;
-  y?: number;
-  payload?: { value?: number };
-  stroke?: string;
-  fill?: string;
-}) {
-  const { x = 0, y = 0, payload, stroke, fill } = props;
-  const color = stroke ?? fill ?? '#db2777';
-  const val = payload?.value;
-  const text = typeof val === 'number' && Number.isFinite(val) ? `${Math.round(val)}%` : '';
-  return (
-    <text x={x} y={y} dy={4} fill={color} fontSize={9} textAnchor="end">
-      {text}
-    </text>
-  );
-}
-
 function Dashboard({ onUpdateHistorical }: DashboardProps) {
   const { summary, holdings, chartData, annualPerformance,
     accountPerformance, cashFlows, transactions, accounts: portfolioAccounts, computedAccounts,
@@ -877,22 +834,28 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           yAxisId="left"
                           orientation="left"
                           stroke={isDarkMode ? '#cbd5e1' : '#64748b'}
-                          tick={TrendChartCurrencyYTick}
+                          tick={{ fill: isDarkMode ? '#cbd5e1' : '#64748b', fontSize: 9 }}
                           axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           className="text-xs"
                           width={39}
+                          tickFormatter={(val: number) => {
+                            if (Math.abs(val) >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+                            if (Math.abs(val) >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
+                            return val.toFixed(0);
+                          }}
                         />
                         <YAxis
                           yAxisId="right"
                           orientation="left"
                           stroke={isDarkMode ? '#f472b6' : '#db2777'}
-                          tick={TrendChartRoiYTick}
+                          tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }}
                           axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           width={42}
                           dx={-34}
                           domain={['auto', 'auto']}
+                          tickFormatter={(val: number) => `${Math.round(Number(val))}%`}
                         />
                         <Tooltip
                           contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
