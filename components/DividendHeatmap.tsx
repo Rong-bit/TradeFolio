@@ -55,6 +55,11 @@ function pickNextUpcomingMonth(candidates: number[], currentMonth: number): numb
   return unique[0];
 }
 
+function shiftMonthForTwPayout(month: number, market: Market): number {
+  if (market !== Market.TW) return month;
+  return (month + 1) % 12;
+}
+
 const DividendHeatmap: React.FC = () => {
   const { transactions, accounts, holdings } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
@@ -125,7 +130,9 @@ const DividendHeatmap: React.FC = () => {
       let inferredMonth: number | undefined;
       let inferredSource: 'yahoo-history' | 'yahoo-lastEx' | 'local-history' | undefined;
       let inferredMonthsCandidate: number[] | undefined;
-      const recentMonths = (info.recentExMonths ?? []).filter(m => Number.isInteger(m) && m >= 0 && m <= 11) as number[];
+      const recentMonths = (info.recentExMonths ?? [])
+        .filter(m => Number.isInteger(m) && m >= 0 && m <= 11)
+        .map(m => shiftMonthForTwPayout(m, row.market)) as number[];
       if (recentMonths.length > 0) {
         inferredMonthsCandidate = Array.from(new Set(recentMonths));
         if (inferredMonthsCandidate.length > 0) {
@@ -135,7 +142,7 @@ const DividendHeatmap: React.FC = () => {
       }
       if (inferredMonth == null && info.lastExDate) {
         const d = new Date(`${info.lastExDate}T12:00:00`);
-        const m = d.getMonth();
+        const m = shiftMonthForTwPayout(d.getMonth(), row.market);
         if (!Number.isNaN(d.getTime()) && m >= 0 && m <= 11) {
           inferredMonth = m;
           inferredMonthsCandidate = [m];
@@ -326,9 +333,11 @@ const DividendHeatmap: React.FC = () => {
       if (row.exDate) {
         const dt = new Date(`${row.exDate}T12:00:00`);
         const year = dt.getFullYear();
-        const month = dt.getMonth();
+        const rawMonth = dt.getMonth();
+        const month = shiftMonthForTwPayout(rawMonth, row.market);
+        const yearAdjusted = row.market === Market.TW && month < rawMonth ? year + 1 : year;
         if (!Number.isNaN(dt.getTime()) && month >= 0 && month <= 11) {
-          targetYear = year;
+          targetYear = yearAdjusted;
           targetMonth = month;
         }
       }
@@ -431,6 +440,7 @@ const DividendHeatmap: React.FC = () => {
                   const actualAmount = cell?.amount ?? 0;
                   const estimatedAmount = estimatedSummary.byYearMonthly[year]?.[m] ?? 0;
                   const amount = actualAmount + estimatedAmount;
+                  const displayAmount = estimatedAmount > 0 ? estimatedAmount : actualAmount;
                   const isHovered = hoveredCell?.year === year && hoveredCell?.month === m;
                   const actualColor = colorForAmount(actualAmount, heatScaleMax);
                   const estColor = estimateColorForAmount(estimatedAmount, heatScaleMax);
@@ -454,16 +464,16 @@ const DividendHeatmap: React.FC = () => {
                       onMouseEnter={() => setHoveredCell({ year, month: m })}
                       onMouseLeave={() => setHoveredCell(null)}
                     >
-                      {amount > 0 && (
+                      {displayAmount > 0 && (
                         <span
                           className="text-[9px] font-bold leading-none"
                           style={{
                             color: estimatedAmount > 0 && actualAmount === 0
                               ? estimateTextColorForAmount(estimatedAmount, heatScaleMax)
-                              : textColorForAmount(Math.max(actualAmount, amount), heatScaleMax),
+                              : textColorForAmount(Math.max(actualAmount, displayAmount), heatScaleMax),
                           }}
                         >
-                          {fmt(amount)}
+                          {fmt(displayAmount)}
                         </span>
                       )}
                       {estimatedAmount > 0 && (estimatedSummary.byYearMonthlyNhiTriggered[year]?.[m] ?? false) && (
