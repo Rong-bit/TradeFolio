@@ -169,16 +169,9 @@ const DividendHeatmap: React.FC = () => {
 
   const hoveredData = hoveredCell ? grid[hoveredCell.year]?.[hoveredCell.month] : null;
   const bestMonth = monthTotals.indexOf(Math.max(...monthTotals));
+  const hasHeatmapData = years.length > 0;
 
   if (isGuest) return null;
-
-  if (years.length === 0) {
-    return (
-      <div className="bg-white p-6 rounded-xl shadow">
-        <p className="text-slate-400 text-sm text-center py-8">{tr.dividendHeatmap.noData}</p>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
@@ -195,79 +188,83 @@ const DividendHeatmap: React.FC = () => {
       </div>
 
       {/* Heatmap grid */}
-      <div className="overflow-x-auto">
-        <div className="min-w-[540px]">
-          {/* Month header */}
-          <div className="flex mb-1.5">
-            <div className="w-14 shrink-0" />
-            {SHORT_MONTHS.map(m => (
-              <div key={m} className="flex-1 text-center text-[10px] font-medium text-slate-400" style={{ minWidth: 36 }}>
-                {m}
+      {hasHeatmapData ? (
+        <div className="overflow-x-auto">
+          <div className="min-w-[540px]">
+            {/* Month header */}
+            <div className="flex mb-1.5">
+              <div className="w-14 shrink-0" />
+              {SHORT_MONTHS.map(m => (
+                <div key={m} className="flex-1 text-center text-[10px] font-medium text-slate-400" style={{ minWidth: 36 }}>
+                  {m}
+                </div>
+              ))}
+              <div className="w-20 shrink-0 text-[10px] font-medium text-slate-400 text-right pr-1">
+                {tr.dividendHeatmap.yearTotal}
+              </div>
+            </div>
+
+            {/* Year rows */}
+            {years.map(year => (
+              <div key={year} className="flex items-center mb-1">
+                <div className="w-14 shrink-0 text-xs font-bold text-slate-600 pr-2 text-right">{year}</div>
+                {Array.from({ length: 12 }, (_, m) => {
+                  const cell = grid[year]?.[m];
+                  const amount = cell?.amount ?? 0;
+                  const isHovered = hoveredCell?.year === year && hoveredCell?.month === m;
+                  return (
+                    <div
+                      key={m}
+                      className="flex-1 mx-0.5 rounded cursor-pointer transition-all duration-150"
+                      style={{
+                        minWidth: 32,
+                        height: 36,
+                        backgroundColor: colorForAmount(amount, maxAmount),
+                        border: isHovered ? '2px solid #d97706' : '2px solid transparent',
+                        transform: isHovered ? 'scale(1.08)' : 'scale(1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      onMouseEnter={() => setHoveredCell({ year, month: m })}
+                      onMouseLeave={() => setHoveredCell(null)}
+                    >
+                      {amount > 0 && (
+                        <span className="text-[9px] font-bold leading-none" style={{ color: textColorForAmount(amount, maxAmount) }}>
+                          {fmt(amount)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                <div className="w-20 shrink-0 text-xs font-bold text-amber-600 text-right pr-1 tabular-nums">
+                  {yearTotals[year] > 0 ? fmt(yearTotals[year]) : '—'}
+                </div>
               </div>
             ))}
-            <div className="w-20 shrink-0 text-[10px] font-medium text-slate-400 text-right pr-1">
-              {tr.dividendHeatmap.yearTotal}
-            </div>
-          </div>
 
-          {/* Year rows */}
-          {years.map(year => (
-            <div key={year} className="flex items-center mb-1">
-              <div className="w-14 shrink-0 text-xs font-bold text-slate-600 pr-2 text-right">{year}</div>
-              {Array.from({ length: 12 }, (_, m) => {
-                const cell = grid[year]?.[m];
-                const amount = cell?.amount ?? 0;
-                const isHovered = hoveredCell?.year === year && hoveredCell?.month === m;
-                return (
-                  <div
-                    key={m}
-                    className="flex-1 mx-0.5 rounded cursor-pointer transition-all duration-150"
-                    style={{
-                      minWidth: 32,
-                      height: 36,
-                      backgroundColor: colorForAmount(amount, maxAmount),
-                      border: isHovered ? '2px solid #d97706' : '2px solid transparent',
-                      transform: isHovered ? 'scale(1.08)' : 'scale(1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    onMouseEnter={() => setHoveredCell({ year, month: m })}
-                    onMouseLeave={() => setHoveredCell(null)}
-                  >
-                    {amount > 0 && (
-                      <span className="text-[9px] font-bold leading-none" style={{ color: textColorForAmount(amount, maxAmount) }}>
-                        {fmt(amount)}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-              <div className="w-20 shrink-0 text-xs font-bold text-amber-600 text-right pr-1 tabular-nums">
-                {yearTotals[year] > 0 ? fmt(yearTotals[year]) : '—'}
+            {/* Month totals row */}
+            <div className="flex items-center mt-2 border-t border-slate-100 pt-2">
+              <div className="w-14 shrink-0 text-[10px] text-slate-400 text-right pr-2">
+                {tr.dividendHeatmap.monthTotal}
               </div>
+              {monthTotals.map((total, m) => (
+                <div key={m} className="flex-1 mx-0.5 text-center" style={{ minWidth: 32 }}>
+                  <span className={`text-[9px] font-bold tabular-nums ${m === bestMonth && total > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                    {total > 0 ? fmt(total) : '—'}
+                  </span>
+                </div>
+              ))}
+              <div className="w-20 shrink-0" />
             </div>
-          ))}
-
-          {/* Month totals row */}
-          <div className="flex items-center mt-2 border-t border-slate-100 pt-2">
-            <div className="w-14 shrink-0 text-[10px] text-slate-400 text-right pr-2">
-              {tr.dividendHeatmap.monthTotal}
-            </div>
-            {monthTotals.map((total, m) => (
-              <div key={m} className="flex-1 mx-0.5 text-center" style={{ minWidth: 32 }}>
-                <span className={`text-[9px] font-bold tabular-nums ${m === bestMonth && total > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
-                  {total > 0 ? fmt(total) : '—'}
-                </span>
-              </div>
-            ))}
-            <div className="w-20 shrink-0" />
           </div>
         </div>
-      </div>
+      ) : (
+        <p className="text-slate-400 text-sm text-center py-6">{tr.dividendHeatmap.noData}</p>
+      )}
 
       {/* Hover tooltip panel */}
-      {hoveredCell && hoveredData && (
+      {hasHeatmapData && hoveredCell && hoveredData && (
         <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">
           <div className="font-bold text-amber-800 mb-2">
             {hoveredCell.year} · {MONTH_NAMES[hoveredCell.month]}
@@ -294,7 +291,7 @@ const DividendHeatmap: React.FC = () => {
           <div key={c} className="w-6 h-3 rounded-sm" style={{ backgroundColor: c }} />
         ))}
         <span>{tr.dividendHeatmap.more}</span>
-        {bestMonth >= 0 && monthTotals[bestMonth] > 0 && (
+        {hasHeatmapData && bestMonth >= 0 && monthTotals[bestMonth] > 0 && (
           <span className="ml-4 text-amber-600 font-medium">
             {tr.dividendHeatmap.bestMonth}：{MONTH_NAMES[bestMonth]}
           </span>
