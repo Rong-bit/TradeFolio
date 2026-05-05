@@ -141,6 +141,47 @@ const DividendHeatmap: React.FC = () => {
     );
   }, [language]);
 
+  // 當 Yahoo 尚未提供 nextExDate 時，依歷史現金股息月份推估
+  const inferredPayoutMonthByTicker = useMemo(() => {
+    const map = new Map<string, { counts: number[]; latestTs: number[] }>();
+    for (const tx of transactions) {
+      if (tx.type !== TransactionType.CASH_DIVIDEND) continue;
+      const ticker = tx.ticker.toUpperCase();
+      const d = new Date(tx.date);
+      const ts = d.getTime();
+      if (Number.isNaN(ts)) continue;
+      const month = d.getMonth();
+      if (month < 0 || month > 11) continue;
+      if (!map.has(ticker)) {
+        map.set(ticker, {
+          counts: new Array(12).fill(0),
+          latestTs: new Array(12).fill(-Infinity),
+        });
+      }
+      const stat = map.get(ticker)!;
+      stat.counts[month] += 1;
+      stat.latestTs[month] = Math.max(stat.latestTs[month], ts);
+    }
+
+    const inferred = new Map<string, number>();
+    for (const [ticker, stat] of map.entries()) {
+      let bestMonth = -1;
+      let bestCount = -1;
+      let bestLatest = -Infinity;
+      for (let m = 0; m < 12; m++) {
+        const c = stat.counts[m];
+        const latest = stat.latestTs[m];
+        if (c > bestCount || (c === bestCount && latest > bestLatest)) {
+          bestMonth = m;
+          bestCount = c;
+          bestLatest = latest;
+        }
+      }
+      if (bestMonth >= 0 && bestCount > 0) inferred.set(ticker, bestMonth);
+    }
+    return inferred;
+  }, [transactions]);
+
   const { grid, years, maxAmount, totalDividend, monthTotals, yearTotals } = useMemo(() => {
     const map: Record<number, Record<number, { amount: number; tickers: Record<string, number> }>> = {};
 
@@ -201,6 +242,12 @@ const DividendHeatmap: React.FC = () => {
       if (estimatedBase <= 0) continue;
 
       if (!row.exDate) {
+        const inferredMonth = inferredPayoutMonthByTicker.get(row.ticker.toUpperCase());
+        if (inferredMonth != null && inferredMonth >= 0 && inferredMonth <= 11) {
+          monthly[inferredMonth] += estimatedBase;
+          monthlyNhiTriggered[inferredMonth] = monthlyNhiTriggered[inferredMonth] || !!row.nhiTriggered;
+          continue;
+        }
         unknownMonthTotal += estimatedBase;
         unknownMonthNhiTriggered = unknownMonthNhiTriggered || !!row.nhiTriggered;
         continue;
@@ -226,7 +273,7 @@ const DividendHeatmap: React.FC = () => {
       unknownMonthTotal,
       unknownMonthNhiTriggered,
     };
-  }, [upcomingRows, rates.exchangeRateUsdToTwd, baseCurrency]);
+  }, [upcomingRows, rates.exchangeRateUsdToTwd, baseCurrency, inferredPayoutMonthByTicker]);
 
   if (isGuest) return null;
 
@@ -429,7 +476,7 @@ const DividendHeatmap: React.FC = () => {
             {tr.dividendHeatmap.bestMonth}：{MONTH_NAMES[bestMonth]}
           </span>
         )}
-        <span className="ml-3 text-indigo-600 font-medium">Est. = 預估配息</span>
+        <span className="ml-3 text-indigo-600 font-medium">Est. = 預估配息（無除息日優先依歷史月份推估）</span>
       </div>
 
       {/* 未來 90 天除息（Yahoo calendar） */}
