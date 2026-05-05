@@ -45,7 +45,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     profit: true,
     totalAssets: true,
     estTotalAssets: true,
-    yearlyPeriodRoi: false,
+    yearlyPeriodRoi: true,
   });
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
@@ -854,10 +854,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           fontSize={10}
-                          width={42}
-                          tickMargin={0}
-                          // 將第二組左軸向左回推一個軸寬，與第一組左軸重疊
-                          dx={-84}
+                          width={46}
+                          dx={-40}
                           domain={['auto', 'auto']}
                           tickFormatter={(val: number) => `${Number(val).toFixed(0)}%`}
                         />
