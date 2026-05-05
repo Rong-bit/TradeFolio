@@ -30,6 +30,21 @@ function textColorForAmount(amount: number, maxAmount: number): string {
   return (amount / maxAmount) > 0.5 ? '#78350f' : '#92400e';
 }
 
+function estimateColorForAmount(amount: number, maxAmount: number): string {
+  if (amount === 0) return '#eef2ff';
+  const ratio = Math.min(amount / maxAmount, 1);
+  if (ratio < 0.2) return '#e0e7ff';
+  if (ratio < 0.4) return '#c7d2fe';
+  if (ratio < 0.6) return '#a5b4fc';
+  if (ratio < 0.8) return '#818cf8';
+  return '#6366f1';
+}
+
+function estimateTextColorForAmount(amount: number, maxAmount: number): string {
+  if (amount === 0) return '#94a3b8';
+  return (amount / maxAmount) > 0.5 ? '#312e81' : '#4338ca';
+}
+
 const DividendHeatmap: React.FC = () => {
   const { transactions, accounts, holdings } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
@@ -172,6 +187,45 @@ const DividendHeatmap: React.FC = () => {
   const hoveredData = hoveredCell ? grid[hoveredCell.year]?.[hoveredCell.month] : null;
   const bestMonth = monthTotals.indexOf(Math.max(...monthTotals));
   const hasHeatmapData = years.length > 0;
+  const estimatedSummary = useMemo(() => {
+    const monthly = new Array(12).fill(0) as number[];
+    const monthlyNhiTriggered = new Array(12).fill(false) as boolean[];
+    let unknownMonthTotal = 0;
+    let unknownMonthNhiTriggered = false;
+
+    for (const row of upcomingRows) {
+      const twdPart = row.estTwd ?? 0;
+      const usdPartAsTwd = (row.estUsdNet ?? 0) * rates.exchangeRateUsdToTwd;
+      const estimatedBase = toBase(twdPart + usdPartAsTwd);
+      if (estimatedBase <= 0) continue;
+
+      if (!row.exDate) {
+        unknownMonthTotal += estimatedBase;
+        unknownMonthNhiTriggered = unknownMonthNhiTriggered || !!row.nhiTriggered;
+        continue;
+      }
+      const dt = new Date(`${row.exDate}T12:00:00`);
+      const month = dt.getMonth();
+      if (Number.isNaN(dt.getTime()) || month < 0 || month > 11) {
+        unknownMonthTotal += estimatedBase;
+        unknownMonthNhiTriggered = unknownMonthNhiTriggered || !!row.nhiTriggered;
+        continue;
+      }
+      monthly[month] += estimatedBase;
+      monthlyNhiTriggered[month] = monthlyNhiTriggered[month] || !!row.nhiTriggered;
+    }
+
+    const monthlyTotal = monthly.reduce((acc, v) => acc + v, 0);
+    const maxMonthly = Math.max(...monthly, 0);
+    return {
+      monthly,
+      monthlyNhiTriggered,
+      monthlyTotal,
+      maxMonthly,
+      unknownMonthTotal,
+      unknownMonthNhiTriggered,
+    };
+  }, [upcomingRows, rates.exchangeRateUsdToTwd, baseCurrency]);
 
   if (isGuest) return null;
 
@@ -259,6 +313,46 @@ const DividendHeatmap: React.FC = () => {
               ))}
               <div className="w-20 shrink-0" />
             </div>
+
+            {/* Estimated row */}
+            <div className="flex items-center mt-2 border-t border-slate-100 pt-2">
+              <div className="w-14 shrink-0 text-[10px] font-bold text-indigo-600 pr-2 text-right">Est.</div>
+              {estimatedSummary.monthly.map((amount, m) => (
+                <div
+                  key={`est-${m}`}
+                  className="flex-1 mx-0.5 rounded transition-all duration-150 relative"
+                  style={{
+                    minWidth: 32,
+                    height: 26,
+                    backgroundColor: estimateColorForAmount(amount, estimatedSummary.maxMonthly),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  title={amount > 0 ? `${MONTH_NAMES[m]}: ${fmt(amount)} ${baseCurrency}` : undefined}
+                >
+                  {amount > 0 && (
+                    <span className="text-[9px] font-bold leading-none" style={{ color: estimateTextColorForAmount(amount, estimatedSummary.maxMonthly) }}>
+                      {fmt(amount)}
+                    </span>
+                  )}
+                  {estimatedSummary.monthlyNhiTriggered[m] && (
+                    <span className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500 border border-white" title={dtx.nhiForecastTag} />
+                  )}
+                </div>
+              ))}
+              <div className="w-20 shrink-0 text-right pr-1 tabular-nums">
+                <div className="text-xs font-bold text-indigo-600">
+                  {estimatedSummary.monthlyTotal > 0 ? fmt(estimatedSummary.monthlyTotal) : '—'}
+                </div>
+                {estimatedSummary.unknownMonthTotal > 0 && (
+                  <div className="text-[9px] text-slate-500" title="No ex-date month from source">
+                    +{fmt(estimatedSummary.unknownMonthTotal)}
+                    {estimatedSummary.unknownMonthNhiTriggered ? ' ⚠' : ''}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       ) : (
@@ -298,6 +392,7 @@ const DividendHeatmap: React.FC = () => {
             {tr.dividendHeatmap.bestMonth}：{MONTH_NAMES[bestMonth]}
           </span>
         )}
+        <span className="ml-3 text-indigo-600 font-medium">Est. = 預估配息</span>
       </div>
 
       {/* 未來 90 天除息（Yahoo calendar） */}
