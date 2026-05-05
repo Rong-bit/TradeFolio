@@ -45,6 +45,16 @@ function estimateTextColorForAmount(amount: number, maxAmount: number): string {
   return (amount / maxAmount) > 0.5 ? '#312e81' : '#4338ca';
 }
 
+function pickNextUpcomingMonth(candidates: number[], currentMonth: number): number | undefined {
+  const unique = Array.from(
+    new Set(candidates.filter(m => Number.isInteger(m) && m >= 0 && m <= 11))
+  ).sort((a, b) => a - b);
+  if (unique.length === 0) return undefined;
+  const sameYear = unique.find(m => m >= currentMonth);
+  if (sameYear != null) return sameYear;
+  return unique[0];
+}
+
 const DividendHeatmap: React.FC = () => {
   const { transactions, accounts, holdings } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
@@ -80,6 +90,7 @@ const DividendHeatmap: React.FC = () => {
       market: Market;
       exDate: string;
       lastExDate?: string;
+      inferredMonthsCandidate?: number[];
       inferredMonth?: number;
       inferredSource?: 'yahoo-history' | 'yahoo-lastEx' | 'local-history';
       estTwd?: number;
@@ -113,27 +124,12 @@ const DividendHeatmap: React.FC = () => {
           : undefined;
       let inferredMonth: number | undefined;
       let inferredSource: 'yahoo-history' | 'yahoo-lastEx' | 'local-history' | undefined;
+      let inferredMonthsCandidate: number[] | undefined;
       const recentMonths = (info.recentExMonths ?? []).filter(m => Number.isInteger(m) && m >= 0 && m <= 11) as number[];
       if (recentMonths.length > 0) {
-        const counts = new Array(12).fill(0);
-        const firstSeen = new Array(12).fill(-1);
-        recentMonths.forEach((m, idx) => {
-          counts[m] += 1;
-          if (firstSeen[m] < 0) firstSeen[m] = idx;
-        });
-        let bestMonth = -1;
-        let bestCount = -1;
-        let bestRecency = Number.POSITIVE_INFINITY;
-        for (let m = 0; m < 12; m++) {
-          if (counts[m] <= 0) continue;
-          if (counts[m] > bestCount || (counts[m] === bestCount && firstSeen[m] < bestRecency)) {
-            bestMonth = m;
-            bestCount = counts[m];
-            bestRecency = firstSeen[m];
-          }
-        }
-        if (bestMonth >= 0) {
-          inferredMonth = bestMonth;
+        inferredMonthsCandidate = Array.from(new Set(recentMonths));
+        if (inferredMonthsCandidate.length > 0) {
+          inferredMonth = inferredMonthsCandidate[0];
           inferredSource = 'yahoo-history';
         }
       }
@@ -142,6 +138,7 @@ const DividendHeatmap: React.FC = () => {
         const m = d.getMonth();
         if (!Number.isNaN(d.getTime()) && m >= 0 && m <= 11) {
           inferredMonth = m;
+          inferredMonthsCandidate = [m];
           inferredSource = 'yahoo-lastEx';
         }
       }
@@ -152,6 +149,7 @@ const DividendHeatmap: React.FC = () => {
         market: row.market,
         exDate: info.nextExDate ?? '',
         lastExDate: info.lastExDate || undefined,
+        inferredMonthsCandidate,
         inferredMonth,
         inferredSource,
         estTwd,
@@ -336,7 +334,9 @@ const DividendHeatmap: React.FC = () => {
       }
       if (targetMonth == null || targetYear == null) {
         const tickerUpper = row.ticker.toUpperCase();
+        const preferredInferredMonth = pickNextUpcomingMonth(row.inferredMonthsCandidate ?? [], currentMonth);
         const inferredMonth =
+          preferredInferredMonth ??
           row.inferredMonth ??
           inferredPayoutMonthByTicker.get(tickerUpper) ??
           inferredPayoutMonthFromYahooByTicker.get(tickerUpper);
