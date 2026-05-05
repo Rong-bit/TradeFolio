@@ -483,7 +483,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   const cumulativeChartHeightClass = isMobileViewport ? 'h-[400px] md:h-[450px]' : 'h-[300px] md:h-[450px]';
   const cumulativeXAxisFontSize = isMobileViewport ? 9 : 10;
   const cumulativeXAxisHeight = isMobileViewport ? 68 : 60;
-  const cumulativeLeftMargin = isMobileViewport ? 44 : 60;
+  const cumulativeLeftMargin = isMobileViewport ? 10 : 60;
+  const cumulativeRightMargin = isMobileViewport ? 8 : 20;
+  const cumulativeLeftAxisWidth = isMobileViewport ? 30 : 39;
+  const cumulativeRightAxisWidth = isMobileViewport ? 30 : 38;
+  const cumulativeRightAxisDx = isMobileViewport ? -14 : -20;
   const cumulativeBarSize = isMobileViewport ? 22 : 30;
   const cumulativeDotSize = isMobileViewport ? 3 : 4;
   const cumulativeRoiDotSize = isMobileViewport ? 2 : 3;
@@ -760,7 +764,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
       {/* 主圖：累積損益（按季）／按年資金流瀑布 */}
       {!isGuest && (
-        <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
+        <div className="bg-white p-3 sm:p-6 rounded-xl shadow overflow-hidden">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-3">
             <div className="min-w-0 flex-1">
               {mainChartTab === 'cumulative' ? (
@@ -831,12 +835,12 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     </label>
                   ))}
                 </div>
-                <div className={`w-full ${cumulativeChartHeightClass}`}>
+                <div className={`w-full ${cumulativeChartHeightClass} -mx-2 sm:mx-0`}>
                   {isMounted && quarterlyTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={quarterlyTrendData}
-                        margin={{ top: 10, right: 20, left: cumulativeLeftMargin, bottom: 60 }}
+                        margin={{ top: 10, right: cumulativeRightMargin, left: cumulativeLeftMargin, bottom: 60 }}
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
@@ -845,7 +849,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         <XAxis
                           dataKey="year"
                           stroke={isDarkMode ? '#cbd5e1' : '#64748b'}
-                          tick={{ fill: isDarkMode ? '#cbd5e1' : '#64748b', fontSize: 10 }}
+                          tick={{ fill: isDarkMode ? '#cbd5e1' : '#64748b', fontSize: cumulativeXAxisFontSize }}
                           axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           fontSize={cumulativeXAxisFontSize}
@@ -863,7 +867,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           className="text-xs"
-                          width={39}
+                          width={cumulativeLeftAxisWidth}
                           tickFormatter={(val: number) => {
                             if (Math.abs(val) >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
                             if (Math.abs(val) >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
@@ -877,8 +881,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }}
                           axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
-                          width={38}
-                          dx={-20}
+                          width={cumulativeRightAxisWidth}
+                          dx={cumulativeRightAxisDx}
                           domain={['auto', 'auto']}
                           tickFormatter={(val: number) => `${Math.round(Number(val))}%`}
                         />
