@@ -132,6 +132,7 @@ const DividendHeatmap: React.FC = () => {
 
   // Month labels — always 3-letter English abbreviations for the grid header
   const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const UNKNOWN_MONTH_LABEL = '?';
 
   // Localised month names for tooltip / best-month label
   const MONTH_NAMES = useMemo(() => {
@@ -246,7 +247,7 @@ const DividendHeatmap: React.FC = () => {
       {/* Heatmap grid */}
       {hasHeatmapData ? (
         <div className="overflow-x-auto">
-          <div className="min-w-[540px]">
+          <div className="min-w-[600px]">
             {/* Month header */}
             <div className="flex mb-1.5">
               <div className="w-14 shrink-0" />
@@ -255,6 +256,9 @@ const DividendHeatmap: React.FC = () => {
                   {m}
                 </div>
               ))}
+              <div className="flex-1 text-center text-[10px] font-medium text-indigo-400" style={{ minWidth: 36 }} title="預估月份未定">
+                {UNKNOWN_MONTH_LABEL}
+              </div>
               <div className="w-20 shrink-0 text-[10px] font-medium text-slate-400 text-right pr-1">
                 {tr.dividendHeatmap.yearTotal}
               </div>
@@ -293,6 +297,11 @@ const DividendHeatmap: React.FC = () => {
                     </div>
                   );
                 })}
+                <div
+                  className="flex-1 mx-0.5 rounded"
+                  style={{ minWidth: 32, height: 36, backgroundColor: '#f8fafc' }}
+                  title="此欄位僅用於預估月份未定"
+                />
                 <div className="w-20 shrink-0 text-xs font-bold text-amber-600 text-right pr-1 tabular-nums">
                   {yearTotals[year] > 0 ? fmt(yearTotals[year]) : '—'}
                 </div>
@@ -311,6 +320,9 @@ const DividendHeatmap: React.FC = () => {
                   </span>
                 </div>
               ))}
+              <div className="flex-1 mx-0.5 text-center" style={{ minWidth: 32 }}>
+                <span className="text-[9px] font-bold tabular-nums text-slate-300">—</span>
+              </div>
               <div className="w-20 shrink-0" />
             </div>
 
@@ -341,16 +353,41 @@ const DividendHeatmap: React.FC = () => {
                   )}
                 </div>
               ))}
+              <div
+                className="flex-1 mx-0.5 rounded transition-all duration-150 relative"
+                style={{
+                  minWidth: 32,
+                  height: 26,
+                  backgroundColor: estimateColorForAmount(estimatedSummary.unknownMonthTotal, estimatedSummary.maxMonthly || estimatedSummary.unknownMonthTotal || 1),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                title={estimatedSummary.unknownMonthTotal > 0 ? `月份未定: ${fmt(estimatedSummary.unknownMonthTotal)} ${baseCurrency}` : '月份未定'}
+              >
+                {estimatedSummary.unknownMonthTotal > 0 && (
+                  <span
+                    className="text-[9px] font-bold leading-none"
+                    style={{
+                      color: estimateTextColorForAmount(
+                        estimatedSummary.unknownMonthTotal,
+                        estimatedSummary.maxMonthly || estimatedSummary.unknownMonthTotal || 1
+                      ),
+                    }}
+                  >
+                    {fmt(estimatedSummary.unknownMonthTotal)}
+                  </span>
+                )}
+                {estimatedSummary.unknownMonthNhiTriggered && (
+                  <span className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500 border border-white" title={dtx.nhiForecastTag} />
+                )}
+              </div>
               <div className="w-20 shrink-0 text-right pr-1 tabular-nums">
                 <div className="text-xs font-bold text-indigo-600">
-                  {estimatedSummary.monthlyTotal > 0 ? fmt(estimatedSummary.monthlyTotal) : '—'}
+                  {(estimatedSummary.monthlyTotal + estimatedSummary.unknownMonthTotal) > 0
+                    ? fmt(estimatedSummary.monthlyTotal + estimatedSummary.unknownMonthTotal)
+                    : '—'}
                 </div>
-                {estimatedSummary.unknownMonthTotal > 0 && (
-                  <div className="text-[9px] text-slate-500" title="No ex-date month from source">
-                    +{fmt(estimatedSummary.unknownMonthTotal)}
-                    {estimatedSummary.unknownMonthNhiTriggered ? ' ⚠' : ''}
-                  </div>
-                )}
               </div>
             </div>
           </div>
