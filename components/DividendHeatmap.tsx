@@ -9,6 +9,7 @@ import { useDividendSchedules } from '../hooks/useDividendSchedules';
 import {
   dividendScheduleMapKey,
   marketToYahooMarketForDividends,
+  TW_NHI_SUPPLEMENT_RATE,
   twEstimatedSingleDividendTwd,
   twNhiSupplementFloorTwd,
   TW_NHI_SUPPLEMENT_THRESHOLD_TWD,
@@ -308,6 +309,8 @@ const DividendHeatmap: React.FC = () => {
   const estimatedSummary = useMemo(() => {
     const byYearMonthly: Record<number, number[]> = {};
     const byYearMonthlyNhiTriggered: Record<number, boolean[]> = {};
+    const byYearMonthlyNhiBaseTwd: Record<number, number[]> = {};
+    const byYearMonthlyNhiFeeTwd: Record<number, number[]> = {};
     const byYearMonthlyTickers: Record<number, Array<Record<string, number>>> = {};
     let maxCell = 0;
     const now = new Date();
@@ -317,6 +320,8 @@ const DividendHeatmap: React.FC = () => {
     const ensureYearBucket = (year: number) => {
       if (!byYearMonthly[year]) byYearMonthly[year] = new Array(12).fill(0);
       if (!byYearMonthlyNhiTriggered[year]) byYearMonthlyNhiTriggered[year] = new Array(12).fill(false);
+      if (!byYearMonthlyNhiBaseTwd[year]) byYearMonthlyNhiBaseTwd[year] = new Array(12).fill(0);
+      if (!byYearMonthlyNhiFeeTwd[year]) byYearMonthlyNhiFeeTwd[year] = new Array(12).fill(0);
       if (!byYearMonthlyTickers[year]) {
         byYearMonthlyTickers[year] = Array.from({ length: 12 }, () => ({} as Record<string, number>));
       }
@@ -361,6 +366,10 @@ const DividendHeatmap: React.FC = () => {
       byYearMonthly[targetYear][targetMonth] += estimatedBase;
       byYearMonthlyNhiTriggered[targetYear][targetMonth] =
         byYearMonthlyNhiTriggered[targetYear][targetMonth] || !!row.nhiTriggered;
+      if (row.market === Market.TW && row.nhiTriggered) {
+        byYearMonthlyNhiBaseTwd[targetYear][targetMonth] += row.estTwd ?? 0;
+        byYearMonthlyNhiFeeTwd[targetYear][targetMonth] += row.twNhiFeeTwd ?? 0;
+      }
       byYearMonthlyTickers[targetYear][targetMonth][row.ticker] =
         (byYearMonthlyTickers[targetYear][targetMonth][row.ticker] ?? 0) + estimatedBase;
       if (byYearMonthly[targetYear][targetMonth] > maxCell) {
@@ -371,6 +380,8 @@ const DividendHeatmap: React.FC = () => {
     return {
       byYearMonthly,
       byYearMonthlyNhiTriggered,
+      byYearMonthlyNhiBaseTwd,
+      byYearMonthlyNhiFeeTwd,
       byYearMonthlyTickers,
       maxCell,
     };
@@ -397,6 +408,12 @@ const DividendHeatmap: React.FC = () => {
   const hoveredEstimatedNhi = hoveredCell
     ? (estimatedSummary.byYearMonthlyNhiTriggered[hoveredCell.year]?.[hoveredCell.month] ?? false)
     : false;
+  const hoveredEstimatedNhiBaseTwd = hoveredCell
+    ? (estimatedSummary.byYearMonthlyNhiBaseTwd[hoveredCell.year]?.[hoveredCell.month] ?? 0)
+    : 0;
+  const hoveredEstimatedNhiFeeTwd = hoveredCell
+    ? (estimatedSummary.byYearMonthlyNhiFeeTwd[hoveredCell.year]?.[hoveredCell.month] ?? 0)
+    : 0;
 
   if (isGuest) return null;
 
@@ -527,7 +544,7 @@ const DividendHeatmap: React.FC = () => {
               預估：{fmt(hoveredEstimatedAmount)} {baseCurrency}
               {hoveredEstimatedNhi && (
                 <span className="ml-2 text-rose-600 font-semibold">
-                  ⚠ {dtx.nhiForecastTag}：配息金額 × 2.11% = 台幣金額
+                  ⚠ {dtx.nhiForecastTag}：{Math.round(hoveredEstimatedNhiBaseTwd).toLocaleString()} × {(TW_NHI_SUPPLEMENT_RATE * 100).toFixed(2)}% = {Math.floor(hoveredEstimatedNhiFeeTwd).toLocaleString()} TWD
                 </span>
               )}
             </div>
