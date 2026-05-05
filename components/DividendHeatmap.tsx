@@ -79,6 +79,9 @@ const DividendHeatmap: React.FC = () => {
       ticker: string;
       market: Market;
       exDate: string;
+      lastExDate?: string;
+      inferredMonth?: number;
+      inferredSource?: 'yahoo-history' | 'yahoo-lastEx' | 'local-history';
       estTwd?: number;
       estUsdNet?: number;
       twNhiFeeTwd?: number;
@@ -108,12 +111,49 @@ const DividendHeatmap: React.FC = () => {
         row.market === Market.US && info.lastAmountPerShare > 0
           ? row.quantity * info.lastAmountPerShare
           : undefined;
+      let inferredMonth: number | undefined;
+      let inferredSource: 'yahoo-history' | 'yahoo-lastEx' | 'local-history' | undefined;
+      const recentMonths = (info.recentExMonths ?? []).filter(m => Number.isInteger(m) && m >= 0 && m <= 11) as number[];
+      if (recentMonths.length > 0) {
+        const counts = new Array(12).fill(0);
+        const firstSeen = new Array(12).fill(-1);
+        recentMonths.forEach((m, idx) => {
+          counts[m] += 1;
+          if (firstSeen[m] < 0) firstSeen[m] = idx;
+        });
+        let bestMonth = -1;
+        let bestCount = -1;
+        let bestRecency = Number.POSITIVE_INFINITY;
+        for (let m = 0; m < 12; m++) {
+          if (counts[m] <= 0) continue;
+          if (counts[m] > bestCount || (counts[m] === bestCount && firstSeen[m] < bestRecency)) {
+            bestMonth = m;
+            bestCount = counts[m];
+            bestRecency = firstSeen[m];
+          }
+        }
+        if (bestMonth >= 0) {
+          inferredMonth = bestMonth;
+          inferredSource = 'yahoo-history';
+        }
+      }
+      if (inferredMonth == null && info.lastExDate) {
+        const d = new Date(`${info.lastExDate}T12:00:00`);
+        const m = d.getMonth();
+        if (!Number.isNaN(d.getTime()) && m >= 0 && m <= 11) {
+          inferredMonth = m;
+          inferredSource = 'yahoo-lastEx';
+        }
+      }
       if ((estTwd ?? 0) <= 0 && (estUsdNet ?? 0) <= 0) continue;
       rows.push({
         key,
         ticker: row.ticker,
         market: row.market,
         exDate: info.nextExDate ?? '',
+        lastExDate: info.lastExDate || undefined,
+        inferredMonth,
+        inferredSource,
         estTwd,
         estUsdNet,
         twNhiFeeTwd,
@@ -297,6 +337,7 @@ const DividendHeatmap: React.FC = () => {
       if (targetMonth == null || targetYear == null) {
         const tickerUpper = row.ticker.toUpperCase();
         const inferredMonth =
+          row.inferredMonth ??
           inferredPayoutMonthByTicker.get(tickerUpper) ??
           inferredPayoutMonthFromYahooByTicker.get(tickerUpper);
         if (inferredMonth != null && inferredMonth >= 0 && inferredMonth <= 11) {
@@ -533,6 +574,7 @@ const DividendHeatmap: React.FC = () => {
                   <th className="px-2 py-1.5">{tr.holdings.ticker}</th>
                   <th className="px-2 py-1.5">Mkt</th>
                   <th className="px-2 py-1.5">{dtx.upcomingExDate}</th>
+                  <th className="px-2 py-1.5">推估月</th>
                   <th className="px-2 py-1.5 text-right">{dtx.upcomingEstTwd}</th>
                   <th className="px-2 py-1.5 text-right">{dtx.upcomingEstUsd}</th>
                 </tr>
@@ -543,6 +585,13 @@ const DividendHeatmap: React.FC = () => {
                     <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
                     <td className="px-2 py-1.5">{r.market}</td>
                     <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
+                    <td className="px-2 py-1.5 tabular-nums">
+                      {r.exDate
+                        ? `${new Date(`${r.exDate}T12:00:00`).getMonth() + 1}月`
+                        : (r.inferredMonth != null
+                          ? `${r.inferredMonth + 1}月`
+                          : '—')}
+                    </td>
                     <td className="px-2 py-1.5 text-right tabular-nums">
                       {r.estTwd != null && r.estTwd > 0 ? (
                         <div className="inline-flex flex-col items-end gap-1">
