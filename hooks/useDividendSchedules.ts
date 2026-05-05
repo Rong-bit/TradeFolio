@@ -3,7 +3,7 @@ import { Market } from '../types';
 import { fetchDividendSchedule, type DividendScheduleInfo } from '../services/yahooFinanceService';
 import { dividendScheduleMapKey, marketToYahooMarketForDividends } from '../utils/dividendTaxHelpers';
 
-const LS_KEY = 'tf-dividend-schedule-v1';
+const LS_KEY = 'tf-dividend-schedule-v2';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const CONCURRENCY = 3;
 
@@ -62,7 +62,9 @@ export function useDividendSchedules(
 
     for (const j of jobs) {
       const hit = cached[j.key];
-      if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+      const isFresh = !!hit && Date.now() - hit.at < CACHE_TTL_MS;
+      const hasNewShape = !!hit && (hit.data == null || Array.isArray((hit.data as DividendScheduleInfo).recentExMonths));
+      if (isFresh && hasNewShape) {
         initial[j.key] = hit.data;
       } else {
         initial[j.key] = 'loading';
