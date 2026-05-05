@@ -132,7 +132,6 @@ const DividendHeatmap: React.FC = () => {
 
   // Month labels — always 3-letter English abbreviations for the grid header
   const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const UNKNOWN_MONTH_LABEL = '?';
 
   // Localised month names for tooltip / best-month label
   const MONTH_NAMES = useMemo(() => {
@@ -229,11 +228,11 @@ const DividendHeatmap: React.FC = () => {
   const hoveredData = hoveredCell ? grid[hoveredCell.year]?.[hoveredCell.month] : null;
   const bestMonth = monthTotals.indexOf(Math.max(...monthTotals));
   const hasHeatmapData = years.length > 0;
+  const latestYear = hasHeatmapData ? years[years.length - 1] : new Date().getFullYear();
   const estimatedSummary = useMemo(() => {
     const monthly = new Array(12).fill(0) as number[];
     const monthlyNhiTriggered = new Array(12).fill(false) as boolean[];
-    let unknownMonthTotal = 0;
-    let unknownMonthNhiTriggered = false;
+    const monthlyTickers = Array.from({ length: 12 }, () => ({} as Record<string, number>));
 
     for (const row of upcomingRows) {
       const twdPart = row.estTwd ?? 0;
@@ -241,26 +240,24 @@ const DividendHeatmap: React.FC = () => {
       const estimatedBase = toBase(twdPart + usdPartAsTwd);
       if (estimatedBase <= 0) continue;
 
+      let targetMonth: number | null = null;
       if (!row.exDate) {
         const inferredMonth = inferredPayoutMonthByTicker.get(row.ticker.toUpperCase());
         if (inferredMonth != null && inferredMonth >= 0 && inferredMonth <= 11) {
-          monthly[inferredMonth] += estimatedBase;
-          monthlyNhiTriggered[inferredMonth] = monthlyNhiTriggered[inferredMonth] || !!row.nhiTriggered;
-          continue;
+          targetMonth = inferredMonth;
         }
-        unknownMonthTotal += estimatedBase;
-        unknownMonthNhiTriggered = unknownMonthNhiTriggered || !!row.nhiTriggered;
-        continue;
+      } else {
+        const dt = new Date(`${row.exDate}T12:00:00`);
+        const month = dt.getMonth();
+        if (!Number.isNaN(dt.getTime()) && month >= 0 && month <= 11) {
+          targetMonth = month;
+        }
       }
-      const dt = new Date(`${row.exDate}T12:00:00`);
-      const month = dt.getMonth();
-      if (Number.isNaN(dt.getTime()) || month < 0 || month > 11) {
-        unknownMonthTotal += estimatedBase;
-        unknownMonthNhiTriggered = unknownMonthNhiTriggered || !!row.nhiTriggered;
-        continue;
-      }
-      monthly[month] += estimatedBase;
-      monthlyNhiTriggered[month] = monthlyNhiTriggered[month] || !!row.nhiTriggered;
+      if (targetMonth == null) continue;
+
+      monthly[targetMonth] += estimatedBase;
+      monthlyNhiTriggered[targetMonth] = monthlyNhiTriggered[targetMonth] || !!row.nhiTriggered;
+      monthlyTickers[targetMonth][row.ticker] = (monthlyTickers[targetMonth][row.ticker] ?? 0) + estimatedBase;
     }
 
     const monthlyTotal = monthly.reduce((acc, v) => acc + v, 0);
@@ -268,12 +265,15 @@ const DividendHeatmap: React.FC = () => {
     return {
       monthly,
       monthlyNhiTriggered,
+      monthlyTickers,
       monthlyTotal,
       maxMonthly,
-      unknownMonthTotal,
-      unknownMonthNhiTriggered,
     };
   }, [upcomingRows, rates.exchangeRateUsdToTwd, baseCurrency, inferredPayoutMonthByTicker]);
+  const heatScaleMax = Math.max(maxAmount, estimatedSummary.maxMonthly, 1);
+  const hoveredEstimatedAmount = hoveredCell ? estimatedSummary.monthly[hoveredCell.month] ?? 0 : 0;
+  const hoveredEstimatedTickers = hoveredCell ? estimatedSummary.monthlyTickers[hoveredCell.month] : {};
+  const hoveredEstimatedNhi = hoveredCell ? estimatedSummary.monthlyNhiTriggered[hoveredCell.month] : false;
 
   if (isGuest) return null;
 
@@ -294,7 +294,7 @@ const DividendHeatmap: React.FC = () => {
       {/* Heatmap grid */}
       {hasHeatmapData ? (
         <div className="overflow-x-auto">
-          <div className="min-w-[600px]">
+          <div className="min-w-[540px]">
             {/* Month header */}
             <div className="flex mb-1.5">
               <div className="w-14 shrink-0" />
@@ -303,9 +303,6 @@ const DividendHeatmap: React.FC = () => {
                   {m}
                 </div>
               ))}
-              <div className="flex-1 text-center text-[10px] font-medium text-indigo-400" style={{ minWidth: 36 }} title="預估月份未定">
-                {UNKNOWN_MONTH_LABEL}
-              </div>
               <div className="w-20 shrink-0 text-[10px] font-medium text-slate-400 text-right pr-1">
                 {tr.dividendHeatmap.yearTotal}
               </div>
@@ -317,8 +314,13 @@ const DividendHeatmap: React.FC = () => {
                 <div className="w-14 shrink-0 text-xs font-bold text-slate-600 pr-2 text-right">{year}</div>
                 {Array.from({ length: 12 }, (_, m) => {
                   const cell = grid[year]?.[m];
-                  const amount = cell?.amount ?? 0;
+                  const actualAmount = cell?.amount ?? 0;
+                  const estimatedAmount = year === latestYear ? estimatedSummary.monthly[m] ?? 0 : 0;
+                  const amount = actualAmount + estimatedAmount;
                   const isHovered = hoveredCell?.year === year && hoveredCell?.month === m;
+                  const actualColor = colorForAmount(actualAmount, heatScaleMax);
+                  const estColor = estimateColorForAmount(estimatedAmount, heatScaleMax);
+                  const hasBoth = actualAmount > 0 && estimatedAmount > 0;
                   return (
                     <div
                       key={m}
@@ -326,7 +328,9 @@ const DividendHeatmap: React.FC = () => {
                       style={{
                         minWidth: 32,
                         height: 36,
-                        backgroundColor: colorForAmount(amount, maxAmount),
+                        background: hasBoth
+                          ? `linear-gradient(135deg, ${actualColor} 0%, ${actualColor} 54%, ${estColor} 54%, ${estColor} 100%)`
+                          : (estimatedAmount > 0 ? estColor : actualColor),
                         border: isHovered ? '2px solid #d97706' : '2px solid transparent',
                         transform: isHovered ? 'scale(1.08)' : 'scale(1)',
                         display: 'flex',
@@ -337,18 +341,23 @@ const DividendHeatmap: React.FC = () => {
                       onMouseLeave={() => setHoveredCell(null)}
                     >
                       {amount > 0 && (
-                        <span className="text-[9px] font-bold leading-none" style={{ color: textColorForAmount(amount, maxAmount) }}>
+                        <span
+                          className="text-[9px] font-bold leading-none"
+                          style={{
+                            color: estimatedAmount > 0 && actualAmount === 0
+                              ? estimateTextColorForAmount(estimatedAmount, heatScaleMax)
+                              : textColorForAmount(Math.max(actualAmount, amount), heatScaleMax),
+                          }}
+                        >
                           {fmt(amount)}
                         </span>
+                      )}
+                      {estimatedAmount > 0 && estimatedSummary.monthlyNhiTriggered[m] && (
+                        <span className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500 border border-white" title={dtx.nhiForecastTag} />
                       )}
                     </div>
                   );
                 })}
-                <div
-                  className="flex-1 mx-0.5 rounded"
-                  style={{ minWidth: 32, height: 36, backgroundColor: '#f8fafc' }}
-                  title="此欄位僅用於預估月份未定"
-                />
                 <div className="w-20 shrink-0 text-xs font-bold text-amber-600 text-right pr-1 tabular-nums">
                   {yearTotals[year] > 0 ? fmt(yearTotals[year]) : '—'}
                 </div>
@@ -367,75 +376,7 @@ const DividendHeatmap: React.FC = () => {
                   </span>
                 </div>
               ))}
-              <div className="flex-1 mx-0.5 text-center" style={{ minWidth: 32 }}>
-                <span className="text-[9px] font-bold tabular-nums text-slate-300">—</span>
-              </div>
               <div className="w-20 shrink-0" />
-            </div>
-
-            {/* Estimated row */}
-            <div className="flex items-center mt-2 border-t border-slate-100 pt-2">
-              <div className="w-14 shrink-0 text-[10px] font-bold text-indigo-600 pr-2 text-right">Est.</div>
-              {estimatedSummary.monthly.map((amount, m) => (
-                <div
-                  key={`est-${m}`}
-                  className="flex-1 mx-0.5 rounded transition-all duration-150 relative"
-                  style={{
-                    minWidth: 32,
-                    height: 26,
-                    backgroundColor: estimateColorForAmount(amount, estimatedSummary.maxMonthly),
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  title={amount > 0 ? `${MONTH_NAMES[m]}: ${fmt(amount)} ${baseCurrency}` : undefined}
-                >
-                  {amount > 0 && (
-                    <span className="text-[9px] font-bold leading-none" style={{ color: estimateTextColorForAmount(amount, estimatedSummary.maxMonthly) }}>
-                      {fmt(amount)}
-                    </span>
-                  )}
-                  {estimatedSummary.monthlyNhiTriggered[m] && (
-                    <span className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500 border border-white" title={dtx.nhiForecastTag} />
-                  )}
-                </div>
-              ))}
-              <div
-                className="flex-1 mx-0.5 rounded transition-all duration-150 relative"
-                style={{
-                  minWidth: 32,
-                  height: 26,
-                  backgroundColor: estimateColorForAmount(estimatedSummary.unknownMonthTotal, estimatedSummary.maxMonthly || estimatedSummary.unknownMonthTotal || 1),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                title={estimatedSummary.unknownMonthTotal > 0 ? `月份未定: ${fmt(estimatedSummary.unknownMonthTotal)} ${baseCurrency}` : '月份未定'}
-              >
-                {estimatedSummary.unknownMonthTotal > 0 && (
-                  <span
-                    className="text-[9px] font-bold leading-none"
-                    style={{
-                      color: estimateTextColorForAmount(
-                        estimatedSummary.unknownMonthTotal,
-                        estimatedSummary.maxMonthly || estimatedSummary.unknownMonthTotal || 1
-                      ),
-                    }}
-                  >
-                    {fmt(estimatedSummary.unknownMonthTotal)}
-                  </span>
-                )}
-                {estimatedSummary.unknownMonthNhiTriggered && (
-                  <span className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500 border border-white" title={dtx.nhiForecastTag} />
-                )}
-              </div>
-              <div className="w-20 shrink-0 text-right pr-1 tabular-nums">
-                <div className="text-xs font-bold text-indigo-600">
-                  {(estimatedSummary.monthlyTotal + estimatedSummary.unknownMonthTotal) > 0
-                    ? fmt(estimatedSummary.monthlyTotal + estimatedSummary.unknownMonthTotal)
-                    : '—'}
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -452,12 +393,25 @@ const DividendHeatmap: React.FC = () => {
           <div className="text-amber-700 font-mono font-bold text-lg mb-2">
             {fmt(hoveredData.amount)} {baseCurrency}
           </div>
+          {hoveredEstimatedAmount > 0 && (
+            <div className="mb-2 text-indigo-700">
+              預估：{fmt(hoveredEstimatedAmount)} {baseCurrency}
+              {hoveredEstimatedNhi && <span className="ml-2 text-rose-600 font-semibold">⚠ {dtx.nhiForecastTag}</span>}
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             {Object.entries(hoveredData.tickers)
               .sort(([, a], [, b]) => b - a)
               .map(([ticker, amt]) => (
                 <div key={ticker} className="text-xs bg-white border border-amber-200 rounded-full px-2 py-0.5 text-amber-700 font-medium">
                   {ticker}: {fmt(amt)}
+                </div>
+              ))}
+            {Object.entries(hoveredEstimatedTickers)
+              .sort(([, a], [, b]) => b - a)
+              .map(([ticker, amt]) => (
+                <div key={`est-${ticker}`} className="text-xs bg-indigo-50 border border-indigo-200 rounded-full px-2 py-0.5 text-indigo-700 font-medium">
+                  {ticker} (預估): {fmt(amt)}
                 </div>
               ))}
           </div>
@@ -476,7 +430,14 @@ const DividendHeatmap: React.FC = () => {
             {tr.dividendHeatmap.bestMonth}：{MONTH_NAMES[bestMonth]}
           </span>
         )}
-        <span className="ml-3 text-indigo-600 font-medium">Est. = 預估配息（無除息日優先依歷史月份推估）</span>
+        <span className="ml-3 inline-flex items-center gap-1 text-amber-700 font-medium">
+          <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: '#f59e0b' }} />
+          實績
+        </span>
+        <span className="inline-flex items-center gap-1 text-indigo-700 font-medium">
+          <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: '#6366f1' }} />
+          預估（無除息日以歷史月份推估）
+        </span>
       </div>
 
       {/* 未來 90 天除息（Yahoo calendar） */}
