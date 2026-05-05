@@ -45,7 +45,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     profit: true,
     totalAssets: true,
     estTotalAssets: true,
-    yearlyPeriodRoi: true,
+    yearlyPeriodRoi: false,
   });
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
@@ -852,8 +852,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }}
                           axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
-                          width={42}
-                          dx={-34}
+                          width={38}
+                          dx={-26}
                           domain={['auto', 'auto']}
                           tickFormatter={(val: number) => `${Math.round(Number(val))}%`}
                         />
