@@ -611,7 +611,7 @@ const DividendHeatmap: React.FC = () => {
                           {r.nhiTriggered && (
                             <span
                               className="rounded px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 font-semibold"
-                              title={`${dtx.estNhiFee}: ${r.twNhiFeeTwd?.toLocaleString() ?? '0'} TWD`}
+                              title={`${dtx.estNhiFee}: ${r.estTwd?.toLocaleString() ?? '0'} × 2.11% = ${r.twNhiFeeTwd?.toLocaleString() ?? '0'} TWD`}
                             >
                               {dtx.nhiForecastTag}
                             </span>
