@@ -852,10 +852,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }}
                           axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
-                          tickMargin={0}
-                          tickSize={0}
                           width={38}
-                          dx={-22}
+                          dx={-20}
                           domain={['auto', 'auto']}
                           tickFormatter={(val: number) => `${Math.round(Number(val))}%`}
                         />
