@@ -855,7 +855,6 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           fontSize={10}
                           width={46}
-                          dx={-40}
                           domain={['auto', 'auto']}
                           tickFormatter={(val: number) => `${Number(val).toFixed(0)}%`}
                         />
