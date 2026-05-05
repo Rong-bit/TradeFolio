@@ -487,7 +487,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   const cumulativeRightMargin = isMobileViewport ? 8 : 20;
   const cumulativeLeftAxisWidth = isMobileViewport ? 30 : 39;
   const cumulativeRightAxisWidth = isMobileViewport ? 30 : 38;
-  const cumulativeRightAxisDx = isMobileViewport ? -14 : -20;
+  const cumulativeRightAxisDx = isMobileViewport ? -6 : -10;
   const cumulativeBarSize = isMobileViewport ? 22 : 30;
   const cumulativeDotSize = isMobileViewport ? 3 : 4;
   const cumulativeRoiDotSize = isMobileViewport ? 2 : 3;
