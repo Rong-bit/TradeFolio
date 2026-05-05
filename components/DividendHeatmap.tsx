@@ -46,11 +46,17 @@ function estimateTextColorForAmount(amount: number, maxAmount: number): string {
   return (amount / maxAmount) > 0.5 ? '#312e81' : '#4338ca';
 }
 
-function pickNextUpcomingMonth(candidates: number[], currentMonth: number): number | undefined {
+function pickNextUpcomingMonth(candidates: number[], currentMonth: number, currentDay = 1): number | undefined {
   const unique = Array.from(
     new Set(candidates.filter(m => Number.isInteger(m) && m >= 0 && m <= 11))
   ).sort((a, b) => a - b);
   if (unique.length === 0) return undefined;
+  // 無精確除息日時，接近月底（>=20）時避免卡在「本月」，
+  // 優先找下一個月，較符合使用者對「即將到來」的直覺。
+  if (currentDay >= 20) {
+    const laterThisYear = unique.find(m => m > currentMonth);
+    if (laterThisYear != null) return laterThisYear;
+  }
   const sameYear = unique.find(m => m >= currentMonth);
   if (sameYear != null) return sameYear;
   return unique[0];
@@ -316,6 +322,7 @@ const DividendHeatmap: React.FC = () => {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
+      const currentDay = now.getDate();
 
     const ensureYearBucket = (year: number) => {
       if (!byYearMonthly[year]) byYearMonthly[year] = new Array(12).fill(0);
@@ -348,7 +355,7 @@ const DividendHeatmap: React.FC = () => {
       }
       if (targetMonth == null || targetYear == null) {
         const tickerUpper = row.ticker.toUpperCase();
-        const preferredInferredMonth = pickNextUpcomingMonth(row.inferredMonthsCandidate ?? [], currentMonth);
+        const preferredInferredMonth = pickNextUpcomingMonth(row.inferredMonthsCandidate ?? [], currentMonth, currentDay);
         const inferredMonth =
           preferredInferredMonth ??
           row.inferredMonth ??
@@ -414,6 +421,8 @@ const DividendHeatmap: React.FC = () => {
   const hoveredEstimatedNhiFeeTwd = hoveredCell
     ? (estimatedSummary.byYearMonthlyNhiFeeTwd[hoveredCell.year]?.[hoveredCell.month] ?? 0)
     : 0;
+  const currentMonthForDisplay = new Date().getMonth();
+  const currentDayForDisplay = new Date().getDate();
 
   if (isGuest) return null;
 
@@ -617,11 +626,19 @@ const DividendHeatmap: React.FC = () => {
                     <td className="px-2 py-1.5">{r.market}</td>
                     <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
                     <td className="px-2 py-1.5 tabular-nums">
-                      {r.exDate
-                        ? `${new Date(`${r.exDate}T12:00:00`).getMonth() + 1}月`
-                        : (r.inferredMonth != null
-                          ? `${r.inferredMonth + 1}月`
-                          : '—')}
+                      {(() => {
+                        const preferredInferredMonth = pickNextUpcomingMonth(
+                          r.inferredMonthsCandidate ?? [],
+                          currentMonthForDisplay,
+                          currentDayForDisplay
+                        );
+                        const displayInferredMonth = preferredInferredMonth ?? r.inferredMonth;
+                        return r.exDate
+                          ? `${new Date(`${r.exDate}T12:00:00`).getMonth() + 1}月`
+                          : (displayInferredMonth != null
+                            ? `${displayInferredMonth + 1}月`
+                            : '—');
+                      })()}
                     </td>
                     <td className="px-2 py-1.5 text-right tabular-nums">
                       {r.estTwd != null && r.estTwd > 0 ? (
