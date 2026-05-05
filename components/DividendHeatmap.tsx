@@ -525,7 +525,11 @@ const DividendHeatmap: React.FC = () => {
           {hoveredEstimatedAmount > 0 && (
             <div className="mb-2 text-indigo-700">
               預估：{fmt(hoveredEstimatedAmount)} {baseCurrency}
-              {hoveredEstimatedNhi && <span className="ml-2 text-rose-600 font-semibold">⚠ {dtx.nhiForecastTag}</span>}
+              {hoveredEstimatedNhi && (
+                <span className="ml-2 text-rose-600 font-semibold">
+                  ⚠ {dtx.nhiForecastTag}：配息金額 × 2.11% = 台幣金額
+                </span>
+              )}
             </div>
           )}
           <div className="flex flex-wrap gap-2">
