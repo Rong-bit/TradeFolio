@@ -1098,6 +1098,8 @@ export interface DividendScheduleInfo {
   lastExDate: string;
   /** Yahoo calendar 若提供且為未來之除息日（YYYY-MM-DD） */
   nextExDate?: string;
+  /** 近年除息月份（0-11），由新到舊，供無 nextExDate 時推估月份 */
+  recentExMonths?: number[];
   currency?: string;
 }
 
@@ -1127,18 +1129,25 @@ export async function fetchDividendSchedule(
 
   let lastAmount = 0;
   let lastTs = 0;
+  const recentTs: number[] = [];
   const divObj = (chartPack?.json as any)?.chart?.result?.[0]?.events?.dividends;
   if (divObj && typeof divObj === 'object') {
     for (const v of Object.values(divObj) as any[]) {
       const amt = Number(v?.amount);
       const dRaw = v?.date != null ? Number(v.date) : NaN;
       const ts = Number.isFinite(dRaw) ? (dRaw > 1e12 ? Math.floor(dRaw / 1000) : dRaw) : 0;
+      if (ts > 0) recentTs.push(ts);
       if (Number.isFinite(amt) && amt > 0 && ts > lastTs) {
         lastAmount = amt;
         lastTs = ts;
       }
     }
   }
+  recentTs.sort((a, b) => b - a);
+  const recentExMonths = recentTs
+    .slice(0, 12)
+    .map(ts => new Date(ts * 1000).getMonth())
+    .filter(m => Number.isInteger(m) && m >= 0 && m <= 11);
 
   let lastExDate = '';
   if (lastTs > 0) {
@@ -1166,6 +1175,7 @@ export async function fetchDividendSchedule(
       lastAmountPerShare: 0,
       lastExDate: '',
       nextExDate,
+      recentExMonths,
       currency: curHint,
     };
   }
@@ -1174,6 +1184,7 @@ export async function fetchDividendSchedule(
     lastAmountPerShare: lastAmount,
     lastExDate: lastExDate || '',
     nextExDate,
+    recentExMonths,
     currency: curHint,
   };
 }
