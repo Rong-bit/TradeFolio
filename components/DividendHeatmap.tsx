@@ -180,6 +180,39 @@ const DividendHeatmap: React.FC = () => {
     }
     return inferred;
   }, [transactions]);
+  const inferredPayoutMonthFromYahooByTicker = useMemo(() => {
+    const inferred = new Map<string, number>();
+    for (const row of mergedHoldingsForDiv) {
+      const key = dividendScheduleMapKey(row.market, row.ticker);
+      const info = dividendSchedules[key];
+      if (!info || info === 'loading') continue;
+      const months = info.recentExMonths ?? [];
+      if (months.length === 0) continue;
+      const counts = new Array(12).fill(0);
+      const lastIndex = new Array(12).fill(-1);
+      months.forEach((m, idx) => {
+        if (Number.isInteger(m) && m >= 0 && m <= 11) {
+          counts[m] += 1;
+          if (lastIndex[m] < 0) lastIndex[m] = idx;
+        }
+      });
+      let bestMonth = -1;
+      let bestCount = -1;
+      let bestRecency = Number.POSITIVE_INFINITY;
+      for (let m = 0; m < 12; m++) {
+        const c = counts[m];
+        if (c <= 0) continue;
+        const recency = lastIndex[m];
+        if (c > bestCount || (c === bestCount && recency < bestRecency)) {
+          bestMonth = m;
+          bestCount = c;
+          bestRecency = recency;
+        }
+      }
+      if (bestMonth >= 0) inferred.set(row.ticker.toUpperCase(), bestMonth);
+    }
+    return inferred;
+  }, [mergedHoldingsForDiv, dividendSchedules]);
 
   const { grid, years, maxAmount, totalDividend, monthTotals, yearTotals } = useMemo(() => {
     const map: Record<number, Record<number, { amount: number; tickers: Record<string, number> }>> = {};
@@ -262,7 +295,10 @@ const DividendHeatmap: React.FC = () => {
         }
       }
       if (targetMonth == null || targetYear == null) {
-        const inferredMonth = inferredPayoutMonthByTicker.get(row.ticker.toUpperCase());
+        const tickerUpper = row.ticker.toUpperCase();
+        const inferredMonth =
+          inferredPayoutMonthByTicker.get(tickerUpper) ??
+          inferredPayoutMonthFromYahooByTicker.get(tickerUpper);
         if (inferredMonth != null && inferredMonth >= 0 && inferredMonth <= 11) {
           // 無除息日時，用歷史月份推估到「本年或次年」的對應月份
           targetYear = inferredMonth < currentMonth ? currentYear + 1 : currentYear;
@@ -288,7 +324,13 @@ const DividendHeatmap: React.FC = () => {
       byYearMonthlyTickers,
       maxCell,
     };
-  }, [upcomingRows, rates.exchangeRateUsdToTwd, baseCurrency, inferredPayoutMonthByTicker]);
+  }, [
+    upcomingRows,
+    rates.exchangeRateUsdToTwd,
+    baseCurrency,
+    inferredPayoutMonthByTicker,
+    inferredPayoutMonthFromYahooByTicker,
+  ]);
   const displayYears = useMemo(() => {
     const s = new Set<number>(years);
     Object.keys(estimatedSummary.byYearMonthly).forEach(y => s.add(Number(y)));
