@@ -227,12 +227,22 @@ const DividendHeatmap: React.FC = () => {
 
   const hoveredData = hoveredCell ? grid[hoveredCell.year]?.[hoveredCell.month] : null;
   const bestMonth = monthTotals.indexOf(Math.max(...monthTotals));
-  const hasHeatmapData = years.length > 0;
-  const latestYear = hasHeatmapData ? years[years.length - 1] : new Date().getFullYear();
   const estimatedSummary = useMemo(() => {
-    const monthly = new Array(12).fill(0) as number[];
-    const monthlyNhiTriggered = new Array(12).fill(false) as boolean[];
-    const monthlyTickers = Array.from({ length: 12 }, () => ({} as Record<string, number>));
+    const byYearMonthly: Record<number, number[]> = {};
+    const byYearMonthlyNhiTriggered: Record<number, boolean[]> = {};
+    const byYearMonthlyTickers: Record<number, Array<Record<string, number>>> = {};
+    let maxCell = 0;
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const ensureYearBucket = (year: number) => {
+      if (!byYearMonthly[year]) byYearMonthly[year] = new Array(12).fill(0);
+      if (!byYearMonthlyNhiTriggered[year]) byYearMonthlyNhiTriggered[year] = new Array(12).fill(false);
+      if (!byYearMonthlyTickers[year]) {
+        byYearMonthlyTickers[year] = Array.from({ length: 12 }, () => ({} as Record<string, number>));
+      }
+    };
 
     for (const row of upcomingRows) {
       const twdPart = row.estTwd ?? 0;
@@ -240,40 +250,61 @@ const DividendHeatmap: React.FC = () => {
       const estimatedBase = toBase(twdPart + usdPartAsTwd);
       if (estimatedBase <= 0) continue;
 
+      let targetYear: number | null = null;
       let targetMonth: number | null = null;
-      if (!row.exDate) {
-        const inferredMonth = inferredPayoutMonthByTicker.get(row.ticker.toUpperCase());
-        if (inferredMonth != null && inferredMonth >= 0 && inferredMonth <= 11) {
-          targetMonth = inferredMonth;
-        }
-      } else {
+      if (row.exDate) {
         const dt = new Date(`${row.exDate}T12:00:00`);
+        const year = dt.getFullYear();
         const month = dt.getMonth();
         if (!Number.isNaN(dt.getTime()) && month >= 0 && month <= 11) {
+          targetYear = year;
           targetMonth = month;
         }
       }
-      if (targetMonth == null) continue;
+      if (targetMonth == null || targetYear == null) {
+        const inferredMonth = inferredPayoutMonthByTicker.get(row.ticker.toUpperCase());
+        if (inferredMonth != null && inferredMonth >= 0 && inferredMonth <= 11) {
+          // 無除息日時，用歷史月份推估到「本年或次年」的對應月份
+          targetYear = inferredMonth < currentMonth ? currentYear + 1 : currentYear;
+          targetMonth = inferredMonth;
+        }
+      }
+      if (targetMonth == null || targetYear == null) continue;
 
-      monthly[targetMonth] += estimatedBase;
-      monthlyNhiTriggered[targetMonth] = monthlyNhiTriggered[targetMonth] || !!row.nhiTriggered;
-      monthlyTickers[targetMonth][row.ticker] = (monthlyTickers[targetMonth][row.ticker] ?? 0) + estimatedBase;
+      ensureYearBucket(targetYear);
+      byYearMonthly[targetYear][targetMonth] += estimatedBase;
+      byYearMonthlyNhiTriggered[targetYear][targetMonth] =
+        byYearMonthlyNhiTriggered[targetYear][targetMonth] || !!row.nhiTriggered;
+      byYearMonthlyTickers[targetYear][targetMonth][row.ticker] =
+        (byYearMonthlyTickers[targetYear][targetMonth][row.ticker] ?? 0) + estimatedBase;
+      if (byYearMonthly[targetYear][targetMonth] > maxCell) {
+        maxCell = byYearMonthly[targetYear][targetMonth];
+      }
     }
 
-    const monthlyTotal = monthly.reduce((acc, v) => acc + v, 0);
-    const maxMonthly = Math.max(...monthly, 0);
     return {
-      monthly,
-      monthlyNhiTriggered,
-      monthlyTickers,
-      monthlyTotal,
-      maxMonthly,
+      byYearMonthly,
+      byYearMonthlyNhiTriggered,
+      byYearMonthlyTickers,
+      maxCell,
     };
   }, [upcomingRows, rates.exchangeRateUsdToTwd, baseCurrency, inferredPayoutMonthByTicker]);
-  const heatScaleMax = Math.max(maxAmount, estimatedSummary.maxMonthly, 1);
-  const hoveredEstimatedAmount = hoveredCell ? estimatedSummary.monthly[hoveredCell.month] ?? 0 : 0;
-  const hoveredEstimatedTickers = hoveredCell ? estimatedSummary.monthlyTickers[hoveredCell.month] : {};
-  const hoveredEstimatedNhi = hoveredCell ? estimatedSummary.monthlyNhiTriggered[hoveredCell.month] : false;
+  const displayYears = useMemo(() => {
+    const s = new Set<number>(years);
+    Object.keys(estimatedSummary.byYearMonthly).forEach(y => s.add(Number(y)));
+    return Array.from(s).sort((a, b) => a - b);
+  }, [years, estimatedSummary.byYearMonthly]);
+  const hasHeatmapData = displayYears.length > 0;
+  const heatScaleMax = Math.max(maxAmount, estimatedSummary.maxCell, 1);
+  const hoveredEstimatedAmount = hoveredCell
+    ? (estimatedSummary.byYearMonthly[hoveredCell.year]?.[hoveredCell.month] ?? 0)
+    : 0;
+  const hoveredEstimatedTickers = hoveredCell
+    ? (estimatedSummary.byYearMonthlyTickers[hoveredCell.year]?.[hoveredCell.month] ?? {})
+    : {};
+  const hoveredEstimatedNhi = hoveredCell
+    ? (estimatedSummary.byYearMonthlyNhiTriggered[hoveredCell.year]?.[hoveredCell.month] ?? false)
+    : false;
 
   if (isGuest) return null;
 
@@ -309,13 +340,13 @@ const DividendHeatmap: React.FC = () => {
             </div>
 
             {/* Year rows */}
-            {years.map(year => (
+            {displayYears.map(year => (
               <div key={year} className="flex items-center mb-1">
                 <div className="w-14 shrink-0 text-xs font-bold text-slate-600 pr-2 text-right">{year}</div>
                 {Array.from({ length: 12 }, (_, m) => {
                   const cell = grid[year]?.[m];
                   const actualAmount = cell?.amount ?? 0;
-                  const estimatedAmount = year === latestYear ? estimatedSummary.monthly[m] ?? 0 : 0;
+                  const estimatedAmount = estimatedSummary.byYearMonthly[year]?.[m] ?? 0;
                   const amount = actualAmount + estimatedAmount;
                   const isHovered = hoveredCell?.year === year && hoveredCell?.month === m;
                   const actualColor = colorForAmount(actualAmount, heatScaleMax);
@@ -352,14 +383,19 @@ const DividendHeatmap: React.FC = () => {
                           {fmt(amount)}
                         </span>
                       )}
-                      {estimatedAmount > 0 && estimatedSummary.monthlyNhiTriggered[m] && (
+                      {estimatedAmount > 0 && (estimatedSummary.byYearMonthlyNhiTriggered[year]?.[m] ?? false) && (
                         <span className="absolute -top-1 -right-1 inline-flex h-2.5 w-2.5 rounded-full bg-rose-500 border border-white" title={dtx.nhiForecastTag} />
                       )}
                     </div>
                   );
                 })}
                 <div className="w-20 shrink-0 text-xs font-bold text-amber-600 text-right pr-1 tabular-nums">
-                  {yearTotals[year] > 0 ? fmt(yearTotals[year]) : '—'}
+                  {(() => {
+                    const actualYearTotal = yearTotals[year] ?? 0;
+                    const estYearTotal = (estimatedSummary.byYearMonthly[year] ?? []).reduce((acc, v) => acc + v, 0);
+                    const combined = actualYearTotal + estYearTotal;
+                    return combined > 0 ? fmt(combined) : '—';
+                  })()}
                 </div>
               </div>
             ))}
@@ -385,13 +421,13 @@ const DividendHeatmap: React.FC = () => {
       )}
 
       {/* Hover tooltip panel */}
-      {hasHeatmapData && hoveredCell && hoveredData && (
+      {hasHeatmapData && hoveredCell && ((hoveredData?.amount ?? 0) > 0 || hoveredEstimatedAmount > 0) && (
         <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">
           <div className="font-bold text-amber-800 mb-2">
             {hoveredCell.year} · {MONTH_NAMES[hoveredCell.month]}
           </div>
           <div className="text-amber-700 font-mono font-bold text-lg mb-2">
-            {fmt(hoveredData.amount)} {baseCurrency}
+            實績：{fmt(hoveredData?.amount ?? 0)} {baseCurrency}
           </div>
           {hoveredEstimatedAmount > 0 && (
             <div className="mb-2 text-indigo-700">
@@ -400,7 +436,7 @@ const DividendHeatmap: React.FC = () => {
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            {Object.entries(hoveredData.tickers)
+            {Object.entries(hoveredData?.tickers ?? {})
               .sort(([, a], [, b]) => b - a)
               .map(([ticker, amt]) => (
                 <div key={ticker} className="text-xs bg-white border border-amber-200 rounded-full px-2 py-0.5 text-amber-700 font-medium">
