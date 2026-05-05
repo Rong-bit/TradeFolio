@@ -40,6 +40,13 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   const [showAccountInUSD, setShowAccountInUSD] = useState(false); 
   const [showAnnualInUSD, setShowAnnualInUSD] = useState(false);
   const [mainChartTab, setMainChartTab] = useState<'cumulative' | 'year'>('cumulative');
+  const [trendSeriesVisible, setTrendSeriesVisible] = useState({
+    cost: true,
+    profit: true,
+    totalAssets: true,
+    estTotalAssets: true,
+    yearlyPeriodRoi: true,
+  });
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
   const [activeOuterIndex, setActiveOuterIndex] = useState<number | undefined>(undefined);
@@ -388,6 +395,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       ...prev,
       [accountId]: !prev[accountId]
     }));
+  };
+  const toggleTrendSeries = (key: keyof typeof trendSeriesVisible) => {
+    setTrendSeriesVisible(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const attributionSeries = useMemo(() => {
@@ -776,12 +786,32 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           <div className="w-full">
             {mainChartTab === 'cumulative' ? (
               <>
+                <div className="mb-3 flex flex-wrap gap-3 text-xs">
+                  {[
+                    { key: 'cost', label: translations.dashboard.chartLabels.investmentCost, color: '#8b5cf6' },
+                    { key: 'profit', label: translations.dashboard.chartLabels.barName, color: '#10b981' },
+                    { key: 'totalAssets', label: translations.dashboard.chartLabels.totalAssets, color: '#3b82f6' },
+                    { key: 'estTotalAssets', label: translations.dashboard.chartLabels.estimatedAssets, color: '#f59e0b' },
+                    { key: 'yearlyPeriodRoi', label: translations.dashboard.chartLabels.yearlyPeriodRoi, color: '#db2777' },
+                  ].map(item => (
+                    <label key={item.key} className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={trendSeriesVisible[item.key as keyof typeof trendSeriesVisible]}
+                        onChange={() => toggleTrendSeries(item.key as keyof typeof trendSeriesVisible)}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: item.color }} />
+                      <span className="text-slate-600">{item.label}</span>
+                    </label>
+                  ))}
+                </div>
                 <div className="w-full h-[300px] md:h-[450px]">
                   {isMounted && quarterlyTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={quarterlyTrendData}
-                        margin={{ top: 10, right: 52, left: 10, bottom: 60 }}
+                        margin={{ top: 10, right: 52, left: 20, bottom: 60 }}
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
@@ -802,6 +832,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         />
                         <YAxis
                           yAxisId="left"
+                          orientation="right"
                           stroke={isDarkMode ? '#cbd5e1' : '#64748b'}
                           tick={{ fill: isDarkMode ? '#cbd5e1' : '#64748b', fontSize: 10 }}
                           axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
@@ -816,7 +847,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         />
                         <YAxis
                           yAxisId="right"
-                          orientation="right"
+                          orientation="left"
                           stroke={isDarkMode ? '#f472b6' : '#db2777'}
                           tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 10 }}
                           axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
@@ -918,53 +949,63 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             );
                           }}
                         />
-                        <Bar
-                          yAxisId="left"
-                          dataKey="cost"
-                          name={translations.dashboard.chartLabels.investmentCost}
-                          stackId="a"
-                          fill="#8b5cf6"
-                          barSize={30}
-                        />
-                        <Bar
-                          yAxisId="left"
-                          dataKey="profit"
-                          name={translations.dashboard.chartLabels.barName}
-                          stackId="a"
-                          barSize={30}
-                          shape={(props: any) => {
-                            const barFill = props?.payload?.profit >= 0 ? '#10b981' : '#ef4444';
-                            return <Rectangle {...props} fill={barFill} />;
-                          }}
-                        />
-                        <Line
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="totalAssets"
-                          name={translations.dashboard.chartLabels.totalAssets}
-                          stroke="#3b82f6"
-                          strokeWidth={3}
-                          dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
-                        />
-                        <Line
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="estTotalAssets"
-                          name={translations.dashboard.chartLabels.estimatedAssets}
-                          stroke="#f59e0b"
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                        <Line
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="yearlyPeriodRoi"
-                          name={translations.dashboard.chartLabels.yearlyPeriodRoi}
-                          stroke="#db2777"
-                          strokeWidth={2}
-                          dot={{ r: 3, fill: '#db2777', strokeWidth: 0 }}
-                          connectNulls
-                        />
+                        {trendSeriesVisible.cost && (
+                          <Bar
+                            yAxisId="left"
+                            dataKey="cost"
+                            name={translations.dashboard.chartLabels.investmentCost}
+                            stackId="a"
+                            fill="#8b5cf6"
+                            barSize={30}
+                          />
+                        )}
+                        {trendSeriesVisible.profit && (
+                          <Bar
+                            yAxisId="left"
+                            dataKey="profit"
+                            name={translations.dashboard.chartLabels.barName}
+                            stackId="a"
+                            barSize={30}
+                            shape={(props: any) => {
+                              const barFill = props?.payload?.profit >= 0 ? '#10b981' : '#ef4444';
+                              return <Rectangle {...props} fill={barFill} />;
+                            }}
+                          />
+                        )}
+                        {trendSeriesVisible.totalAssets && (
+                          <Line
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="totalAssets"
+                            name={translations.dashboard.chartLabels.totalAssets}
+                            stroke="#3b82f6"
+                            strokeWidth={3}
+                            dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
+                          />
+                        )}
+                        {trendSeriesVisible.estTotalAssets && (
+                          <Line
+                            yAxisId="left"
+                            type="monotone"
+                            dataKey="estTotalAssets"
+                            name={translations.dashboard.chartLabels.estimatedAssets}
+                            stroke="#f59e0b"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        )}
+                        {trendSeriesVisible.yearlyPeriodRoi && (
+                          <Line
+                            yAxisId="right"
+                            type="monotone"
+                            dataKey="yearlyPeriodRoi"
+                            name={translations.dashboard.chartLabels.yearlyPeriodRoi}
+                            stroke="#db2777"
+                            strokeWidth={2}
+                            dot={{ r: 3, fill: '#db2777', strokeWidth: 0 }}
+                            connectNulls
+                          />
+                        )}
                         <Brush
                           dataKey="year"
                           height={28}
