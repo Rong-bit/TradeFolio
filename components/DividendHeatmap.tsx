@@ -59,8 +59,6 @@ const DividendHeatmap: React.FC = () => {
   const dividendSchedules = useDividendSchedules(dividendRequests);
 
   const upcomingRows = useMemo(() => {
-    const now = Date.now();
-    const horizon = now + 90 * 24 * 60 * 60 * 1000;
     const rows: Array<{
       key: string;
       ticker: string;
@@ -76,9 +74,7 @@ const DividendHeatmap: React.FC = () => {
     for (const row of mergedHoldingsForDiv) {
       const key = dividendScheduleMapKey(row.market, row.ticker);
       const info = dividendSchedules[key];
-      if (!info || info === 'loading' || !info.nextExDate) continue;
-      const t = new Date(`${info.nextExDate}T12:00:00`).getTime();
-      if (Number.isNaN(t) || t < now - 24 * 60 * 60 * 1000 || t > horizon) continue;
+      if (!info || info === 'loading') continue;
       const estTwd =
         row.market === Market.TW && info.lastAmountPerShare > 0
           ? twEstimatedSingleDividendTwd(row.quantity, info.lastAmountPerShare)
@@ -97,11 +93,12 @@ const DividendHeatmap: React.FC = () => {
         row.market === Market.US && info.lastAmountPerShare > 0
           ? row.quantity * info.lastAmountPerShare
           : undefined;
+      if ((estTwd ?? 0) <= 0 && (estUsdNet ?? 0) <= 0) continue;
       rows.push({
         key,
         ticker: row.ticker,
         market: row.market,
-        exDate: info.nextExDate,
+        exDate: info.nextExDate ?? '',
         estTwd,
         estUsdNet,
         twNhiFeeTwd,
@@ -109,7 +106,12 @@ const DividendHeatmap: React.FC = () => {
         usGrossDividend,
       });
     }
-    rows.sort((a, b) => a.exDate.localeCompare(b.exDate) || a.ticker.localeCompare(b.ticker));
+    rows.sort((a, b) => {
+      if (!a.exDate && !b.exDate) return a.ticker.localeCompare(b.ticker);
+      if (!a.exDate) return 1;
+      if (!b.exDate) return -1;
+      return a.exDate.localeCompare(b.exDate) || a.ticker.localeCompare(b.ticker);
+    });
     return rows;
   }, [mergedHoldingsForDiv, dividendSchedules]);
 
@@ -322,7 +324,7 @@ const DividendHeatmap: React.FC = () => {
                   <tr key={r.key} className="text-slate-600">
                     <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
                     <td className="px-2 py-1.5">{r.market}</td>
-                    <td className="px-2 py-1.5 tabular-nums">{r.exDate}</td>
+                    <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
                     <td className="px-2 py-1.5 text-right tabular-nums">
                       {r.estTwd != null && r.estTwd > 0 ? (
                         <div className="inline-flex flex-col items-end gap-1">
