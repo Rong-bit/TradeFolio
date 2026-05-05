@@ -359,9 +359,7 @@ const App: React.FC = () => {
     transactions.forEach((t: Transaction) => {
       if (t.type !== TransactionType.CASH_DIVIDEND) return;
       if (new Date(t.date).getFullYear() !== reportYear) return;
-      if (t.market === Market.TW && t.withheldNhiTwd != null && t.withheldNhiTwd > 0) {
-        yearWithheldNhiTwd += t.withheldNhiTwd;
-      }
+      // 停用「本年度累計二代健保補充保費」統計；熱力圖的 NHI 試算邏輯不受影響。
       if (t.market === Market.US) {
         const netNative = (t.amount ?? t.price * t.quantity) - (t.fees || 0);
         if (t.withheldUsTaxNative != null && t.withheldUsTaxNative > 0) {
