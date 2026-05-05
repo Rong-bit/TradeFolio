@@ -1159,10 +1159,13 @@ export async function fetchDividendSchedule(
   const exRaw = cal?.exDividendDate;
   const nextYmd = parseYahooEpochToYmd(exRaw);
   const now = Date.now();
+  const tomorrowStart = new Date();
+  tomorrowStart.setHours(0, 0, 0, 0);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
   const in90d = 90 * 24 * 60 * 60 * 1000;
   if (nextYmd) {
     const t = new Date(nextYmd + 'T12:00:00').getTime();
-    if (!Number.isNaN(t) && t >= now - 24 * 60 * 60 * 1000 && t <= now + in90d) {
+    if (!Number.isNaN(t) && t >= tomorrowStart.getTime() && t <= now + in90d) {
       nextExDate = nextYmd;
     }
   }
