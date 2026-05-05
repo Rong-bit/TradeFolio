@@ -10,6 +10,8 @@ import {
   dividendScheduleMapKey,
   marketToYahooMarketForDividends,
   twEstimatedSingleDividendTwd,
+  twNhiSupplementFloorTwd,
+  TW_NHI_SUPPLEMENT_THRESHOLD_TWD,
   usEstimatedNetDividendNative,
 } from '../utils/dividendTaxHelpers';
 
@@ -66,6 +68,9 @@ const DividendHeatmap: React.FC = () => {
       exDate: string;
       estTwd?: number;
       estUsdNet?: number;
+      twNhiFeeTwd?: number;
+      nhiTriggered?: boolean;
+      usGrossDividend?: number;
     }> = [];
 
     for (const row of mergedHoldingsForDiv) {
@@ -82,6 +87,16 @@ const DividendHeatmap: React.FC = () => {
         row.market === Market.US && info.lastAmountPerShare > 0
           ? usEstimatedNetDividendNative(row.quantity, info.lastAmountPerShare)
           : undefined;
+      const twNhiFeeTwd =
+        row.market === Market.TW && estTwd != null && estTwd > 0
+          ? twNhiSupplementFloorTwd(estTwd)
+          : undefined;
+      const nhiTriggered =
+        row.market === Market.TW && estTwd != null && estTwd >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD;
+      const usGrossDividend =
+        row.market === Market.US && info.lastAmountPerShare > 0
+          ? row.quantity * info.lastAmountPerShare
+          : undefined;
       rows.push({
         key,
         ticker: row.ticker,
@@ -89,6 +104,9 @@ const DividendHeatmap: React.FC = () => {
         exDate: info.nextExDate,
         estTwd,
         estUsdNet,
+        twNhiFeeTwd,
+        nhiTriggered,
+        usGrossDividend,
       });
     }
     rows.sort((a, b) => a.exDate.localeCompare(b.exDate) || a.ticker.localeCompare(b.ticker));
@@ -309,10 +327,39 @@ const DividendHeatmap: React.FC = () => {
                     <td className="px-2 py-1.5">{r.market}</td>
                     <td className="px-2 py-1.5 tabular-nums">{r.exDate}</td>
                     <td className="px-2 py-1.5 text-right tabular-nums">
-                      {r.estTwd != null && r.estTwd > 0 ? Math.round(r.estTwd).toLocaleString() : '—'}
+                      {r.estTwd != null && r.estTwd > 0 ? (
+                        <div className="inline-flex flex-col items-end gap-1">
+                          <span className="rounded px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
+                            {Math.round(r.estTwd).toLocaleString()}
+                          </span>
+                          {r.nhiTriggered && (
+                            <span
+                              className="rounded px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 font-semibold"
+                              title={`${dtx.estNhiFee}: ${r.twNhiFeeTwd?.toLocaleString() ?? '0'} TWD`}
+                            >
+                              {dtx.nhiForecastTag}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                     <td className="px-2 py-1.5 text-right tabular-nums">
-                      {r.estUsdNet != null && r.estUsdNet > 0 ? r.estUsdNet.toFixed(2) : '—'}
+                      {r.estUsdNet != null && r.estUsdNet > 0 ? (
+                        <span
+                          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold"
+                          title={
+                            r.usGrossDividend != null
+                              ? `${dtx.estGrossPerPayout}: ${r.usGrossDividend.toFixed(4)} USD\n${dtx.estNetAfterWithholding}: ${r.estUsdNet.toFixed(4)} USD`
+                              : undefined
+                          }
+                        >
+                          {r.estUsdNet.toFixed(2)} <span className="text-[10px]">{dtx.usBadgeShort}</span>
+                        </span>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                   </tr>
                 ))}
