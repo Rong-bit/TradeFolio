@@ -851,7 +851,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           orientation="left"
                           stroke={isDarkMode ? '#f472b6' : '#db2777'}
                           tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 10 }}
-                          axisLine={false}
+                          axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           tickLine={false}
                           fontSize={10}
                           width={42}
