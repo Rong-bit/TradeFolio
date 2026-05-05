@@ -855,8 +855,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                           fontSize={10}
                           width={42}
-                          // Recharts 會將同側雙 Y 軸自動並排，這裡用反向位移把第二軸對齊第一軸位置
-                          dx={-42}
+                          tickMargin={0}
+                          // 將第二組左軸向左回推一個軸寬，與第一組左軸重疊
+                          dx={-84}
                           domain={['auto', 'auto']}
                           tickFormatter={(val: number) => `${Number(val).toFixed(0)}%`}
                         />
