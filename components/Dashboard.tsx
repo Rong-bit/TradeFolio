@@ -45,7 +45,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     profit: true,
     totalAssets: true,
     estTotalAssets: true,
-    yearlyPeriodRoi: true,
+    yearlyPeriodRoi: false,
   });
   const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
