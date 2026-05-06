@@ -765,7 +765,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
       {/* 主圖：累積損益（按季）／按年資金流瀑布 */}
       {!isGuest && (
-        <div className="bg-white p-3 sm:p-6 rounded-xl shadow overflow-hidden">
+        <div className="bg-white pl-3 pr-2 pt-3 pb-3 sm:p-6 rounded-xl shadow overflow-hidden">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-3">
             <div className="min-w-0 flex-1">
               {mainChartTab === 'cumulative' ? (
@@ -837,7 +837,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   ))}
                 </div>
                 <div
-                  className={`w-full min-w-0 ${cumulativeChartHeightClass} -ml-2 sm:ml-0 -mr-6 sm:-mr-5 md:-mr-3 md:ml-0 lg:mx-0`}
+                  className={`w-full min-w-0 ${cumulativeChartHeightClass} -ml-2 sm:ml-0 -mr-10 sm:-mr-5 md:-mr-3 md:ml-0 lg:mx-0`}
                 >
                   {isMounted && quarterlyTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%" debounce={50}>
