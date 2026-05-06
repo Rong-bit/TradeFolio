@@ -717,10 +717,15 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   <div className="absolute inset-y-0 border-l border-slate-400/70" style={{ left: `${(1_000_000 / 6_700_000) * 100}%` }} />
                   <div className="absolute inset-y-0 border-l border-slate-500" style={{ left: '100%' }} />
                 </div>
-                <div className="mt-1 flex justify-between text-[10px] text-slate-500">
-                  <span>0</span>
-                  <span>100 萬（申報門檻）</span>
-                  <span>670 萬（免稅額）</span>
+                <div className="relative mt-1 h-4 text-[10px] text-slate-500">
+                  <span className="absolute left-0 top-0">0</span>
+                  <span
+                    className="absolute top-0 -translate-x-1/2"
+                    style={{ left: `${(1_000_000 / 6_700_000) * 100}%` }}
+                  >
+                    100 萬（申報門檻）
+                  </span>
+                  <span className="absolute right-0 top-0">670 萬（免稅額）</span>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
