@@ -73,6 +73,7 @@ const DividendHeatmap: React.FC = () => {
   const { language, isGuest } = useUI();
   const tr = t(language);
   const [hoveredCell, setHoveredCell] = useState<{ year: number; month: number } | null>(null);
+  const [showUpcomingDetails, setShowUpcomingDetails] = useState(false);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const dtx = tr.dividendTax;
@@ -601,9 +602,22 @@ const DividendHeatmap: React.FC = () => {
 
       {/* 未來 90 天除息（Yahoo calendar） */}
       <div className="mt-6 border-t border-slate-100 pt-4">
-        <h4 className="text-sm font-bold text-slate-700 mb-1">{dtx.upcomingTitle}</h4>
-        <p className="text-xs text-slate-400 mb-2">{dtx.upcomingSubtitle}</p>
-        <p className="text-[10px] text-slate-400 mb-2">{dtx.dataFromYahoo} · {dtx.disclaimerShort}</p>
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <h4 className="text-sm font-bold text-slate-700">{dtx.upcomingTitle}</h4>
+          <button
+            type="button"
+            onClick={() => setShowUpcomingDetails(v => !v)}
+            className="text-[11px] rounded border border-slate-200 px-2 py-0.5 text-slate-500 hover:bg-slate-50"
+          >
+            {showUpcomingDetails ? '隱藏說明' : '顯示說明'}
+          </button>
+        </div>
+        {showUpcomingDetails && (
+          <>
+            <p className="text-xs text-slate-400 mb-2">{dtx.upcomingSubtitle}</p>
+            <p className="text-[10px] text-slate-400 mb-2">{dtx.dataFromYahoo} · {dtx.disclaimerShort}</p>
+          </>
+        )}
         {upcomingRows.length === 0 ? (
           <p className="text-xs text-slate-400 py-2">{dtx.upcomingEmpty}</p>
         ) : (
@@ -646,7 +660,7 @@ const DividendHeatmap: React.FC = () => {
                           <span className="rounded px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
                             {Math.round(r.estTwd).toLocaleString()}
                           </span>
-                          {r.nhiTriggered && (
+                          {showUpcomingDetails && r.nhiTriggered && (
                             <span
                               className="rounded px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 font-semibold"
                               title={`${dtx.estNhiFee}: ${r.estTwd?.toLocaleString() ?? '0'} × 2.11% = ${r.twNhiFeeTwd?.toLocaleString() ?? '0'} TWD`}
@@ -669,7 +683,7 @@ const DividendHeatmap: React.FC = () => {
                               : undefined
                           }
                         >
-                          {r.estUsdNet.toFixed(2)} <span className="text-[10px]">{dtx.usBadgeShort}</span>
+                          {r.estUsdNet.toFixed(2)} {showUpcomingDetails && <span className="text-[10px]">{dtx.usBadgeShort}</span>}
                         </span>
                       ) : (
                         '—'
