@@ -250,17 +250,13 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     return () => mq.removeEventListener('change', apply);
   }, []);
 
+  /** 固定 margin：右側預留報酬率軸寬度；勾選／取消年度報酬率時繪圖區寬度不變 */
   const cumulativeChartMargin = useMemo(() => {
-    const roi = trendSeriesVisible.yearlyPeriodRoi;
     if (isTrendChartCompact) {
-      return roi
-        ? { top: 6, right: 4, left: 28, bottom: 52 }
-        : { top: 6, right: 4, left: 4, bottom: 52 };
+      return { top: 6, left: 4, right: 40, bottom: 52 };
     }
-    return roi
-      ? { top: 10, right: 20, left: 56, bottom: 60 }
-      : { top: 10, right: 20, left: 44, bottom: 60 };
-  }, [isTrendChartCompact, trendSeriesVisible.yearlyPeriodRoi]);
+    return { top: 10, left: 44, right: 48, bottom: 60 };
+  }, [isTrendChartCompact]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -864,13 +860,12 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         {trendSeriesVisible.yearlyPeriodRoi && (
                           <YAxis
                             yAxisId="right"
-                            orientation="left"
+                            orientation="right"
                             stroke={isDarkMode ? '#f472b6' : '#db2777'}
                             tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }}
                             axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                             tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
-                            width={isTrendChartCompact ? 32 : 38}
-                            dx={isTrendChartCompact ? -12 : -20}
+                            width={isTrendChartCompact ? 34 : 40}
                             domain={['auto', 'auto']}
                             tickFormatter={(val: number) => `${Math.round(Number(val))}%`}
                           />
