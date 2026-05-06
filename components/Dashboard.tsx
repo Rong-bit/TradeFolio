@@ -836,7 +836,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     </label>
                   ))}
                 </div>
-                <div className={`w-full min-w-0 ${cumulativeChartHeightClass} -mx-2 sm:mx-0`}>
+                <div
+                  className={`w-full min-w-0 ${cumulativeChartHeightClass} -ml-2 sm:ml-0 -mr-6 sm:-mr-5 md:-mr-3 md:ml-0 lg:mx-0`}
+                >
                   {isMounted && quarterlyTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%" debounce={50}>
                       <ComposedChart
