@@ -502,7 +502,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Net Cost Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-purple-500 relative group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider flex justify-between items-center">
+          <h4 className="text-slate-500 text-sm font-bold uppercase tracking-wider flex justify-between items-center">
             {translations.dashboard.netCost}
             <button
               onClick={() => setShowCostDetailModal(true)}
@@ -533,7 +533,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Total Assets Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-green-500 relative overflow-hidden group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
+          <h4 className="text-slate-500 text-sm font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
           <div className="flex items-center gap-2 mt-2">
             <p className="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums">
               {formatCurrency(toBase(summary.totalValueTWD + summary.cashBalanceTWD), baseCurrency)}
@@ -559,7 +559,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Total P/L Card */}
         <div className={`bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-emerald-500' : 'border-rose-500'} group hover:shadow-md transition-shadow`}>
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
+          <h4 className="text-slate-500 text-sm font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
           <div className="flex items-center gap-2 mt-2">
             <span className={`text-lg leading-none ${summary.totalPLTWD >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
               {summary.totalPLTWD >= 0 ? '↑' : '↓'}
@@ -592,7 +592,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Annualized Return Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-blue-500 group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
+          <h4 className="text-slate-500 text-sm font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
           <div className="flex items-center gap-2 mt-2">
             <span className={`text-lg leading-none ${summary.annualizedReturn >= 0 ? 'text-blue-500' : 'text-orange-500'}`}>
               {summary.annualizedReturn >= 0 ? '↑' : '↓'}
@@ -1505,7 +1505,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm sm:text-base text-left">
-            <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-xs uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
+            <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-sm uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
               <tr>
                 <th className="px-3 py-2 sticky left-0 z-10 min-w-[10rem] bg-white dark:bg-slate-800">
                   {translations.dashboard.accountName}
