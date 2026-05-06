@@ -1429,8 +1429,12 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             </div>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm sm:text-base text-left">
+        <div
+          className="overflow-x-auto overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]"
+          role="region"
+          aria-label={translations.dashboard.brokerageAccounts}
+        >
+          <table className="min-w-full border-separate border-spacing-0 text-sm sm:text-base text-left">
             <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
               <tr>
                 <th className="px-3 py-2 sticky left-0 z-20 min-w-[10rem] bg-slate-50 border-r border-slate-200 shadow-[4px_0_12px_-6px_rgba(15,23,42,0.12)] dark:bg-slate-800 dark:border-slate-600 dark:shadow-[4px_0_12px_-6px_rgba(0,0,0,0.35)]">
