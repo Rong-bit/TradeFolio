@@ -176,7 +176,6 @@ export interface PortfolioSummary {
   accumulatedCashDividendsTWD: number;
   accumulatedStockDividendsTWD: number;
   avgExchangeRate: number;
-  yearWithheldNhiTwd: number;
   yearUsWithholdingTwd: number;
 }
 
