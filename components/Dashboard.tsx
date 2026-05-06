@@ -240,6 +240,28 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   }, [accounts, cashFlows, transactions, rates]);
 
 
+  /** 累積損益圖：窄螢幕下縮小 Recharts margin／避免雙 Y 軸佔寬，使繪圖區接近「按年」瀑布圖 */
+  const [isTrendChartCompact, setIsTrendChartCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const apply = () => setIsTrendChartCompact(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
+  const cumulativeChartMargin = useMemo(() => {
+    const roi = trendSeriesVisible.yearlyPeriodRoi;
+    if (isTrendChartCompact) {
+      return roi
+        ? { top: 6, right: 4, left: 28, bottom: 52 }
+        : { top: 6, right: 4, left: 4, bottom: 52 };
+    }
+    return roi
+      ? { top: 10, right: 20, left: 56, bottom: 60 }
+      : { top: 10, right: 20, left: 44, bottom: 60 };
+  }, [isTrendChartCompact, trendSeriesVisible.yearlyPeriodRoi]);
+
   useEffect(() => {
     setIsMounted(true);
     // 與專案實際 dark class 同步，避免 matchMedia 與 html.dark 不一致造成字色/背景對比錯誤
@@ -729,7 +751,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
       {/* 主圖：累積損益（按季）／按年資金流瀑布 */}
       {!isGuest && (
-        <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
+        <div className="bg-white p-4 sm:p-6 rounded-xl shadow overflow-hidden">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-3">
             <div className="min-w-0 flex-1">
               {mainChartTab === 'cumulative' ? (
@@ -800,12 +822,12 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     </label>
                   ))}
                 </div>
-                <div className="w-full h-[380px] md:h-[540px]">
+                <div className="w-full min-w-0 h-[400px] md:h-[540px]">
                   {isMounted && quarterlyTrendData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" debounce={50}>
                       <ComposedChart
                         data={quarterlyTrendData}
-                        margin={{ top: 10, right: 20, left: 60, bottom: 60 }}
+                        margin={cumulativeChartMargin}
                       >
                         <CartesianGrid
                           strokeDasharray="3 3"
@@ -819,10 +841,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           fontSize={10}
                           className="text-xs"
-                          padding={{ left: 10, right: 10 }}
+                          padding={isTrendChartCompact ? { left: 0, right: 0 } : { left: 10, right: 10 }}
                           angle={-45}
                           textAnchor="end"
-                          height={60}
+                          height={isTrendChartCompact ? 54 : 60}
                         />
                         <YAxis
                           yAxisId="left"
@@ -832,25 +854,27 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           className="text-xs"
-                          width={39}
+                          width={isTrendChartCompact ? 34 : 39}
                           tickFormatter={(val: number) => {
                             if (Math.abs(val) >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
                             if (Math.abs(val) >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
                             return val.toFixed(0);
                           }}
                         />
-                        <YAxis
-                          yAxisId="right"
-                          orientation="left"
-                          stroke={isDarkMode ? '#f472b6' : '#db2777'}
-                          tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }}
-                          axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
-                          tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
-                          width={38}
-                          dx={-20}
-                          domain={['auto', 'auto']}
-                          tickFormatter={(val: number) => `${Math.round(Number(val))}%`}
-                        />
+                        {trendSeriesVisible.yearlyPeriodRoi && (
+                          <YAxis
+                            yAxisId="right"
+                            orientation="left"
+                            stroke={isDarkMode ? '#f472b6' : '#db2777'}
+                            tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }}
+                            axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
+                            tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
+                            width={isTrendChartCompact ? 32 : 38}
+                            dx={isTrendChartCompact ? -12 : -20}
+                            domain={['auto', 'auto']}
+                            tickFormatter={(val: number) => `${Math.round(Number(val))}%`}
+                          />
+                        )}
                         <Tooltip
                           contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                           labelStyle={{ color: '#0f172a', fontWeight: 700 }}
