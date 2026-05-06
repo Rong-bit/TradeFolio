@@ -639,7 +639,13 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className={`flex-1 mx-auto w-full p-4 md:p-8 ${view === 'dashboard' ? 'max-w-[1800px]' : 'max-w-7xl'}`}>
+      <main
+        className={`flex-1 mx-auto w-full md:p-8 ${
+          view === 'dashboard'
+            ? 'pl-3 pr-2 pt-4 pb-4 md:p-8 max-w-[1800px]'
+            : 'p-4 max-w-7xl'
+        }`}
+      >
         <div className="mb-6">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
             <span className="break-words">{view==='dashboard'&&t(language).pages.dashboard}{view==='history'&&t(language).pages.history}{view==='funds'&&t(language).pages.funds}{view==='accounts'&&t(language).pages.accounts}{view==='rebalance'&&t(language).pages.rebalance}{view==='simulator'&&t(language).pages.simulator}{view==='help'&&t(language).pages.help}</span>
