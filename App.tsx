@@ -612,7 +612,7 @@ const App: React.FC = () => {
     <UIContext.Provider value={uiValue}>
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className={`mx-auto px-4 ${view === 'dashboard' ? 'max-w-[1800px]' : 'max-w-7xl'}`}>
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3 shrink-0">
               <button onClick={()=>setIsMobileMenuOpen(true)} className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors" aria-label="Open Menu"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
@@ -639,7 +639,7 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8">
+      <main className={`flex-1 mx-auto w-full p-4 md:p-8 ${view === 'dashboard' ? 'max-w-[1800px]' : 'max-w-7xl'}`}>
         <div className="mb-6">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
             <span className="break-words">{view==='dashboard'&&t(language).pages.dashboard}{view==='history'&&t(language).pages.history}{view==='funds'&&t(language).pages.funds}{view==='accounts'&&t(language).pages.accounts}{view==='rebalance'&&t(language).pages.rebalance}{view==='simulator'&&t(language).pages.simulator}{view==='help'&&t(language).pages.help}</span>
@@ -701,7 +701,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <footer className="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800"><div className="max-w-7xl mx-auto px-4 text-center"><p className="text-sm">© 2025 TradeView. Designed & Developed by <span className="text-indigo-400 font-bold">Jun-rong, Huang</span></p><p className="text-[10px] mt-2 text-slate-500">{t(language).common.footerLocalDataPrivacy}</p></div></footer>
+      <footer className="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800"><div className={`mx-auto px-4 text-center ${view === 'dashboard' ? 'max-w-[1800px]' : 'max-w-7xl'}`}><p className="text-sm">© 2025 TradeView. Designed & Developed by <span className="text-indigo-400 font-bold">Jun-rong, Huang</span></p><p className="text-[10px] mt-2 text-slate-500">{t(language).common.footerLocalDataPrivacy}</p></div></footer>
 
       {isFormOpen&&<TransactionForm onAdd={addTransaction} onUpdate={handleUpdateTransaction} editingTransaction={transactionToEdit} onClose={()=>{setIsFormOpen(false);setTransactionToEdit(null);}} />}
       {isImportOpen&&<BatchImportModal onImport={addBatchTransactions} onClose={()=>setIsImportOpen(false)} />}
