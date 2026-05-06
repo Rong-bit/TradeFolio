@@ -647,7 +647,7 @@ const App: React.FC = () => {
         }`}
       >
         <div className={`mb-6 ${view === 'dashboard' ? 'max-sm:px-3 max-sm:pr-2' : ''}`}>
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
             <span className="break-words">{view==='dashboard'&&t(language).pages.dashboard}{view==='history'&&t(language).pages.history}{view==='funds'&&t(language).pages.funds}{view==='accounts'&&t(language).pages.accounts}{view==='rebalance'&&t(language).pages.rebalance}{view==='simulator'&&t(language).pages.simulator}{view==='help'&&t(language).pages.help}</span>
             {isGuest&&<button onClick={handleContactAdmin} className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow">{t(language).common.upgrade}</button>}
           </h2>
