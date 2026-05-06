@@ -48,7 +48,6 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     estTotalAssets: true,
     yearlyPeriodRoi: false,
   });
-  const [expandedAccountRows, setExpandedAccountRows] = useState<Record<string, boolean>>({});
   const [activeInnerIndex, setActiveInnerIndex] = useState<number | undefined>(undefined);
   const [activeOuterIndex, setActiveOuterIndex] = useState<number | undefined>(undefined);
   /**
@@ -391,12 +390,6 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       return acc;
   }, 0);
 
-  const toggleAccountRow = (accountId: string) => {
-    setExpandedAccountRows(prev => ({
-      ...prev,
-      [accountId]: !prev[accountId]
-    }));
-  };
   const toggleTrendSeries = (key: keyof typeof trendSeriesVisible) => {
     setTrendSeriesVisible(prev => ({ ...prev, [key]: !prev[key] }));
   };
@@ -1445,9 +1438,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 <th className="px-3 py-2 text-right">{translations.dashboard.totalAssetsNT}</th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.marketValueNT}</th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.balanceNT}</th>
-                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.unrealizedPL}</th>
-                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.realizedPL}</th>
-                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.dividendInterest}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.unrealizedPL}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.realizedPL}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.dividendInterest}</th>
                 <th className="px-3 py-2 text-right">
                   <span className="inline-flex items-center justify-end gap-1">
                     {translations.dashboard.profitNT}
@@ -1505,8 +1498,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   }
                   
                   return (
-                    <React.Fragment key={acc.id}>
                       <tr
+                        key={acc.id}
                         onMouseEnter={e => {
                           e.currentTarget.style.backgroundColor = isDarkMode ? "#334155" : "#f8fafc";
                           setHoveredAccountId(acc.id);
@@ -1531,29 +1524,19 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                                 : (isDarkMode ? "#e2e8f0" : "#334155"),
                           }}
                         >
-                          <div className="flex items-center justify-between gap-2">
-                            <div>
-                              {acc.name}
-                              <span
-                                className="text-xs font-normal ml-1"
-                                style={{
-                                  color:
-                                    (!isDarkMode && hoveredAccountId === acc.id)
-                                      ? "#0f172a"
-                                      : (isDarkMode ? "#cbd5e1" : "#64748b"),
-                                }}
-                              >
-                                ({acc.currency})
-                              </span>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => toggleAccountRow(acc.id)}
-                              className="md:hidden text-xs px-2 py-0.5 rounded border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
-                              aria-label="toggle account breakdown"
+                          <div>
+                            {acc.name}
+                            <span
+                              className="text-xs font-normal ml-1"
+                              style={{
+                                color:
+                                  (!isDarkMode && hoveredAccountId === acc.id)
+                                    ? "#0f172a"
+                                    : (isDarkMode ? "#cbd5e1" : "#64748b"),
+                              }}
                             >
-                              {expandedAccountRows[acc.id] ? '▲' : '▼'}
-                            </button>
+                              ({acc.currency})
+                            </span>
                           </div>
                         </td>
                         <td
@@ -1574,13 +1557,13 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         >
                           {formatCurrency(cashBalance, displayCurrency)}
                         </td>
-                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td className={`px-3 py-2 text-right font-bold ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
                           {formatCurrency(unrealizedProfit, displayCurrency)}
                         </td>
-                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td className={`px-3 py-2 text-right font-bold ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
                           {formatCurrency(realizedProfit, displayCurrency)}
                         </td>
-                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${income >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td className={`px-3 py-2 text-right font-bold ${income >= 0 ? 'text-success' : 'text-danger'}`}>
                           {formatCurrency(income, displayCurrency)}
                         </td>
                         <td className={`px-3 py-2 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -1590,33 +1573,6 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           {acc.roi.toFixed(2)}%
                         </td>
                       </tr>
-                      {expandedAccountRows[acc.id] && (
-                        <tr className="md:hidden bg-slate-50 dark:bg-slate-900/50">
-                          <td colSpan={9} className="px-3 py-2">
-                            <div className="grid grid-cols-1 gap-1 text-xs">
-                              <div className="flex justify-between">
-                                <span className="text-slate-500 dark:text-slate-400">{translations.dashboard.unrealizedPL}</span>
-                                <span className={`font-bold ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
-                                  {formatCurrency(unrealizedProfit, displayCurrency)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-slate-500 dark:text-slate-400">{translations.dashboard.realizedPL}</span>
-                                <span className={`font-bold ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
-                                  {formatCurrency(realizedProfit, displayCurrency)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-slate-500 dark:text-slate-400">{translations.dashboard.dividendInterest}</span>
-                                <span className={`font-bold ${income >= 0 ? 'text-success' : 'text-danger'}`}>
-                                  {formatCurrency(income, displayCurrency)}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
                   );
                 })
               ) : (
