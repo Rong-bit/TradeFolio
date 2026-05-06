@@ -23,26 +23,6 @@ const SHOW_ANNUAL_PERFORMANCE_TABLE = false;
 const SEGMENT_PILL_CLASS =
   'inline-flex overflow-hidden rounded-lg border border-slate-200 shadow-sm dark:border-slate-600';
 
-/** 證券戶列表：md 以上橫向捲動時凍結第 1～7 欄（含未實現／已實現／股利標題），需與 min-w 對齊 */
-const ACCOUNT_COL_STICKY = {
-  c1: 'sticky left-0 z-[45] min-w-[10rem]',
-  c2: 'md:sticky md:left-[10rem] md:z-[46] md:min-w-[7rem]',
-  c3: 'md:sticky md:left-[17rem] md:z-[47] md:min-w-[7rem]',
-  c4: 'md:sticky md:left-[24rem] md:z-[48] md:min-w-[7rem]',
-  c5: 'md:sticky md:left-[31rem] md:z-[49] md:min-w-[7.5rem]',
-  c6: 'md:sticky md:left-[38.5rem] md:z-[50] md:min-w-[7.5rem]',
-  c7: 'md:sticky md:left-[46rem] md:z-[51] md:min-w-[7.5rem]',
-  tdZ: {
-    c1: 'sticky left-0 z-[25] min-w-[10rem]',
-    c2: 'md:sticky md:left-[10rem] md:z-[26] md:min-w-[7rem]',
-    c3: 'md:sticky md:left-[17rem] md:z-[27] md:min-w-[7rem]',
-    c4: 'md:sticky md:left-[24rem] md:z-[28] md:min-w-[7rem]',
-    c5: 'md:sticky md:left-[31rem] md:z-[29] md:min-w-[7.5rem]',
-    c6: 'md:sticky md:left-[38.5rem] md:z-[30] md:min-w-[7.5rem]',
-    c7: 'md:sticky md:left-[46rem] md:z-[31] md:min-w-[7.5rem]',
-  },
-  theadBg: 'bg-slate-50 dark:bg-slate-800',
-} as const;
 const SEGMENT_BTN_CLASS =
   'px-3 py-1.5 text-sm rounded-none transition whitespace-nowrap focus:outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400/90';
 
@@ -1418,12 +1398,17 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           </div>
       )}
 
-      {/* Account List Card */}
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-          <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.brokerageAccounts}</h3>
+      {/* Account List Card — 版面與「資產配置明細」(HoldingsTable) 一致 */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden border border-slate-100 dark:border-slate-700">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2 bg-slate-50 dark:bg-slate-800">
+          <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+            </svg>
+            {translations.dashboard.brokerageAccounts}
+          </h3>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600 shrink-0">{translations.dashboard.displayCurrency}:</span>
+            <span className="text-sm text-slate-600 dark:text-slate-300 shrink-0">{translations.dashboard.displayCurrency}:</span>
             <div className={SEGMENT_PILL_CLASS}>
               <button
                 type="button"
@@ -1450,40 +1435,24 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             </div>
           </div>
         </div>
-        <div
-          className="overflow-x-auto overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]"
-          role="region"
-          aria-label={translations.dashboard.brokerageAccounts}
-        >
-          <table className="min-w-full border-separate border-spacing-0 text-sm sm:text-base text-left">
-            <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm sm:text-base text-left">
+            <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-xs uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
               <tr>
-                <th className={`px-3 py-2 ${ACCOUNT_COL_STICKY.c1} ${ACCOUNT_COL_STICKY.theadBg}`}>
+                <th className="px-3 py-2 sticky left-0 z-10 min-w-[10rem] bg-white dark:bg-slate-800">
                   {translations.dashboard.accountName}
                 </th>
-                <th className={`px-3 py-2 text-right ${ACCOUNT_COL_STICKY.c2} ${ACCOUNT_COL_STICKY.theadBg}`}>
-                  {translations.dashboard.totalAssetsNT}
-                </th>
-                <th className={`px-3 py-2 text-right ${ACCOUNT_COL_STICKY.c3} ${ACCOUNT_COL_STICKY.theadBg}`}>
-                  {translations.dashboard.marketValueNT}
-                </th>
-                <th className={`px-3 py-2 text-right ${ACCOUNT_COL_STICKY.c4} ${ACCOUNT_COL_STICKY.theadBg}`}>
-                  {translations.dashboard.balanceNT}
-                </th>
-                <th className={`px-3 py-2 text-right hidden md:table-cell ${ACCOUNT_COL_STICKY.c5} ${ACCOUNT_COL_STICKY.theadBg}`}>
-                  {translations.dashboard.unrealizedPL}
-                </th>
-                <th className={`px-3 py-2 text-right hidden md:table-cell ${ACCOUNT_COL_STICKY.c6} ${ACCOUNT_COL_STICKY.theadBg}`}>
-                  {translations.dashboard.realizedPL}
-                </th>
-                <th className={`px-3 py-2 text-right hidden md:table-cell ${ACCOUNT_COL_STICKY.c7} ${ACCOUNT_COL_STICKY.theadBg}`}>
-                  {translations.dashboard.dividendInterest}
-                </th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.totalAssetsNT}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.marketValueNT}</th>
+                <th className="px-3 py-2 text-right">{translations.dashboard.balanceNT}</th>
+                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.unrealizedPL}</th>
+                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.realizedPL}</th>
+                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.dividendInterest}</th>
                 <th className="px-3 py-2 text-right">
                   <span className="inline-flex items-center justify-end gap-1">
                     {translations.dashboard.profitNT}
                     <span
-                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 text-[10px] text-slate-500 cursor-help"
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-[10px] text-slate-500 dark:text-slate-400 cursor-help"
                       title={translations.dashboard.profitFormulaTooltip}
                     >
                       i
@@ -1493,7 +1462,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 <th className="px-3 py-2 text-right">{translations.dashboard.totalReturnRate}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800">
               {accountPerformance.length > 0 ? (
                 accountPerformance.map(acc => {
                   let displayCurrency: string;
@@ -1549,13 +1518,13 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         style={{ transition: "background-color 0.15s" }}
                       >
                         <td
-                          className={`px-3 py-2 font-semibold text-sm sm:text-base ${ACCOUNT_COL_STICKY.tdZ.c1}`}
+                          className="px-3 py-2 font-semibold text-sm sm:text-base sticky left-0 z-10 min-w-[10rem] bg-white dark:bg-slate-800"
                           style={{
                             transition: "background-color 0.15s",
                             backgroundColor:
                               hoveredAccountId === acc.id
                                 ? (isDarkMode ? "#334155" : "#f8fafc")
-                                : "#ffffff",
+                                : undefined,
                             color:
                               (!isDarkMode && hoveredAccountId === acc.id)
                                 ? "#0f172a"
@@ -1580,7 +1549,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             <button
                               type="button"
                               onClick={() => toggleAccountRow(acc.id)}
-                              className="md:hidden text-xs px-2 py-0.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-100"
+                              className="md:hidden text-xs px-2 py-0.5 rounded border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                               aria-label="toggle account breakdown"
                             >
                               {expandedAccountRows[acc.id] ? '▲' : '▼'}
@@ -1588,78 +1557,30 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           </div>
                         </td>
                         <td
-                          className={`px-3 py-2 text-right font-bold tabular-nums text-sm sm:text-base ${ACCOUNT_COL_STICKY.tdZ.c2}`}
-                          style={{
-                            transition: "background-color 0.15s",
-                            backgroundColor:
-                              hoveredAccountId === acc.id
-                                ? (isDarkMode ? "#334155" : "#f8fafc")
-                                : "#ffffff",
-                            color: isDarkMode ? "#e2e8f0" : "#334155",
-                          }}
+                          className="px-3 py-2 text-right font-bold tabular-nums text-sm sm:text-base"
+                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
                         >
                           {formatCurrency(totalAssets, displayCurrency)}
                         </td>
                         <td
-                          className={`px-3 py-2 text-right tabular-nums text-sm sm:text-base ${ACCOUNT_COL_STICKY.tdZ.c3}`}
-                          style={{
-                            transition: "background-color 0.15s",
-                            backgroundColor:
-                              hoveredAccountId === acc.id
-                                ? (isDarkMode ? "#334155" : "#f8fafc")
-                                : "#ffffff",
-                            color: isDarkMode ? "#e2e8f0" : "#334155",
-                          }}
+                          className="px-3 py-2 text-right tabular-nums text-sm sm:text-base"
+                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
                         >
                           {formatCurrency(marketValue, displayCurrency)}
                         </td>
                         <td
-                          className={`px-3 py-2 text-right tabular-nums text-sm sm:text-base ${ACCOUNT_COL_STICKY.tdZ.c4}`}
-                          style={{
-                            transition: "background-color 0.15s",
-                            backgroundColor:
-                              hoveredAccountId === acc.id
-                                ? (isDarkMode ? "#334155" : "#f8fafc")
-                                : "#ffffff",
-                            color: isDarkMode ? "#e2e8f0" : "#334155",
-                          }}
+                          className="px-3 py-2 text-right tabular-nums text-sm sm:text-base"
+                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
                         >
                           {formatCurrency(cashBalance, displayCurrency)}
                         </td>
-                        <td
-                          className={`px-3 py-2 text-right font-bold hidden md:table-cell ${ACCOUNT_COL_STICKY.tdZ.c5} ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}
-                          style={{
-                            transition: "background-color 0.15s",
-                            backgroundColor:
-                              hoveredAccountId === acc.id
-                                ? (isDarkMode ? "#334155" : "#f8fafc")
-                                : "#ffffff",
-                          }}
-                        >
+                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
                           {formatCurrency(unrealizedProfit, displayCurrency)}
                         </td>
-                        <td
-                          className={`px-3 py-2 text-right font-bold hidden md:table-cell ${ACCOUNT_COL_STICKY.tdZ.c6} ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}
-                          style={{
-                            transition: "background-color 0.15s",
-                            backgroundColor:
-                              hoveredAccountId === acc.id
-                                ? (isDarkMode ? "#334155" : "#f8fafc")
-                                : "#ffffff",
-                          }}
-                        >
+                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
                           {formatCurrency(realizedProfit, displayCurrency)}
                         </td>
-                        <td
-                          className={`px-3 py-2 text-right font-bold hidden md:table-cell ${ACCOUNT_COL_STICKY.tdZ.c7} ${income >= 0 ? 'text-success' : 'text-danger'}`}
-                          style={{
-                            transition: "background-color 0.15s",
-                            backgroundColor:
-                              hoveredAccountId === acc.id
-                                ? (isDarkMode ? "#334155" : "#f8fafc")
-                                : "#ffffff",
-                          }}
-                        >
+                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${income >= 0 ? 'text-success' : 'text-danger'}`}>
                           {formatCurrency(income, displayCurrency)}
                         </td>
                         <td className={`px-3 py-2 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
@@ -1670,23 +1591,23 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         </td>
                       </tr>
                       {expandedAccountRows[acc.id] && (
-                        <tr className="md:hidden bg-slate-50">
+                        <tr className="md:hidden bg-slate-50 dark:bg-slate-900/50">
                           <td colSpan={9} className="px-3 py-2">
                             <div className="grid grid-cols-1 gap-1 text-xs">
                               <div className="flex justify-between">
-                                <span className="text-slate-500">{translations.dashboard.unrealizedPL}</span>
+                                <span className="text-slate-500 dark:text-slate-400">{translations.dashboard.unrealizedPL}</span>
                                 <span className={`font-bold ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
                                   {formatCurrency(unrealizedProfit, displayCurrency)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-slate-500">{translations.dashboard.realizedPL}</span>
+                                <span className="text-slate-500 dark:text-slate-400">{translations.dashboard.realizedPL}</span>
                                 <span className={`font-bold ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
                                   {formatCurrency(realizedProfit, displayCurrency)}
                                 </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-slate-500">{translations.dashboard.dividendInterest}</span>
+                                <span className="text-slate-500 dark:text-slate-400">{translations.dashboard.dividendInterest}</span>
                                 <span className={`font-bold ${income >= 0 ? 'text-success' : 'text-danger'}`}>
                                   {formatCurrency(income, displayCurrency)}
                                 </span>
@@ -1700,7 +1621,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 })
               ) : (
                 <tr>
-                  <td colSpan={9} className="px-3 py-4 text-center text-slate-400">{translations.dashboard.noAccounts}</td>
+                  <td colSpan={9} className="px-3 py-4 text-center text-slate-400 dark:text-slate-500">{translations.dashboard.noAccounts}</td>
                 </tr>
               )}
             </tbody>
