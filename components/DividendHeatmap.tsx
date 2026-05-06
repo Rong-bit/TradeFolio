@@ -448,11 +448,11 @@ const DividendHeatmap: React.FC = () => {
             <div className="flex mb-1.5">
               <div className="w-14 shrink-0" />
               {SHORT_MONTHS.map(m => (
-                <div key={m} className="flex-1 text-center text-xs font-medium text-slate-400" style={{ minWidth: 36 }}>
+                <div key={m} className="flex-1 text-center text-sm font-medium text-slate-400" style={{ minWidth: 36 }}>
                   {m}
                 </div>
               ))}
-              <div className="w-20 shrink-0 text-xs font-medium text-slate-400 text-right pr-1">
+              <div className="w-20 shrink-0 text-sm font-medium text-slate-400 text-right pr-1">
                 {tr.dividendHeatmap.yearTotal}
               </div>
             </div>
