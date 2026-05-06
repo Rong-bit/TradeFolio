@@ -243,7 +243,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   /** 累積損益圖：窄螢幕（與瀑布圖同款判斷）— 外擴 margin、較緊卡片內距，繪圖區較大 */
   const [isTrendChartCompact, setIsTrendChartCompact] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 640px)');
+    const mq = window.matchMedia('(max-width: 639px)');
     const apply = () => setIsTrendChartCompact(mq.matches);
     apply();
     mq.addEventListener('change', apply);
@@ -763,10 +763,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
         )}
       </div>
 
-      {/* 主圖：累積損益（按季）／按年資金流瀑布 */}
+      {/* 主圖：累積損益（按季）／按年資金流瀑布；窄螢幕 overflow-visible 讓累積圖可滿版寬 */}
       {!isGuest && (
-        <div className="bg-white pl-3 pr-2 pt-3 pb-3 sm:p-6 rounded-xl shadow overflow-hidden">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-3">
+        <div className="bg-white max-sm:overflow-visible sm:overflow-hidden max-sm:py-3 sm:p-6 rounded-xl shadow">
+          <div className="max-sm:px-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-3">
             <div className="min-w-0 flex-1">
               {mainChartTab === 'cumulative' ? (
                 <h3 className="font-bold text-blue-600 text-xl">{translations.dashboard.assetVsCostTrend}</h3>
@@ -816,7 +816,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           <div className="w-full">
             {mainChartTab === 'cumulative' ? (
               <>
-                <div className="mb-3 flex flex-wrap gap-3 text-xs">
+                <div className="max-sm:px-3 mb-3 flex flex-wrap gap-3 text-xs">
                   {[
                     { key: 'cost', label: translations.dashboard.chartLabels.investmentCost, color: '#8b5cf6' },
                     { key: 'profit', label: translations.dashboard.chartLabels.barName, color: '#10b981' },
@@ -837,7 +837,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   ))}
                 </div>
                 <div
-                  className={`w-full min-w-0 ${cumulativeChartHeightClass} -ml-2 sm:ml-0 -mr-10 sm:-mr-5 md:-mr-3 md:ml-0 lg:mx-0`}
+                  className={
+                    isTrendChartCompact
+                      ? `w-screen max-w-[100vw] min-w-0 ${cumulativeChartHeightClass} ml-[calc(50%-50vw)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]`
+                      : `w-full min-w-0 ${cumulativeChartHeightClass} -ml-2 sm:ml-0 -mr-10 sm:-mr-5 md:-mr-3 md:ml-0 lg:mx-0`
+                  }
                 >
                   {isMounted && quarterlyTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%" debounce={50}>
@@ -1088,18 +1092,20 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   )}
                 </div>
                 {hasAttributionMismatch && (
-                  <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <div className="max-sm:mx-3 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                     資料對帳提醒：部分年度「資產變化」與「淨流入 + 收益 + 市場損益」存在微小差異，請檢查匯率或歷史估值來源。
                   </div>
                 )}
-                <div className="mt-2 text-xs text-slate-400 dark:text-slate-300 flex flex-wrap gap-x-2 gap-y-1 items-baseline">
+                <div className="max-sm:px-3 mt-2 text-xs text-slate-400 dark:text-slate-300 flex flex-wrap gap-x-2 gap-y-1 items-baseline">
                   <span>{translations.dashboard.chartLegendQuarterSnapshot}</span>
                   <span>{translations.dashboard.chartLegendLinearInterpolation}</span>
                   <span>{translations.dashboard.chartLabels.chartLegendYearlyPeriodRoi}</span>
                 </div>
               </>
             ) : (
-              <CashFlowWaterfall hideHeader rows={waterfallYearRows} />
+              <div className="max-sm:px-3">
+                <CashFlowWaterfall hideHeader rows={waterfallYearRows} />
+              </div>
             )}
           </div>
         </div>
