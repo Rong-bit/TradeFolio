@@ -354,12 +354,10 @@ const App: React.FC = () => {
     }, 0);
 
     const reportYear = new Date().getFullYear();
-    let yearWithheldNhiTwd = 0;
     let yearUsWithholdingTwd = 0;
     transactions.forEach((t: Transaction) => {
       if (t.type !== TransactionType.CASH_DIVIDEND) return;
       if (new Date(t.date).getFullYear() !== reportYear) return;
-      // 停用「本年度累計二代健保補充保費」統計；熱力圖的 NHI 試算邏輯不受影響。
       if (t.market === Market.US) {
         const netNative = (t.amount ?? t.price * t.quantity) - (t.fees || 0);
         if (t.withheldUsTaxNative != null && t.withheldUsTaxNative > 0) {
@@ -383,7 +381,6 @@ const App: React.FC = () => {
       accumulatedCashDividendsTWD: sumDiv(TransactionType.CASH_DIVIDEND),
       accumulatedStockDividendsTWD: sumDiv(TransactionType.DIVIDEND),
       avgExchangeRate: totalUsdInflow > 0 ? totalTwdCostForUsd / totalUsdInflow : 0,
-      yearWithheldNhiTwd,
       yearUsWithholdingTwd,
     };
   }, [baseHoldings, computedAccounts, cashFlows, rates, accounts, transactions]);
@@ -647,7 +644,7 @@ const App: React.FC = () => {
         }`}
       >
         <div className={`mb-6 ${view === 'dashboard' ? 'max-sm:px-3 max-sm:pr-2' : ''}`}>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
             <span className="break-words">{view==='dashboard'&&t(language).pages.dashboard}{view==='history'&&t(language).pages.history}{view==='funds'&&t(language).pages.funds}{view==='accounts'&&t(language).pages.accounts}{view==='rebalance'&&t(language).pages.rebalance}{view==='simulator'&&t(language).pages.simulator}{view==='help'&&t(language).pages.help}</span>
             {isGuest&&<button onClick={handleContactAdmin} className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow">{t(language).common.upgrade}</button>}
           </h2>
