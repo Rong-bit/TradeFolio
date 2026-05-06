@@ -609,91 +609,93 @@ const DividendHeatmap: React.FC = () => {
             onClick={() => setShowUpcomingDetails(v => !v)}
             className="text-[11px] rounded border border-slate-200 px-2 py-0.5 text-slate-500 hover:bg-slate-50"
           >
-            {showUpcomingDetails ? '隱藏說明' : '顯示說明'}
+            {showUpcomingDetails ? '隱藏明細' : '顯示明細'}
           </button>
         </div>
-        {showUpcomingDetails && (
+        {showUpcomingDetails ? (
           <>
             <p className="text-xs text-slate-400 mb-2">{dtx.upcomingSubtitle}</p>
             <p className="text-[10px] text-slate-400 mb-2">{dtx.dataFromYahoo} · {dtx.disclaimerShort}</p>
-          </>
-        )}
-        {upcomingRows.length === 0 ? (
-          <p className="text-xs text-slate-400 py-2">{dtx.upcomingEmpty}</p>
-        ) : (
-          <div className="overflow-x-auto rounded-lg border border-slate-100">
-            <table className="min-w-full text-xs text-left">
-              <thead className="bg-slate-50 text-slate-500 font-semibold">
-                <tr>
-                  <th className="px-2 py-1.5">{tr.holdings.ticker}</th>
-                  <th className="px-2 py-1.5">Mkt</th>
-                  <th className="px-2 py-1.5">{dtx.upcomingExDate}</th>
-                  <th className="px-2 py-1.5">推估月</th>
-                  <th className="px-2 py-1.5 text-right">{dtx.upcomingEstTwd}</th>
-                  <th className="px-2 py-1.5 text-right">{dtx.upcomingEstUsd}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {upcomingRows.map(r => (
-                  <tr key={r.key} className="text-slate-600">
-                    <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
-                    <td className="px-2 py-1.5">{r.market}</td>
-                    <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
-                    <td className="px-2 py-1.5 tabular-nums">
-                      {(() => {
-                        const preferredInferredMonth = pickNextUpcomingMonth(
-                          r.inferredMonthsCandidate ?? [],
-                          currentMonthForDisplay,
-                          currentDayForDisplay
-                        );
-                        const displayInferredMonth = preferredInferredMonth ?? r.inferredMonth;
-                        return r.exDate
-                          ? `${new Date(`${r.exDate}T12:00:00`).getMonth() + 1}月`
-                          : (displayInferredMonth != null
-                            ? `${displayInferredMonth + 1}月`
-                            : '—');
-                      })()}
-                    </td>
-                    <td className="px-2 py-1.5 text-right tabular-nums">
-                      {r.estTwd != null && r.estTwd > 0 ? (
-                        <div className="inline-flex flex-col items-end gap-1">
-                          <span className="rounded px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
-                            {Math.round(r.estTwd).toLocaleString()}
-                          </span>
-                          {showUpcomingDetails && r.nhiTriggered && (
-                            <span
-                              className="rounded px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 font-semibold"
-                              title={`${dtx.estNhiFee}: ${r.estTwd?.toLocaleString() ?? '0'} × 2.11% = ${r.twNhiFeeTwd?.toLocaleString() ?? '0'} TWD`}
-                            >
-                              {dtx.nhiForecastTag}
-                            </span>
+            {upcomingRows.length === 0 ? (
+              <p className="text-xs text-slate-400 py-2">{dtx.upcomingEmpty}</p>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-slate-100">
+                <table className="min-w-full text-xs text-left">
+                  <thead className="bg-slate-50 text-slate-500 font-semibold">
+                    <tr>
+                      <th className="px-2 py-1.5">{tr.holdings.ticker}</th>
+                      <th className="px-2 py-1.5">Mkt</th>
+                      <th className="px-2 py-1.5">{dtx.upcomingExDate}</th>
+                      <th className="px-2 py-1.5">推估月</th>
+                      <th className="px-2 py-1.5 text-right">{dtx.upcomingEstTwd}</th>
+                      <th className="px-2 py-1.5 text-right">{dtx.upcomingEstUsd}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {upcomingRows.map(r => (
+                      <tr key={r.key} className="text-slate-600">
+                        <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
+                        <td className="px-2 py-1.5">{r.market}</td>
+                        <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
+                        <td className="px-2 py-1.5 tabular-nums">
+                          {(() => {
+                            const preferredInferredMonth = pickNextUpcomingMonth(
+                              r.inferredMonthsCandidate ?? [],
+                              currentMonthForDisplay,
+                              currentDayForDisplay
+                            );
+                            const displayInferredMonth = preferredInferredMonth ?? r.inferredMonth;
+                            return r.exDate
+                              ? `${new Date(`${r.exDate}T12:00:00`).getMonth() + 1}月`
+                              : (displayInferredMonth != null
+                                ? `${displayInferredMonth + 1}月`
+                                : '—');
+                          })()}
+                        </td>
+                        <td className="px-2 py-1.5 text-right tabular-nums">
+                          {r.estTwd != null && r.estTwd > 0 ? (
+                            <div className="inline-flex flex-col items-end gap-1">
+                              <span className="rounded px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
+                                {Math.round(r.estTwd).toLocaleString()}
+                              </span>
+                              {r.nhiTriggered && (
+                                <span
+                                  className="rounded px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 font-semibold"
+                                  title={`${dtx.estNhiFee}: ${r.estTwd?.toLocaleString() ?? '0'} × 2.11% = ${r.twNhiFeeTwd?.toLocaleString() ?? '0'} TWD`}
+                                >
+                                  {dtx.nhiForecastTag}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            '—'
                           )}
-                        </div>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="px-2 py-1.5 text-right tabular-nums">
-                      {r.estUsdNet != null && r.estUsdNet > 0 ? (
-                        <span
-                          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold"
-                          title={
-                            r.usGrossDividend != null
-                              ? `${dtx.estGrossPerPayout}: ${r.usGrossDividend.toFixed(4)} USD\n${dtx.estNetAfterWithholding}: ${r.estUsdNet.toFixed(4)} USD`
-                              : undefined
-                          }
-                        >
-                          {r.estUsdNet.toFixed(2)} {showUpcomingDetails && <span className="text-[10px]">{dtx.usBadgeShort}</span>}
-                        </span>
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="px-2 py-1.5 text-right tabular-nums">
+                          {r.estUsdNet != null && r.estUsdNet > 0 ? (
+                            <span
+                              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold"
+                              title={
+                                r.usGrossDividend != null
+                                  ? `${dtx.estGrossPerPayout}: ${r.usGrossDividend.toFixed(4)} USD\n${dtx.estNetAfterWithholding}: ${r.estUsdNet.toFixed(4)} USD`
+                                  : undefined
+                              }
+                            >
+                              {r.estUsdNet.toFixed(2)} <span className="text-[10px]">{dtx.usBadgeShort}</span>
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-xs text-slate-400 py-2">已隱藏明細，點「顯示明細」即可展開。</p>
         )}
       </div>
     </div>
