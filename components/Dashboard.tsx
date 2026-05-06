@@ -875,19 +875,38 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             return val.toFixed(0);
                           }}
                         />
-                        {trendSeriesVisible.yearlyPeriodRoi && (
-                          <YAxis
-                            yAxisId="right"
-                            orientation="right"
-                            stroke={isDarkMode ? '#f472b6' : '#db2777'}
-                            tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }}
-                            axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
-                            tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
-                            width={cumulativeRightAxisWidth}
-                            domain={['auto', 'auto']}
-                            tickFormatter={(val: number) => `${Math.round(Number(val))}%`}
-                          />
-                        )}
+                        {/*
+                          右軸始終掛載（刻度／軸線僅在勾選報酬率時顯示），避免 Recharts 因掛卸軸而重算繪圖區造成「縮圖」。
+                        */}
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          stroke={
+                            trendSeriesVisible.yearlyPeriodRoi
+                              ? isDarkMode
+                                ? '#f472b6'
+                                : '#db2777'
+                              : 'transparent'
+                          }
+                          tick={
+                            trendSeriesVisible.yearlyPeriodRoi
+                              ? { fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }
+                              : false
+                          }
+                          axisLine={
+                            trendSeriesVisible.yearlyPeriodRoi
+                              ? { stroke: isDarkMode ? '#f472b6' : '#db2777' }
+                              : false
+                          }
+                          tickLine={
+                            trendSeriesVisible.yearlyPeriodRoi
+                              ? { stroke: isDarkMode ? '#f472b6' : '#db2777' }
+                              : false
+                          }
+                          width={cumulativeRightAxisWidth}
+                          domain={['auto', 'auto']}
+                          tickFormatter={(val: number) => `${Math.round(Number(val))}%`}
+                        />
                         <Tooltip
                           contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                           labelStyle={{ color: '#0f172a', fontWeight: 700 }}
@@ -1025,18 +1044,23 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             dot={false}
                           />
                         )}
-                        {trendSeriesVisible.yearlyPeriodRoi && (
-                          <Line
-                            yAxisId="right"
-                            type="monotone"
-                            dataKey="yearlyPeriodRoi"
-                            name={translations.dashboard.chartLabels.yearlyPeriodRoi}
-                            stroke="#db2777"
-                            strokeWidth={2}
-                            dot={{ r: cumulativeRoiDotSize, fill: '#db2777', strokeWidth: 0 }}
-                            connectNulls
-                          />
-                        )}
+                        <Line
+                          yAxisId="right"
+                          type="monotone"
+                          dataKey="yearlyPeriodRoi"
+                          name={translations.dashboard.chartLabels.yearlyPeriodRoi}
+                          stroke={trendSeriesVisible.yearlyPeriodRoi ? '#db2777' : 'transparent'}
+                          strokeWidth={trendSeriesVisible.yearlyPeriodRoi ? 2 : 0}
+                          dot={
+                            trendSeriesVisible.yearlyPeriodRoi
+                              ? { r: cumulativeRoiDotSize, fill: '#db2777', strokeWidth: 0 }
+                              : false
+                          }
+                          activeDot={trendSeriesVisible.yearlyPeriodRoi ? undefined : false}
+                          connectNulls
+                          legendType={trendSeriesVisible.yearlyPeriodRoi ? 'line' : 'none'}
+                          isAnimationActive={trendSeriesVisible.yearlyPeriodRoi}
+                        />
                         {showCumulativeBrush && (
                           <Brush
                             dataKey="year"
