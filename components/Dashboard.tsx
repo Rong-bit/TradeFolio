@@ -22,6 +22,27 @@ const SHOW_ANNUAL_PERFORMANCE_TABLE = false;
 /** 雙鈕一體式膠囊：外框圓角、內鈕無縫、中間無分隔線 */
 const SEGMENT_PILL_CLASS =
   'inline-flex overflow-hidden rounded-lg border border-slate-200 shadow-sm dark:border-slate-600';
+
+/** 證券戶列表：md 以上橫向捲動時凍結第 1～7 欄（含未實現／已實現／股利標題），需與 min-w 對齊 */
+const ACCOUNT_COL_STICKY = {
+  c1: 'sticky left-0 z-[45] min-w-[10rem]',
+  c2: 'md:sticky md:left-[10rem] md:z-[46] md:min-w-[7rem]',
+  c3: 'md:sticky md:left-[17rem] md:z-[47] md:min-w-[7rem]',
+  c4: 'md:sticky md:left-[24rem] md:z-[48] md:min-w-[7rem]',
+  c5: 'md:sticky md:left-[31rem] md:z-[49] md:min-w-[7.5rem]',
+  c6: 'md:sticky md:left-[38.5rem] md:z-[50] md:min-w-[7.5rem]',
+  c7: 'md:sticky md:left-[46rem] md:z-[51] md:min-w-[7.5rem]',
+  tdZ: {
+    c1: 'sticky left-0 z-[25] min-w-[10rem]',
+    c2: 'md:sticky md:left-[10rem] md:z-[26] md:min-w-[7rem]',
+    c3: 'md:sticky md:left-[17rem] md:z-[27] md:min-w-[7rem]',
+    c4: 'md:sticky md:left-[24rem] md:z-[28] md:min-w-[7rem]',
+    c5: 'md:sticky md:left-[31rem] md:z-[29] md:min-w-[7.5rem]',
+    c6: 'md:sticky md:left-[38.5rem] md:z-[30] md:min-w-[7.5rem]',
+    c7: 'md:sticky md:left-[46rem] md:z-[31] md:min-w-[7.5rem]',
+  },
+  theadBg: 'bg-slate-50 dark:bg-slate-800',
+} as const;
 const SEGMENT_BTN_CLASS =
   'px-3 py-1.5 text-sm rounded-none transition whitespace-nowrap focus:outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400/90';
 
@@ -1437,15 +1458,27 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           <table className="min-w-full border-separate border-spacing-0 text-sm sm:text-base text-left">
             <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
               <tr>
-                <th className="px-3 py-2 sticky left-0 z-20 min-w-[10rem] bg-slate-50 border-r border-slate-200 shadow-[4px_0_12px_-6px_rgba(15,23,42,0.12)] dark:bg-slate-800 dark:border-slate-600 dark:shadow-[4px_0_12px_-6px_rgba(0,0,0,0.35)]">
+                <th className={`px-3 py-2 ${ACCOUNT_COL_STICKY.c1} ${ACCOUNT_COL_STICKY.theadBg}`}>
                   {translations.dashboard.accountName}
                 </th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.totalAssetsNT}</th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.marketValueNT}</th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.balanceNT}</th>
-                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.unrealizedPL}</th>
-                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.realizedPL}</th>
-                <th className="px-3 py-2 text-right hidden md:table-cell">{translations.dashboard.dividendInterest}</th>
+                <th className={`px-3 py-2 text-right ${ACCOUNT_COL_STICKY.c2} ${ACCOUNT_COL_STICKY.theadBg}`}>
+                  {translations.dashboard.totalAssetsNT}
+                </th>
+                <th className={`px-3 py-2 text-right ${ACCOUNT_COL_STICKY.c3} ${ACCOUNT_COL_STICKY.theadBg}`}>
+                  {translations.dashboard.marketValueNT}
+                </th>
+                <th className={`px-3 py-2 text-right ${ACCOUNT_COL_STICKY.c4} ${ACCOUNT_COL_STICKY.theadBg}`}>
+                  {translations.dashboard.balanceNT}
+                </th>
+                <th className={`px-3 py-2 text-right hidden md:table-cell ${ACCOUNT_COL_STICKY.c5} ${ACCOUNT_COL_STICKY.theadBg}`}>
+                  {translations.dashboard.unrealizedPL}
+                </th>
+                <th className={`px-3 py-2 text-right hidden md:table-cell ${ACCOUNT_COL_STICKY.c6} ${ACCOUNT_COL_STICKY.theadBg}`}>
+                  {translations.dashboard.realizedPL}
+                </th>
+                <th className={`px-3 py-2 text-right hidden md:table-cell ${ACCOUNT_COL_STICKY.c7} ${ACCOUNT_COL_STICKY.theadBg}`}>
+                  {translations.dashboard.dividendInterest}
+                </th>
                 <th className="px-3 py-2 text-right">
                   <span className="inline-flex items-center justify-end gap-1">
                     {translations.dashboard.profitNT}
@@ -1516,7 +1549,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         style={{ transition: "background-color 0.15s" }}
                       >
                         <td
-                          className="px-3 py-2 font-semibold text-sm sm:text-base sticky left-0 z-10 min-w-[10rem] border-r border-slate-200 shadow-[4px_0_12px_-6px_rgba(15,23,42,0.08)] dark:border-slate-600 dark:shadow-[4px_0_12px_-6px_rgba(0,0,0,0.3)]"
+                          className={`px-3 py-2 font-semibold text-sm sm:text-base ${ACCOUNT_COL_STICKY.tdZ.c1}`}
                           style={{
                             transition: "background-color 0.15s",
                             backgroundColor:
@@ -1555,30 +1588,78 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           </div>
                         </td>
                         <td
-                          className="px-3 py-2 text-right font-bold tabular-nums text-sm sm:text-base"
-                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
+                          className={`px-3 py-2 text-right font-bold tabular-nums text-sm sm:text-base ${ACCOUNT_COL_STICKY.tdZ.c2}`}
+                          style={{
+                            transition: "background-color 0.15s",
+                            backgroundColor:
+                              hoveredAccountId === acc.id
+                                ? (isDarkMode ? "#334155" : "#f8fafc")
+                                : "#ffffff",
+                            color: isDarkMode ? "#e2e8f0" : "#334155",
+                          }}
                         >
                           {formatCurrency(totalAssets, displayCurrency)}
                         </td>
                         <td
-                          className="px-3 py-2 text-right tabular-nums text-sm sm:text-base"
-                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
+                          className={`px-3 py-2 text-right tabular-nums text-sm sm:text-base ${ACCOUNT_COL_STICKY.tdZ.c3}`}
+                          style={{
+                            transition: "background-color 0.15s",
+                            backgroundColor:
+                              hoveredAccountId === acc.id
+                                ? (isDarkMode ? "#334155" : "#f8fafc")
+                                : "#ffffff",
+                            color: isDarkMode ? "#e2e8f0" : "#334155",
+                          }}
                         >
                           {formatCurrency(marketValue, displayCurrency)}
                         </td>
                         <td
-                          className="px-3 py-2 text-right tabular-nums text-sm sm:text-base"
-                          style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
+                          className={`px-3 py-2 text-right tabular-nums text-sm sm:text-base ${ACCOUNT_COL_STICKY.tdZ.c4}`}
+                          style={{
+                            transition: "background-color 0.15s",
+                            backgroundColor:
+                              hoveredAccountId === acc.id
+                                ? (isDarkMode ? "#334155" : "#f8fafc")
+                                : "#ffffff",
+                            color: isDarkMode ? "#e2e8f0" : "#334155",
+                          }}
                         >
                           {formatCurrency(cashBalance, displayCurrency)}
                         </td>
-                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td
+                          className={`px-3 py-2 text-right font-bold hidden md:table-cell ${ACCOUNT_COL_STICKY.tdZ.c5} ${unrealizedProfit >= 0 ? 'text-success' : 'text-danger'}`}
+                          style={{
+                            transition: "background-color 0.15s",
+                            backgroundColor:
+                              hoveredAccountId === acc.id
+                                ? (isDarkMode ? "#334155" : "#f8fafc")
+                                : "#ffffff",
+                          }}
+                        >
                           {formatCurrency(unrealizedProfit, displayCurrency)}
                         </td>
-                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td
+                          className={`px-3 py-2 text-right font-bold hidden md:table-cell ${ACCOUNT_COL_STICKY.tdZ.c6} ${realizedProfit >= 0 ? 'text-success' : 'text-danger'}`}
+                          style={{
+                            transition: "background-color 0.15s",
+                            backgroundColor:
+                              hoveredAccountId === acc.id
+                                ? (isDarkMode ? "#334155" : "#f8fafc")
+                                : "#ffffff",
+                          }}
+                        >
                           {formatCurrency(realizedProfit, displayCurrency)}
                         </td>
-                        <td className={`px-3 py-2 text-right font-bold hidden md:table-cell ${income >= 0 ? 'text-success' : 'text-danger'}`}>
+                        <td
+                          className={`px-3 py-2 text-right font-bold hidden md:table-cell ${ACCOUNT_COL_STICKY.tdZ.c7} ${income >= 0 ? 'text-success' : 'text-danger'}`}
+                          style={{
+                            transition: "background-color 0.15s",
+                            backgroundColor:
+                              hoveredAccountId === acc.id
+                                ? (isDarkMode ? "#334155" : "#f8fafc")
+                                : "#ffffff",
+                          }}
+                        >
                           {formatCurrency(income, displayCurrency)}
                         </td>
                         <td className={`px-3 py-2 text-right font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>
