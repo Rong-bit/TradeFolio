@@ -251,14 +251,14 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   }, []);
 
   /**
-   * 固定 margin：右側預留 % 軸，勾選／取消「年度報酬率」時繪圖區寬度不變。
-   * 窄螢幕 left≈10、right 略小於舊版 40，整體接近手動版「左 10 + 右 8」的視覺比例並保留右軸空間。
+   * 窄螢幕右側只留 Y 軸刻度寬（margin.right 盡量小），避免繪圖區右側一大塊空白；
+   * 右軸 width 與 margin 合計仍需容納「12%」類刻度，勾選報酬率時不另加大 margin。
    */
   const cumulativeChartMargin = useMemo(() => {
     if (isTrendChartCompact) {
-      return { top: 10, left: 10, right: 36, bottom: 60 };
+      return { top: 8, left: 8, right: 2, bottom: 58 };
     }
-    return { top: 10, left: 44, right: 48, bottom: 60 };
+    return { top: 10, left: 44, right: 40, bottom: 60 };
   }, [isTrendChartCompact]);
 
   useEffect(() => {
@@ -486,7 +486,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   const cumulativeXAxisFontSize = isTrendChartCompact ? 9 : 10;
   const cumulativeXAxisHeight = isTrendChartCompact ? 68 : 60;
   const cumulativeLeftAxisWidth = isTrendChartCompact ? 30 : 39;
-  const cumulativeRightAxisWidth = isTrendChartCompact ? 30 : 40;
+  const cumulativeRightAxisWidth = isTrendChartCompact ? 26 : 38;
+  const cumulativeRoiAxisTickFontSize = isTrendChartCompact ? 8 : 9;
   const cumulativeBarSize = isTrendChartCompact ? 22 : 30;
   const cumulativeDotSize = isTrendChartCompact ? 3 : 4;
   const cumulativeRoiDotSize = isTrendChartCompact ? 2 : 3;
@@ -839,7 +840,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 <div
                   className={
                     isTrendChartCompact
-                      ? `w-screen max-w-[100vw] min-w-0 ${cumulativeChartHeightClass} ml-[calc(50%-50vw)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]`
+                      ? `w-screen max-w-[100vw] min-w-0 ${cumulativeChartHeightClass} ml-[calc(50%-50vw)] pl-[max(0px,env(safe-area-inset-left))]`
                       : `w-full min-w-0 ${cumulativeChartHeightClass} -ml-2 sm:ml-0 -mr-10 sm:-mr-5 md:-mr-3 md:ml-0 lg:mx-0`
                   }
                 >
@@ -896,7 +897,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           }
                           tick={
                             trendSeriesVisible.yearlyPeriodRoi
-                              ? { fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }
+                              ? {
+                                  fill: isDarkMode ? '#f472b6' : '#db2777',
+                                  fontSize: cumulativeRoiAxisTickFontSize,
+                                }
                               : false
                           }
                           axisLine={
