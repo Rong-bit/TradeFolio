@@ -240,20 +240,23 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   }, [accounts, cashFlows, transactions, rates]);
 
 
-  /** 累積損益圖：窄螢幕下縮小 Recharts margin／避免雙 Y 軸佔寬，使繪圖區接近「按年」瀑布圖 */
+  /** 累積損益圖：窄螢幕（與瀑布圖同款判斷）— 外擴 margin、較緊卡片內距，繪圖區較大 */
   const [isTrendChartCompact, setIsTrendChartCompact] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)');
+    const mq = window.matchMedia('(max-width: 640px)');
     const apply = () => setIsTrendChartCompact(mq.matches);
     apply();
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
   }, []);
 
-  /** 固定 margin：右側預留報酬率軸寬度；勾選／取消年度報酬率時繪圖區寬度不變 */
+  /**
+   * 固定 margin：右側預留 % 軸，勾選／取消「年度報酬率」時繪圖區寬度不變。
+   * 窄螢幕 left≈10、right 略小於舊版 40，整體接近手動版「左 10 + 右 8」的視覺比例並保留右軸空間。
+   */
   const cumulativeChartMargin = useMemo(() => {
     if (isTrendChartCompact) {
-      return { top: 6, left: 4, right: 40, bottom: 52 };
+      return { top: 10, left: 10, right: 36, bottom: 60 };
     }
     return { top: 10, left: 44, right: 48, bottom: 60 };
   }, [isTrendChartCompact]);
@@ -476,6 +479,21 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     () => buildWaterfallYearRows(attributionSeries, cashFlows, portfolioAccounts, rates),
     [attributionSeries, cashFlows, portfolioAccounts, rates]
   );
+
+  const cumulativeChartHeightClass = isTrendChartCompact
+    ? 'h-[400px] md:h-[540px]'
+    : 'h-[380px] md:h-[540px]';
+  const cumulativeXAxisFontSize = isTrendChartCompact ? 9 : 10;
+  const cumulativeXAxisHeight = isTrendChartCompact ? 68 : 60;
+  const cumulativeLeftAxisWidth = isTrendChartCompact ? 30 : 39;
+  const cumulativeRightAxisWidth = isTrendChartCompact ? 30 : 40;
+  const cumulativeBarSize = isTrendChartCompact ? 22 : 30;
+  const cumulativeDotSize = isTrendChartCompact ? 3 : 4;
+  const cumulativeRoiDotSize = isTrendChartCompact ? 2 : 3;
+  const showCumulativeBrush = isTrendChartCompact
+    ? quarterlyTrendData.length > 16
+    : quarterlyTrendData.length > 8;
+
   return (
     <div className="space-y-6">
       {/* ① Summary Cards — enhanced with trend arrows + sparkline */}
@@ -747,7 +765,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
       {/* 主圖：累積損益（按季）／按年資金流瀑布 */}
       {!isGuest && (
-        <div className="bg-white p-4 sm:p-6 rounded-xl shadow overflow-hidden">
+        <div className="bg-white p-3 sm:p-6 rounded-xl shadow overflow-hidden">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-3">
             <div className="min-w-0 flex-1">
               {mainChartTab === 'cumulative' ? (
@@ -818,7 +836,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     </label>
                   ))}
                 </div>
-                <div className="w-full min-w-0 h-[400px] md:h-[540px]">
+                <div className={`w-full min-w-0 ${cumulativeChartHeightClass} -mx-2 sm:mx-0`}>
                   {isMounted && quarterlyTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%" debounce={50}>
                       <ComposedChart
@@ -832,15 +850,15 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         <XAxis
                           dataKey="year"
                           stroke={isDarkMode ? '#cbd5e1' : '#64748b'}
-                          tick={{ fill: isDarkMode ? '#cbd5e1' : '#64748b', fontSize: 10 }}
+                          tick={{ fill: isDarkMode ? '#cbd5e1' : '#64748b', fontSize: cumulativeXAxisFontSize }}
                           axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
-                          fontSize={10}
+                          fontSize={cumulativeXAxisFontSize}
                           className="text-xs"
                           padding={isTrendChartCompact ? { left: 0, right: 0 } : { left: 10, right: 10 }}
                           angle={-45}
                           textAnchor="end"
-                          height={isTrendChartCompact ? 54 : 60}
+                          height={cumulativeXAxisHeight}
                         />
                         <YAxis
                           yAxisId="left"
@@ -850,7 +868,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           className="text-xs"
-                          width={isTrendChartCompact ? 34 : 39}
+                          width={cumulativeLeftAxisWidth}
                           tickFormatter={(val: number) => {
                             if (Math.abs(val) >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
                             if (Math.abs(val) >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
@@ -865,7 +883,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             tick={{ fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }}
                             axisLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
                             tickLine={{ stroke: isDarkMode ? '#f472b6' : '#db2777' }}
-                            width={isTrendChartCompact ? 34 : 40}
+                            width={cumulativeRightAxisWidth}
                             domain={['auto', 'auto']}
                             tickFormatter={(val: number) => `${Math.round(Number(val))}%`}
                           />
@@ -969,7 +987,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             name={translations.dashboard.chartLabels.investmentCost}
                             stackId="a"
                             fill="#8b5cf6"
-                            barSize={30}
+                            barSize={cumulativeBarSize}
                           />
                         )}
                         {trendSeriesVisible.profit && (
@@ -978,7 +996,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             dataKey="profit"
                             name={translations.dashboard.chartLabels.barName}
                             stackId="a"
-                            barSize={30}
+                            barSize={cumulativeBarSize}
                             shape={(props: any) => {
                               const barFill = props?.payload?.profit >= 0 ? '#10b981' : '#ef4444';
                               return <Rectangle {...props} fill={barFill} />;
@@ -993,7 +1011,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             name={translations.dashboard.chartLabels.totalAssets}
                             stroke="#3b82f6"
                             strokeWidth={3}
-                            dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
+                            dot={{ r: cumulativeDotSize, fill: '#3b82f6', strokeWidth: 0 }}
                           />
                         )}
                         {trendSeriesVisible.estTotalAssets && (
@@ -1015,20 +1033,22 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             name={translations.dashboard.chartLabels.yearlyPeriodRoi}
                             stroke="#db2777"
                             strokeWidth={2}
-                            dot={{ r: 3, fill: '#db2777', strokeWidth: 0 }}
+                            dot={{ r: cumulativeRoiDotSize, fill: '#db2777', strokeWidth: 0 }}
                             connectNulls
                           />
                         )}
-                        <Brush
-                          dataKey="year"
-                          height={28}
-                          stroke={isDarkMode ? '#64748b' : '#94a3b8'}
-                          fill={isDarkMode ? '#1e293b' : '#f1f5f9'}
-                          travellerWidth={8}
-                          startIndex={0}
-                          style={{ fontSize: '10px' }}
-                          tickFormatter={v => String(v)}
-                        />
+                        {showCumulativeBrush && (
+                          <Brush
+                            dataKey="year"
+                            height={28}
+                            stroke={isDarkMode ? '#64748b' : '#94a3b8'}
+                            fill={isDarkMode ? '#1e293b' : '#f1f5f9'}
+                            travellerWidth={8}
+                            startIndex={0}
+                            style={{ fontSize: '10px' }}
+                            tickFormatter={v => String(v)}
+                          />
+                        )}
                       </ComposedChart>
                     </ResponsiveContainer>
                   ) : (
