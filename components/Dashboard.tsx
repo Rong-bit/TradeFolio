@@ -800,7 +800,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     </label>
                   ))}
                 </div>
-                <div className="w-full h-[300px] md:h-[450px]">
+                <div className="w-full h-[380px] md:h-[540px]">
                   {isMounted && quarterlyTrendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
