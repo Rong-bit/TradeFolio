@@ -364,6 +364,72 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     return result;
   }, [holdings, rates, tickerClassOverrides, portfolioAccounts, translations]);
 
+  const allocationIncludingCash = useMemo(() => {
+    let stockValue = 0;
+    let bondValue = 0;
+    holdings.forEach((h: Holding) => {
+      const value = holdingValueToTWD(h, portfolioAccounts, rates);
+      const assetClass = getAssetClassForTicker(h.ticker, tickerClassOverrides);
+      if (assetClass === AssetClass.BOND) bondValue += value;
+      else if (assetClass === AssetClass.EQUITY) stockValue += value;
+    });
+
+    const cashValue = Math.max(0, summary.cashBalanceTWD || 0);
+    const investedTotal = stockValue + bondValue;
+    const totalWithCash = investedTotal + cashValue;
+    if (totalWithCash <= 0) {
+      return {
+        outer: [] as Array<{ name: string; value: number; ratio: number; color: string }>,
+        inner: [] as Array<{ name: string; value: number; ratio: number; color: string }>,
+      };
+    }
+
+    const cashLabel = translate('rebalance.cash', language);
+    const outer = tickerAllocationOuter
+      .map(item => ({
+        ...item,
+        ratio: (item.value / totalWithCash) * 100,
+      }))
+      .filter(item => item.value > 0);
+
+    if (cashValue > 0) {
+      outer.push({
+        name: cashLabel,
+        value: cashValue,
+        ratio: (cashValue / totalWithCash) * 100,
+        color: '#94a3b8',
+      });
+    }
+
+    const inner: Array<{ name: string; value: number; ratio: number; color: string }> = [];
+    if (stockValue > 0) {
+      inner.push({
+        name: translations.dashboard.equityLabelShort,
+        value: stockValue,
+        ratio: (stockValue / totalWithCash) * 100,
+        color: ALLOCATION_INNER_EQUITY_COLOR,
+      });
+    }
+    if (bondValue > 0) {
+      inner.push({
+        name: translations.dashboard.bondLabelShort,
+        value: bondValue,
+        ratio: (bondValue / totalWithCash) * 100,
+        color: ALLOCATION_INNER_BOND_COLOR,
+      });
+    }
+    if (cashValue > 0) {
+      inner.push({
+        name: cashLabel,
+        value: cashValue,
+        ratio: (cashValue / totalWithCash) * 100,
+        color: '#94a3b8',
+      });
+    }
+
+    return { outer, inner };
+  }, [holdings, portfolioAccounts, rates, tickerClassOverrides, summary.cashBalanceTWD, tickerAllocationOuter, translations, language]);
+
   const costDetails = useMemo(() => {
     return cashFlows
       .filter((cf: CashFlow) => cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.WITHDRAW)
@@ -486,8 +552,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   const cumulativeXAxisFontSize = isTrendChartCompact ? 9 : 10;
   const cumulativeXAxisHeight = isTrendChartCompact ? 68 : 60;
   const cumulativeLeftAxisWidth = isTrendChartCompact ? 30 : 39;
-  const cumulativeRightAxisWidth = isTrendChartCompact ? 26 : 38;
-  const cumulativeRoiAxisTickFontSize = isTrendChartCompact ? 8 : 9;
+  const cumulativeRightAxisWidth = isTrendChartCompact ? 30 : 40;
   const cumulativeBarSize = isTrendChartCompact ? 22 : 30;
   const cumulativeDotSize = isTrendChartCompact ? 3 : 4;
   const cumulativeRoiDotSize = isTrendChartCompact ? 2 : 3;
@@ -502,7 +567,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Net Cost Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-purple-500 relative group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-base font-bold uppercase tracking-wider flex justify-between items-center">
+          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider flex justify-between items-center">
             {translations.dashboard.netCost}
             <button
               onClick={() => setShowCostDetailModal(true)}
@@ -533,7 +598,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Total Assets Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-green-500 relative overflow-hidden group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-base font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
+          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
           <div className="flex items-center gap-2 mt-2">
             <p className="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums">
               {formatCurrency(toBase(summary.totalValueTWD + summary.cashBalanceTWD), baseCurrency)}
@@ -559,7 +624,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Total P/L Card */}
         <div className={`bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-emerald-500' : 'border-rose-500'} group hover:shadow-md transition-shadow`}>
-          <h4 className="text-slate-500 text-base font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
+          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
           <div className="flex items-center gap-2 mt-2">
             <span className={`text-lg leading-none ${summary.totalPLTWD >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
               {summary.totalPLTWD >= 0 ? '↑' : '↓'}
@@ -592,7 +657,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Annualized Return Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-blue-500 group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-base font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
+          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
           <div className="flex items-center gap-2 mt-2">
             <span className={`text-lg leading-none ${summary.annualizedReturn >= 0 ? 'text-blue-500' : 'text-orange-500'}`}>
               {summary.annualizedReturn >= 0 ? '↑' : '↓'}
@@ -687,6 +752,12 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 <span className="font-normal text-slate-400">({new Date().getFullYear()})</span>
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-slate-500 mb-1">{translations.dashboard.yearWithheldNhi}</p>
+                  <p className="text-lg font-bold text-teal-700 tabular-nums">
+                    {formatCurrency(toBase(summary.yearWithheldNhiTwd), baseCurrency)}
+                  </p>
+                </div>
                 <div>
                   <p className="text-sm text-slate-500 mb-1">{translations.dashboard.yearUsWithholding}</p>
                   <p className="text-lg font-bold text-indigo-700 tabular-nums">
@@ -839,7 +910,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 <div
                   className={
                     isTrendChartCompact
-                      ? `w-screen max-w-[100vw] min-w-0 ${cumulativeChartHeightClass} ml-[calc(50%-50vw)] pl-[max(0px,env(safe-area-inset-left))]`
+                      ? `w-screen max-w-[100vw] min-w-0 ${cumulativeChartHeightClass} ml-[calc(50%-50vw)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]`
                       : `w-full min-w-0 ${cumulativeChartHeightClass} -ml-2 sm:ml-0 -mr-10 sm:-mr-5 md:-mr-3 md:ml-0 lg:mx-0`
                   }
                 >
@@ -896,10 +967,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           }
                           tick={
                             trendSeriesVisible.yearlyPeriodRoi
-                              ? {
-                                  fill: isDarkMode ? '#f472b6' : '#db2777',
-                                  fontSize: cumulativeRoiAxisTickFontSize,
-                                }
+                              ? { fill: isDarkMode ? '#f472b6' : '#db2777', fontSize: 9 }
                               : false
                           }
                           axisLine={
@@ -1279,6 +1347,34 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   ))}
                 </div>
               </div>
+              <div className="border-t border-slate-200 pt-3">
+                <p className="text-xs font-semibold text-slate-500 mb-1">
+                  {translations.dashboard.legendMarketOuter}（{translations.dashboard.includeCash}）
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {allocationIncludingCash.outer.map((item, index) => (
+                    <div key={`${item.name}-with-cash-${index}`} className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="text-sm sm:text-xs font-semibold flex-1 font-mono text-slate-900 dark:text-slate-100">{item.name}</span>
+                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 mb-1">
+                  {translations.dashboard.stockBondRatioBadge}（{translations.dashboard.includeCash}）
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {allocationIncludingCash.inner.map((item, index) => (
+                    <div key={`${item.name}-stock-bond-cash-${index}`} className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.name}</span>
+                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {/* 股/債覆寫小表單：用來編輯 localStorage: assetClassOverrides */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
@@ -1504,7 +1600,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm sm:text-base text-left">
-            <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
+            <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-xs uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
               <tr>
                 <th className="px-3 py-2 sticky left-0 z-10 min-w-[10rem] bg-white dark:bg-slate-800">
                   {translations.dashboard.accountName}
