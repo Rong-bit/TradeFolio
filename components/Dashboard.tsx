@@ -1194,13 +1194,13 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           <p className="text-xs text-slate-500 mb-3">{translations.dashboard.allocationDonutSubtitle}</p>
           <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             <span className="mr-4">
-              目前總資產: <span className="font-semibold tabular-nums">{formatCurrency(toBase(totalAssetsWithCashTwd), baseCurrency)}</span>
+              {translations.dashboard.totalAssets}: <span className="font-semibold tabular-nums">{formatCurrency(toBase(totalAssetsWithCashTwd), baseCurrency)}</span>
             </span>
             <span className="mr-4">
-              含現金: <span className="font-semibold tabular-nums">{formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</span>
+              {translations.dashboard.includeCash}: <span className="font-semibold tabular-nums">{formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</span>
             </span>
             <span>
-              現金占比: <span className="font-semibold tabular-nums">{cashRatioOfTotalAssets.toFixed(2)}%</span>
+              {translations.marketChart.ratio}: <span className="font-semibold tabular-nums">{cashRatioOfTotalAssets.toFixed(2)}%</span>
             </span>
           </div>
           <div
@@ -1365,7 +1365,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               </div>
               <div className="border-t border-slate-200 pt-3">
                 <p className="text-xs font-semibold text-slate-500 mb-1">
-                  {translations.dashboard.legendMarketOuter}（{translations.dashboard.includeCash}）
+                  {translations.dashboard.legendMarketOuter} ({translations.dashboard.includeCash})
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {allocationIncludingCash.outer.map((item, index) => (
@@ -1379,7 +1379,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-500 mb-1">
-                  {translations.dashboard.stockBondRatioBadge}（{translations.dashboard.includeCash}）
+                  {translations.dashboard.stockBondRatioBadge} ({translations.dashboard.includeCash})
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {allocationIncludingCash.inner.map((item, index) => (
