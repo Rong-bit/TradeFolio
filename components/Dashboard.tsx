@@ -1191,7 +1191,6 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
-          <p className="text-xs text-slate-500 mb-3">{translations.dashboard.allocationDonutSubtitle}</p>
           <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             <span className="mr-4">
               {translations.dashboard.totalAssets}: <span className="font-semibold tabular-nums">{formatCurrency(toBase(totalAssetsWithCashTwd), baseCurrency)}</span>
@@ -1208,36 +1207,36 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             onPointerEnter={cancelAllocationHoverClear}
             onPointerLeave={scheduleAllocationHoverClear}
           >
-          {(activeOuterIndex !== undefined && tickerAllocationOuter[activeOuterIndex]) || (activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex]) ? (
+          {(activeOuterIndex !== undefined && allocationIncludingCash.outer[activeOuterIndex]) || (activeInnerIndex !== undefined && allocationIncludingCash.inner[activeInnerIndex]) ? (
             <div className="mb-3 px-3 py-2 rounded-lg flex items-center gap-3 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-              {activeOuterIndex !== undefined && tickerAllocationOuter[activeOuterIndex] ? (
+              {activeOuterIndex !== undefined && allocationIncludingCash.outer[activeOuterIndex] ? (
                 <>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: tickerAllocationOuter[activeOuterIndex].color }} />
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: allocationIncludingCash.outer[activeOuterIndex].color }} />
                   <span className="font-semibold font-mono text-slate-900 dark:text-slate-100">
-                    {tickerAllocationOuter[activeOuterIndex].name}
+                    {allocationIncludingCash.outer[activeOuterIndex].name}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-semibold">{translations.dashboard.marketDistribution}</span>
                   <span className="text-sm ml-auto text-slate-900 dark:text-slate-200 tabular-nums">
-                    {tickerAllocationOuter[activeOuterIndex].ratio.toFixed(1)}%
+                    {allocationIncludingCash.outer[activeOuterIndex].ratio.toFixed(1)}%
                   </span>
                   <span className="font-mono font-bold text-slate-900 dark:text-slate-200">
-                    {formatCurrency(toBase(tickerAllocationOuter[activeOuterIndex].value), baseCurrency)}
+                    {formatCurrency(toBase(allocationIncludingCash.outer[activeOuterIndex].value), baseCurrency)}
                   </span>
                 </>
-              ) : activeInnerIndex !== undefined && stockBondAllocation[activeInnerIndex] ? (
+              ) : activeInnerIndex !== undefined && allocationIncludingCash.inner[activeInnerIndex] ? (
                 <>
-                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: stockBondAllocation[activeInnerIndex].color }} />
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: allocationIncludingCash.inner[activeInnerIndex].color }} />
                   <span className="font-semibold text-slate-900 dark:text-slate-100">
-                    {stockBondAllocation[activeInnerIndex].name}
+                    {allocationIncludingCash.inner[activeInnerIndex].name}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-semibold">
-                    {translations.dashboard.stockBondRatioBadge}
+                    {translations.dashboard.stockBondRatioBadge} ({translations.dashboard.includeCash})
                   </span>
                   <span className="text-sm ml-auto text-slate-900 dark:text-slate-200 tabular-nums">
-                    {stockBondAllocation[activeInnerIndex].ratio.toFixed(1)}%
+                    {allocationIncludingCash.inner[activeInnerIndex].ratio.toFixed(1)}%
                   </span>
                   <span className="font-mono font-bold text-slate-900 dark:text-slate-200">
-                    {formatCurrency(toBase(stockBondAllocation[activeInnerIndex].value), baseCurrency)}
+                    {formatCurrency(toBase(allocationIncludingCash.inner[activeInnerIndex].value), baseCurrency)}
                   </span>
                 </>
               ) : null}
@@ -1245,11 +1244,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           ) : null}
           <div className="w-full flex flex-col lg:flex-row items-center gap-6">
             <div className="w-full max-w-sm h-72">
-              {isMounted && (stockBondAllocation.length > 0 || tickerAllocationOuter.length > 0) ? (
+              {isMounted && (allocationIncludingCash.inner.length > 0 || allocationIncludingCash.outer.length > 0) ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={tickerAllocationOuter}
+                      data={allocationIncludingCash.outer}
                       cx="50%"
                       cy="50%"
                       innerRadius={72}
@@ -1265,7 +1264,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         setActiveInnerIndex(undefined);
                       }}
                     >
-                      {tickerAllocationOuter.map((entry, index) => (
+                      {allocationIncludingCash.outer.map((entry, index) => (
                         <Cell
                           key={`outer-${entry.name}-${index}`}
                           fill={entry.color}
@@ -1275,7 +1274,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                       ))}
                     </Pie>
                     <Pie
-                      data={stockBondAllocation}
+                      data={allocationIncludingCash.inner}
                       cx="50%"
                       cy="50%"
                       innerRadius={36}
@@ -1291,9 +1290,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         setActiveOuterIndex(undefined);
                       }}
                     >
-                      {stockBondAllocation.map((entry, index) => (
+                      {allocationIncludingCash.inner.map((entry, index) => (
                         <Cell
-                          key={`inner-${entry.assetClass}-${index}`}
+                          key={`inner-${entry.name}-${index}`}
                           fill={entry.color}
                           opacity={activeInnerIndex === undefined || activeInnerIndex === index ? 1 : 0.45}
                           style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
@@ -1320,9 +1319,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             </div>
             <div className="flex-1 w-full space-y-3">
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.legendMarketOuter}</p>
+                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.legendMarketOuter} ({translations.dashboard.includeCash})</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {tickerAllocationOuter.map((item, index) => (
+                  {allocationIncludingCash.outer.map((item, index) => (
                     <div
                       key={`${item.name}-${index}`}
                       className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
@@ -1342,11 +1341,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.legendStockBondInner}</p>
+                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.legendStockBondInner} ({translations.dashboard.includeCash})</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {stockBondAllocation.map((item, index) => (
+                  {allocationIncludingCash.inner.map((item, index) => (
                     <div
-                      key={`${item.assetClass}-${index}`}
+                      key={`${item.name}-${index}`}
                       className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all ${
                         activeInnerIndex === index ? 'bg-slate-50 dark:bg-slate-700/50 shadow-sm' : 'bg-transparent'
                       }`}
@@ -1356,34 +1355,6 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         setActiveOuterIndex(undefined);
                       }}
                     >
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.name}</span>
-                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="border-t border-slate-200 pt-3">
-                <p className="text-xs font-semibold text-slate-500 mb-1">
-                  {translations.dashboard.legendMarketOuter} ({translations.dashboard.includeCash})
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {allocationIncludingCash.outer.map((item, index) => (
-                    <div key={`${item.name}-with-cash-${index}`} className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-sm sm:text-xs font-semibold flex-1 font-mono text-slate-900 dark:text-slate-100">{item.name}</span>
-                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">
-                  {translations.dashboard.stockBondRatioBadge} ({translations.dashboard.includeCash})
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                  {allocationIncludingCash.inner.map((item, index) => (
-                    <div key={`${item.name}-stock-bond-cash-${index}`} className="flex items-center gap-2 px-2 py-1.5 rounded-lg">
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                       <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.name}</span>
                       <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
