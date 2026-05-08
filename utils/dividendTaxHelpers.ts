@@ -10,8 +10,8 @@ export function dividendScheduleMapKey(market: Market, ticker: string): string {
 export const TW_NHI_SUPPLEMENT_THRESHOLD_TWD = 20_000;
 /** 補充保費率（參考常數） */
 export const TW_NHI_SUPPLEMENT_RATE = 0.0211;
-/** 美股配息常見預扣 30%，稅後約 70%（僅供試算） */
-export const US_DIVIDEND_NET_FACTOR = 0.7;
+/** 美股配息常見預扣 30%（僅供試算） */
+export const US_DIVIDEND_WITHHOLDING_RATE = 0.3;
 export function marketToYahooMarketForDividends(m: Market): YahooMarket | null {
   const map: Partial<Record<Market, YahooMarket>> = {
     [Market.US]: 'US',
@@ -54,5 +54,16 @@ export function isHighDividendTwEtfTicker(ticker: string): boolean {
 /** 美股：試算稅後配息（原幣） */
 export function usEstimatedNetDividendNative(shares: number, lastAmountPerShareUsd: number): number {
   if (shares <= 0 || lastAmountPerShareUsd <= 0) return 0;
-  return shares * lastAmountPerShareUsd * US_DIVIDEND_NET_FACTOR;
+
+  // 1. 先計算總額（以美分為單位，避免浮點數誤差）
+  const grossCents = Math.round(shares * lastAmountPerShareUsd * 100);
+
+  // 2. 計算稅金（30%），同樣四捨五入到美分（US_DIVIDEND_WITHHOLDING_RATE 應為 0.3）
+  const taxCents = Math.round(grossCents * US_DIVIDEND_WITHHOLDING_RATE);
+
+  // 3. 實領金額 = 總額 - 稅金
+  const netCents = grossCents - taxCents;
+
+  // 4. 轉回美元
+  return netCents / 100;
 }
