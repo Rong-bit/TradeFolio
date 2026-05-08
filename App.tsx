@@ -354,10 +354,14 @@ const App: React.FC = () => {
     }, 0);
 
     const reportYear = new Date().getFullYear();
+    let yearWithheldNhiTwd = 0;
     let yearUsWithholdingTwd = 0;
     transactions.forEach((t: Transaction) => {
       if (t.type !== TransactionType.CASH_DIVIDEND) return;
       if (new Date(t.date).getFullYear() !== reportYear) return;
+      if (t.withheldNhiTwd != null && t.withheldNhiTwd > 0) {
+        yearWithheldNhiTwd += t.withheldNhiTwd;
+      }
       if (t.market === Market.US) {
         const netNative = (t.amount ?? t.price * t.quantity) - (t.fees || 0);
         if (t.withheldUsTaxNative != null && t.withheldUsTaxNative > 0) {
@@ -381,6 +385,7 @@ const App: React.FC = () => {
       accumulatedCashDividendsTWD: sumDiv(TransactionType.CASH_DIVIDEND),
       accumulatedStockDividendsTWD: sumDiv(TransactionType.DIVIDEND),
       avgExchangeRate: totalUsdInflow > 0 ? totalTwdCostForUsd / totalUsdInflow : 0,
+      yearWithheldNhiTwd,
       yearUsWithholdingTwd,
     };
   }, [baseHoldings, computedAccounts, cashFlows, rates, accounts, transactions]);
