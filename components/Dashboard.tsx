@@ -364,6 +364,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     return result;
   }, [holdings, rates, tickerClassOverrides, portfolioAccounts, translations]);
 
+  const totalAssetsWithCashTwd = summary.totalValueTWD + summary.cashBalanceTWD;
+  const cashRatioOfTotalAssets = totalAssetsWithCashTwd > 0
+    ? (summary.cashBalanceTWD / totalAssetsWithCashTwd) * 100
+    : 0;
+
   const allocationIncludingCash = useMemo(() => {
     let stockValue = 0;
     let bondValue = 0;
@@ -1187,6 +1192,17 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
           <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
           <p className="text-xs text-slate-500 mb-3">{translations.dashboard.allocationDonutSubtitle}</p>
+          <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            <span className="mr-4">
+              目前總資產: <span className="font-semibold tabular-nums">{formatCurrency(toBase(totalAssetsWithCashTwd), baseCurrency)}</span>
+            </span>
+            <span className="mr-4">
+              含現金: <span className="font-semibold tabular-nums">{formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</span>
+            </span>
+            <span>
+              現金占比: <span className="font-semibold tabular-nums">{cashRatioOfTotalAssets.toFixed(2)}%</span>
+            </span>
+          </div>
           <div
             className="allocation-donut-hover-zone"
             onPointerEnter={cancelAllocationHoverClear}
