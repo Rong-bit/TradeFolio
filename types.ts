@@ -186,6 +186,8 @@ export interface PortfolioSummary {
   accumulatedCashDividendsTWD: number;
   accumulatedStockDividendsTWD: number;
   avgExchangeRate: number;
+  /** 當曆年：台股健保補充保費預扣合計（TWD） */
+  yearWithheldNhiTwd: number;
   /** 當曆年：美股現金股利預扣稅合計（TWD）：有填 withheldUsTaxNative 者加總，否則以實領金額用 30% 回推 */
   yearUsWithholdingTwd: number;
 }
