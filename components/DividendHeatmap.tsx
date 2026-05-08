@@ -10,6 +10,7 @@ import {
   dividendScheduleMapKey,
   marketToYahooMarketForDividends,
   TW_NHI_SUPPLEMENT_RATE,
+  TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD,
   twEstimatedSingleDividendTwd,
   twNhiSupplementFloorTwd,
   TW_NHI_SUPPLEMENT_THRESHOLD_TWD,
@@ -74,6 +75,7 @@ const DividendHeatmap: React.FC = () => {
   const tr = t(language);
   const [hoveredCell, setHoveredCell] = useState<{ year: number; month: number } | null>(null);
   const [showUpcomingDetails, setShowUpcomingDetails] = useState(false);
+  const [deductTwWireFee, setDeductTwWireFee] = useState(false);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const dtx = tr.dividendTax;
@@ -110,6 +112,8 @@ const DividendHeatmap: React.FC = () => {
       estUsdNet?: number;
       twNhiFeeTwd?: number;
       nhiTriggered?: boolean;
+      /** 二代健保門檻試算基礎（現金＋同次股票面額；目前僅現金） */
+      nhiThresholdBasisTwd?: number;
       usGrossDividend?: number;
     }> = [];
 
@@ -125,12 +129,18 @@ const DividendHeatmap: React.FC = () => {
         row.market === Market.US && info.lastAmountPerShare > 0
           ? usEstimatedNetDividendNative(row.quantity, info.lastAmountPerShare)
           : undefined;
+      // 同次股票股計入門檻：股數 × 每股面額（常見 10 元，見 TW_STOCK_FACE_VALUE_PER_SHARE_NHI_BASIS_TWD）；尚無資料時為 0
+      const twStockParForNhi = 0;
+      const nhiThresholdBasisTwd =
+        row.market === Market.TW && estTwd != null && estTwd > 0 ? estTwd + twStockParForNhi : undefined;
       const twNhiFeeTwd =
         row.market === Market.TW && estTwd != null && estTwd > 0
-          ? twNhiSupplementFloorTwd(estTwd)
+          ? twNhiSupplementFloorTwd(estTwd, twStockParForNhi)
           : undefined;
       const nhiTriggered =
-        row.market === Market.TW && estTwd != null && estTwd >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD;
+        row.market === Market.TW &&
+        nhiThresholdBasisTwd != null &&
+        nhiThresholdBasisTwd >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD;
       const usGrossDividend =
         row.market === Market.US && info.lastAmountPerShare > 0
           ? row.quantity * info.lastAmountPerShare
@@ -171,6 +181,7 @@ const DividendHeatmap: React.FC = () => {
         estUsdNet,
         twNhiFeeTwd,
         nhiTriggered,
+        nhiThresholdBasisTwd,
         usGrossDividend,
       });
     }
@@ -615,6 +626,15 @@ const DividendHeatmap: React.FC = () => {
         {showUpcomingDetails ? (
           <>
             <p className="text-xs text-slate-400 mb-2">{dtx.upcomingSubtitle}</p>
+            <label className="mb-2 inline-flex items-center gap-2 text-xs text-slate-600 select-none">
+              <input
+                type="checkbox"
+                checked={deductTwWireFee}
+                onChange={(e) => setDeductTwWireFee(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span>預估入帳扣除跨行匯費（每筆 {TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD} 元）</span>
+            </label>
             <p className="text-[10px] text-slate-400 mb-2">{dtx.dataFromYahoo} · {dtx.disclaimerShort}</p>
             {upcomingRows.length === 0 ? (
               <p className="text-xs text-slate-400 py-2">{dtx.upcomingEmpty}</p>
@@ -658,10 +678,23 @@ const DividendHeatmap: React.FC = () => {
                               <span className="rounded px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
                                 {Math.round(r.estTwd).toLocaleString()}
                               </span>
+                              {r.market === Market.TW && (
+                                <span
+                                  className="rounded px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold"
+                                  title={`預估入帳 = 預估配息 ${Math.round(r.estTwd).toLocaleString()} - 健保 ${(r.twNhiFeeTwd ?? 0).toLocaleString()}${deductTwWireFee ? ` - 匯費 ${TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD}` : ''}`}
+                                >
+                                  入帳
+                                  {' '}
+                                  {Math.max(
+                                    0,
+                                    Math.round(r.estTwd) - (r.twNhiFeeTwd ?? 0) - (deductTwWireFee ? TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD : 0)
+                                  ).toLocaleString()}
+                                </span>
+                              )}
                               {r.nhiTriggered && (
                                 <span
                                   className="rounded px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 font-semibold"
-                                  title={`${dtx.estNhiFee}: ${r.estTwd?.toLocaleString() ?? '0'} × 2.11% = ${r.twNhiFeeTwd?.toLocaleString() ?? '0'} TWD`}
+                                  title={`${dtx.estNhiFee}: ${(r.nhiThresholdBasisTwd ?? r.estTwd)?.toLocaleString() ?? '0'} × ${(TW_NHI_SUPPLEMENT_RATE * 100).toFixed(2)}% = ${r.twNhiFeeTwd?.toLocaleString() ?? '0'} TWD`}
                                 >
                                   {dtx.nhiForecastTag}
                                 </span>
