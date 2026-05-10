@@ -257,11 +257,14 @@ const DividendHeatmap: React.FC = () => {
         // 超過回溯窗格（以除息日為準）直接停止往更舊掃描，避免把陳年舊帳一直列出
         const exDateMs = new Date(`${rec.exDate}T12:00:00`).getTime();
         if (Number.isFinite(exDateMs) && exDateMs < lookbackCutoffMs) break;
-        // 與熱力圖月份顯示對齊：該 ticker 在「除息日同年同月」或「發放日同年同月」任一已有
-        // CASH_DIVIDEND 紀錄，都視為已記錄。台股季配常見除息 3 月 / 發放 4 月的跨月情境，雙月比對較不會漏判。
-        const existing =
-          findExistingCashDividendInSameMonth(transactions, row.ticker, rec.exDate) ??
-          findExistingCashDividendInSameMonth(transactions, row.ticker, payDate);
+        // 規則：「除息月」是否已有 CASH_DIVIDEND 紀錄。沒有就列入待確認。
+        // 不使用估發放月比對 —— 估發放日不穩定（券商實際入帳可能差數天到數週），
+        // 以「除息月」為單一基準，與熱力圖該月格子是否顯示實績的判斷一致。
+        const existing = findExistingCashDividendInSameMonth(
+          transactions,
+          row.ticker,
+          rec.exDate
+        );
         if (existing) continue;
         rows.push({
           key: `${key}|${rec.exDate}`,
