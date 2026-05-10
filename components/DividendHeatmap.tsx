@@ -8,7 +8,7 @@ import { transactionAmountNativeToTWD, valueInBaseCurrency } from '../utils/calc
 import { t, translate } from '../utils/i18n';
 import { useDividendSchedules } from '../hooks/useDividendSchedules';
 import { useActualDividends } from '../hooks/useActualDividends';
-import { findExistingCashDividendTx } from '../utils/dividendMatching';
+import { findExistingCashDividendInSameMonth } from '../utils/dividendMatching';
 import {
   dividendScheduleMapKey,
   marketToYahooMarketForDividends,
@@ -256,7 +256,9 @@ const DividendHeatmap: React.FC = () => {
         // 超過回溯窗格直接停止往更舊掃描（list 已由新到舊），避免把陳年舊帳一直列出
         const payDateMs = new Date(`${payDate}T12:00:00`).getTime();
         if (Number.isFinite(payDateMs) && payDateMs < lookbackCutoffMs) break;
-        const existing = findExistingCashDividendTx(transactions, row.ticker, rec.exDate);
+        // 與熱力圖月份顯示對齊：只要該 ticker 在「發放日同年同月」已有 CASH_DIVIDEND 紀錄，
+        // 即視為已記錄；否則才列入待確認。發放日是估值時退用除息日的月份。
+        const existing = findExistingCashDividendInSameMonth(transactions, row.ticker, payDate);
         if (existing) continue;
         rows.push({
           key: `${key}|${rec.exDate}`,
