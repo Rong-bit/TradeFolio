@@ -166,6 +166,8 @@ export const de: Translations = {
     upcomingSubtitle: 'Amount ≈ last cash dividend/share × current shares; may differ from actual.',
     upcomingEmpty: 'No ex-dates in the next 90 days, or data unavailable.',
     upcomingExDate: 'Ex-date',
+    upcomingInferredMonthHint:
+      'Monat aus jüngstem Ex-Dividenden-Muster; bereits gebuchte Monate dieses Jahres werden übersprungen. Yahoo liefert kein Ex-Datum in den nächsten 90 Tagen (Spalte „—“). Betrag = letzte Dividende/Aktie × Stückzahl (Schätzung).',
     upcomingEstTwd: 'Est. payout (TWD)',
     upcomingEstUsd: 'Est. net (USD)',
     dataFromYahoo: 'Source: Yahoo Finance (cached locally)',
@@ -173,7 +175,7 @@ export const de: Translations = {
     usBadgeShort: '~70%',
     nhiForecastTag: 'Est. payout may trigger NHI supplement fee',
     pendingActualTitle: 'Tatsächliche Dividenden (MoneyDJ)',
-    pendingActualSubtitle: 'Bereits ausgezahlte Dividenden, die noch nicht erfasst sind. Mit „Hinzufügen“ als Bardividende eintragen.',
+    pendingActualSubtitle: 'Dividenden mit Ex-Tag in den letzten 90 Tagen, die noch nicht erfasst sind. Mit „Hinzufügen“ als Bardividende eintragen.',
     pendingActualEmpty: 'Keine offenen tatsächlichen Dividenden.',
     pendingActualLoading: 'MoneyDJ-Daten werden geladen …',
     pendingActualAddBtn: 'Hinzufügen',

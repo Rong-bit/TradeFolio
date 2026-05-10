@@ -238,6 +238,8 @@ export const ko: Translations = {
     upcomingSubtitle: 'Amount ≈ last cash dividend/share × current shares; may differ from actual.',
     upcomingEmpty: 'No ex-dates in the next 90 days, or data unavailable.',
     upcomingExDate: 'Ex-date',
+    upcomingInferredMonthHint:
+      'Month is inferred from recent ex-dividend months and skips months you already recorded this year. Yahoo has no ex-date in the next 90 days (ex-date shows "—"). Amount = last dividend/share × shares (estimate).',
     upcomingEstTwd: 'Est. payout (TWD)',
     upcomingEstUsd: 'Est. net (USD)',
     dataFromYahoo: 'Source: Yahoo Finance (cached locally)',
@@ -245,7 +247,7 @@ export const ko: Translations = {
     usBadgeShort: '~70%',
     nhiForecastTag: 'Est. payout may trigger NHI supplement fee',
     pendingActualTitle: '확인 필요한 실배당 (MoneyDJ)',
-    pendingActualSubtitle: '지급일이 지났지만 거래 기록에 없는 배당. "추가"를 누르면 현금 배당 거래로 등록됩니다.',
+    pendingActualSubtitle: '최근 90일 이내 배당락이 발생했지만 거래 기록에 없는 배당. "추가"를 누르면 현금 배당 거래로 등록됩니다.',
     pendingActualEmpty: '등록이 필요한 실배당이 없습니다.',
     pendingActualLoading: 'MoneyDJ 실적 데이터 로드 중…',
     pendingActualAddBtn: '거래에 추가',

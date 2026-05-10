@@ -177,6 +177,8 @@ zhCN.dividendTax = {
   upcomingSubtitle: '金额依「最近一次每股现金股利 × 目前持股」试算，与实际发放可能不同。',
   upcomingEmpty: '目前无符合条件的除息日程，或尚无法取得公开资料。',
   upcomingExDate: '除息日',
+  upcomingInferredMonthHint:
+    '此「推估月」来自近年除息月份规律，并会跳过您本年度已记录的月份；Yahoo 目前未列出未来 90 天内的确定除息日（故除息日显示「—」）。金额仍以「最近一次每股现金股利 × 目前持股」试算，非官方公告。',
   upcomingEstTwd: '预估配息 (TWD)',
   upcomingEstUsd: '预估税后 (USD)',
   dataFromYahoo: '数据来源：Yahoo Finance（缓存在本机）',
@@ -184,7 +186,7 @@ zhCN.dividendTax = {
   usBadgeShort: '70%',
   nhiForecastTag: '预估单次配息将触发二代健保扣费',
   pendingActualTitle: '待确认实绩配息（MoneyDJ）',
-  pendingActualSubtitle: '发放日已过、尚未在交易记录出现的配息；点击「新增」即建立一笔现金股息交易。',
+  pendingActualSubtitle: '近 90 天内已除息、尚未在交易记录出现的配息；点击「新增」即建立一笔现金股息交易。',
   pendingActualEmpty: '目前没有需要补登的实绩配息。',
   pendingActualLoading: '加载 MoneyDJ 实绩数据…',
   pendingActualAddBtn: '新增至交易记录',

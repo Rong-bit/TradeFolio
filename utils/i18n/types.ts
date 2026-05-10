@@ -275,6 +275,8 @@ export interface Translations {
     upcomingSubtitle: string;
     upcomingEmpty: string;
     upcomingExDate: string;
+    /** 除息日欄為「—」時，推估月來自歷史規律（非 Yahoo 90 天內日曆）；用於表格 tooltip */
+    upcomingInferredMonthHint: string;
     upcomingEstTwd: string;
     upcomingEstUsd: string;
     dataFromYahoo: string;

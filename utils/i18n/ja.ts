@@ -238,6 +238,8 @@ export const ja: Translations = {
     upcomingSubtitle: '直近の1株あたり現金配当×保有株数による試算です。',
     upcomingEmpty: '該当する除息予定がないか、データを取得できませんでした。',
     upcomingExDate: '除息日',
+    upcomingInferredMonthHint:
+      '表示月は直近の除息月パターンから推定し、今年すでに記録した月はスキップします。Yahoo に今後90日以内の確定除息日がないため「除息日」は「—」です。金額は直近の1株当たり配当×保有株数の試算であり、公式公告ではありません。',
     upcomingEstTwd: '予想配当（TWD）',
     upcomingEstUsd: '予想税後（USD）',
     dataFromYahoo: 'データ: Yahoo Finance（ローカルキャッシュ）',
@@ -245,7 +247,7 @@ export const ja: Translations = {
     usBadgeShort: '~70%',
     nhiForecastTag: '単発配当で二代健保の可能性',
     pendingActualTitle: '未確認の実績配当（MoneyDJ）',
-    pendingActualSubtitle: '支払日を過ぎていて取引履歴に未登録の配当。「追加」を押すと現金配当として登録します。',
+    pendingActualSubtitle: '直近 90 日以内に権利落ちが発生し、取引履歴に未登録の配当。「追加」を押すと現金配当として登録します。',
     pendingActualEmpty: '補登録が必要な実績配当はありません。',
     pendingActualLoading: 'MoneyDJ 実績を取得中…',
     pendingActualAddBtn: '取引に追加',

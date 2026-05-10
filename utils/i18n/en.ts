@@ -239,6 +239,8 @@ export const en: Translations = {
     upcomingSubtitle: 'Amount ≈ last cash dividend/share × current shares; may differ from actual.',
     upcomingEmpty: 'No ex-dates in the next 90 days, or data unavailable.',
     upcomingExDate: 'Ex-date',
+    upcomingInferredMonthHint:
+      'This month is inferred from recent ex-dividend months (and skips months you already recorded). Yahoo has no confirmed ex-date in the next 90 days yet. The amount still uses last dividend per share × your shares.',
     upcomingEstTwd: 'Est. payout (TWD)',
     upcomingEstUsd: 'Est. net (USD)',
     dataFromYahoo: 'Source: Yahoo Finance (cached locally)',
@@ -246,7 +248,7 @@ export const en: Translations = {
     usBadgeShort: '~70%',
     nhiForecastTag: 'Est. payout may trigger NHI supplement fee',
     pendingActualTitle: 'Actual dividends to confirm (MoneyDJ)',
-    pendingActualSubtitle: 'Past pay-date dividends that are not yet in your transactions. Click "Add" to create a cash dividend record.',
+    pendingActualSubtitle: 'Dividends with ex-date in the last 90 days that are not yet in your transactions. Click "Add" to create a cash dividend record.',
     pendingActualEmpty: 'No pending actual dividends to record.',
     pendingActualLoading: 'Loading MoneyDJ actuals…',
     pendingActualAddBtn: 'Add to records',

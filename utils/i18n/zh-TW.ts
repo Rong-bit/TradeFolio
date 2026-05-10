@@ -235,6 +235,8 @@ export const zhTW: Translations = {
     upcomingSubtitle: '金額依「最近一次每股現金股利 × 目前持股」試算，與實際發放可能不同。',
     upcomingEmpty: '目前無符合條件的除息日程，或尚無法取得公開資料。',
     upcomingExDate: '除息日',
+    upcomingInferredMonthHint:
+      '此「推估月」來自近年除息月份規律，並會跳過您本年度已記錄的月份；Yahoo 目前未列出未來 90 天內的確定除息日（故除息日顯示「—」）。金額仍以「最近一次每股現金股利 × 目前持股」試算，非官方公告。',
     upcomingEstTwd: '預估配息 (TWD)',
     upcomingEstUsd: '預估稅後 (USD)',
     dataFromYahoo: '資料來源：Yahoo Finance（快取於本機）',
@@ -242,7 +244,7 @@ export const zhTW: Translations = {
     usBadgeShort: '70%',
     nhiForecastTag: '預估單次配息將觸發二代健保扣費',
     pendingActualTitle: '待確認實績配息（MoneyDJ）',
-    pendingActualSubtitle: '發放日已過、尚未在交易記錄出現的配息；按下「新增」即建立一筆現金股息交易。',
+    pendingActualSubtitle: '近 90 天內已除息、尚未在交易記錄出現的配息；按下「新增」即建立一筆現金股息交易。',
     pendingActualEmpty: '目前沒有需要補登的實績配息。',
     pendingActualLoading: '載入 MoneyDJ 實績資料…',
     pendingActualAddBtn: '新增至交易記錄',
