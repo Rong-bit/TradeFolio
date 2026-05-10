@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from 'react';
-import { Market, TransactionType } from '../types';
+import { v4 as uuidv4 } from 'uuid';
+import { Market, Transaction, TransactionType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 import { transactionAmountNativeToTWD, valueInBaseCurrency } from '../utils/calculations';
-import { t } from '../utils/i18n';
+import { t, translate } from '../utils/i18n';
 import { useDividendSchedules } from '../hooks/useDividendSchedules';
+import { useActualDividends } from '../hooks/useActualDividends';
+import { findExistingCashDividendTx } from '../utils/dividendMatching';
 import {
   dividendScheduleMapKey,
   marketToYahooMarketForDividends,
@@ -69,13 +72,16 @@ function shiftMonthForTwPayout(month: number, market: Market): number {
 }
 
 const DividendHeatmap: React.FC = () => {
-  const { transactions, accounts, holdings } = usePortfolio();
+  const { transactions, accounts, holdings, addTransaction } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { language, isGuest } = useUI();
   const tr = t(language);
   const [hoveredCell, setHoveredCell] = useState<{ year: number; month: number } | null>(null);
   const [showUpcomingDetails, setShowUpcomingDetails] = useState(false);
+  const [showPendingActualDetails, setShowPendingActualDetails] = useState(true);
   const [deductTwWireFee, setDeductTwWireFee] = useState(false);
+  /** 每個 pending row 的「選擇入帳帳戶」狀態，key = `${market}|${ticker}|${exDate}` */
+  const [pendingAccountByKey, setPendingAccountByKey] = useState<Record<string, string>>({});
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const dtx = tr.dividendTax;
@@ -97,6 +103,26 @@ const DividendHeatmap: React.FC = () => {
     [mergedHoldingsForDiv]
   );
   const dividendSchedules = useDividendSchedules(dividendRequests);
+  const actualDividendsMap = useActualDividends(dividendRequests);
+
+  /**
+   * 「待確認實績配息」用：以 `<market>|<ticker>` 為 key，列出該 ticker 在哪些帳戶有持倉與股數，
+   * 用於入帳帳戶下拉的選項與預設（持股最大者）。
+   */
+  const holdingAccountsByTicker = useMemo(() => {
+    const m = new Map<string, Array<{ accountId: string; quantity: number }>>();
+    for (const h of holdings) {
+      if (!marketToYahooMarketForDividends(h.market)) continue;
+      const k = dividendScheduleMapKey(h.market, h.ticker);
+      const list = m.get(k) ?? [];
+      const idx = list.findIndex(x => x.accountId === h.accountId);
+      if (idx >= 0) list[idx].quantity += h.quantity;
+      else list.push({ accountId: h.accountId, quantity: h.quantity });
+      m.set(k, list);
+    }
+    for (const list of m.values()) list.sort((a, b) => b.quantity - a.quantity);
+    return m;
+  }, [holdings]);
 
   const upcomingRows = useMemo(() => {
     const rows: Array<{
@@ -193,6 +219,106 @@ const DividendHeatmap: React.FC = () => {
     });
     return rows;
   }, [mergedHoldingsForDiv, dividendSchedules]);
+
+  /**
+   * 「待確認實績配息」清單：每個持倉 ticker 取最新一筆「發放日 ≤ 今天 + 尚未在交易記錄」的配息。
+   * 若某 ticker 已全數記錄、或目前還無 MoneyDJ/Yahoo 資料，會被略過。
+   */
+  const pendingActualRows = useMemo(() => {
+    const todayYmd = new Date().toISOString().slice(0, 10);
+    const rows: Array<{
+      key: string;
+      ticker: string;
+      market: Market;
+      quantity: number;
+      exDate: string;
+      payDate?: string;
+      payDateEstimated?: boolean;
+      amountPerShare: number;
+      currency?: string;
+      source: 'moneydj' | 'yahoo';
+      estTotalNative: number;
+      accountOptions: Array<{ accountId: string; quantity: number }>;
+    }> = [];
+    for (const row of mergedHoldingsForDiv) {
+      const key = dividendScheduleMapKey(row.market, row.ticker);
+      const list = actualDividendsMap[key];
+      if (!list || list === 'loading') continue;
+      const accountOptions = holdingAccountsByTicker.get(key) ?? [];
+      // Yahoo events 已按 ts 由新到舊排序，但 MoneyDJ 來源也照 exDate 排：兩種都從首筆開始找第一筆「發放日已過 + 未記錄」的
+      for (const rec of list) {
+        const payDate = rec.payDate ?? rec.exDate;
+        if (payDate > todayYmd) continue; // 還沒到發放日
+        const existing = findExistingCashDividendTx(transactions, row.ticker, rec.exDate);
+        if (existing) continue;
+        rows.push({
+          key: `${key}|${rec.exDate}`,
+          ticker: row.ticker,
+          market: row.market,
+          quantity: row.quantity,
+          exDate: rec.exDate,
+          payDate: rec.payDate,
+          payDateEstimated: rec.payDateEstimated,
+          amountPerShare: rec.amountPerShare,
+          currency: rec.currency,
+          source: rec.source,
+          estTotalNative: rec.amountPerShare * row.quantity,
+          accountOptions,
+        });
+        break; // 同 ticker 一次只列最新一筆
+      }
+    }
+    rows.sort((a, b) => b.exDate.localeCompare(a.exDate) || a.ticker.localeCompare(b.ticker));
+    return rows;
+  }, [mergedHoldingsForDiv, actualDividendsMap, holdingAccountsByTicker, transactions]);
+
+  const pendingActualLoading = useMemo(() => {
+    for (const row of mergedHoldingsForDiv) {
+      const key = dividendScheduleMapKey(row.market, row.ticker);
+      if (actualDividendsMap[key] === 'loading') return true;
+    }
+    return false;
+  }, [mergedHoldingsForDiv, actualDividendsMap]);
+
+  /** 點「新增至交易記錄」時組裝 CASH_DIVIDEND 並寫入；同時清掉該列暫存的帳戶選擇。 */
+  const handleAddPendingActual = (row: (typeof pendingActualRows)[number]) => {
+    const accountId =
+      pendingAccountByKey[row.key] ?? row.accountOptions[0]?.accountId ?? accounts[0]?.id;
+    if (!accountId) return;
+    const totalNative = Math.max(0, row.amountPerShare * row.quantity);
+    if (totalNative <= 0) return;
+    const isTw = row.market === Market.TW;
+    const totalRoundedTwd = isTw ? twEstimatedSingleDividendTwd(row.quantity, row.amountPerShare) : 0;
+    const nhiFee =
+      isTw && totalRoundedTwd >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD
+        ? twNhiSupplementFloorTwd(totalRoundedTwd)
+        : 0;
+    const note = translate('dividendTax.pendingActualNoteTemplate', language, {
+      perShare: row.amountPerShare.toLocaleString(undefined, { maximumFractionDigits: 6 }),
+      qty: row.quantity.toLocaleString(),
+    });
+    const tx: Transaction = {
+      id: uuidv4(),
+      date: row.payDate ?? row.exDate,
+      ticker: row.ticker,
+      market: row.market,
+      type: TransactionType.CASH_DIVIDEND,
+      // 沿用 TransactionForm 對 CASH_DIVIDEND 的慣例：quantity = 1，price 視為總額；amount 一併存以利下游計算
+      price: totalNative,
+      quantity: 1,
+      fees: 0,
+      accountId,
+      amount: totalNative,
+      note,
+      ...(nhiFee > 0 ? { withheldNhiTwd: nhiFee } : {}),
+    };
+    addTransaction(tx);
+    setPendingAccountByKey(prev => {
+      const next = { ...prev };
+      delete next[row.key];
+      return next;
+    });
+  };
 
   // Month labels — always 3-letter English abbreviations for the grid header
   const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -729,6 +855,141 @@ const DividendHeatmap: React.FC = () => {
           </>
         ) : (
           <p className="text-xs text-slate-400 py-2">已隱藏明細，點「顯示明細」即可展開。</p>
+        )}
+      </div>
+
+      {/* 待確認實績配息（MoneyDJ）：發放日已過、尚未在交易記錄中出現的配息 */}
+      <div className="mt-6 border-t border-slate-100 pt-4">
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <h4 className="text-sm font-bold text-slate-700">{dtx.pendingActualTitle}</h4>
+          <button
+            type="button"
+            onClick={() => setShowPendingActualDetails(v => !v)}
+            className="text-[11px] rounded border border-slate-200 px-2 py-0.5 text-slate-500 hover:bg-slate-50"
+          >
+            {showPendingActualDetails ? '隱藏明細' : '顯示明細'}
+          </button>
+        </div>
+        {showPendingActualDetails && (
+          <>
+            <p className="text-xs text-slate-400 mb-2">{dtx.pendingActualSubtitle}</p>
+            {pendingActualLoading && pendingActualRows.length === 0 ? (
+              <p className="text-xs text-slate-400 py-2">{dtx.pendingActualLoading}</p>
+            ) : pendingActualRows.length === 0 ? (
+              <p className="text-xs text-slate-400 py-2">{dtx.pendingActualEmpty}</p>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-slate-100">
+                <table className="min-w-full text-xs text-left">
+                  <thead className="bg-slate-50 text-slate-500 font-semibold">
+                    <tr>
+                      <th className="px-2 py-1.5">{tr.holdings.ticker}</th>
+                      <th className="px-2 py-1.5">Mkt</th>
+                      <th className="px-2 py-1.5">{dtx.upcomingExDate}</th>
+                      <th className="px-2 py-1.5">{dtx.pendingActualPayDate}</th>
+                      <th className="px-2 py-1.5 text-right">{dtx.pendingActualPerShare}</th>
+                      <th className="px-2 py-1.5 text-right">{dtx.pendingActualEstAmount}</th>
+                      <th className="px-2 py-1.5">{dtx.pendingActualAccount}</th>
+                      <th className="px-2 py-1.5"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {pendingActualRows.map(r => {
+                      const selectedAccount =
+                        pendingAccountByKey[r.key] ??
+                        r.accountOptions[0]?.accountId ??
+                        accounts[0]?.id ??
+                        '';
+                      const sourceLabel =
+                        r.source === 'moneydj'
+                          ? dtx.pendingActualSourceMoneyDj
+                          : dtx.pendingActualSourceYahoo;
+                      const sourceClass =
+                        r.source === 'moneydj'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-slate-50 text-slate-500 border-slate-200';
+                      const optionAccountIds = new Set(r.accountOptions.map(o => o.accountId));
+                      return (
+                        <tr key={r.key} className="text-slate-600">
+                          <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
+                          <td className="px-2 py-1.5">{r.market}</td>
+                          <td className="px-2 py-1.5 tabular-nums">{r.exDate}</td>
+                          <td className="px-2 py-1.5 tabular-nums">
+                            <span className="inline-flex items-center gap-1">
+                              {r.payDate ?? '—'}
+                              {r.payDateEstimated && (
+                                <span
+                                  className="rounded px-1 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px]"
+                                  title={dtx.pendingActualEstimatedDate}
+                                >
+                                  {dtx.pendingActualEstimatedDate}
+                                </span>
+                              )}
+                            </span>
+                          </td>
+                          <td className="px-2 py-1.5 text-right tabular-nums">
+                            {r.amountPerShare.toLocaleString(undefined, {
+                              maximumFractionDigits: 4,
+                            })}
+                          </td>
+                          <td className="px-2 py-1.5 text-right tabular-nums">
+                            <div className="inline-flex flex-col items-end gap-1">
+                              <span className="rounded px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
+                                {Math.round(r.estTotalNative).toLocaleString()}{' '}
+                                {r.currency ?? ''}
+                              </span>
+                              <span
+                                className={`rounded px-1 py-0.5 border text-[10px] font-semibold ${sourceClass}`}
+                              >
+                                {sourceLabel}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <select
+                              value={selectedAccount}
+                              onChange={e =>
+                                setPendingAccountByKey(prev => ({
+                                  ...prev,
+                                  [r.key]: e.target.value,
+                                }))
+                              }
+                              className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                            >
+                              {r.accountOptions.map(opt => {
+                                const acc = accounts.find(a => a.id === opt.accountId);
+                                return (
+                                  <option key={opt.accountId} value={opt.accountId}>
+                                    {acc ? acc.name : opt.accountId}
+                                  </option>
+                                );
+                              })}
+                              {/* 若該 ticker 已無持倉但仍允許新增，列出全部帳戶供選擇 */}
+                              {accounts
+                                .filter(a => !optionAccountIds.has(a.id))
+                                .map(a => (
+                                  <option key={a.id} value={a.id}>
+                                    {a.name}
+                                  </option>
+                                ))}
+                            </select>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleAddPendingActual(r)}
+                              className="rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100"
+                            >
+                              {dtx.pendingActualAddBtn}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
