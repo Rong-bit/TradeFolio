@@ -19,6 +19,7 @@ function ymOf(ymd: string): string {
 /**
  * 判斷某個 ticker + 除息日，使用者是否已經有對應的 CASH_DIVIDEND 交易紀錄。
  * 因使用者可能用「除息日」或「發放日」記錄，兩者通常相差 1–2 週，預設容忍 ±14 天。
+ * （目前畫面以月份為基準的判定見 findExistingCashDividendInSameMonth；此函式保留供其他模組沿用。）
  */
 export function findExistingCashDividendTx(
   transactions: Transaction[],
@@ -38,16 +39,20 @@ export function findExistingCashDividendTx(
 }
 
 /**
- * 與熱力圖月份顯示對齊的「已記錄」判定：只要該 ticker 在「發放日的同年同月」
+ * 與熱力圖月份顯示對齊的「已記錄」判定：只要該 ticker 在「給定日期的同年同月」
  * 已存在任一筆 CASH_DIVIDEND 交易，就視為已記錄。
  *
- * 之所以採月份（而非 ±N 天）為基準，是要呼應使用者的直覺：「熱力圖上那個月已經顯示
- * 了實績琥珀色 → 不需再列入待確認」。
+ * 之所以採月份（而非 ±N 天）為基準，是要呼應使用者的直覺：
+ * 「熱力圖上那個月已經顯示了實績琥珀色 → 不需再列入待確認」。
+ *
+ * 可選 accountId：傳入時只匹配該帳戶下的交易。多帳戶持有同 ticker 時，
+ * 才能讓「甲證券已記錄、乙證券尚未記錄」分別判定。
  */
 export function findExistingCashDividendInSameMonth(
   transactions: Transaction[],
   ticker: string,
-  payOrExDateYmd: string
+  payOrExDateYmd: string,
+  accountId?: string
 ): Transaction | null {
   const targetYm = ymOf(payOrExDateYmd);
   if (!targetYm) return null;
@@ -56,6 +61,7 @@ export function findExistingCashDividendInSameMonth(
     if (tx.type !== TransactionType.CASH_DIVIDEND) continue;
     if (tx.ticker.trim().toUpperCase() !== upperTicker) continue;
     if (ymOf(tx.date) !== targetYm) continue;
+    if (accountId && tx.accountId !== accountId) continue;
     return tx;
   }
   return null;
