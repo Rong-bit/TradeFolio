@@ -78,7 +78,6 @@ const DividendHeatmap: React.FC = () => {
   const tr = t(language);
   const [hoveredCell, setHoveredCell] = useState<{ year: number; month: number } | null>(null);
   const [showUpcomingDetails, setShowUpcomingDetails] = useState(false);
-  const [showPendingActualDetails, setShowPendingActualDetails] = useState(true);
   const [deductTwWireFee, setDeductTwWireFee] = useState(false);
   /** 每個 pending row 的「選擇入帳帳戶」狀態，key = `${market}|${ticker}|${exDate}` */
   const [pendingAccountByKey, setPendingAccountByKey] = useState<Record<string, string>>({});
@@ -294,6 +293,20 @@ const DividendHeatmap: React.FC = () => {
     }
     return false;
   }, [mergedHoldingsForDiv, actualDividendsMap]);
+
+  /**
+   * 以 dividendScheduleMapKey（同 ticker × market）為 key 的 pending 索引；
+   * 用於上方預估列表 inline 顯示「新增至交易記錄」按鈕。
+   */
+  const pendingActualByTickerKey = useMemo(() => {
+    const m = new Map<string, (typeof pendingActualRows)[number]>();
+    for (const r of pendingActualRows) {
+      const tickerKey = dividendScheduleMapKey(r.market, r.ticker);
+      // 一個 ticker 一次只取最新一筆（pendingActualRows 已由新到舊排序）
+      if (!m.has(tickerKey)) m.set(tickerKey, r);
+    }
+    return m;
+  }, [pendingActualRows]);
 
   /** 點「新增至交易記錄」時組裝 CASH_DIVIDEND 並寫入；同時清掉該列暫存的帳戶選擇。 */
   const handleAddPendingActual = (row: (typeof pendingActualRows)[number]) => {
@@ -790,79 +803,173 @@ const DividendHeatmap: React.FC = () => {
                       <th className="px-2 py-1.5">推估月</th>
                       <th className="px-2 py-1.5 text-right">{dtx.upcomingEstTwd}</th>
                       <th className="px-2 py-1.5 text-right">{dtx.upcomingEstUsd}</th>
+                      <th className="px-2 py-1.5">{dtx.pendingActualAddBtn}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {upcomingRows.map(r => (
-                      <tr key={r.key} className="text-slate-600">
-                        <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
-                        <td className="px-2 py-1.5">{r.market}</td>
-                        <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
-                        <td className="px-2 py-1.5 tabular-nums">
-                          {(() => {
-                            const preferredInferredMonth = pickNextUpcomingMonth(
-                              r.inferredMonthsCandidate ?? [],
-                              currentMonthForDisplay,
-                              currentDayForDisplay
-                            );
-                            const displayInferredMonth = preferredInferredMonth ?? r.inferredMonth;
-                            return r.exDate
-                              ? `${new Date(`${r.exDate}T12:00:00`).getMonth() + 1}月`
-                              : (displayInferredMonth != null
-                                ? `${displayInferredMonth + 1}月`
-                                : '—');
-                          })()}
-                        </td>
-                        <td className="px-2 py-1.5 text-right tabular-nums">
-                          {r.estTwd != null && r.estTwd > 0 ? (
-                            <div className="inline-flex flex-col items-end gap-1">
-                              <span className="rounded px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
-                                {Math.round(r.estTwd).toLocaleString()}
+                    {upcomingRows.map(r => {
+                      const tickerKey = dividendScheduleMapKey(r.market, r.ticker);
+                      const pa = pendingActualByTickerKey.get(tickerKey);
+                      const paSelectedAccount = pa
+                        ? (pendingAccountByKey[pa.key] ??
+                          pa.accountOptions[0]?.accountId ??
+                          accounts[0]?.id ??
+                          '')
+                        : '';
+                      const paOptionAccountIds = pa
+                        ? new Set(pa.accountOptions.map(o => o.accountId))
+                        : new Set<string>();
+                      return (
+                        <tr key={r.key} className="text-slate-600">
+                          <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
+                          <td className="px-2 py-1.5">{r.market}</td>
+                          <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
+                          <td className="px-2 py-1.5 tabular-nums">
+                            {(() => {
+                              const preferredInferredMonth = pickNextUpcomingMonth(
+                                r.inferredMonthsCandidate ?? [],
+                                currentMonthForDisplay,
+                                currentDayForDisplay
+                              );
+                              const displayInferredMonth = preferredInferredMonth ?? r.inferredMonth;
+                              return r.exDate
+                                ? `${new Date(`${r.exDate}T12:00:00`).getMonth() + 1}月`
+                                : (displayInferredMonth != null
+                                  ? `${displayInferredMonth + 1}月`
+                                  : '—');
+                            })()}
+                          </td>
+                          <td className="px-2 py-1.5 text-right tabular-nums">
+                            {r.estTwd != null && r.estTwd > 0 ? (
+                              <div className="inline-flex flex-col items-end gap-1">
+                                <span className="rounded px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
+                                  {Math.round(r.estTwd).toLocaleString()}
+                                </span>
+                                {r.market === Market.TW && (
+                                  <span
+                                    className="rounded px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold"
+                                    title={`預估入帳 = 預估配息 ${Math.round(r.estTwd).toLocaleString()} - 健保 ${(r.twNhiFeeTwd ?? 0).toLocaleString()}${deductTwWireFee ? ` - 匯費 ${TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD}` : ''}`}
+                                  >
+                                    入帳
+                                    {' '}
+                                    {Math.max(
+                                      0,
+                                      Math.round(r.estTwd) - (r.twNhiFeeTwd ?? 0) - (deductTwWireFee ? TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD : 0)
+                                    ).toLocaleString()}
+                                  </span>
+                                )}
+                                {r.nhiTriggered && (
+                                  <span
+                                    className="rounded px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 font-semibold"
+                                    title={`${dtx.estNhiFee}: ${(r.nhiThresholdBasisTwd ?? r.estTwd)?.toLocaleString() ?? '0'} × ${(TW_NHI_SUPPLEMENT_RATE * 100).toFixed(2)}% = ${r.twNhiFeeTwd?.toLocaleString() ?? '0'} TWD`}
+                                  >
+                                    {dtx.nhiForecastTag}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td className="px-2 py-1.5 text-right tabular-nums">
+                            {r.estUsdNet != null && r.estUsdNet > 0 ? (
+                              <span
+                                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold"
+                                title={
+                                  r.usGrossDividend != null
+                                    ? `${dtx.estGrossPerPayout}: ${r.usGrossDividend.toFixed(4)} USD\n${dtx.estNetAfterWithholding}: ${r.estUsdNet.toFixed(4)} USD`
+                                    : undefined
+                                }
+                              >
+                                {r.estUsdNet.toFixed(2)} <span className="text-[10px]">{dtx.usBadgeShort}</span>
                               </span>
-                              {r.market === Market.TW && (
-                                <span
-                                  className="rounded px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold"
-                                  title={`預估入帳 = 預估配息 ${Math.round(r.estTwd).toLocaleString()} - 健保 ${(r.twNhiFeeTwd ?? 0).toLocaleString()}${deductTwWireFee ? ` - 匯費 ${TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD}` : ''}`}
-                                >
-                                  入帳
-                                  {' '}
-                                  {Math.max(
-                                    0,
-                                    Math.round(r.estTwd) - (r.twNhiFeeTwd ?? 0) - (deductTwWireFee ? TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD : 0)
-                                  ).toLocaleString()}
-                                </span>
-                              )}
-                              {r.nhiTriggered && (
-                                <span
-                                  className="rounded px-1.5 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 font-semibold"
-                                  title={`${dtx.estNhiFee}: ${(r.nhiThresholdBasisTwd ?? r.estTwd)?.toLocaleString() ?? '0'} × ${(TW_NHI_SUPPLEMENT_RATE * 100).toFixed(2)}% = ${r.twNhiFeeTwd?.toLocaleString() ?? '0'} TWD`}
-                                >
-                                  {dtx.nhiForecastTag}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                        <td className="px-2 py-1.5 text-right tabular-nums">
-                          {r.estUsdNet != null && r.estUsdNet > 0 ? (
-                            <span
-                              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold"
-                              title={
-                                r.usGrossDividend != null
-                                  ? `${dtx.estGrossPerPayout}: ${r.usGrossDividend.toFixed(4)} USD\n${dtx.estNetAfterWithholding}: ${r.estUsdNet.toFixed(4)} USD`
-                                  : undefined
-                              }
-                            >
-                              {r.estUsdNet.toFixed(2)} <span className="text-[10px]">{dtx.usBadgeShort}</span>
-                            </span>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          {/* 操作欄：當該 ticker 有「除息已過 + 同月未紀錄」的實績配息時，顯示新增按鈕；否則保持空白 */}
+                          <td className="px-2 py-1.5">
+                            {pa ? (
+                              <div className="flex flex-col gap-1 text-[11px]">
+                                <div className="text-slate-500 tabular-nums">
+                                  {pa.exDate}
+                                  {pa.payDate && (
+                                    <span className="ml-1 text-slate-400">→ {pa.payDate}</span>
+                                  )}
+                                  {pa.payDateEstimated && (
+                                    <span
+                                      className="ml-1 rounded px-1 py-0.5 bg-amber-50 text-amber-700 border border-amber-200"
+                                      title={dtx.pendingActualEstimatedDate}
+                                    >
+                                      {dtx.pendingActualEstimatedDate}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  <span
+                                    className="rounded px-1 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 font-mono"
+                                    title={`${dtx.pendingActualPerShare}: ${pa.amountPerShare}`}
+                                  >
+                                    {pa.amountPerShare.toLocaleString(undefined, {
+                                      maximumFractionDigits: 4,
+                                    })}
+                                    /股
+                                  </span>
+                                  <span
+                                    className={`rounded px-1 py-0.5 border text-[10px] font-semibold ${
+                                      pa.source === 'moneydj'
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        : 'bg-slate-50 text-slate-500 border-slate-200'
+                                    }`}
+                                  >
+                                    {pa.source === 'moneydj'
+                                      ? dtx.pendingActualSourceMoneyDj
+                                      : dtx.pendingActualSourceYahoo}
+                                  </span>
+                                  <select
+                                    value={paSelectedAccount}
+                                    onChange={e =>
+                                      setPendingAccountByKey(prev => ({
+                                        ...prev,
+                                        [pa.key]: e.target.value,
+                                      }))
+                                    }
+                                    className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                  >
+                                    {pa.accountOptions.map(opt => {
+                                      const acc = accounts.find(a => a.id === opt.accountId);
+                                      return (
+                                        <option key={opt.accountId} value={opt.accountId}>
+                                          {acc ? acc.name : opt.accountId}
+                                        </option>
+                                      );
+                                    })}
+                                    {accounts
+                                      .filter(a => !paOptionAccountIds.has(a.id))
+                                      .map(a => (
+                                        <option key={a.id} value={a.id}>
+                                          {a.name}
+                                        </option>
+                                      ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddPendingActual(pa)}
+                                    className="rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100"
+                                  >
+                                    {dtx.pendingActualAddBtn}
+                                  </button>
+                                </div>
+                              </div>
+                            ) : pendingActualLoading ? (
+                              <span className="text-[10px] text-slate-300">…</span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -873,140 +980,6 @@ const DividendHeatmap: React.FC = () => {
         )}
       </div>
 
-      {/* 待確認實績配息（MoneyDJ）：發放日已過、尚未在交易記錄中出現的配息 */}
-      <div className="mt-6 border-t border-slate-100 pt-4">
-        <div className="mb-1 flex items-center justify-between gap-2">
-          <h4 className="text-sm font-bold text-slate-700">{dtx.pendingActualTitle}</h4>
-          <button
-            type="button"
-            onClick={() => setShowPendingActualDetails(v => !v)}
-            className="text-[11px] rounded border border-slate-200 px-2 py-0.5 text-slate-500 hover:bg-slate-50"
-          >
-            {showPendingActualDetails ? '隱藏明細' : '顯示明細'}
-          </button>
-        </div>
-        {showPendingActualDetails && (
-          <>
-            <p className="text-xs text-slate-400 mb-2">{dtx.pendingActualSubtitle}</p>
-            {pendingActualLoading && pendingActualRows.length === 0 ? (
-              <p className="text-xs text-slate-400 py-2">{dtx.pendingActualLoading}</p>
-            ) : pendingActualRows.length === 0 ? (
-              <p className="text-xs text-slate-400 py-2">{dtx.pendingActualEmpty}</p>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border border-slate-100">
-                <table className="min-w-full text-xs text-left">
-                  <thead className="bg-slate-50 text-slate-500 font-semibold">
-                    <tr>
-                      <th className="px-2 py-1.5">{tr.holdings.ticker}</th>
-                      <th className="px-2 py-1.5">Mkt</th>
-                      <th className="px-2 py-1.5">{dtx.upcomingExDate}</th>
-                      <th className="px-2 py-1.5">{dtx.pendingActualPayDate}</th>
-                      <th className="px-2 py-1.5 text-right">{dtx.pendingActualPerShare}</th>
-                      <th className="px-2 py-1.5 text-right">{dtx.pendingActualEstAmount}</th>
-                      <th className="px-2 py-1.5">{dtx.pendingActualAccount}</th>
-                      <th className="px-2 py-1.5"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {pendingActualRows.map(r => {
-                      const selectedAccount =
-                        pendingAccountByKey[r.key] ??
-                        r.accountOptions[0]?.accountId ??
-                        accounts[0]?.id ??
-                        '';
-                      const sourceLabel =
-                        r.source === 'moneydj'
-                          ? dtx.pendingActualSourceMoneyDj
-                          : dtx.pendingActualSourceYahoo;
-                      const sourceClass =
-                        r.source === 'moneydj'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-slate-50 text-slate-500 border-slate-200';
-                      const optionAccountIds = new Set(r.accountOptions.map(o => o.accountId));
-                      return (
-                        <tr key={r.key} className="text-slate-600">
-                          <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
-                          <td className="px-2 py-1.5">{r.market}</td>
-                          <td className="px-2 py-1.5 tabular-nums">{r.exDate}</td>
-                          <td className="px-2 py-1.5 tabular-nums">
-                            <span className="inline-flex items-center gap-1">
-                              {r.payDate ?? '—'}
-                              {r.payDateEstimated && (
-                                <span
-                                  className="rounded px-1 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px]"
-                                  title={dtx.pendingActualEstimatedDate}
-                                >
-                                  {dtx.pendingActualEstimatedDate}
-                                </span>
-                              )}
-                            </span>
-                          </td>
-                          <td className="px-2 py-1.5 text-right tabular-nums">
-                            {r.amountPerShare.toLocaleString(undefined, {
-                              maximumFractionDigits: 4,
-                            })}
-                          </td>
-                          <td className="px-2 py-1.5 text-right tabular-nums">
-                            <div className="inline-flex flex-col items-end gap-1">
-                              <span className="rounded px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 font-semibold">
-                                {Math.round(r.estTotalNative).toLocaleString()}{' '}
-                                {r.currency ?? ''}
-                              </span>
-                              <span
-                                className={`rounded px-1 py-0.5 border text-[10px] font-semibold ${sourceClass}`}
-                              >
-                                {sourceLabel}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <select
-                              value={selectedAccount}
-                              onChange={e =>
-                                setPendingAccountByKey(prev => ({
-                                  ...prev,
-                                  [r.key]: e.target.value,
-                                }))
-                              }
-                              className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                            >
-                              {r.accountOptions.map(opt => {
-                                const acc = accounts.find(a => a.id === opt.accountId);
-                                return (
-                                  <option key={opt.accountId} value={opt.accountId}>
-                                    {acc ? acc.name : opt.accountId}
-                                  </option>
-                                );
-                              })}
-                              {/* 若該 ticker 已無持倉但仍允許新增，列出全部帳戶供選擇 */}
-                              {accounts
-                                .filter(a => !optionAccountIds.has(a.id))
-                                .map(a => (
-                                  <option key={a.id} value={a.id}>
-                                    {a.name}
-                                  </option>
-                                ))}
-                            </select>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleAddPendingActual(r)}
-                              className="rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100"
-                            >
-                              {dtx.pendingActualAddBtn}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
-        )}
-      </div>
     </div>
   );
 };
