@@ -9,7 +9,8 @@ import {
   marketToYahooMarketForDividends,
 } from '../utils/dividendTaxHelpers';
 
-const LS_KEY = 'tf-actual-dividends-v1';
+// v2：新增 MoneyDJ ETF 配息頁來源（精確至 6 位小數 + 真實發放日），需作廢舊 v1 快取避免顯示舊估值。
+const LS_KEY = 'tf-actual-dividends-v2';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const CONCURRENCY = 3;
 
