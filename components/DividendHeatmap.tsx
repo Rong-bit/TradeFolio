@@ -249,16 +249,19 @@ const DividendHeatmap: React.FC = () => {
       const list = actualDividendsMap[key];
       if (!list || list === 'loading') continue;
       const accountOptions = holdingAccountsByTicker.get(key) ?? [];
-      // Yahoo events 已按 ts 由新到舊排序，但 MoneyDJ 來源也照 exDate 排：兩種都從首筆開始找第一筆「發放日已過 + 未記錄」的
+      // Yahoo events 已按 ts 由新到舊排序，但 MoneyDJ 來源也照 exDate 排：兩種都從首筆開始找第一筆「除息已發生 + 未記錄」的
       for (const rec of list) {
+        // 用「除息日 ≤ 今天」做閘門：配息事件已正式發生即提醒，避免發放日推估值不準（例如 ETF 實際 5 天到，我們估 14 天）導致漏顯示。
+        if (rec.exDate > todayYmd) continue;
         const payDate = rec.payDate ?? rec.exDate;
-        if (payDate > todayYmd) continue; // 還沒到發放日
-        // 超過回溯窗格直接停止往更舊掃描（list 已由新到舊），避免把陳年舊帳一直列出
-        const payDateMs = new Date(`${payDate}T12:00:00`).getTime();
-        if (Number.isFinite(payDateMs) && payDateMs < lookbackCutoffMs) break;
-        // 與熱力圖月份顯示對齊：只要該 ticker 在「發放日同年同月」已有 CASH_DIVIDEND 紀錄，
-        // 即視為已記錄；否則才列入待確認。發放日是估值時退用除息日的月份。
-        const existing = findExistingCashDividendInSameMonth(transactions, row.ticker, payDate);
+        // 超過回溯窗格（以除息日為準）直接停止往更舊掃描，避免把陳年舊帳一直列出
+        const exDateMs = new Date(`${rec.exDate}T12:00:00`).getTime();
+        if (Number.isFinite(exDateMs) && exDateMs < lookbackCutoffMs) break;
+        // 與熱力圖月份顯示對齊：該 ticker 在「除息日同年同月」或「發放日同年同月」任一已有
+        // CASH_DIVIDEND 紀錄，都視為已記錄。台股季配常見除息 3 月 / 發放 4 月的跨月情境，雙月比對較不會漏判。
+        const existing =
+          findExistingCashDividendInSameMonth(transactions, row.ticker, rec.exDate) ??
+          findExistingCashDividendInSameMonth(transactions, row.ticker, payDate);
         if (existing) continue;
         rows.push({
           key: `${key}|${rec.exDate}`,
