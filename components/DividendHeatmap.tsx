@@ -82,9 +82,71 @@ const DividendHeatmap: React.FC = () => {
   const [deductTwWireFee, setDeductTwWireFee] = useState(false);
   /** 每個 pending row 的「選擇入帳帳戶」狀態，key = `${market}|${ticker}|${exDate}` */
   const [pendingAccountByKey, setPendingAccountByKey] = useState<Record<string, string>>({});
+  /** 按下「新增至交易記錄」後待使用者確認的 transaction（暫存於 state，按確認後才 addTransaction） */
+  const [confirmState, setConfirmState] = useState<{ tx: Transaction; rowKey: string } | null>(null);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const dtx = tr.dividendTax;
+  const tf = tr.transactionForm;
+
+  // ── 確認 modal 用的小工具：與 TransactionForm 同邏輯，避免顯示時「帳戶 ID」「TYPE 字串」這種 raw 值 ──
+  const getAccountName = (accountId: string): string => {
+    const a = accounts.find(x => x.id === accountId);
+    return a ? `${a.name} (${a.currency})` : accountId;
+  };
+  const getAccountCurrencyCode = (accountId: string): string => {
+    const a = accounts.find(x => x.id === accountId);
+    return a ? String(a.currency) : 'TWD';
+  };
+  const getTypeName = (type: TransactionType): string => {
+    switch (type) {
+      case TransactionType.BUY: return tf.typeBuy;
+      case TransactionType.SELL: return tf.typeSell;
+      case TransactionType.DIVIDEND: return tf.typeDividend;
+      case TransactionType.CASH_DIVIDEND: return tf.typeCashDividend;
+      case TransactionType.TRANSFER_IN: return tf.typeTransferIn;
+      case TransactionType.TRANSFER_OUT: return tf.typeTransferOut;
+      default: return String(type);
+    }
+  };
+
+  /**
+   * 把 pending row 換算成「最終要寫入交易記錄」的金額。UI 顯示與 handleAddPendingActual 都走這條，避免兩處數字飄移。
+   *  - 美股：以美分整數運算先四捨入毛額，再 round(×30%) 為稅，淨 = 毛 − 稅
+   *  - 台股：毛額入 price/amount，超過門檻時另算二代健保補充保費（不影響入帳金額）
+   *  - 其他市場：以毛額入帳（暫無預扣模型）
+   */
+  const getCashDividendCalc = (
+    row: { market: Market; amountPerShare: number; quantity: number }
+  ): {
+    grossNative: number;
+    netNative: number;
+    withheldUsTaxNative?: number;
+    withheldNhiTwd?: number;
+  } => {
+    const grossNative = Math.max(0, row.amountPerShare * row.quantity);
+    if (grossNative <= 0) return { grossNative: 0, netNative: 0 };
+
+    if (row.market === Market.US) {
+      const grossCents = Math.round(grossNative * 100);
+      const taxCents = Math.round(grossCents * US_DIVIDEND_WITHHOLDING_RATE);
+      const netCents = Math.max(0, grossCents - taxCents);
+      return {
+        grossNative: grossCents / 100,
+        netNative: netCents / 100,
+        withheldUsTaxNative: taxCents / 100,
+      };
+    }
+    if (row.market === Market.TW) {
+      const totalRoundedTwd = twEstimatedSingleDividendTwd(row.quantity, row.amountPerShare);
+      const withheldNhiTwd =
+        totalRoundedTwd >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD
+          ? twNhiSupplementFloorTwd(totalRoundedTwd)
+          : undefined;
+      return { grossNative, netNative: grossNative, withheldNhiTwd };
+    }
+    return { grossNative, netNative: grossNative };
+  };
 
   const mergedHoldingsForDiv = useMemo(() => {
     const m = new Map<string, { market: Market; ticker: string; quantity: number }>();
@@ -310,41 +372,17 @@ const DividendHeatmap: React.FC = () => {
   }, [pendingActualRows]);
 
   /**
-   * 點「新增至交易記錄」時組裝 CASH_DIVIDEND 並寫入；同時清掉該列暫存的帳戶選擇。
+   * 點「新增至交易記錄」時，先組裝 CASH_DIVIDEND 並把它放進 confirmState，由確認 modal 接手；
+   * 真正的 addTransaction 在使用者按下「確認儲存」後才執行（confirmAndSavePendingActual）。
    *
-   * 入帳金額（price/amount）以「實領金額」為準，與券商對帳單一致：
-   *  - 美股：實領 = round(股數 × 每股, 美分) − round(總額 × 30%, 美分)；預扣稅另存 withheldUsTaxNative。
-   *    例：1549.88675 × 0.1939 = 300.5230... → 總額 300.52 USD - 稅 90.16 = 實領 210.36 USD
-   *  - 台股：總額（毛額）入 price/amount；二代健保補充保費另存 withheldNhiTwd。
-   *  - 其他市場：暫無預扣模型，先以毛額入帳；使用者可手動修改。
+   * 入帳金額（price/amount）以「實領金額」為準，與券商對帳單一致；計算邏輯統一走 getCashDividendCalc。
    */
   const handleAddPendingActual = (row: (typeof pendingActualRows)[number]) => {
     const accountId =
       pendingAccountByKey[row.key] ?? row.accountOptions[0]?.accountId ?? accounts[0]?.id;
     if (!accountId) return;
-    const grossNative = Math.max(0, row.amountPerShare * row.quantity);
-    if (grossNative <= 0) return;
-    const isTw = row.market === Market.TW;
-    const isUs = row.market === Market.US;
-
-    let priceAmountNative = grossNative;
-    let withheldUsTaxNative: number | undefined;
-    let withheldNhiTwd: number | undefined;
-
-    if (isUs) {
-      // 以美分整數運算避免浮點誤差；先把毛額四捨五入到美分，再用四捨五入的稅金作差，與券商實際入帳對齊
-      const grossCents = Math.round(grossNative * 100);
-      const taxCents = Math.round(grossCents * US_DIVIDEND_WITHHOLDING_RATE);
-      const netCents = Math.max(0, grossCents - taxCents);
-      priceAmountNative = netCents / 100;
-      withheldUsTaxNative = taxCents / 100;
-    } else if (isTw) {
-      const totalRoundedTwd = twEstimatedSingleDividendTwd(row.quantity, row.amountPerShare);
-      if (totalRoundedTwd >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD) {
-        withheldNhiTwd = twNhiSupplementFloorTwd(totalRoundedTwd);
-      }
-    }
-
+    const calc = getCashDividendCalc(row);
+    if (calc.netNative <= 0) return;
     const note = translate('dividendTax.pendingActualNoteTemplate', language, {
       perShare: row.amountPerShare.toLocaleString(undefined, { maximumFractionDigits: 6 }),
       qty: row.quantity.toLocaleString(),
@@ -356,21 +394,38 @@ const DividendHeatmap: React.FC = () => {
       market: row.market,
       type: TransactionType.CASH_DIVIDEND,
       // 沿用 TransactionForm 對 CASH_DIVIDEND 的慣例：quantity = 1，price 視為實領（已扣稅）；amount 同步存供下游計算
-      price: priceAmountNative,
+      price: calc.netNative,
       quantity: 1,
       fees: 0,
       accountId,
-      amount: priceAmountNative,
+      amount: calc.netNative,
       note,
-      ...(withheldNhiTwd != null && withheldNhiTwd > 0 ? { withheldNhiTwd } : {}),
-      ...(withheldUsTaxNative != null && withheldUsTaxNative > 0 ? { withheldUsTaxNative } : {}),
+      ...(calc.withheldNhiTwd != null && calc.withheldNhiTwd > 0
+        ? { withheldNhiTwd: calc.withheldNhiTwd }
+        : {}),
+      ...(calc.withheldUsTaxNative != null && calc.withheldUsTaxNative > 0
+        ? { withheldUsTaxNative: calc.withheldUsTaxNative }
+        : {}),
     };
-    addTransaction(tx);
+    setConfirmState({ tx, rowKey: row.key });
+  };
+
+  /** 確認儲存：寫入交易並清掉該列的暫存帳戶選擇（避免下次 reopen 時殘留舊值）。 */
+  const confirmAndSavePendingActual = () => {
+    if (!confirmState) return;
+    addTransaction(confirmState.tx);
+    const rowKey = confirmState.rowKey;
     setPendingAccountByKey(prev => {
       const next = { ...prev };
-      delete next[row.key];
+      delete next[rowKey];
       return next;
     });
+    setConfirmState(null);
+  };
+
+  /** 返回修改：只關掉 modal，保留帳戶選擇與待補登清單，使用者可重新換帳戶再按一次。 */
+  const cancelConfirmPendingActual = () => {
+    setConfirmState(null);
   };
 
   // Month labels — always 3-letter English abbreviations for the grid header
@@ -924,21 +979,38 @@ const DividendHeatmap: React.FC = () => {
                           <td className="px-2 py-1.5">
                             {showPendingAction && pa ? (
                               <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                                {/* 除息日／估發放日與來源 badge 已移除（操作欄精簡為「每股 + 帳戶 + 按鈕」），
-                                    日期資訊在「除息日」欄位仍可見，來源差異另外用按鈕本身的可用性表達。 */}
-                                <span
-                                  className="rounded px-1 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 font-mono"
-                                  title={`${dtx.pendingActualPerShare}: ${pa.amountPerShare}（${
-                                    pa.source === 'moneydj'
-                                      ? dtx.pendingActualSourceMoneyDj
-                                      : dtx.pendingActualSourceYahoo
-                                  }｜${pa.exDate}${pa.payDate ? ` → ${pa.payDate}` : ''}）`}
-                                >
-                                  {pa.amountPerShare.toLocaleString(undefined, {
-                                    maximumFractionDigits: 4,
-                                  })}
-                                  /股
-                                </span>
+                                {/* 顯示「實領金額」（與按下確認後實際寫入交易記錄的 price/amount 一致），
+                                    詳細的每股 / 毛額 / 預扣稅在 tooltip 與後續確認 modal 呈現。 */}
+                                {(() => {
+                                  const calc = getCashDividendCalc(pa);
+                                  const cur = pa.currency ?? '';
+                                  const fmt = (n: number) =>
+                                    n.toLocaleString(undefined, {
+                                      maximumFractionDigits: 2,
+                                      minimumFractionDigits: 2,
+                                    });
+                                  const tipLines: string[] = [];
+                                  tipLines.push(
+                                    `${dtx.pendingActualPerShare}: ${pa.amountPerShare} × ${pa.quantity} = ${fmt(calc.grossNative)} ${cur}`
+                                  );
+                                  if (calc.withheldUsTaxNative != null && calc.withheldUsTaxNative > 0) {
+                                    tipLines.push(
+                                      `− ${(US_DIVIDEND_WITHHOLDING_RATE * 100).toFixed(0)}% = -${fmt(calc.withheldUsTaxNative)} ${cur}`
+                                    );
+                                    tipLines.push(`= ${fmt(calc.netNative)} ${cur}`);
+                                  }
+                                  tipLines.push(
+                                    `${pa.source === 'moneydj' ? dtx.pendingActualSourceMoneyDj : dtx.pendingActualSourceYahoo}｜${pa.exDate}${pa.payDate ? ` → ${pa.payDate}` : ''}`
+                                  );
+                                  return (
+                                    <span
+                                      className="rounded px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 font-semibold tabular-nums"
+                                      title={tipLines.join('\n')}
+                                    >
+                                      {fmt(calc.netNative)} {cur}
+                                    </span>
+                                  );
+                                })()}
                                 <select
                                   value={paSelectedAccount}
                                   onChange={e =>
@@ -992,6 +1064,111 @@ const DividendHeatmap: React.FC = () => {
         )}
       </div>
 
+      {/* 確認交易資訊 modal：與 TransactionForm 的確認框同樣式，避免使用者誤按「新增」一次就直接寫入。
+          按「返回修改」只關閉 modal，pendingAccountByKey 不清，使用者可改帳戶再按一次新增。 */}
+      {confirmState && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-slate-900 p-4">
+              <h3 className="text-white font-bold text-lg">{tf.confirmTitle}</h3>
+            </div>
+            <div className="p-6 space-y-3">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 font-medium">{tf.confirmMessage}</p>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{tf.dateLabel}</span>
+                  <span className="font-medium tabular-nums">{confirmState.tx.date}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{tf.accountLabel}</span>
+                  <span className="font-medium">{getAccountName(confirmState.tx.accountId)}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{tf.marketLabel}</span>
+                  <span className="font-medium">{confirmState.tx.market}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{tf.tickerLabel}</span>
+                  <span className="font-medium font-mono">{confirmState.tx.ticker}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{tf.typeLabel}</span>
+                  <span className="font-medium">{getTypeName(confirmState.tx.type)}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{tf.priceLabel}</span>
+                  <span className="font-medium tabular-nums">
+                    {confirmState.tx.price.toFixed(2)} {getAccountCurrencyCode(confirmState.tx.accountId)}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{tf.quantityLabel}</span>
+                  <span className="font-medium">
+                    {confirmState.tx.quantity} {tf.shares}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-600">{tf.feesLabel}</span>
+                  <span className="font-medium tabular-nums">
+                    {confirmState.tx.fees.toFixed(2)} {getAccountCurrencyCode(confirmState.tx.accountId)}
+                  </span>
+                </div>
+                {/* 美股預扣稅 / 台股二代健保補充保費：作為 transparency 提示，使用者一眼確認系統算的稅金 */}
+                {confirmState.tx.withheldUsTaxNative != null && confirmState.tx.withheldUsTaxNative > 0 && (
+                  <div className="flex justify-between py-1 border-b border-slate-100 text-rose-700">
+                    <span>{dtx.estNetAfterWithholding}</span>
+                    <span className="font-medium tabular-nums">
+                      −{confirmState.tx.withheldUsTaxNative.toFixed(2)}{' '}
+                      {getAccountCurrencyCode(confirmState.tx.accountId)}
+                    </span>
+                  </div>
+                )}
+                {confirmState.tx.withheldNhiTwd != null && confirmState.tx.withheldNhiTwd > 0 && (
+                  <div className="flex justify-between py-1 border-b border-slate-100 text-rose-700">
+                    <span>{dtx.estNhiFee}</span>
+                    <span className="font-medium tabular-nums">
+                      −{confirmState.tx.withheldNhiTwd.toLocaleString()} TWD
+                    </span>
+                  </div>
+                )}
+                {confirmState.tx.note && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-600">{tf.noteLabel}</span>
+                    <span className="font-medium text-right max-w-[60%]">{confirmState.tx.note}</span>
+                  </div>
+                )}
+                <div className="border-t-2 border-slate-300 pt-2 mt-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-700 font-semibold">{tf.totalAmount}</span>
+                    <span className="font-bold text-lg text-slate-900 tabular-nums">
+                      {confirmState.tx.amount?.toFixed(2) ?? '0.00'}{' '}
+                      {getAccountCurrencyCode(confirmState.tx.accountId)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={cancelConfirmPendingActual}
+                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50"
+                >
+                  {tf.backToEdit}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmAndSavePendingActual}
+                  className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
+                >
+                  {tf.confirmSave}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
