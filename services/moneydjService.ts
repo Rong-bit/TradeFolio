@@ -187,6 +187,107 @@ async function fetchMoneyDjTwAmounts(ticker: string): Promise<MoneyDjAmountByPer
   return parsed;
 }
 
+// ── MoneyDJ ETF 配息頁（適用美股／海外 ETF；提供精確每股 + 真實發放日） ──────
+//
+// URL：https://www.moneydj.com/ETF/X/Basic/Basic0005.xdjhtm?etfid=<TICKER>
+// 表格結構（每列 8 個 <td>，index 從 0 起）：
+//   [0] 配息基準日（常為空）｜[1] 除息日｜[2] 登記日｜[3] 發放日｜[4] 幣別
+//   ｜[5] 短期資本利得｜[6] 長期資本利得｜[7] 配息總額（精確到 6 位小數）
+// 解析重點：
+//  - 每股 = [7] 配息總額（注意 12 月底特別配息會把資本利得加進這欄）
+//  - 發放日 = [3]，可信值（非推估）
+//  - 幣別 = [4]，需從中文（美元／新台幣）轉成 ISO（USD／TWD）
+const ETF_CURRENCY_MAP: Record<string, string> = {
+  美元: 'USD',
+  新台幣: 'TWD',
+  港元: 'HKD',
+  日圓: 'JPY',
+  歐元: 'EUR',
+  英鎊: 'GBP',
+  人民幣: 'CNY',
+  加幣: 'CAD',
+  澳幣: 'AUD',
+};
+
+interface MoneyDjEtfDividendRow {
+  /** YYYY-MM-DD 除息日 */
+  exDate: string;
+  /** YYYY-MM-DD 發放日 */
+  payDate: string;
+  /** 每股現金股利（含資本利得；以原幣別計） */
+  amountPerShare: number;
+  /** 報價幣別 ISO 三碼 */
+  currency?: string;
+}
+
+function normalizeYmd(slashYmd: string): string {
+  const m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(slashYmd.trim());
+  if (!m) return '';
+  return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+}
+
+function stripHtml(s: string): string {
+  return s
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .trim();
+}
+
+export function parseMoneyDjEtfHtml(html: string): MoneyDjEtfDividendRow[] {
+  const rows: MoneyDjEtfDividendRow[] = [];
+  const flat = html.replace(/[\r\n]+/g, ' ');
+  // 鎖定 <tbody>...</tbody>，避免抓到頁面其他表格
+  const tbodyMatch = /<tbody[^>]*>([\s\S]*?)<\/tbody>/i.exec(flat);
+  const scope = tbodyMatch ? tbodyMatch[1] : flat;
+
+  const trRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = trRe.exec(scope)) != null) {
+    const tdRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
+    const cells: string[] = [];
+    let cm: RegExpExecArray | null;
+    while ((cm = tdRe.exec(m[1])) != null) cells.push(stripHtml(cm[1]));
+    if (cells.length < 8) continue;
+
+    const exDateRaw = cells[1] ?? '';
+    const payDateRaw = cells[3] ?? '';
+    const currencyRaw = cells[4] ?? '';
+    const amountRaw = cells[7] ?? '';
+
+    const exDate = normalizeYmd(exDateRaw);
+    const payDate = normalizeYmd(payDateRaw);
+    if (!exDate) continue;
+    const amount = Number(amountRaw.replace(/,/g, ''));
+    if (!Number.isFinite(amount) || amount <= 0) continue;
+
+    const currKey = Object.keys(ETF_CURRENCY_MAP).find(k => currencyRaw.includes(k));
+    const currency = currKey ? ETF_CURRENCY_MAP[currKey] : undefined;
+
+    rows.push({ exDate, payDate, amountPerShare: amount, currency });
+  }
+  // 由新到舊
+  rows.sort((a, b) => b.exDate.localeCompare(a.exDate));
+  return rows;
+}
+
+/** 抓取 ETF 配息頁；解析失敗或無資料時回 null。 */
+async function fetchMoneyDjEtfHistory(
+  ticker: string
+): Promise<MoneyDjEtfDividendRow[] | null> {
+  // ETF id 接受 A–Z／0–9，VTI、QQQM、0050、SPDR 系列大小寫無關
+  const sanitized = String(ticker).replace(/\s/g, '').toUpperCase();
+  if (!/^[0-9A-Z.\-]{1,12}$/.test(sanitized)) return null;
+  const url = `https://www.moneydj.com/ETF/X/Basic/Basic0005.xdjhtm?etfid=${encodeURIComponent(sanitized)}`;
+  const html = await fetchAsText(url);
+  if (!html) return null;
+  // 找不到該 ETF 時 MoneyDJ 通常導去清單頁或顯示「查無資料」字樣
+  if (/查無資料|個股代碼錯誤/.test(html)) return null;
+  const rows = parseMoneyDjEtfHtml(html);
+  if (rows.length === 0) return null;
+  return rows;
+}
+
 // ── Yahoo events=div：取得歷史除息明細（適用全市場） ──────────────────────────
 interface YahooDividendEvent {
   exDate: string;
@@ -254,44 +355,71 @@ function isWithin(amount: number, target: number, ratio = 0.1): boolean {
 /**
  * 取得指定持倉的歷史已發放現金配息（過去 5 年內）。
  * 一律回傳「除息日由新到舊」的陣列；未來日期不會出現。
+ *
+ * 來源優先序：
+ *  - 台股：Yahoo events=div 提供 (除息日, 金額)；MoneyDJ ZCC_<TICKER> 用於金額／年度 cross-check 標記。
+ *  - 非台股（主要是美股 ETF）：先試 MoneyDJ ETF 配息頁（Basic0005.xdjhtm?etfid=<TICKER>），可拿到
+ *    精確小數（例如 0.193900）與真實發放日；失敗才退回 Yahoo events=div + 推估發放日。
  */
 export async function fetchActualDividendHistory(
   ticker: string,
   market: Market,
   yahooMarket: YahooMarket
 ): Promise<ActualDividendRecord[]> {
-  // 1) Yahoo events=div 永遠抓；它提供精確的除息日 + 金額
+  // 1) Yahoo events=div 永遠抓（普及度最高，作為通用 fallback / 追加來源）
   const yahoo = await fetchYahooDividendEvents(ticker, yahooMarket);
 
-  // 2) 台股額外 query MoneyDJ 做金額/年度標記；其他市場略過
-  const mdj = market === Market.TW ? await fetchMoneyDjTwAmounts(ticker).catch(() => null) : null;
+  // 2) 台股 cross-check 用：MoneyDJ 個股股利政策頁（年度／季度合計金額）
+  const mdjTw =
+    market === Market.TW ? await fetchMoneyDjTwAmounts(ticker).catch(() => null) : null;
+
+  // 3) 非台股優先來源：MoneyDJ ETF 配息頁；提供精確每股 + 真實發放日（非推估）
+  const mdjEtfRows =
+    market !== Market.TW ? await fetchMoneyDjEtfHistory(ticker).catch(() => null) : null;
 
   const offset = payDateOffsetDays(market);
   const today = new Date().toISOString().slice(0, 10);
 
-  const records: ActualDividendRecord[] = yahoo.events
-    .filter(ev => ev.exDate <= today) // 只取已除息（≤今天），未來除息留給 Yahoo 預估區塊
-    .map(ev => {
-      const payDate = addDaysYmd(ev.exDate, offset);
-      // 來源標記：若 MoneyDJ 同年/同季金額在 ±10% 內可比對到，視為 MoneyDJ 來源
-      let source: 'moneydj' | 'yahoo' = 'yahoo';
-      if (mdj) {
-        const dt = new Date(`${ev.exDate}T12:00:00`);
-        const y = dt.getFullYear();
-        const q = Math.floor(dt.getMonth() / 3) + 1;
-        const yAmt = mdj.byYear.get(y);
-        const qAmt = mdj.byQuarter.get(`${y}-Q${q}`);
-        if (qAmt != null && isWithin(qAmt, ev.amountPerShare)) source = 'moneydj';
-        else if (yAmt != null && isWithin(yAmt, ev.amountPerShare)) source = 'moneydj';
-      }
-      return {
-        exDate: ev.exDate,
-        payDate,
-        payDateEstimated: true,
-        amountPerShare: ev.amountPerShare,
-        currency: yahoo.currency,
-        source,
-      };
+  // 以 exDate 為 key 合併兩個來源；MoneyDJ ETF 行精度更高，遇衝突時覆蓋 Yahoo。
+  const byExDate = new Map<string, ActualDividendRecord>();
+
+  // 先放 Yahoo（含全部市場），標記為 yahoo / 推估發放日
+  for (const ev of yahoo.events) {
+    if (ev.exDate > today) continue;
+    let source: 'moneydj' | 'yahoo' = 'yahoo';
+    if (mdjTw) {
+      const dt = new Date(`${ev.exDate}T12:00:00`);
+      const y = dt.getFullYear();
+      const q = Math.floor(dt.getMonth() / 3) + 1;
+      const yAmt = mdjTw.byYear.get(y);
+      const qAmt = mdjTw.byQuarter.get(`${y}-Q${q}`);
+      if (qAmt != null && isWithin(qAmt, ev.amountPerShare)) source = 'moneydj';
+      else if (yAmt != null && isWithin(yAmt, ev.amountPerShare)) source = 'moneydj';
+    }
+    byExDate.set(ev.exDate, {
+      exDate: ev.exDate,
+      payDate: addDaysYmd(ev.exDate, offset),
+      payDateEstimated: true,
+      amountPerShare: ev.amountPerShare,
+      currency: yahoo.currency,
+      source,
     });
-  return records;
+  }
+
+  // 再用 MoneyDJ ETF 配息頁覆蓋（精度與發放日更可信）
+  if (mdjEtfRows && mdjEtfRows.length > 0) {
+    for (const row of mdjEtfRows) {
+      if (row.exDate > today) continue;
+      byExDate.set(row.exDate, {
+        exDate: row.exDate,
+        payDate: row.payDate || addDaysYmd(row.exDate, offset),
+        payDateEstimated: !row.payDate,
+        amountPerShare: row.amountPerShare,
+        currency: row.currency ?? yahoo.currency,
+        source: 'moneydj',
+      });
+    }
+  }
+
+  return Array.from(byExDate.values()).sort((a, b) => b.exDate.localeCompare(a.exDate));
 }
