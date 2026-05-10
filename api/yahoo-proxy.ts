@@ -11,6 +11,9 @@ const ALLOWED_PREFIXES = [
   'https://stockanalysis.com/',
   // 台灣證交所即時報價（Yahoo US chart API 對 TW 股票常延遲至前一交易日收盤，需要用 TWSE 補盤中價）
   'https://mis.twse.com.tw/',
+  // MoneyDJ：個股/ETF 配息實績（除息日、發放日、每股股利）；HTML 解析後做為 Yahoo 預估的「實績補登」資料
+  'https://concords.moneydj.com/',
+  'https://www.moneydj.com/',
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -45,6 +48,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('[yahoo-proxy] Fetching:', targetUrl);
 
     const isTwse = targetUrl.startsWith('https://mis.twse.com.tw/');
+    const isMoneyDj =
+      targetUrl.startsWith('https://concords.moneydj.com/') ||
+      targetUrl.startsWith('https://www.moneydj.com/');
     const upstream = await fetch(targetUrl, {
       method: 'GET',
       headers: {
@@ -55,6 +61,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         // TWSE mis API 需要看起來像從它自家網頁發起，否則可能被擋或回空資料
         ...(isTwse ? { Referer: 'https://mis.twse.com.tw/stock/fibest.jsp' } : {}),
+        // MoneyDJ 部分頁面對非 MoneyDJ Referer 會回 403/重導，補上自家網域看起來像由 MoneyDJ 內部發出的請求
+        ...(isMoneyDj ? { Referer: 'https://concords.moneydj.com/' } : {}),
       },
     });
 
