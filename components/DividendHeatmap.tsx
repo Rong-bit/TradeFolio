@@ -51,18 +51,29 @@ function estimateTextColorForAmount(amount: number, maxAmount: number): string {
   return (amount / maxAmount) > 0.5 ? '#312e81' : '#4338ca';
 }
 
-function pickNextUpcomingMonth(candidates: number[], currentMonth: number, currentDay = 1): number | undefined {
+/**
+ * 從「該 ticker 歷史除息月份」候選中挑下一個尚未發生的月份索引（0–11）。
+ * 可選 recordedThisYear：已在本年度記錄過的月份直接跳過，使「BNDW 5月已實蹟化 → 推估月跳 6月」這類情境符合直覺。
+ * 若全年候選都被記錄完，會 wrap 回最早的月份（視為次年 cycle），避免回 undefined 造成行被誤刪。
+ */
+function pickNextUpcomingMonth(
+  candidates: number[],
+  currentMonth: number,
+  currentDay = 1,
+  recordedThisYear?: Set<number>
+): number | undefined {
   const unique = Array.from(
     new Set(candidates.filter(m => Number.isInteger(m) && m >= 0 && m <= 11))
   ).sort((a, b) => a - b);
   if (unique.length === 0) return undefined;
+  const isAvailable = (m: number) => !recordedThisYear?.has(m);
   // 無精確除息日時，接近月底（>=20）時避免卡在「本月」，
   // 優先找下一個月，較符合使用者對「即將到來」的直覺。
   if (currentDay >= 20) {
-    const laterThisYear = unique.find(m => m > currentMonth);
+    const laterThisYear = unique.find(m => m > currentMonth && isAvailable(m));
     if (laterThisYear != null) return laterThisYear;
   }
-  const sameYear = unique.find(m => m >= currentMonth);
+  const sameYear = unique.find(m => m >= currentMonth && isAvailable(m));
   if (sameYear != null) return sameYear;
   return unique[0];
 }
@@ -371,6 +382,32 @@ const DividendHeatmap: React.FC = () => {
     }
     return false;
   }, [mergedHoldingsForDiv, actualDividendsMap]);
+
+  /**
+   * 每個 ticker 在「本年度」已存在 CASH_DIVIDEND 紀錄的月份集合（任何帳戶都算）。
+   * 用於上方預估表 — 已實蹟化的月份不再列為「下次推估月」候選，使 BNDW 5月已記後自動跳 6月、
+   * 0050 / 2330 完成本輪後也能跳到下一輪。多帳戶情境下，任一帳戶記錄即視為「已實蹟」。
+   */
+  const recordedMonthsByTickerThisYear = useMemo(() => {
+    const m = new Map<string, Set<number>>();
+    const yearStr = String(new Date().getFullYear());
+    for (const tx of transactions) {
+      if (tx.type !== TransactionType.CASH_DIVIDEND) continue;
+      const date = (tx.date || '').slice(0, 10);
+      if (!date.startsWith(yearStr)) continue;
+      const month = parseInt(date.slice(5, 7), 10) - 1;
+      if (!Number.isInteger(month) || month < 0 || month > 11) continue;
+      const ticker = tx.ticker.trim().toUpperCase();
+      if (!ticker) continue;
+      let set = m.get(ticker);
+      if (!set) {
+        set = new Set();
+        m.set(ticker, set);
+      }
+      set.add(month);
+    }
+    return m;
+  }, [transactions]);
 
   /**
    * 以 dividendScheduleMapKey（同 ticker × market）為 key 的 pending 索引；用於上方預估列表 inline 顯示按鈕。
@@ -909,10 +946,15 @@ const DividendHeatmap: React.FC = () => {
                       const paList = pendingActualByTickerKey.get(tickerKey) ?? [];
                       // 計算「推估月」(0–11)：優先用 Yahoo 已知的 nextExDate；否則 fallback 由歷史挑下一個月。
                       // 操作欄只有在 pending 除息月與此推估月一致時才顯示，避免季／年配把「上一輪」當成這輪的補登提醒。
+                      // 帶入「本年度已記錄月份」→ 5 月已實蹟的 BNDW 自動跳 6 月，季配同理跳到下一輪。
+                      const recordedThisYear = recordedMonthsByTickerThisYear.get(
+                        r.ticker.trim().toUpperCase()
+                      );
                       const preferredInferredMonth = pickNextUpcomingMonth(
                         r.inferredMonthsCandidate ?? [],
                         currentMonthForDisplay,
-                        currentDayForDisplay
+                        currentDayForDisplay,
+                        recordedThisYear
                       );
                       const displayInferredMonth = preferredInferredMonth ?? r.inferredMonth;
                       const displayMonthIndex = r.exDate
