@@ -974,7 +974,16 @@ const DividendHeatmap: React.FC = () => {
                           <td className="px-2 py-1.5">{r.market}</td>
                           <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
                           <td className="px-2 py-1.5 tabular-nums">
-                            {displayMonthIndex != null ? `${displayMonthIndex + 1}月` : '—'}
+                            {displayMonthIndex != null ? (
+                              <span
+                                className={!r.exDate ? 'cursor-help border-b border-dotted border-slate-300' : undefined}
+                                title={!r.exDate ? dtx.upcomingInferredMonthHint : undefined}
+                              >
+                                {`${displayMonthIndex + 1}月`}
+                              </span>
+                            ) : (
+                              '—'
+                            )}
                           </td>
                           <td className="px-2 py-1.5 text-right tabular-nums">
                             {r.estTwd != null && r.estTwd > 0 ? (
