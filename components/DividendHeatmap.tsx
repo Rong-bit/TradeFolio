@@ -283,19 +283,23 @@ const DividendHeatmap: React.FC = () => {
   }, [mergedHoldingsForDiv, dividendSchedules]);
 
   /**
-   * 「待確認實績配息」清單：每個持倉 ticker 取最新一筆「發放日 ≤ 今天 + 尚未在交易記錄」的配息。
-   * 若某 ticker 已全數記錄、或目前還無 MoneyDJ/Yahoo 資料，會被略過。
+   * 「待確認實績配息」清單：每個持倉「(ticker × 帳戶)」各取最新一筆「除息日 ≤ 今天 + 該帳戶當月尚未補登」的配息。
+   *
+   * 多帳戶同 ticker 的情境（例如 BNDW 同時在「國泰複委託」與「元大證券」）：
+   *  - 兩個帳戶的 quantity 不同 → 預估金額 / 實領各自試算，不再彙總成單一筆
+   *  - dedup 改用 (ticker, ex-month, accountId) 三元組，甲帳戶已記錄不會把乙帳戶也擋掉
+   *
+   * 其餘 gating（MoneyDJ/Yahoo 來源、90 天回溯窗、除息日 ≤ 今天）與單帳戶版本相同。
    */
   const pendingActualRows = useMemo(() => {
     const todayYmd = new Date().toISOString().slice(0, 10);
-    // 只看「最近一個季度」內已發放但尚未補登的；超過 90 天的歷史漏記由使用者自行決定要不要手動補
-    // （否則會把多年前的舊紀錄一直曝出來，干擾近期判斷）。
     const PENDING_LOOKBACK_DAYS = 90;
     const lookbackCutoffMs = Date.now() - PENDING_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
-    const rows: Array<{
+    type Row = {
       key: string;
       ticker: string;
       market: Market;
+      /** 該帳戶當前持有股數（用於試算入帳金額） */
       quantity: number;
       exDate: string;
       payDate?: string;
@@ -304,48 +308,59 @@ const DividendHeatmap: React.FC = () => {
       currency?: string;
       source: 'moneydj' | 'yahoo';
       estTotalNative: number;
+      /** 預設鎖定的入帳帳戶（持倉所在證券戶；UI 仍可改成其他帳戶） */
+      accountId: string;
+      /** 同 ticker 全部持倉帳戶（給 UI dropdown 列出選項） */
       accountOptions: Array<{ accountId: string; quantity: number }>;
-    }> = [];
+    };
+    const rows: Row[] = [];
     for (const row of mergedHoldingsForDiv) {
       const key = dividendScheduleMapKey(row.market, row.ticker);
       const list = actualDividendsMap[key];
       if (!list || list === 'loading') continue;
       const accountOptions = holdingAccountsByTicker.get(key) ?? [];
-      // Yahoo events 已按 ts 由新到舊排序，但 MoneyDJ 來源也照 exDate 排：兩種都從首筆開始找第一筆「除息已發生 + 未記錄」的
-      for (const rec of list) {
-        // 用「除息日 ≤ 今天」做閘門：配息事件已正式發生即提醒，避免發放日推估值不準（例如 ETF 實際 5 天到，我們估 14 天）導致漏顯示。
-        if (rec.exDate > todayYmd) continue;
-        const payDate = rec.payDate ?? rec.exDate;
-        // 超過回溯窗格（以除息日為準）直接停止往更舊掃描，避免把陳年舊帳一直列出
-        const exDateMs = new Date(`${rec.exDate}T12:00:00`).getTime();
-        if (Number.isFinite(exDateMs) && exDateMs < lookbackCutoffMs) break;
-        // 規則：「除息月」是否已有 CASH_DIVIDEND 紀錄。沒有就列入待確認。
-        // 不使用估發放月比對 —— 估發放日不穩定（券商實際入帳可能差數天到數週），
-        // 以「除息月」為單一基準，與熱力圖該月格子是否顯示實績的判斷一致。
-        const existing = findExistingCashDividendInSameMonth(
-          transactions,
-          row.ticker,
-          rec.exDate
-        );
-        if (existing) continue;
-        rows.push({
-          key: `${key}|${rec.exDate}`,
-          ticker: row.ticker,
-          market: row.market,
-          quantity: row.quantity,
-          exDate: rec.exDate,
-          payDate: rec.payDate,
-          payDateEstimated: rec.payDateEstimated,
-          amountPerShare: rec.amountPerShare,
-          currency: rec.currency,
-          source: rec.source,
-          estTotalNative: rec.amountPerShare * row.quantity,
-          accountOptions,
-        });
-        break; // 同 ticker 一次只列最新一筆
+      if (accountOptions.length === 0) continue;
+      // 對該 ticker 的「每個持倉帳戶」各自找最新一筆「除息已過 + 該帳戶當月尚未記錄」
+      for (const acct of accountOptions) {
+        if (acct.quantity <= 0) continue;
+        for (const rec of list) {
+          // 配息事件已正式發生（除息日 ≤ 今天）才提醒，避免估發放日不準導致漏顯示
+          if (rec.exDate > todayYmd) continue;
+          const exDateMs = new Date(`${rec.exDate}T12:00:00`).getTime();
+          if (Number.isFinite(exDateMs) && exDateMs < lookbackCutoffMs) break;
+          // 帳戶層級 dedup：同 (ticker, ex-month, accountId) — 甲帳戶已記錄不會擋掉乙帳戶
+          const existing = findExistingCashDividendInSameMonth(
+            transactions,
+            row.ticker,
+            rec.exDate,
+            acct.accountId
+          );
+          if (existing) continue;
+          rows.push({
+            key: `${key}|${rec.exDate}|${acct.accountId}`,
+            ticker: row.ticker,
+            market: row.market,
+            quantity: acct.quantity,
+            exDate: rec.exDate,
+            payDate: rec.payDate,
+            payDateEstimated: rec.payDateEstimated,
+            amountPerShare: rec.amountPerShare,
+            currency: rec.currency,
+            source: rec.source,
+            estTotalNative: rec.amountPerShare * acct.quantity,
+            accountId: acct.accountId,
+            accountOptions,
+          });
+          break; // 同 (ticker, accountId) 一次只列最新一筆
+        }
       }
     }
-    rows.sort((a, b) => b.exDate.localeCompare(a.exDate) || a.ticker.localeCompare(b.ticker));
+    rows.sort(
+      (a, b) =>
+        b.exDate.localeCompare(a.exDate) ||
+        a.ticker.localeCompare(b.ticker) ||
+        a.accountId.localeCompare(b.accountId)
+    );
     return rows;
   }, [mergedHoldingsForDiv, actualDividendsMap, holdingAccountsByTicker, transactions]);
 
@@ -358,15 +373,16 @@ const DividendHeatmap: React.FC = () => {
   }, [mergedHoldingsForDiv, actualDividendsMap]);
 
   /**
-   * 以 dividendScheduleMapKey（同 ticker × market）為 key 的 pending 索引；
-   * 用於上方預估列表 inline 顯示「新增至交易記錄」按鈕。
+   * 以 dividendScheduleMapKey（同 ticker × market）為 key 的 pending 索引；用於上方預估列表 inline 顯示按鈕。
+   * 因為單一 ticker 可能在多個帳戶都需補登，這裡保留陣列（一帳戶一筆），UI 會逐筆顯示「新增至交易記錄」按鈕。
    */
   const pendingActualByTickerKey = useMemo(() => {
-    const m = new Map<string, (typeof pendingActualRows)[number]>();
+    const m = new Map<string, Array<(typeof pendingActualRows)[number]>>();
     for (const r of pendingActualRows) {
       const tickerKey = dividendScheduleMapKey(r.market, r.ticker);
-      // 一個 ticker 一次只取最新一筆（pendingActualRows 已由新到舊排序）
-      if (!m.has(tickerKey)) m.set(tickerKey, r);
+      const existing = m.get(tickerKey);
+      if (existing) existing.push(r);
+      else m.set(tickerKey, [r]);
     }
     return m;
   }, [pendingActualRows]);
@@ -378,8 +394,8 @@ const DividendHeatmap: React.FC = () => {
    * 入帳金額（price/amount）以「實領金額」為準，與券商對帳單一致；計算邏輯統一走 getCashDividendCalc。
    */
   const handleAddPendingActual = (row: (typeof pendingActualRows)[number]) => {
-    const accountId =
-      pendingAccountByKey[row.key] ?? row.accountOptions[0]?.accountId ?? accounts[0]?.id;
+    // 預設用 row 鎖定的持倉證券戶；使用者若在 dropdown 改了，pendingAccountByKey 會覆蓋
+    const accountId = pendingAccountByKey[row.key] ?? row.accountId ?? accounts[0]?.id;
     if (!accountId) return;
     const calc = getCashDividendCalc(row);
     if (calc.netNative <= 0) return;
@@ -889,16 +905,8 @@ const DividendHeatmap: React.FC = () => {
                   <tbody className="divide-y divide-slate-100">
                     {upcomingRows.map(r => {
                       const tickerKey = dividendScheduleMapKey(r.market, r.ticker);
-                      const pa = pendingActualByTickerKey.get(tickerKey);
-                      const paSelectedAccount = pa
-                        ? (pendingAccountByKey[pa.key] ??
-                          pa.accountOptions[0]?.accountId ??
-                          accounts[0]?.id ??
-                          '')
-                        : '';
-                      const paOptionAccountIds = pa
-                        ? new Set(pa.accountOptions.map(o => o.accountId))
-                        : new Set<string>();
+                      // 同 ticker 可能多帳戶各自需補登 → 取整個陣列，逐筆渲染
+                      const paList = pendingActualByTickerKey.get(tickerKey) ?? [];
                       // 計算「推估月」(0–11)：優先用 Yahoo 已知的 nextExDate；否則 fallback 由歷史挑下一個月。
                       // 操作欄只有在 pending 除息月與此推估月一致時才顯示，避免季／年配把「上一輪」當成這輪的補登提醒。
                       const preferredInferredMonth = pickNextUpcomingMonth(
@@ -910,14 +918,14 @@ const DividendHeatmap: React.FC = () => {
                       const displayMonthIndex = r.exDate
                         ? new Date(`${r.exDate}T12:00:00`).getMonth()
                         : (displayInferredMonth ?? null);
-                      const paMonthIndex = pa
-                        ? new Date(`${pa.exDate}T12:00:00`).getMonth()
-                        : null;
-                      const showPendingAction =
-                        !!pa &&
-                        paMonthIndex != null &&
-                        displayMonthIndex != null &&
-                        paMonthIndex === displayMonthIndex;
+                      // 過濾出「除息月 = 推估月」的 pending — 季配同一輪才顯示按鈕，不被上一輪干擾
+                      const visiblePaList =
+                        displayMonthIndex == null
+                          ? []
+                          : paList.filter(p => {
+                              const m = new Date(`${p.exDate}T12:00:00`).getMonth();
+                              return m === displayMonthIndex;
+                            });
                       return (
                         <tr key={r.key} className="text-slate-600">
                           <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
@@ -974,14 +982,20 @@ const DividendHeatmap: React.FC = () => {
                               '—'
                             )}
                           </td>
-                          {/* 操作欄：僅當該 ticker 的 pending 除息月 = 推估月（同一輪）時顯示新增按鈕；
-                              否則維持 '—'（避免季／年配把上一輪當成這輪提醒） */}
+                          {/* 操作欄：每個持倉帳戶各一筆「實領金額 + 帳戶 + 新增按鈕」；
+                              只在「pending 除息月 = 推估月」（同一輪）時顯示，避免季／年配把上一輪當這輪提醒 */}
                           <td className="px-2 py-1.5">
-                            {showPendingAction && pa ? (
-                              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                                {/* 顯示「實領金額」（與按下確認後實際寫入交易記錄的 price/amount 一致），
-                                    詳細的每股 / 毛額 / 預扣稅在 tooltip 與後續確認 modal 呈現。 */}
-                                {(() => {
+                            {visiblePaList.length > 0 ? (
+                              <div className="flex flex-col gap-1.5">
+                                {visiblePaList.map(pa => {
+                                  const paSelectedAccount =
+                                    pendingAccountByKey[pa.key] ??
+                                    pa.accountId ??
+                                    accounts[0]?.id ??
+                                    '';
+                                  const paOptionAccountIds = new Set(
+                                    pa.accountOptions.map(o => o.accountId)
+                                  );
                                   const calc = getCashDividendCalc(pa);
                                   const cur = pa.currency ?? '';
                                   const fmt = (n: number) =>
@@ -989,7 +1003,10 @@ const DividendHeatmap: React.FC = () => {
                                       maximumFractionDigits: 2,
                                       minimumFractionDigits: 2,
                                     });
+                                  const accountLabel =
+                                    accounts.find(a => a.id === pa.accountId)?.name ?? pa.accountId;
                                   const tipLines: string[] = [];
+                                  tipLines.push(`${accountLabel}：${pa.quantity} 股`);
                                   tipLines.push(
                                     `${dtx.pendingActualPerShare}: ${pa.amountPerShare} × ${pa.quantity} = ${fmt(calc.grossNative)} ${cur}`
                                   );
@@ -1003,47 +1020,52 @@ const DividendHeatmap: React.FC = () => {
                                     `${pa.source === 'moneydj' ? dtx.pendingActualSourceMoneyDj : dtx.pendingActualSourceYahoo}｜${pa.exDate}${pa.payDate ? ` → ${pa.payDate}` : ''}`
                                   );
                                   return (
-                                    <span
-                                      className="rounded px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 font-semibold tabular-nums"
-                                      title={tipLines.join('\n')}
+                                    <div
+                                      key={pa.key}
+                                      className="flex flex-wrap items-center gap-1.5 text-[11px]"
                                     >
-                                      {fmt(calc.netNative)} {cur}
-                                    </span>
+                                      <span
+                                        className="rounded px-1.5 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 font-semibold tabular-nums"
+                                        title={tipLines.join('\n')}
+                                      >
+                                        {fmt(calc.netNative)} {cur}
+                                      </span>
+                                      <select
+                                        value={paSelectedAccount}
+                                        onChange={e =>
+                                          setPendingAccountByKey(prev => ({
+                                            ...prev,
+                                            [pa.key]: e.target.value,
+                                          }))
+                                        }
+                                        className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                                      >
+                                        {pa.accountOptions.map(opt => {
+                                          const acc = accounts.find(a => a.id === opt.accountId);
+                                          return (
+                                            <option key={opt.accountId} value={opt.accountId}>
+                                              {acc ? acc.name : opt.accountId}
+                                            </option>
+                                          );
+                                        })}
+                                        {accounts
+                                          .filter(a => !paOptionAccountIds.has(a.id))
+                                          .map(a => (
+                                            <option key={a.id} value={a.id}>
+                                              {a.name}
+                                            </option>
+                                          ))}
+                                      </select>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAddPendingActual(pa)}
+                                        className="rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100"
+                                      >
+                                        {dtx.pendingActualAddBtn}
+                                      </button>
+                                    </div>
                                   );
-                                })()}
-                                <select
-                                  value={paSelectedAccount}
-                                  onChange={e =>
-                                    setPendingAccountByKey(prev => ({
-                                      ...prev,
-                                      [pa.key]: e.target.value,
-                                    }))
-                                  }
-                                  className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                                >
-                                  {pa.accountOptions.map(opt => {
-                                    const acc = accounts.find(a => a.id === opt.accountId);
-                                    return (
-                                      <option key={opt.accountId} value={opt.accountId}>
-                                        {acc ? acc.name : opt.accountId}
-                                      </option>
-                                    );
-                                  })}
-                                  {accounts
-                                    .filter(a => !paOptionAccountIds.has(a.id))
-                                    .map(a => (
-                                      <option key={a.id} value={a.id}>
-                                        {a.name}
-                                      </option>
-                                    ))}
-                                </select>
-                                <button
-                                  type="button"
-                                  onClick={() => handleAddPendingActual(pa)}
-                                  className="rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100"
-                                >
-                                  {dtx.pendingActualAddBtn}
-                                </button>
+                                })}
                               </div>
                             ) : pendingActualLoading ? (
                               <span className="text-[10px] text-slate-300">…</span>
