@@ -226,6 +226,10 @@ const DividendHeatmap: React.FC = () => {
    */
   const pendingActualRows = useMemo(() => {
     const todayYmd = new Date().toISOString().slice(0, 10);
+    // 只看「最近一個季度」內已發放但尚未補登的；超過 90 天的歷史漏記由使用者自行決定要不要手動補
+    // （否則會把多年前的舊紀錄一直曝出來，干擾近期判斷）。
+    const PENDING_LOOKBACK_DAYS = 90;
+    const lookbackCutoffMs = Date.now() - PENDING_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
     const rows: Array<{
       key: string;
       ticker: string;
@@ -249,6 +253,9 @@ const DividendHeatmap: React.FC = () => {
       for (const rec of list) {
         const payDate = rec.payDate ?? rec.exDate;
         if (payDate > todayYmd) continue; // 還沒到發放日
+        // 超過回溯窗格直接停止往更舊掃描（list 已由新到舊），避免把陳年舊帳一直列出
+        const payDateMs = new Date(`${payDate}T12:00:00`).getTime();
+        if (Number.isFinite(payDateMs) && payDateMs < lookbackCutoffMs) break;
         const existing = findExistingCashDividendTx(transactions, row.ticker, rec.exDate);
         if (existing) continue;
         rows.push({
