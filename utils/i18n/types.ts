@@ -281,6 +281,19 @@ export interface Translations {
     disclaimerShort: string;
     usBadgeShort: string;
     nhiForecastTag: string;
+    pendingActualTitle: string;
+    pendingActualSubtitle: string;
+    pendingActualEmpty: string;
+    pendingActualLoading: string;
+    pendingActualAddBtn: string;
+    pendingActualEstimatedDate: string;
+    pendingActualSourceMoneyDj: string;
+    pendingActualSourceYahoo: string;
+    pendingActualPayDate: string;
+    pendingActualPerShare: string;
+    pendingActualEstAmount: string;
+    pendingActualAccount: string;
+    pendingActualNoteTemplate: string;
   };
   // 資金管理
   funds: {
