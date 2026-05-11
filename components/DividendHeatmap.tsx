@@ -999,7 +999,13 @@ const DividendHeatmap: React.FC = () => {
                         <tr key={r.key} className="text-slate-600">
                           <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
                           <td className="px-2 py-1.5">{r.market}</td>
-                          <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
+                          <td className="px-2 py-1.5 tabular-nums">
+                            {r.exDate
+                              ? r.exDate
+                              : visiblePaList.length > 0
+                                ? visiblePaList[0].exDate
+                                : '—'}
+                          </td>
                           <td className="px-2 py-1.5 tabular-nums">
                             {displayMonthIndex != null ? (
                               <span
