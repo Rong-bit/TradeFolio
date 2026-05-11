@@ -1162,17 +1162,18 @@ export async function fetchDividendSchedule(
   const tomorrowStart = new Date();
   tomorrowStart.setHours(0, 0, 0, 0);
   tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-  const in90d = 90 * 24 * 60 * 60 * 1000;
+  const in365d = 365 * 24 * 60 * 60 * 1000;
   if (nextYmd) {
     const t = new Date(nextYmd + 'T12:00:00').getTime();
-    if (!Number.isNaN(t) && t >= tomorrowStart.getTime() && t <= now + in90d) {
+    // 放寬到 365 天：月配息 ETF（如 BNDW）Yahoo 有時提供較遠的除息日
+    if (!Number.isNaN(t) && t >= tomorrowStart.getTime() && t <= now + in365d) {
       nextExDate = nextYmd;
     }
   }
 
   const curHint = normalizeYahooCurrency((sumPack?.json as any)?.quoteSummary?.result?.[0]?.summaryDetail?.currency);
 
-  if (lastAmount <= 0 && !nextExDate) return null;
+  if (lastAmount <= 0 && !nextExDate && !lastExDate) return null;
   if (lastAmount <= 0 && nextExDate) {
     return {
       lastAmountPerShare: 0,
