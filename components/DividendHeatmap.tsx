@@ -285,10 +285,13 @@ const DividendHeatmap: React.FC = () => {
       });
     }
     rows.sort((a, b) => {
-      if (!a.exDate && !b.exDate) return a.ticker.localeCompare(b.ticker);
-      if (!a.exDate) return 1;
-      if (!b.exDate) return -1;
-      return a.exDate.localeCompare(b.exDate) || a.ticker.localeCompare(b.ticker);
+      // 排序鍵：優先用 exDate（確認除息日），其次用 lastExDate（上次除息，供參考），無日期排最後
+      const aKey = a.exDate || a.lastExDate || '';
+      const bKey = b.exDate || b.lastExDate || '';
+      if (!aKey && !bKey) return a.ticker.localeCompare(b.ticker);
+      if (!aKey) return 1;
+      if (!bKey) return -1;
+      return aKey.localeCompare(bKey) || a.ticker.localeCompare(b.ticker);
     });
     return rows;
   }, [mergedHoldingsForDiv, dividendSchedules]);
@@ -972,7 +975,15 @@ const DividendHeatmap: React.FC = () => {
                         <tr key={r.key} className="text-slate-600">
                           <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
                           <td className="px-2 py-1.5">{r.market}</td>
-                          <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
+                          <td className="px-2 py-1.5 tabular-nums">
+                {r.exDate
+                  ? r.exDate
+                  : r.lastExDate
+                    ? <span className="text-slate-400 text-[11px]" title="Yahoo 尚未提供下次除息日，顯示上次記錄">
+                        上次 {r.lastExDate}
+                      </span>
+                    : '—'}
+              </td>
                           <td className="px-2 py-1.5 tabular-nums">
                             {displayMonthIndex != null ? (
                               <span
