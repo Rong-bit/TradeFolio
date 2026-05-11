@@ -83,6 +83,7 @@ function shiftMonthForTwPayout(month: number, market: Market): number {
   return (month + 1) % 12;
 }
 
+
 const DividendHeatmap: React.FC = () => {
   const { transactions, accounts, holdings, addTransaction } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
