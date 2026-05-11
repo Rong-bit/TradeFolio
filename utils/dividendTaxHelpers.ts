@@ -3,7 +3,7 @@ import type { YahooMarket } from '../services/yahooFinanceService';
 
 /** 與 useDividendSchedules 快取鍵一致 */
 export function dividendScheduleMapKey(market: Market, ticker: string): string {
-  return `${market}\x1e${ticker.toUpperCase()}`;
+  return `${market}\x1e${ticker.trim().toUpperCase()}`;
 }
 
 /** 二代健保補充保費：單次給付達此金額（含）以上須扣繳（參考常數，以最新法規為準） */
