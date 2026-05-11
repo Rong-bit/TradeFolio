@@ -285,13 +285,10 @@ const DividendHeatmap: React.FC = () => {
       });
     }
     rows.sort((a, b) => {
-      // 排序鍵：優先用 exDate（確認除息日），其次用 lastExDate（上次除息，供參考），無日期排最後
-      const aKey = a.exDate || a.lastExDate || '';
-      const bKey = b.exDate || b.lastExDate || '';
-      if (!aKey && !bKey) return a.ticker.localeCompare(b.ticker);
-      if (!aKey) return 1;
-      if (!bKey) return -1;
-      return aKey.localeCompare(bKey) || a.ticker.localeCompare(b.ticker);
+      if (!a.exDate && !b.exDate) return a.ticker.localeCompare(b.ticker);
+      if (!a.exDate) return 1;
+      if (!b.exDate) return -1;
+      return a.exDate.localeCompare(b.exDate) || a.ticker.localeCompare(b.ticker);
     });
     return rows;
   }, [mergedHoldingsForDiv, dividendSchedules]);
@@ -642,6 +639,9 @@ const DividendHeatmap: React.FC = () => {
       const estimatedBase = toBase(twdPart + usdPartAsTwd);
       if (estimatedBase <= 0) continue;
 
+      const tickerUpper = row.ticker.toUpperCase();
+      const recordedThisYear = recordedMonthsByTickerThisYear.get(tickerUpper);
+
       let targetYear: number | null = null;
       let targetMonth: number | null = null;
       if (row.exDate) {
@@ -651,22 +651,43 @@ const DividendHeatmap: React.FC = () => {
         const month = shiftMonthForTwPayout(rawMonth, row.market);
         const yearAdjusted = row.market === Market.TW && month < rawMonth ? year + 1 : year;
         if (!Number.isNaN(dt.getTime()) && month >= 0 && month <= 11) {
-          targetYear = yearAdjusted;
-          targetMonth = month;
+          if (yearAdjusted === currentYear && recordedThisYear?.has(month)) {
+            // 該月已有實績股息，不使用此 exDate 月份，改走推估邏輯找下一個月
+          } else {
+            targetYear = yearAdjusted;
+            targetMonth = month;
+          }
         }
       }
       if (targetMonth == null || targetYear == null) {
-        const tickerUpper = row.ticker.toUpperCase();
-        const preferredInferredMonth = pickNextUpcomingMonth(row.inferredMonthsCandidate ?? [], currentMonth, currentDay);
+        const preferredInferredMonth = pickNextUpcomingMonth(
+          row.inferredMonthsCandidate ?? [],
+          currentMonth,
+          currentDay,
+          recordedThisYear
+        );
         const inferredMonth =
           preferredInferredMonth ??
           row.inferredMonth ??
           inferredPayoutMonthByTicker.get(tickerUpper) ??
           inferredPayoutMonthFromYahooByTicker.get(tickerUpper);
         if (inferredMonth != null && inferredMonth >= 0 && inferredMonth <= 11) {
-          // 無除息日時，用歷史月份推估到「本年或次年」的對應月份
-          targetYear = inferredMonth < currentMonth ? currentYear + 1 : currentYear;
-          targetMonth = inferredMonth;
+          if (currentYear === currentYear && recordedThisYear?.has(inferredMonth)) {
+            // fallback 推估月也已記錄，嘗試找更後面的月份
+            const laterMonth = pickNextUpcomingMonth(
+              row.inferredMonthsCandidate ?? [],
+              inferredMonth,
+              28,
+              recordedThisYear
+            );
+            if (laterMonth != null && !recordedThisYear?.has(laterMonth)) {
+              targetYear = laterMonth < currentMonth ? currentYear + 1 : currentYear;
+              targetMonth = laterMonth;
+            }
+          } else {
+            targetYear = inferredMonth < currentMonth ? currentYear + 1 : currentYear;
+            targetMonth = inferredMonth;
+          }
         }
       }
       if (targetMonth == null || targetYear == null) continue;
@@ -700,6 +721,7 @@ const DividendHeatmap: React.FC = () => {
     baseCurrency,
     inferredPayoutMonthByTicker,
     inferredPayoutMonthFromYahooByTicker,
+    recordedMonthsByTickerThisYear,
   ]);
   const displayYears = useMemo(() => {
     const s = new Set<number>(years);
@@ -766,7 +788,8 @@ const DividendHeatmap: React.FC = () => {
                 {Array.from({ length: 12 }, (_, m) => {
                   const cell = grid[year]?.[m];
                   const actualAmount = cell?.amount ?? 0;
-                  const estimatedAmount = estimatedSummary.byYearMonthly[year]?.[m] ?? 0;
+                  const rawEstimatedAmount = estimatedSummary.byYearMonthly[year]?.[m] ?? 0;
+                  const estimatedAmount = actualAmount > 0 ? 0 : rawEstimatedAmount;
                   const amount = actualAmount + estimatedAmount;
                   const displayAmount = estimatedAmount > 0 ? estimatedAmount : actualAmount;
                   const isHovered = hoveredCell?.year === year && hoveredCell?.month === m;
@@ -975,15 +998,7 @@ const DividendHeatmap: React.FC = () => {
                         <tr key={r.key} className="text-slate-600">
                           <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
                           <td className="px-2 py-1.5">{r.market}</td>
-                          <td className="px-2 py-1.5 tabular-nums">
-                {r.exDate
-                  ? r.exDate
-                  : r.lastExDate
-                    ? <span className="text-slate-400 text-[11px]" title="Yahoo 尚未提供下次除息日，顯示上次記錄">
-                        上次 {r.lastExDate}
-                      </span>
-                    : '—'}
-              </td>
+                          <td className="px-2 py-1.5 tabular-nums">{r.exDate || '—'}</td>
                           <td className="px-2 py-1.5 tabular-nums">
                             {displayMonthIndex != null ? (
                               <span
