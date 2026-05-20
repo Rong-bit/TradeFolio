@@ -15,4 +15,5 @@ export const GLOBAL_AUTHORIZED_USERS = [
    'limriiam@gmail.com',
   'kuoarnan@gmail.com',
   'qaz7920726@gmail.com',
+  'iamsophiali@gmail.com',
   ]
