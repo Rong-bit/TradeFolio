@@ -17,8 +17,14 @@ import {
   BaseCurrency,
   AttributionPoint,
   WaterfallPeriodRow,
-  CombinedRecord
+  CombinedRecord,
+  StockSplitEvent,
 } from '../types';
+import {
+  getSplitsForSymbol,
+  applyPendingSplitsToHolding,
+  applyPendingSplitsToPosition,
+} from './stockSplitHelpers';
 
 /** 匯率物件（X→TWD：1 X = N TWD） */
 export interface ExchangeRates {
@@ -269,13 +275,15 @@ export const calculateHoldings = (
   priceDetails?: Record<string, { change: number, changePercent: number }>,
   /** 若有帳戶與匯率，會把現價/市值/涨跌金額依證券戶幣別換算，與 totalCost（入帳幣）一致 */
   accounts?: Account[],
-  rates?: ExchangeRates
+  rates?: ExchangeRates,
+  stockSplits: StockSplitEvent[] = []
 ): Holding[] => {
   const MIN_ANNUALIZED_DAYS = 30;
   const dbgOnceKey = new Set<string>();
   const map = new Map<string, Holding>();
   const flowsMap = new Map<string, { amount: number, date: number }[]>();
   const sortedTx = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const splitCursors = new Map<string, { splits: StockSplitEvent[]; index: number }>();
 
   sortedTx.forEach(tx => {
      const key = `${tx.accountId}-${tx.ticker}`;
@@ -304,6 +312,14 @@ export const calculateHoldings = (
      const flows = flowsMap.get(key)!;
 
      const h = map.get(key)!;
+
+     if (!splitCursors.has(key)) {
+       splitCursors.set(key, {
+         splits: getSplitsForSymbol(stockSplits, tx.market, tx.ticker),
+         index: 0,
+       });
+     }
+     applyPendingSplitsToHolding(h, splitCursors.get(key)!.splits, splitCursors.get(key)!, tx.date);
      
      if (tx.type === TransactionType.BUY || tx.type === TransactionType.TRANSFER_IN || tx.type === TransactionType.DIVIDEND) {
        // 台股邏輯：股價 * 股數 無條件捨去 + 手續費
@@ -1643,7 +1659,8 @@ export const calculateAccountPerformance = (
   holdings: Holding[],
   cashFlows: CashFlow[],
   transactions: Transaction[],
-  rates: ExchangeRates
+  rates: ExchangeRates,
+  stockSplits: StockSplitEvent[] = []
 ): AccountPerformance[] => {
   const normalizeUsdTwdRate = (rate: number | undefined): number => {
     if (!rate || !Number.isFinite(rate)) return 31.5;
@@ -1734,6 +1751,7 @@ export const calculateAccountPerformance = (
     // TRANSFER_OUT 只移轉成本，不認列已實現。
     let realizedProfitTWD = 0;
     const positionMap = new Map<string, { quantity: number; totalCost: number }>();
+    const splitCursors = new Map<string, { splits: StockSplitEvent[]; index: number }>();
     const accountTxs = transactions
       .filter(tx => tx.accountId === acc.id)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -1744,6 +1762,16 @@ export const calculateAccountPerformance = (
         positionMap.set(key, { quantity: 0, totalCost: 0 });
       }
       const pos = positionMap.get(key)!;
+
+      const cursorKey = `${acc.id}-${key}`;
+      if (!splitCursors.has(cursorKey)) {
+        splitCursors.set(cursorKey, {
+          splits: getSplitsForSymbol(stockSplits, tx.market, tx.ticker),
+          index: 0,
+        });
+      }
+      const cursor = splitCursors.get(cursorKey)!;
+      applyPendingSplitsToPosition(pos, cursor.splits, cursor, tx.date);
 
       if (tx.type === TransactionType.BUY || tx.type === TransactionType.TRANSFER_IN || tx.type === TransactionType.DIVIDEND) {
         let baseVal = tx.price * tx.quantity;
