@@ -370,6 +370,19 @@ export const calculateHoldings = (
         flows.push({ amount: proceeds, date: new Date(tx.date).getTime() });
      }
   });
+
+  // 生效日之後若無新交易，仍依「今日」套用尚未處理的拆分（目前持倉）
+  const asOfDate = new Date().toISOString().split('T')[0];
+  map.forEach((h, key) => {
+    if (h.quantity <= 0.000001) return;
+    if (!splitCursors.has(key)) {
+      splitCursors.set(key, {
+        splits: getSplitsForSymbol(stockSplits, h.market, h.ticker),
+        index: 0,
+      });
+    }
+    applyPendingSplitsToHolding(h, splitCursors.get(key)!.splits, splitCursors.get(key)!, asOfDate);
+  });
   
   return Array.from(map.values())
     .filter(h => h.quantity > 0.000001)
