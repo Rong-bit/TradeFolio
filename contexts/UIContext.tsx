@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import { Language } from '../utils/i18n';
 
-export type View = 'dashboard' | 'history' | 'funds' | 'accounts' | 'rebalance' | 'simulator' | 'help';
+export type View = 'dashboard' | 'history' | 'funds' | 'accounts' | 'splits' | 'rebalance' | 'simulator' | 'help';
 
 export interface AlertState {
   isOpen: boolean;
