@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useLocalStorageDebounced } from './useLocalStorageDebounced';
-import { Transaction, Account, CashFlow, HistoricalData, Market, RecurringDepositRule } from '../types';
+import { Transaction, Account, CashFlow, HistoricalData, Market, RecurringDepositRule, StockSplitEvent } from '../types';
 import { applyRecurringDeposits } from '../utils/recurringDeposits';
 
 interface PortfolioDataState {
@@ -13,6 +13,7 @@ interface PortfolioDataState {
   rebalanceEnabledItems: string[];
   historicalData: HistoricalData;
   recurringDepositRules: RecurringDepositRule[];
+  stockSplits: StockSplitEvent[];
 }
 
 const INITIAL_STATE: PortfolioDataState = {
@@ -25,6 +26,7 @@ const INITIAL_STATE: PortfolioDataState = {
   rebalanceEnabledItems: [],
   historicalData: {},
   recurringDepositRules: [],
+  stockSplits: [],
 };
 
 export function usePortfolioData(userPrefix: string | undefined) {
@@ -40,6 +42,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
   useLocalStorageDebounced('rebalanceEnabledItems', data.rebalanceEnabledItems, 500, userPrefix);
   useLocalStorageDebounced('historicalData', data.historicalData, 500, userPrefix);
   useLocalStorageDebounced('recurringDepositRules', data.recurringDepositRules, 500, userPrefix);
+  useLocalStorageDebounced('stockSplits', data.stockSplits, 500, userPrefix);
 
   /** 從 localStorage 載入所有投資組合資料 */
   const loadData = useCallback((getKey: (k: string) => string) => {
@@ -58,6 +61,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
       rebalanceEnabledItems: parse('rebalanceEnabledItems', []),
       historicalData: parse('historicalData', {}),
       recurringDepositRules: parse('recurringDepositRules', []),
+      stockSplits: parse('stockSplits', []),
     });
   }, []);
 
@@ -247,6 +251,16 @@ export function usePortfolioData(userPrefix: string | undefined) {
     setData(prev => ({ ...prev, historicalData: newData }));
   }, []);
 
+  // ── Stock splits ──────────────────────────────────────────────
+
+  const addStockSplit = useCallback((event: StockSplitEvent) => {
+    setData(prev => ({ ...prev, stockSplits: [...prev.stockSplits, event] }));
+  }, []);
+
+  const removeStockSplit = useCallback((id: string) => {
+    setData(prev => ({ ...prev, stockSplits: prev.stockSplits.filter(s => s.id !== id) }));
+  }, []);
+
   const importData = useCallback((imported: Partial<PortfolioDataState>) => {
     setData(prev => ({ ...prev, ...imported }));
   }, []);
@@ -287,5 +301,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
     updateRebalanceTargets,
     setRebalanceEnabledItems,
     saveHistoricalData,
+    addStockSplit,
+    removeStockSplit,
   };
 }
