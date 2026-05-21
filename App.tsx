@@ -28,6 +28,7 @@ import BatchImportModal from './components/BatchImportModal';
 import HistoricalDataModal from './components/HistoricalDataModal';
 import BatchUpdateMarketModal from './components/BatchUpdateMarketModal';
 import AssetAllocationSimulator from './components/AssetAllocationSimulator';
+import StockSplitManager from './components/StockSplitManager';
 import DarkModeToggle from './components/DarkModeToggle';
 import * as YahooFinance from './services/yahooFinanceService';
 import { autoSyncMissingHistoricalData, findYearsNeedingAutoHistoricalSync } from './utils/autoHistoricalSync';
@@ -68,7 +69,7 @@ const App: React.FC = () => {
   const { rates, loadRates, saveRates, updateRates, setUsdRate, resetRates, exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cadExchangeRate, inrExchangeRate, cnyExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate } = useExchangeRates();
 
   const userPrefix = isAuthenticated && currentUser ? `tf_${currentUser}` : undefined;
-  const { transactions, accounts, cashFlows, currentPrices, priceDetails, rebalanceTargets, rebalanceEnabledItems, historicalData, recurringDepositRules, loadData, resetData, importData, addTransaction, updateTransaction, removeTransaction, addBatchTransactions, clearTransactions, batchUpdateMarket, addAccount, updateAccount, removeAccount, addCashFlow, updateCashFlow, removeCashFlow, addBatchCashFlows, clearCashFlows, addRecurringDepositRule, updateRecurringDepositRule, removeRecurringDepositRule, setRecurringDepositRules, syncRecurringDeposits, updatePrice, updatePricesAndDetails, updateRebalanceTargets, setRebalanceEnabledItems, saveHistoricalData } = usePortfolioData(userPrefix);
+  const { transactions, accounts, cashFlows, currentPrices, priceDetails, rebalanceTargets, rebalanceEnabledItems, historicalData, recurringDepositRules, stockSplits, loadData, resetData, importData, addTransaction, updateTransaction, removeTransaction, addBatchTransactions, clearTransactions, batchUpdateMarket, addAccount, updateAccount, removeAccount, addCashFlow, updateCashFlow, removeCashFlow, addBatchCashFlows, clearCashFlows, addRecurringDepositRule, updateRecurringDepositRule, removeRecurringDepositRule, setRecurringDepositRules, syncRecurringDeposits, updatePrice, updatePricesAndDetails, updateRebalanceTargets, setRebalanceEnabledItems, saveHistoricalData, addStockSplit, removeStockSplit } = usePortfolioData(userPrefix);
 
   useLocalStorageDebouncedSimple('baseCurrency', baseCurrency, 500, userPrefix);
 
@@ -284,7 +285,7 @@ const App: React.FC = () => {
 
   const handleExportData = async () => {
     try {
-      const d = { version:'2.0', user:currentUser, timestamp:new Date().toISOString(), transactions, accounts, cashFlows, currentPrices, priceDetails, ...rates, exchangeRate:rates.exchangeRateUsdToTwd, baseCurrency, rebalanceTargets, rebalanceEnabledItems, historicalData, recurringDepositRules };
+      const d = { version:'2.0', user:currentUser, timestamp:new Date().toISOString(), transactions, accounts, cashFlows, currentPrices, priceDetails, ...rates, exchangeRate:rates.exchangeRateUsdToTwd, baseCurrency, rebalanceTargets, rebalanceEnabledItems, historicalData, recurringDepositRules, stockSplits };
       const blob = new Blob([JSON.stringify(d,null,2)], { type:'application/json' });
       const filename = `TradeView_${(currentUser||'guest').replace(/[^a-zA-Z0-9@._-]/g,'_')}_${new Date().toISOString().split('T')[0]}.json`;
       if (navigator.share) {
@@ -300,7 +301,7 @@ const App: React.FC = () => {
       try {
         const data = JSON.parse(e.target?.result as string);
         if (!data.transactions && !data.accounts) throw new Error('Invalid format');
-        importData({ transactions:data.transactions??[], accounts:data.accounts??[], cashFlows:data.cashFlows??[], currentPrices:data.currentPrices??{}, priceDetails:data.priceDetails??{}, rebalanceTargets:data.rebalanceTargets??{}, rebalanceEnabledItems:data.rebalanceEnabledItems??[], historicalData:data.historicalData??{}, recurringDepositRules:data.recurringDepositRules??[] });
+        importData({ transactions:data.transactions??[], accounts:data.accounts??[], cashFlows:data.cashFlows??[], currentPrices:data.currentPrices??{}, priceDetails:data.priceDetails??{}, rebalanceTargets:data.rebalanceTargets??{}, rebalanceEnabledItems:data.rebalanceEnabledItems??[], historicalData:data.historicalData??{}, recurringDepositRules:data.recurringDepositRules??[], stockSplits:data.stockSplits??[] });
         const ru: Partial<ExchangeRateState> = {};
         const usd = data.exchangeRate ?? data.exchangeRateUsdToTwd; if (usd) ru.exchangeRateUsdToTwd = usd;
         if (data.jpyExchangeRate) ru.jpyExchangeRate = data.jpyExchangeRate;
@@ -326,8 +327,8 @@ const App: React.FC = () => {
   // ─── 計算 ───────────────────────────────────────────────────
 
   const baseHoldings = useMemo(
-    () => calculateHoldings(transactions, currentPrices, priceDetails, accounts, rates),
-    [transactions, currentPrices, priceDetails, accounts, rates]
+    () => calculateHoldings(transactions, currentPrices, priceDetails, accounts, rates, stockSplits),
+    [transactions, currentPrices, priceDetails, accounts, rates, stockSplits]
   );
   const computedAccounts = useMemo(() => calculateAccountBalances(accounts, cashFlows, transactions), [accounts, cashFlows, transactions]);
 
@@ -471,8 +472,8 @@ const App: React.FC = () => {
   const annualPerformance = useMemo(() => calculateAnnualPerformance(chartData), [chartData]);
 
   const accountPerformance = useMemo(() => calculateAccountPerformance(
-    computedAccounts, holdings, cashFlows, transactions, rates
-  ), [computedAccounts, holdings, cashFlows, transactions, rates]);
+    computedAccounts, holdings, cashFlows, transactions, rates, stockSplits
+  ), [computedAccounts, holdings, cashFlows, transactions, rates, stockSplits]);
 
   // ─── Combined Records & Filters ─────────────────────────────
 
@@ -505,13 +506,13 @@ const App: React.FC = () => {
   const handleSaveHistoricalData = (nd: HistoricalData) => { saveHistoricalData(nd); showAlert(appText.historicalSaved,appText.updateSuccessTitle,'success'); };
 
   const availableViews = isGuest
-    ? (['dashboard','history','funds','accounts','simulator','help'] as View[])
-    : (['dashboard','history','funds','accounts','rebalance','simulator','help'] as View[]);
+    ? (['dashboard','history','funds','accounts','splits','simulator','help'] as View[])
+    : (['dashboard','history','funds','accounts','splits','rebalance','simulator','help'] as View[]);
 
   // ─── Context Values ────────────────────────────────────────────
   const portfolioValue = {
     transactions, accounts, cashFlows, currentPrices, priceDetails,
-    historicalData, rebalanceTargets, rebalanceEnabledItems, recurringDepositRules,
+    historicalData, rebalanceTargets, rebalanceEnabledItems, recurringDepositRules, stockSplits,
     holdings, computedAccounts, summary, chartData,
     assetAllocation, annualPerformance, accountPerformance,
     addTransaction, updateTransaction, removeTransaction,
@@ -524,6 +525,7 @@ const App: React.FC = () => {
     updatePrice, updatePricesAndDetails,
     saveHistoricalData: handleSaveHistoricalData,
     updateRebalanceTargets, setRebalanceEnabledItems,
+    addStockSplit, removeStockSplit,
     handleAutoUpdatePrices,
     refreshIntervalMs: REFRESH_INTERVAL_MS,
   };
@@ -650,7 +652,7 @@ const App: React.FC = () => {
       >
         <div className={`mb-6 ${view === 'dashboard' ? 'max-sm:px-3 max-sm:pr-2' : ''}`}>
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
-            <span className="break-words">{view==='dashboard'&&t(language).pages.dashboard}{view==='history'&&t(language).pages.history}{view==='funds'&&t(language).pages.funds}{view==='accounts'&&t(language).pages.accounts}{view==='rebalance'&&t(language).pages.rebalance}{view==='simulator'&&t(language).pages.simulator}{view==='help'&&t(language).pages.help}</span>
+            <span className="break-words">{view==='dashboard'&&t(language).pages.dashboard}{view==='history'&&t(language).pages.history}{view==='funds'&&t(language).pages.funds}{view==='accounts'&&t(language).pages.accounts}{view==='splits'&&t(language).pages.splits}{view==='rebalance'&&t(language).pages.rebalance}{view==='simulator'&&t(language).pages.simulator}{view==='help'&&t(language).pages.help}</span>
             {isGuest&&<button onClick={handleContactAdmin} className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow">{t(language).common.upgrade}</button>}
           </h2>
         </div>
@@ -682,6 +684,7 @@ const App: React.FC = () => {
             />
           )}
           {view==='accounts'&&<AccountManager />}
+          {view==='splits'&&<StockSplitManager />}
           {view==='funds'&&<FundManager />}
           {view==='rebalance'&&!isGuest&&<RebalanceView />}
           {view==='simulator'&&<AssetAllocationSimulator />}
@@ -698,7 +701,7 @@ const App: React.FC = () => {
               <div className="flex justify-between items-center text-xs font-bold"><span className="text-slate-500">{displayRate.label} {t(language).labels.exchangeRate}</span>{baseCurrency==='TWD'?<input type="number" step="0.01" value={exchangeRate} onChange={e=>setUsdRate(parseFloat(e.target.value))} className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1" />:<span className="text-emerald-400 font-mono">{displayRate.value.toFixed(2)}</span>}</div>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-1">
-              {availableViews.map(v=><button key={v} onClick={()=>{setView(v);setIsMobileMenuOpen(false);}} className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition ${view===v?'bg-indigo-600 text-white':'hover:bg-slate-800 text-slate-300'}`}><span className="font-bold">{v==='dashboard'&&t(language).nav.dashboard}{v==='history'&&t(language).nav.history}{v==='funds'&&t(language).nav.funds}{v==='accounts'&&t(language).nav.accounts}{v==='rebalance'&&t(language).nav.rebalance}{v==='simulator'&&t(language).nav.simulator}{v==='help'&&t(language).nav.help}</span></button>)}
+              {availableViews.map(v=><button key={v} onClick={()=>{setView(v);setIsMobileMenuOpen(false);}} className={`w-full flex items-center gap-3 p-4 rounded-xl text-left transition ${view===v?'bg-indigo-600 text-white':'hover:bg-slate-800 text-slate-300'}`}><span className="font-bold">{v==='dashboard'&&t(language).nav.dashboard}{v==='history'&&t(language).nav.history}{v==='funds'&&t(language).nav.funds}{v==='accounts'&&t(language).nav.accounts}{v==='splits'&&t(language).nav.splits}{v==='rebalance'&&t(language).nav.rebalance}{v==='simulator'&&t(language).nav.simulator}{v==='help'&&t(language).nav.help}</span></button>)}
             </div>
             <div className="p-4 border-t border-slate-800 space-y-2">
               <select value={language} onChange={e=>{handleLanguageChange(e.target.value as Language);setIsMobileMenuOpen(false);}} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-indigo-500">{LANGUAGES.map(({code,label})=><option key={code} value={code}>{label}</option>)}</select>
