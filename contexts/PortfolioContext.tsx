@@ -2,7 +2,7 @@ import React, { createContext, useContext } from 'react';
 import {
   Transaction, Account, CashFlow, Holding, PortfolioSummary,
   ChartDataPoint, AssetAllocationItem, AnnualPerformanceItem,
-  AccountPerformance, HistoricalData, Market, RecurringDepositRule,
+  AccountPerformance, HistoricalData, Market, RecurringDepositRule, StockSplitEvent,
 } from '../types';
 
 export interface PortfolioContextValue {
@@ -16,6 +16,7 @@ export interface PortfolioContextValue {
   rebalanceTargets: Record<string, number>;
   rebalanceEnabledItems: string[];
   recurringDepositRules: RecurringDepositRule[];
+  stockSplits: StockSplitEvent[];
 
   // 計算結果
   holdings: Holding[];
@@ -48,6 +49,8 @@ export interface PortfolioContextValue {
   addRecurringDepositRule: (rule: RecurringDepositRule) => void;
   updateRecurringDepositRule: (rule: RecurringDepositRule) => void;
   removeRecurringDepositRule: (id: string) => void;
+  addStockSplit: (event: StockSplitEvent) => void;
+  removeStockSplit: (id: string) => void;
 
   // 操作：prices / historical
   updatePrice: (key: string, price: number) => void;
