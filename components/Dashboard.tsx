@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Account, CashFlow, CashFlowType, Currency, Holding, AssetClass, Market, Transaction, TransactionType } from '../portfolioTypes';
+import { Account, CashFlow, CashFlowType, Currency, Holding, AssetClass, Market, Transaction, TransactionType, StockSplitEvent } from '../portfolioTypes';
 import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildQuarterlyTrendData, getAssetClassForTicker, calculateAssetAllocation, currencyToTWDRate } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
@@ -11,6 +11,7 @@ import CashFlowWaterfall from './CashFlowWaterfall';
 import DividendHeatmap from './DividendHeatmap';
 import { t, translate } from '../utils/i18n';
 import { ALLOCATION_INNER_BOND_COLOR, ALLOCATION_INNER_EQUITY_COLOR } from '../utils/allocationDonutColors';
+import { getSplitsForSymbol, applyPendingSplitsToPosition } from '../utils/stockSplitHelpers';
 
 export interface DashboardProps {
   onUpdateHistorical?: () => void;
@@ -30,7 +31,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   const { summary, holdings, chartData, annualPerformance,
     accountPerformance, cashFlows, transactions, accounts: portfolioAccounts, computedAccounts,
     updatePrice: onUpdatePrice, handleAutoUpdatePrices: onAutoUpdate,
-    refreshIntervalMs, historicalData } = usePortfolio();
+    refreshIntervalMs, historicalData, stockSplits } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { language, isGuest } = useUI();
   const accounts = computedAccounts;
@@ -156,12 +157,21 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     let overseasRealizedPLTwd = 0;
     let overseasDividendTwd = 0;
     const positionMap = new Map<string, { quantity: number; totalCost: number }>();
+    const splitCursors = new Map<string, { splits: StockSplitEvent[]; index: number }>();
     const txs = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     txs.forEach(tx => {
       const key = `${tx.accountId}-${tx.market}-${tx.ticker.toUpperCase()}`;
       if (!positionMap.has(key)) positionMap.set(key, { quantity: 0, totalCost: 0 });
       const pos = positionMap.get(key)!;
+      if (!splitCursors.has(key)) {
+        splitCursors.set(key, {
+          splits: getSplitsForSymbol(stockSplits, tx.market, tx.ticker),
+          index: 0,
+        });
+      }
+      const splitCursor = splitCursors.get(key)!;
+      applyPendingSplitsToPosition(pos, splitCursor.splits, splitCursor, tx.date);
       const isOverseasMarket = tx.market !== Market.TW;
       const isReportYear = new Date(tx.date).getFullYear() === reportYear;
 
@@ -237,7 +247,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       barClass,
       progressPct,
     };
-  }, [accounts, cashFlows, transactions, rates]);
+  }, [accounts, cashFlows, transactions, rates, stockSplits]);
 
 
   /** 累積損益圖：窄螢幕（與瀑布圖同款判斷）— 外擴 margin、較緊卡片內距，繪圖區較大 */
