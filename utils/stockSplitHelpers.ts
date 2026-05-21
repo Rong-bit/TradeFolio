@@ -39,8 +39,9 @@ export function applyPendingSplitsToPosition(
     if (pos.quantity > 0) {
       pos.quantity *= split.ratio;
       // totalCost 不變；賣出成本模擬僅用 quantity + totalCost
+      splitCursor.index += 1;
     }
-    splitCursor.index += 1;
+    // 股數為 0 時不標記為已套用，留待後續交易或結算日再處理
   }
 }
 
@@ -58,8 +59,9 @@ export function applyPendingSplitsToHolding(
     if (h.quantity > 0) {
       h.quantity *= split.ratio;
       h.avgCost = h.quantity > 0 ? h.totalCost / h.quantity : 0;
+      splitCursor.index += 1;
     }
-    splitCursor.index += 1;
+    // 股數為 0 時不標記為已套用，留待後續交易或結算日再處理
   }
 }
 
