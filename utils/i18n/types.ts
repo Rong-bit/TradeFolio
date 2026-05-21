@@ -61,6 +61,7 @@ export interface Translations {
     accounts: string;
     rebalance: string;
     simulator: string;
+    splits: string;
     help: string;
     logout: string;
   };
@@ -72,7 +73,34 @@ export interface Translations {
     accounts: string;
     rebalance: string;
     simulator: string;
+    splits: string;
     help: string;
+  };
+  // 股票拆分管理
+  stockSplit: {
+    title: string;
+    hint: string;
+    ticker: string;
+    tickerPlaceholder: string;
+    market: string;
+    effectiveDate: string;
+    sharesFrom: string;
+    sharesTo: string;
+    splitRatio: string;
+    note: string;
+    notePlaceholder: string;
+    addButton: string;
+    listTitle: string;
+    totalCount: string;
+    emptyList: string;
+    tickerRequired: string;
+    dateRequired: string;
+    invalidRatio: string;
+    duplicateError: string;
+    addSuccess: string;
+    deleteSuccess: string;
+    deleteConfirmTitle: string;
+    deleteConfirmMessage: string;
   };
   // 登入頁
   login: {
