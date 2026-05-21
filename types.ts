@@ -121,6 +121,19 @@ export interface RecurringDepositRule {
   createdMonth?: string;
 }
 
+/** 股票拆分事件（不寫入交易紀錄，於計算層依生效日調整持倉） */
+export interface StockSplitEvent {
+  id: string;
+  ticker: string;
+  market: Market;
+  effectiveDate: string;
+  sharesFrom: number;
+  sharesTo: number;
+  ratio: number;
+  note?: string;
+  createdAt: string;
+}
+
 export interface Transaction {
   id: string;
   date: string; // ISO Date string
