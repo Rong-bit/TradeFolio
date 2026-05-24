@@ -142,6 +142,7 @@ export function applyRecurringDeposits(input: ApplyRecurringDepositsInput): Appl
   for (let i = 0; i < rulesOut.length; i++) {
     const rule = rulesOut[i];
     if (!rule.enabled) continue;
+    if (rule.kind === 'DEBT_PAYMENT_ALERT') continue;
 
     const account = accountById.get(rule.accountId);
     if (!account) continue;
