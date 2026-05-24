@@ -64,8 +64,22 @@ export enum CashFlowType {
   DEPOSIT = 'DEPOSIT', // Import: Salary, Savings -> Account
   WITHDRAW = 'WITHDRAW', // Export: Account -> Living expenses
   TRANSFER = 'TRANSFER', // Internal: Account A -> Account B
-  INTEREST = 'INTEREST' // Interest income
+  INTEREST = 'INTEREST', // Interest income
+  LOAN_INTEREST = 'LOAN_INTEREST', // Loan interest expense (brokerage outflow)
 }
+
+export enum AccountKind {
+  BROKERAGE = 'BROKERAGE',
+  LIABILITY = 'LIABILITY',
+}
+
+export enum DebtKind {
+  PERSONAL_LOAN = 'PERSONAL_LOAN',
+  MORTGAGE = 'MORTGAGE',
+  SECURITIES_LENDING = 'SECURITIES_LENDING',
+}
+
+export type ScheduledRuleKind = 'RECURRING_DEPOSIT' | 'DEBT_PAYMENT_ALERT';
 
 export enum CashFlowCategory {
   INVESTMENT = 'INVESTMENT', // 投資
@@ -81,7 +95,12 @@ export interface Account {
   name: string;
   currency: Currency;
   isSubBrokerage: boolean; // For USD accounts in TW brokers
-  balance: number; // Cash balance
+  balance: number; // Cash balance (LIABILITY: principal owed, positive)
+  accountKind?: AccountKind;
+  debtKind?: DebtKind;
+  /** Annual interest % e.g. 2.2 */
+  annualInterestRate?: number;
+  linkedBrokerageAccountId?: string;
 }
 
 export interface CashFlow {
@@ -98,7 +117,7 @@ export interface CashFlow {
   category?: CashFlowCategory; // 資金用途類別
 }
 
-/** 每月固定某日自動建立 DEPOSIT 入金（僅在開啟 App 時套用） */
+/** 每月固定某日自動建立 DEPOSIT 入金，或信貸繳款提醒（僅在開啟 App 時檢查） */
 export interface RecurringDepositRule {
   id: string;
   enabled: boolean;
@@ -119,6 +138,12 @@ export interface RecurringDepositRule {
   lastAppliedPeriod?: string;
   /** 建立時 YYYY-MM；舊備份可省略 */
   createdMonth?: string;
+  /** 預設 RECURRING_DEPOSIT */
+  kind?: ScheduledRuleKind;
+  /** DEBT_PAYMENT_ALERT：繳款日前幾天提醒，預設 3 */
+  leadDays?: number;
+  /** DEBT_PAYMENT_ALERT：YYYY-MM 已確認 */
+  lastAcknowledgedPeriod?: string;
 }
 
 /** 股票拆分事件（不寫入交易紀錄，於計算層依生效日調整持倉） */
@@ -182,6 +207,13 @@ export interface PortfolioSummary {
   totalPLPercent: number;
   cashBalanceTWD: number; // Total cash across accounts converted to TWD
   netInvestedTWD: number; // Total cash deposits - withdrawals
+  /** 負債本金餘額合計（TWD） */
+  totalDebtBalanceTWD?: number;
+  /** 淨資產 = 總資產 − 負債 */
+  netWorthTWD?: number;
+  /** 累計信貸撥入 − 還本（TWD） */
+  leverageNetTWD?: number;
+  hasDebtFunding?: boolean;
   annualizedReturn: number; // CAGR
   exchangeRateUsdToTwd: number;
   jpyExchangeRate?: number; // JPY to TWD exchange rate (optional)
