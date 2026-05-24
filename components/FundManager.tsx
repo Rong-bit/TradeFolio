@@ -1,6 +1,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { BaseCurrency, CashFlow, CashFlowType, Currency, RecurringDepositRule } from '../types';
+import { BaseCurrency, CashFlow, CashFlowType, Currency, RecurringDepositRule, ScheduledRuleKind } from '../types';
+import {
+  isLiabilityAccount,
+  isBrokerageAccount,
+  isDebtFundedInflow,
+  isDebtRepaymentOutflow,
+} from '../utils/debtAccountHelpers';
 import { v4 as uuidv4 } from 'uuid';
 import {
   formatCurrency,
@@ -23,7 +29,10 @@ import {
   mergeNotePreserveRecurringMarkers,
 } from '../utils/recurringDeposits';
 
-interface Props {}
+interface Props {
+  minDebtSafetySpread?: number;
+  onMinDebtSafetySpreadChange?: (value: number) => void;
+}
 
 /** 證券戶幣別與儀表板基準幣相同（例：基準幣 JPY 且帳戶為日幣帳） */
 function fundAccountMatchesBaseCurrency(
@@ -33,7 +42,7 @@ function fundAccountMatchesBaseCurrency(
   return !!accountCurrency && (accountCurrency as string) === baseCurrency;
 }
 
-const FundManager: React.FC<Props> = () => {
+const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafetySpreadChange }) => {
   const { accounts, cashFlows, addCashFlow, updateCashFlow: onUpdate,
     addBatchCashFlows, removeCashFlow, clearCashFlows,
     recurringDepositRules, addRecurringDepositRule, updateRecurringDepositRule, removeRecurringDepositRule,
@@ -83,6 +92,8 @@ const FundManager: React.FC<Props> = () => {
   const [recStartMonth, setRecStartMonth] = useState('');
   const [recAmountTwd, setRecAmountTwd] = useState('');
   const [recEnabled, setRecEnabled] = useState(true);
+  const [recKind, setRecKind] = useState<ScheduledRuleKind>('RECURRING_DEPOSIT');
+  const [recLeadDays, setRecLeadDays] = useState('3');
 
   const openRecModal = (rule?: RecurringDepositRule) => {
     if (rule) {
@@ -108,6 +119,8 @@ const FundManager: React.FC<Props> = () => {
       setRecStartMonth(rule.startMonth ?? '');
       setRecAmountTwd(rule.amountTWD != null ? String(rule.amountTWD) : '');
       setRecEnabled(rule.enabled);
+      setRecKind(rule.kind ?? 'RECURRING_DEPOSIT');
+      setRecLeadDays(String(rule.leadDays ?? 3));
     } else {
       setRecEditing(null);
       setRecDay('1');
@@ -119,6 +132,8 @@ const FundManager: React.FC<Props> = () => {
       setRecStartMonth('');
       setRecAmountTwd('');
       setRecEnabled(true);
+      setRecKind('RECURRING_DEPOSIT');
+      setRecLeadDays('3');
     }
     setRecModalOpen(true);
   };
@@ -157,18 +172,22 @@ const FundManager: React.FC<Props> = () => {
       }
       storedEx = conv;
     }
+    const isDebtAlert = recKind === 'DEBT_PAYMENT_ALERT';
     const rule: RecurringDepositRule = {
       id: recEditing?.id ?? uuidv4(),
       enabled: recEnabled,
+      kind: recKind,
       dayOfMonth: day,
       accountId: recAccountId,
       amount: numAmt,
-      fee: Number.isFinite(feeNum) && feeNum > 0 ? feeNum : undefined,
-      exchangeRate: storedEx,
+      fee: isDebtAlert ? undefined : Number.isFinite(feeNum) && feeNum > 0 ? feeNum : undefined,
+      exchangeRate: isDebtAlert ? undefined : storedEx,
       note: recNote.trim() || undefined,
-      amountTWD: amtTwdNum !== undefined && Number.isFinite(amtTwdNum) ? amtTwdNum : undefined,
-      startMonth: recStartMonth.trim() || undefined,
+      amountTWD: isDebtAlert ? undefined : amtTwdNum !== undefined && Number.isFinite(amtTwdNum) ? amtTwdNum : undefined,
+      startMonth: isDebtAlert ? undefined : recStartMonth.trim() || undefined,
       lastAppliedPeriod: recEditing?.lastAppliedPeriod,
+      lastAcknowledgedPeriod: recEditing?.lastAcknowledgedPeriod,
+      leadDays: isDebtAlert ? Math.min(31, Math.max(0, parseInt(recLeadDays, 10) || 3)) : undefined,
       createdMonth: recEditing?.createdMonth ?? currentYearMonth(new Date()),
     };
     if (recEditing) updateRecurringDepositRule(rule);
@@ -259,6 +278,7 @@ const FundManager: React.FC<Props> = () => {
     
     const isTransfer = type === CashFlowType.TRANSFER;
     const isInterest = type === CashFlowType.INTEREST;
+    const isLoanInterest = type === CashFlowType.LOAN_INTEREST;
     const isSameCurrency = isTransfer && account && targetAccount && account.currency === targetAccount.currency;
     const isCrossXfer =
       isTransfer && account && targetAccount && account.currency !== targetAccount.currency;
@@ -297,6 +317,7 @@ const FundManager: React.FC<Props> = () => {
     } else if (
       !isTransfer &&
       !isInterest &&
+      !isLoanInterest &&
       account &&
       fundAccountMatchesBaseCurrency(account.currency, baseCurrency)
     ) {
@@ -310,7 +331,7 @@ const FundManager: React.FC<Props> = () => {
     if (account && account.currency !== Currency.TWD && numRate) {
        if (type === CashFlowType.DEPOSIT) {
           calculatedTWD = (numAmount * numRate) + numFee;
-       } else if (type === CashFlowType.WITHDRAW) {
+       } else if (type === CashFlowType.WITHDRAW || type === CashFlowType.LOAN_INTEREST) {
           calculatedTWD = (numAmount * numRate) - numFee;
        } else {
           calculatedTWD = (numAmount * numRate);
@@ -318,7 +339,7 @@ const FundManager: React.FC<Props> = () => {
     } else if (account?.currency === Currency.TWD) {
         // TWD Logic
         if (type === CashFlowType.DEPOSIT) calculatedTWD = numAmount + numFee;
-        else if (type === CashFlowType.WITHDRAW) calculatedTWD = numAmount - numFee;
+        else if (type === CashFlowType.WITHDRAW || type === CashFlowType.LOAN_INTEREST) calculatedTWD = numAmount - numFee;
         else calculatedTWD = numAmount;
     }
     
@@ -377,6 +398,7 @@ const FundManager: React.FC<Props> = () => {
       case CashFlowType.WITHDRAW: return t(language).funds.withdraw;
       case CashFlowType.TRANSFER: return t(language).funds.transfer;
       case CashFlowType.INTEREST: return t(language).funds.interest;
+      case CashFlowType.LOAN_INTEREST: return t(language).funds.loanInterest;
       default: return type;
     }
   };
@@ -387,13 +409,29 @@ const FundManager: React.FC<Props> = () => {
   // Logic to determine if Exchange Rate Input should be shown
   const isTransfer = type === CashFlowType.TRANSFER;
   const isInterest = type === CashFlowType.INTEREST;
+  const isLoanInterest = type === CashFlowType.LOAN_INTEREST;
   const isCrossCurrencyTransfer = isTransfer && selectedAccount && targetAccount && selectedAccount.currency !== targetAccount.currency;
+  const transferDebtHint =
+    isTransfer && selectedAccount && targetAccount
+      ? isDebtFundedInflow(
+          { type: CashFlowType.TRANSFER, accountId, targetAccountId, amount: 0, date: '', id: '' },
+          accounts
+        )
+        ? ff.transferDebtDisbursementHint
+        : isDebtRepaymentOutflow(
+            { type: CashFlowType.TRANSFER, accountId, targetAccountId, amount: 0, date: '', id: '' },
+            accounts
+          )
+          ? ff.transferDebtRepaymentHint
+          : null
+      : null;
   const isSameCurrencyTransfer = isTransfer && selectedAccount && targetAccount && selectedAccount.currency === targetAccount.currency;
 
   const showExchangeRateInput =
     // 帳戶幣 ≠ 基準幣：顯示 匯率(帳戶幣/基準幣)；同幣時不顯示（改以設定之 TWD/帳戶幣）
     (!isTransfer &&
       !isInterest &&
+      !isLoanInterest &&
       !!selectedAccount &&
       !fundAccountMatchesBaseCurrency(selectedAccount.currency, baseCurrency)) ||
     // 跨幣轉帳
@@ -525,6 +563,20 @@ const FundManager: React.FC<Props> = () => {
           <div>
             <h3 className="text-base sm:text-lg font-bold text-slate-700">{ff.recurringSectionTitle}</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-2xl">{ff.recurringDisclaimer}</p>
+            {onMinDebtSafetySpreadChange && (
+              <label className="flex items-center gap-2 mt-2 text-xs text-slate-600">
+                <span>{ff.minSafetySpread}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={20}
+                  step={0.5}
+                  value={minDebtSafetySpread}
+                  onChange={e => onMinDebtSafetySpreadChange(parseFloat(e.target.value) || 0)}
+                  className={`w-20 border border-slate-300 rounded px-2 py-1 ${FORM_FIELD_THEME}`}
+                />
+              </label>
+            )}
           </div>
           <button
             type="button"
@@ -541,6 +593,7 @@ const FundManager: React.FC<Props> = () => {
           <ul className="divide-y divide-slate-100 border border-slate-100 rounded-lg">
             {recurringDepositRules.map(r => {
               const acc = accounts.find(a => a.id === r.accountId);
+              const isDebtAlert = r.kind === 'DEBT_PAYMENT_ALERT';
               return (
                 <li key={r.id} className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/40">
                   <label className="flex items-center gap-2 text-sm shrink-0">
@@ -552,13 +605,28 @@ const FundManager: React.FC<Props> = () => {
                     />
                     <span className="text-slate-600">{ff.recurringEnabled}</span>
                   </label>
-                  <span className="text-sm font-medium text-slate-800 flex-1">
-                    {translate('fundForm.recurringDayShort', language, {
-                      day: r.dayOfMonth,
-                      account: acc?.name ?? r.accountId,
-                      amount: r.amount.toLocaleString(),
-                      ccy: acc?.currency ?? '',
-                    })}
+                  <span className={`text-sm font-medium flex-1 ${isDebtAlert ? 'text-red-700' : 'text-slate-800'}`}>
+                    {isDebtAlert ? (
+                      <>
+                        <span className="text-xs font-bold uppercase mr-1">[{ff.recurringKindDebtAlert}]</span>
+                        {translate('fundForm.recurringDayShort', language, {
+                          day: r.dayOfMonth,
+                          account: acc?.name ?? r.accountId,
+                          amount: r.amount.toLocaleString(),
+                          ccy: acc?.currency ?? '',
+                        })}
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xs font-bold text-green-700 uppercase mr-1">[{ff.recurringKindDeposit}]</span>
+                        {translate('fundForm.recurringDayShort', language, {
+                          day: r.dayOfMonth,
+                          account: acc?.name ?? r.accountId,
+                          amount: r.amount.toLocaleString(),
+                          ccy: acc?.currency ?? '',
+                        })}
+                      </>
+                    )}
                   </span>
                   <span className="text-xs text-slate-500">
                     {r.lastAppliedPeriod
@@ -616,6 +684,30 @@ const FundManager: React.FC<Props> = () => {
                 <span>{ff.recurringEnabled}</span>
               </label>
               <div>
+                <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.type}</label>
+                <select
+                  value={recKind}
+                  onChange={e => setRecKind(e.target.value as ScheduledRuleKind)}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                >
+                  <option value="RECURRING_DEPOSIT">{ff.recurringKindDeposit}</option>
+                  <option value="DEBT_PAYMENT_ALERT">{ff.recurringKindDebtAlert}</option>
+                </select>
+              </div>
+              {recKind === 'DEBT_PAYMENT_ALERT' && (
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.recurringLeadDays}</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={31}
+                    value={recLeadDays}
+                    onChange={e => setRecLeadDays(e.target.value)}
+                    className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                  />
+                </div>
+              )}
+              <div>
                 <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.recurringDayOfMonth}</label>
                 <input
                   type="number"
@@ -635,7 +727,9 @@ const FundManager: React.FC<Props> = () => {
                   required
                   className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
                 >
-                  {accounts.map(a => (
+                  {accounts
+                    .filter(a => (recKind === 'DEBT_PAYMENT_ALERT' ? isLiabilityAccount(a) : !isLiabilityAccount(a)))
+                    .map(a => (
                     <option key={a.id} value={a.id}>
                       {a.name} ({a.currency})
                     </option>
@@ -791,6 +885,7 @@ const FundManager: React.FC<Props> = () => {
                   <option value={CashFlowType.WITHDRAW}>{t(language).funds.withdraw}</option>
                   <option value={CashFlowType.TRANSFER}>{t(language).funds.transfer}</option>
                   <option value={CashFlowType.INTEREST}>{t(language).funds.interest}</option>
+                  <option value={CashFlowType.LOAN_INTEREST}>{t(language).funds.loanInterest}</option>
                </select>
              </div>
 
@@ -948,6 +1043,24 @@ const FundManager: React.FC<Props> = () => {
                      }
                    }
 
+                   const isDebtInCf = isDebtFundedInflow(cf, accounts);
+                   const isDebtOutCf = isDebtRepaymentOutflow(cf, accounts);
+                   const typeBadgeClass =
+                     cf.type === CashFlowType.DEPOSIT ||
+                     cf.type === CashFlowType.INTEREST ||
+                     cf.type === CashFlowType.LOAN_INTEREST ||
+                     isDebtInCf
+                       ? 'bg-green-100 text-green-700'
+                       : cf.type === CashFlowType.WITHDRAW || isDebtOutCf
+                         ? 'bg-red-100 text-red-700'
+                         : 'bg-blue-100 text-blue-700';
+                   const trDash = t(language).dashboard;
+                   const typeBadgeLabel = isDebtInCf
+                     ? trDash.debtDisbursement
+                     : isDebtOutCf
+                       ? trDash.debtRepayment
+                       : getTypeName(cf.type);
+
                    return (
                      <tr key={cf.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/40">
                        <td className="px-2 sm:px-3 py-2 text-slate-600 dark:text-slate-300 whitespace-nowrap">{cf.date}</td>
@@ -977,10 +1090,8 @@ const FundManager: React.FC<Props> = () => {
 
                        <td className="px-2 sm:px-3 py-2 text-slate-600 dark:text-slate-300 hidden sm:table-cell">
                          <div className="flex flex-col gap-1">
-                           <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold 
-                              ${cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.INTEREST ? 'bg-green-100 text-green-700' : 
-                                cf.type === CashFlowType.WITHDRAW ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                             {getTypeName(cf.type)}
+                           <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${typeBadgeClass}`}>
+                             {typeBadgeLabel}
                            </span>
                            {cf.note && (
                              <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -1166,6 +1277,7 @@ const FundManager: React.FC<Props> = () => {
                         <option value={CashFlowType.WITHDRAW}>{ff.typeWithdraw}</option>
                         <option value={CashFlowType.TRANSFER}>{ff.typeTransfer}</option>
                         <option value={CashFlowType.INTEREST}>{ff.typeInterest}</option>
+                        <option value={CashFlowType.LOAN_INTEREST}>{t(language).funds.loanInterest}</option>
                       </select>
                     </div>
                     <div>
@@ -1190,6 +1302,9 @@ const FundManager: React.FC<Props> = () => {
                               <option value="">{ff.selectAccount}</option>
                               {accounts.filter(a => a.id !== accountId).map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
                            </select>
+                           {transferDebtHint && (
+                             <p className="mt-2 text-xs text-amber-700 dark:text-amber-200">{transferDebtHint}</p>
+                           )}
                          </div>
                      )}
 
