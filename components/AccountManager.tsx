@@ -1,6 +1,7 @@
 
 import React, { useState, useCallback } from 'react';
-import { Account, Currency, BASE_CURRENCIES } from '../types';
+import { Account, AccountKind, Currency, DebtKind, BASE_CURRENCIES } from '../types';
+import { isLiabilityAccount } from '../utils/debtAccountHelpers';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from '../utils/calculations';
 import { t, translate } from '../utils/i18n';
@@ -20,6 +21,10 @@ const AccountManager: React.FC<Props> = () => {
   const [currency, setCurrency] = useState<Currency>(Currency.TWD);
   const [isSubBrokerage, setIsSubBrokerage] = useState(false);
   const [balance, setBalance] = useState('');
+  const [accountKind, setAccountKind] = useState<AccountKind>(AccountKind.BROKERAGE);
+  const [debtKind, setDebtKind] = useState<DebtKind>(DebtKind.PERSONAL_LOAN);
+  const [annualInterestRate, setAnnualInterestRate] = useState('');
+  const [linkedBrokerageAccountId, setLinkedBrokerageAccountId] = useState('');
   
   // State for custom delete confirmation modal
   const [deleteTarget, setDeleteTarget] = useState<{id: string, name: string} | null>(null);
@@ -53,24 +58,34 @@ const AccountManager: React.FC<Props> = () => {
     
     const accountBalance = balance ? parseFloat(balance) : 0;
     
+    const isLiability = accountKind === AccountKind.LIABILITY;
+    const rateNum = annualInterestRate.trim() ? parseFloat(annualInterestRate) : undefined;
+    const accountPayload: Account = {
+      id: editingAccount?.id ?? uuidv4(),
+      name,
+      currency,
+      isSubBrokerage: isLiability ? false : isSubBrokerage,
+      balance: accountBalance,
+      accountKind,
+      ...(isLiability
+        ? {
+            debtKind,
+            annualInterestRate: rateNum,
+            linkedBrokerageAccountId: linkedBrokerageAccountId || undefined,
+          }
+        : {
+            debtKind: undefined,
+            annualInterestRate: undefined,
+            linkedBrokerageAccountId: undefined,
+          }),
+    };
+
     if (editingAccount && onUpdate) {
-      onUpdate({
-        ...editingAccount,
-        name,
-        currency,
-        isSubBrokerage,
-        balance: accountBalance
-      });
+      onUpdate(accountPayload);
       setIsEditModalOpen(false);
       setEditingAccount(null);
     } else {
-      onAdd({
-        id: uuidv4(),
-        name,
-        currency,
-        isSubBrokerage,
-        balance: accountBalance
-      });
+      onAdd(accountPayload);
     }
     
     // Reset form
@@ -78,6 +93,10 @@ const AccountManager: React.FC<Props> = () => {
     setCurrency(Currency.TWD);
     setIsSubBrokerage(false);
     setBalance('');
+    setAccountKind(AccountKind.BROKERAGE);
+    setDebtKind(DebtKind.PERSONAL_LOAN);
+    setAnnualInterestRate('');
+    setLinkedBrokerageAccountId('');
   };
 
   const handleEditClick = (e: React.MouseEvent, account: Account) => {
@@ -87,6 +106,12 @@ const AccountManager: React.FC<Props> = () => {
     setCurrency(account.currency);
     setIsSubBrokerage(account.isSubBrokerage);
     setBalance(account.balance.toString());
+    setAccountKind(account.accountKind ?? AccountKind.BROKERAGE);
+    setDebtKind(account.debtKind ?? DebtKind.PERSONAL_LOAN);
+    setAnnualInterestRate(
+      account.annualInterestRate != null ? String(account.annualInterestRate) : ''
+    );
+    setLinkedBrokerageAccountId(account.linkedBrokerageAccountId ?? '');
     setIsEditModalOpen(true);
   };
   
@@ -146,6 +171,60 @@ const AccountManager: React.FC<Props> = () => {
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-slate-700">{translations.accounts.accountKind}</label>
+            <select
+              value={accountKind}
+              onChange={e => setAccountKind(e.target.value as AccountKind)}
+              className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+            >
+              <option value={AccountKind.BROKERAGE}>{translations.accounts.accountKindBrokerage}</option>
+              <option value={AccountKind.LIABILITY}>{translations.accounts.accountKindLiability}</option>
+            </select>
+          </div>
+          {accountKind === AccountKind.LIABILITY && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">{translations.accounts.debtKind}</label>
+                <select
+                  value={debtKind}
+                  onChange={e => setDebtKind(e.target.value as DebtKind)}
+                  className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                >
+                  <option value={DebtKind.PERSONAL_LOAN}>{translations.accounts.debtKindPersonal}</option>
+                  <option value={DebtKind.MORTGAGE}>{translations.accounts.debtKindMortgage}</option>
+                  <option value={DebtKind.SECURITIES_LENDING}>{translations.accounts.debtKindSecurities}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">{translations.accounts.annualInterestRate}</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={annualInterestRate}
+                  onChange={e => setAnnualInterestRate(e.target.value)}
+                  className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                  placeholder="2.2"
+                />
+              </div>
+              <div className="min-w-[200px] flex-1">
+                <label className="block text-sm font-medium text-slate-700">{translations.accounts.linkedBrokerageAccount}</label>
+                <select
+                  value={linkedBrokerageAccountId}
+                  onChange={e => setLinkedBrokerageAccountId(e.target.value)}
+                  className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                >
+                  <option value="">—</option>
+                  {accounts
+                    .filter(a => !isLiabilityAccount(a))
+                    .map(a => (
+                      <option key={a.id} value={a.id}>{a.name}</option>
+                    ))}
+                </select>
+              </div>
+            </>
+          )}
+          <div>
             <label className="block text-sm font-medium text-slate-700">{translations.accounts.currency}</label>
             <select 
               value={currency}
@@ -157,17 +236,19 @@ const AccountManager: React.FC<Props> = () => {
               ))}
             </select>
           </div>
-          <div className="flex items-center h-10 pb-2">
-             <label className="flex items-center space-x-2 cursor-pointer">
-               <input 
-                type="checkbox"
-                checked={isSubBrokerage}
-                onChange={(e) => setIsSubBrokerage(e.target.checked)}
-                className="rounded text-accent focus:ring-accent"
-               />
-               <span className="text-sm text-slate-700">{translations.accounts.subBrokerage}</span>
-             </label>
-          </div>
+          {accountKind === AccountKind.BROKERAGE && (
+            <div className="flex items-center h-10 pb-2">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isSubBrokerage}
+                  onChange={e => setIsSubBrokerage(e.target.checked)}
+                  className="rounded text-accent focus:ring-accent"
+                />
+                <span className="text-sm text-slate-700">{translations.accounts.subBrokerage}</span>
+              </label>
+            </div>
+          )}
           <button type="submit" className="bg-slate-900 text-white px-4 py-2 rounded hover:bg-slate-800">
             {editingAccount ? translations.accounts.update : translations.accounts.add}
           </button>
@@ -229,10 +310,15 @@ const AccountManager: React.FC<Props> = () => {
             </div>
             
             <div className="pt-4 border-t border-slate-50">
-              <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider">{translations.accounts.cashBalance}</p>
-              <p className="text-xl font-mono font-bold text-slate-700 mt-1">
-                {formatCurrency(acc.balance, acc.currency)}
+              <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider">
+                {isLiabilityAccount(acc) ? translations.accounts.debtBalance : translations.accounts.cashBalance}
               </p>
+              <p className={`text-xl font-mono font-bold mt-1 ${isLiabilityAccount(acc) ? 'text-red-600' : 'text-slate-700'}`}>
+                {isLiabilityAccount(acc) ? `(${formatCurrency(acc.balance, acc.currency)})` : formatCurrency(acc.balance, acc.currency)}
+              </p>
+              {isLiabilityAccount(acc) && acc.annualInterestRate != null && (
+                <p className="text-xs text-slate-500 mt-1">{translations.accounts.annualInterestRate}: {acc.annualInterestRate}%</p>
+              )}
             </div>
           </div>
         ))}
@@ -261,6 +347,59 @@ const AccountManager: React.FC<Props> = () => {
                   placeholder={translations.accounts.accountNamePlaceholder}
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.accountKind}</label>
+                <select
+                  value={accountKind}
+                  onChange={e => setAccountKind(e.target.value as AccountKind)}
+                  className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                >
+                  <option value={AccountKind.BROKERAGE}>{translations.accounts.accountKindBrokerage}</option>
+                  <option value={AccountKind.LIABILITY}>{translations.accounts.accountKindLiability}</option>
+                </select>
+              </div>
+              {accountKind === AccountKind.LIABILITY && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.debtKind}</label>
+                    <select
+                      value={debtKind}
+                      onChange={e => setDebtKind(e.target.value as DebtKind)}
+                      className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                    >
+                      <option value={DebtKind.PERSONAL_LOAN}>{translations.accounts.debtKindPersonal}</option>
+                      <option value={DebtKind.MORTGAGE}>{translations.accounts.debtKindMortgage}</option>
+                      <option value={DebtKind.SECURITIES_LENDING}>{translations.accounts.debtKindSecurities}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.annualInterestRate}</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={annualInterestRate}
+                      onChange={e => setAnnualInterestRate(e.target.value)}
+                      className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.linkedBrokerageAccount}</label>
+                    <select
+                      value={linkedBrokerageAccountId}
+                      onChange={e => setLinkedBrokerageAccountId(e.target.value)}
+                      className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                    >
+                      <option value="">—</option>
+                      {accounts
+                        .filter(a => !isLiabilityAccount(a) && a.id !== editingAccount.id)
+                        .map(a => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                    </select>
+                  </div>
+                </>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.currency}</label>
@@ -286,17 +425,19 @@ const AccountManager: React.FC<Props> = () => {
                   />
                 </div>
               </div>
-              <div className="flex items-center">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input 
-                    type="checkbox"
-                    checked={isSubBrokerage}
-                    onChange={(e) => setIsSubBrokerage(e.target.checked)}
-                    className="rounded text-accent focus:ring-accent"
-                  />
-                  <span className="text-sm text-slate-700">{translations.accounts.subBrokerage}</span>
-                </label>
-              </div>
+              {accountKind === AccountKind.BROKERAGE && (
+                <div className="flex items-center">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input 
+                      type="checkbox"
+                      checked={isSubBrokerage}
+                      onChange={(e) => setIsSubBrokerage(e.target.checked)}
+                      className="rounded text-accent focus:ring-accent"
+                    />
+                    <span className="text-sm text-slate-700">{translations.accounts.subBrokerage}</span>
+                  </label>
+                </div>
+              )}
               <div className="flex justify-end gap-3 pt-4">
                 <button 
                   type="button"
@@ -307,6 +448,10 @@ const AccountManager: React.FC<Props> = () => {
                     setCurrency(Currency.TWD);
                     setIsSubBrokerage(false);
                     setBalance('');
+                    setAccountKind(AccountKind.BROKERAGE);
+                    setDebtKind(DebtKind.PERSONAL_LOAN);
+                    setAnnualInterestRate('');
+                    setLinkedBrokerageAccountId('');
                   }}
                   className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded transition"
                 >
