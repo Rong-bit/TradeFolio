@@ -12,6 +12,11 @@ import DividendHeatmap from './DividendHeatmap';
 import { t, translate } from '../utils/i18n';
 import { ALLOCATION_INNER_BOND_COLOR, ALLOCATION_INNER_EQUITY_COLOR } from '../utils/allocationDonutColors';
 import { getSplitsForSymbol, applyPendingSplitsToPosition } from '../utils/stockSplitHelpers';
+import {
+  isDebtFundedInflow,
+  isDebtRepaymentOutflow,
+  netInvestedDeltaForCashFlow,
+} from '../utils/debtAccountHelpers';
 
 export interface DashboardProps {
   onUpdateHistorical?: () => void;
@@ -447,7 +452,13 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
   const costDetails = useMemo(() => {
     return cashFlows
-      .filter((cf: CashFlow) => cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.WITHDRAW)
+      .filter(
+        (cf: CashFlow) =>
+          cf.type === CashFlowType.DEPOSIT ||
+          cf.type === CashFlowType.WITHDRAW ||
+          isDebtFundedInflow(cf, accounts) ||
+          isDebtRepaymentOutflow(cf, accounts)
+      )
       .sort((a: CashFlow, b: CashFlow) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map(cf => {
           const account = accounts.find(a => a.id === cf.accountId);
@@ -487,9 +498,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   }, [cashFlows, accounts, summary.exchangeRateUsdToTwd, translations]);
 
   const verifyTotal = costDetails.reduce((acc, item) => {
-      if (item.type === CashFlowType.DEPOSIT) return acc + item.amountTWD;
-      if (item.type === CashFlowType.WITHDRAW) return acc - item.amountTWD;
-      return acc;
+      return acc + netInvestedDeltaForCashFlow(item, accounts, rates);
   }, 0);
 
   const toggleTrendSeries = (key: keyof typeof trendSeriesVisible) => {
@@ -593,6 +602,13 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           <p className="text-xl sm:text-2xl font-bold text-slate-800 mt-2 tabular-nums">
             {formatCurrency(toBase(summary.netInvestedTWD), baseCurrency)}
           </p>
+          {summary.hasDebtFunding && (summary.leverageNetTWD ?? 0) > 0 && (
+            <p className="text-[10px] text-amber-700 mt-1 leading-snug">
+              {translate('dashboard.leverageNetInvestedNote', language, {
+                amount: formatCurrency(toBase(summary.leverageNetTWD ?? 0), baseCurrency),
+              })}
+            </p>
+          )}
           {/* Sparkline: historical cost trend */}
           {isMounted && chartData.length > 1 && (
             <div className="mt-2 h-8">
@@ -620,6 +636,13 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             </p>
           </div>
           <p className="text-[10px] text-slate-400 mt-0.5">{translations.dashboard.includeCash}: {formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</p>
+          {(summary.totalDebtBalanceTWD ?? 0) > 0 && (
+            <p className="text-[10px] text-red-600 mt-0.5">
+              {translations.dashboard.totalDebt}: {formatCurrency(toBase(summary.totalDebtBalanceTWD ?? 0), baseCurrency)}
+              {' · '}
+              {translations.dashboard.netWorth}: {formatCurrency(toBase(summary.netWorthTWD ?? 0), baseCurrency)}
+            </p>
+          )}
           {isMounted && chartData.length > 1 && (
             <div className="mt-2 h-8">
               <ResponsiveContainer width="100%" height="100%">
@@ -681,6 +704,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               {summary.annualizedReturn.toFixed(1)}%
             </p>
           </div>
+          {summary.hasDebtFunding && (
+            <p className="text-[10px] text-amber-700 mt-1">{translations.dashboard.leverageXirrWarning}</p>
+          )}
           {/* ① Progress bar showing return vs 8% target */}
           <div className="mt-2">
             <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
@@ -1744,6 +1770,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             <div className="p-4 bg-blue-50 border-b border-blue-100 text-sm text-blue-800">
               <p>ℹ️ <strong>{translations.dashboard.formulaLabel}</strong> {translations.dashboard.calculationFormula}</p>
               <p>⚠️ <strong>{translations.dashboard.attention}：</strong> {translations.dashboard.formulaNote}</p>
+              {summary.hasDebtFunding && (
+                <p className="mt-2">📌 {translations.dashboard.leverageFormulaNote}</p>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-0">
@@ -1759,12 +1788,26 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {costDetails.map((item, idx) => (
+                  {costDetails.map((item, idx) => {
+                    const isDebtIn = isDebtFundedInflow(item, accounts);
+                    const isDebtOut = isDebtRepaymentOutflow(item, accounts);
+                    const categoryLabel = isDebtIn
+                      ? translations.dashboard.debtDisbursement
+                      : isDebtOut
+                        ? translations.dashboard.debtRepayment
+                        : item.type === CashFlowType.DEPOSIT
+                          ? translations.dashboard.deposit
+                          : translations.dashboard.withdraw;
+                    const delta = netInvestedDeltaForCashFlow(item, accounts, rates);
+                    const badgeClass = isDebtIn || item.type === CashFlowType.DEPOSIT
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-red-100 text-red-700';
+                    return (
                     <tr key={item.id} onMouseEnter={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#334155":"#f8fafc")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")} style={{ transition: "background-color 0.15s" }}>
                       <td className="px-3 py-2 whitespace-nowrap">{item.date}</td>
                       <td className="px-3 py-2">
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${item.type === CashFlowType.DEPOSIT ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {item.type === CashFlowType.DEPOSIT ? translations.dashboard.deposit : translations.dashboard.withdraw}
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${badgeClass}`}>
+                          {categoryLabel}
                         </span>
                       </td>
                       <td className="px-3 py-2">
@@ -1779,11 +1822,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           <span className="text-[10px] text-slate-400">{item.rateSource}</span>
                         </div>
                       </td>
-                      <td className={`px-3 py-2 text-right font-bold font-mono ${item.type === CashFlowType.DEPOSIT ? 'text-slate-800' : 'text-red-500'}`}>
-                        {item.type === CashFlowType.WITHDRAW ? '-' : ''}{formatCurrency(toBase(item.amountTWD), baseCurrency)}
+                      <td className={`px-3 py-2 text-right font-bold font-mono ${delta >= 0 ? 'text-slate-800' : 'text-red-500'}`}>
+                        {delta < 0 ? '-' : ''}{formatCurrency(toBase(Math.abs(delta)), baseCurrency)}
                       </td>
                     </tr>
-                  ))}
+                  );})}
                 </tbody>
                 <tfoot className="bg-slate-50 sticky bottom-0 border-t-2 border-slate-300 font-bold text-slate-800">
                   <tr>
