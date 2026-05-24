@@ -76,32 +76,6 @@ export interface Translations {
     splits: string;
     help: string;
   };
-  // 股票拆分管理
-  stockSplit: {
-    title: string;
-    hint: string;
-    ticker: string;
-    tickerPlaceholder: string;
-    market: string;
-    effectiveDate: string;
-    sharesFrom: string;
-    sharesTo: string;
-    splitRatio: string;
-    note: string;
-    notePlaceholder: string;
-    addButton: string;
-    listTitle: string;
-    totalCount: string;
-    emptyList: string;
-    tickerRequired: string;
-    dateRequired: string;
-    invalidRatio: string;
-    duplicateError: string;
-    addSuccess: string;
-    deleteSuccess: string;
-    deleteConfirmTitle: string;
-    deleteConfirmMessage: string;
-  };
   // 登入頁
   login: {
     title: string;
@@ -229,6 +203,13 @@ export interface Translations {
     noHoldingsData: string;
     realHistoricalData: string;
     formulaLabel: string;
+    netWorth: string;
+    totalDebt: string;
+    leverageNetInvestedNote: string;
+    leverageXirrWarning: string;
+    debtDisbursement: string;
+    debtRepayment: string;
+    leverageFormulaNote: string;
     aiCorrectHistoryTitle: string;
     aiAdvisor: string;
     aiAdvisorDesc: string;
@@ -344,6 +325,7 @@ export interface Translations {
     withdraw: string;
     transfer: string;
     interest: string;
+    loanInterest: string;
     showRecords: string;
     totalRecords: string;
     last30Days: string;
@@ -487,6 +469,53 @@ export interface Translations {
     noAccounts: string;
     cashBalance: string;
     editAccountTitle: string;
+    accountKind: string;
+    accountKindBrokerage: string;
+    accountKindLiability: string;
+    debtKind: string;
+    debtKindPersonal: string;
+    debtKindMortgage: string;
+    debtKindSecurities: string;
+    annualInterestRate: string;
+    linkedBrokerageAccount: string;
+    debtBalance: string;
+    liabilityHint: string;
+  };
+  debt: {
+    paymentAlertTitle: string;
+    paymentAlertBody: string;
+    acknowledgePaid: string;
+    remindLater: string;
+    spreadDangerTitle: string;
+    spreadWarningTitle: string;
+    spreadBody: string;
+    notAdvice: string;
+    leverageNetNote: string;
+  };
+  stockSplit: {
+    title: string;
+    hint: string;
+    ticker: string;
+    tickerPlaceholder: string;
+    market: string;
+    effectiveDate: string;
+    sharesFrom: string;
+    sharesTo: string;
+    splitRatio: string;
+    note: string;
+    notePlaceholder: string;
+    addButton: string;
+    listTitle: string;
+    totalCount: string;
+    emptyList: string;
+    tickerRequired: string;
+    dateRequired: string;
+    invalidRatio: string;
+    duplicateError: string;
+    addSuccess: string;
+    deleteSuccess: string;
+    deleteConfirmTitle: string;
+    deleteConfirmMessage: string;
   };
   // 再平衡
   rebalance: {
@@ -779,6 +808,12 @@ export interface Translations {
     recurringAmountTwdHelp: string;
     /** 資金列表：僅含內部標記時顯示的短標籤 */
     recurringNoteBadge: string;
+    recurringKindDeposit: string;
+    recurringKindDebtAlert: string;
+    recurringLeadDays: string;
+    transferDebtDisbursementHint: string;
+    transferDebtRepaymentHint: string;
+    minSafetySpread: string;
   };
   // 批次匯入模組
   batchImportModal: {

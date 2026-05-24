@@ -189,7 +189,7 @@ export const de: Translations = {
     pendingActualAccount: 'Konto',
     pendingActualNoteTemplate: 'MoneyDJ Auto-Import: {perShare} pro Aktie, {qty} Stück',
   },
-  funds: { title: 'Fondsverwaltung', operations: 'Aktionen', clearAll: 'Alle löschen', batchImport: 'Import', addRecord: '+ Eintrag', filter: 'Filter', clearFilters: 'Zurücksetzen', accountFilter: 'Konto', typeFilter: 'Typ', dateFrom: 'Von', dateTo: 'Bis', allAccounts: 'Alle', allTypes: 'Alle', deposit: 'Einzahlung', withdraw: 'Auszahlung', transfer: 'Überweisung', interest: 'Zinsen', showRecords: '{count} Einträge', totalRecords: 'Gesamt {total}', last30Days: 'Letzte 30 Tage', thisYear: 'Dieses Jahr', confirmClearAll: 'Alle Fondsdaten löschen?', confirmClearAllMessage: 'Ein- und Auszahlungen werden gelöscht.', confirmClear: 'Löschen' },
+  funds: { title: 'Fondsverwaltung', operations: 'Aktionen', clearAll: 'Alle löschen', batchImport: 'Import', addRecord: '+ Eintrag', filter: 'Filter', clearFilters: 'Zurücksetzen', accountFilter: 'Konto', typeFilter: 'Typ', dateFrom: 'Von', dateTo: 'Bis', allAccounts: 'Alle', allTypes: 'Alle', deposit: 'Einzahlung', withdraw: 'Auszahlung', transfer: 'Überweisung', interest: 'Zinsen', loanInterest: 'Kreditzinsen', showRecords: '{count} Einträge', totalRecords: 'Gesamt {total}', last30Days: 'Letzte 30 Tage', thisYear: 'Dieses Jahr', confirmClearAll: 'Alle Fondsdaten löschen?', confirmClearAllMessage: 'Ein- und Auszahlungen werden gelöscht.', confirmClear: 'Löschen' },
   history: {
     tabTransactions: 'Transaktionen',
     tabTimeline: 'Haltedauer-Zeitleiste',
@@ -308,6 +308,7 @@ holdings: {
     cashBalance: 'Bargeldbestand',
     editAccountTitle: 'Konto bearbeiten',
   },
+  debt: en.debt,
   rebalance: { 
     ...en.rebalance, 
     title: 'Rebalancing',
