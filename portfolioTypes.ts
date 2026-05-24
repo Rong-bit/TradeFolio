@@ -64,8 +64,22 @@ export enum CashFlowType {
   DEPOSIT = 'DEPOSIT', // Import: Salary, Savings -> Account
   WITHDRAW = 'WITHDRAW', // Export: Account -> Living expenses
   TRANSFER = 'TRANSFER', // Internal: Account A -> Account B
-  INTEREST = 'INTEREST' // Interest income
+  INTEREST = 'INTEREST', // Interest income
+  LOAN_INTEREST = 'LOAN_INTEREST', // Loan interest expense (brokerage outflow)
 }
+
+export enum AccountKind {
+  BROKERAGE = 'BROKERAGE',
+  LIABILITY = 'LIABILITY',
+}
+
+export enum DebtKind {
+  PERSONAL_LOAN = 'PERSONAL_LOAN',
+  MORTGAGE = 'MORTGAGE',
+  SECURITIES_LENDING = 'SECURITIES_LENDING',
+}
+
+export type ScheduledRuleKind = 'RECURRING_DEPOSIT' | 'DEBT_PAYMENT_ALERT';
 
 export enum CashFlowCategory {
   INVESTMENT = 'INVESTMENT', // 投資
@@ -81,7 +95,11 @@ export interface Account {
   name: string;
   currency: Currency;
   isSubBrokerage: boolean; // For USD accounts in TW brokers
-  balance: number; // Cash balance
+  balance: number; // Cash balance (LIABILITY: principal owed, positive)
+  accountKind?: AccountKind;
+  debtKind?: DebtKind;
+  annualInterestRate?: number;
+  linkedBrokerageAccountId?: string;
 }
 
 export interface CashFlow {
@@ -112,6 +130,9 @@ export interface RecurringDepositRule {
   startMonth?: string;
   lastAppliedPeriod?: string;
   createdMonth?: string;
+  kind?: ScheduledRuleKind;
+  leadDays?: number;
+  lastAcknowledgedPeriod?: string;
 }
 
 /** 股票拆分事件（不寫入交易紀錄，於計算層依生效日調整持倉） */
@@ -172,6 +193,10 @@ export interface PortfolioSummary {
   totalPLPercent: number;
   cashBalanceTWD: number; // Total cash across accounts converted to TWD
   netInvestedTWD: number; // Total cash deposits - withdrawals
+  totalDebtBalanceTWD?: number;
+  netWorthTWD?: number;
+  leverageNetTWD?: number;
+  hasDebtFunding?: boolean;
   annualizedReturn: number; // CAGR
   exchangeRateUsdToTwd: number;
   jpyExchangeRate?: number; // JPY to TWD exchange rate (optional)
