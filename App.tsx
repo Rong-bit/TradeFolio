@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Transaction, Holding, PortfolioSummary, Market, Account, CashFlow,
   TransactionType, CashFlowType, Currency, HistoricalData,
@@ -17,6 +17,14 @@ import {
   calculateXIRR, getDisplayRateForBaseCurrency, ExchangeRates,
   currencyToTWDRate, holdingValueToTWD, transactionAmountNativeToTWD
 } from './utils/calculations';
+import {
+  computeDebtSummary,
+  isBrokerageAccount,
+  netInvestedDeltaForCashFlow,
+  DEFAULT_MIN_SAFETY_SPREAD_PERCENT,
+} from './utils/debtAccountHelpers';
+import { checkDebtPaymentAlerts, computeDebtSpreadAlerts } from './utils/scheduledAlerts';
+import DebtAlertsBanner from './components/DebtAlertsBanner';
 import TransactionForm from './components/TransactionForm';
 import Dashboard from './components/Dashboard';
 import AccountManager from './components/AccountManager';
@@ -61,6 +69,7 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>(getLanguage());
   const [baseCurrency, setBaseCurrency] = useState<BaseCurrency>('TWD');
   const [alertDialog, setAlertDialog] = useState<{ isOpen: boolean; title: string; message: string; type: 'info'|'success'|'error' }>({ isOpen: false, title: '', message: '', type: 'info' });
+  const [debtBannerDismissed, setDebtBannerDismissed] = useState(false);
 
   const { isFormOpen, isImportOpen, isDeleteConfirmOpen, isTransactionDeleteConfirmOpen, isCashFlowDeleteConfirmOpen, isHistoricalModalOpen, isBatchUpdateMarketOpen, isMobileMenuOpen, setIsFormOpen, setIsImportOpen, setIsDeleteConfirmOpen, setIsTransactionDeleteConfirmOpen, setIsCashFlowDeleteConfirmOpen, setIsHistoricalModalOpen, setIsBatchUpdateMarketOpen, setIsMobileMenuOpen } = useUIState();
   const { transactionToDelete, transactionToEdit, cashFlowToDelete, setTransactionToDelete, setTransactionToEdit, setCashFlowToDelete, clearTransactionDelete, clearTransactionEdit, clearCashFlowDelete } = useDeleteState();
@@ -285,7 +294,7 @@ const App: React.FC = () => {
 
   const handleExportData = async () => {
     try {
-      const d = { version:'2.0', user:currentUser, timestamp:new Date().toISOString(), transactions, accounts, cashFlows, currentPrices, priceDetails, ...rates, exchangeRate:rates.exchangeRateUsdToTwd, baseCurrency, rebalanceTargets, rebalanceEnabledItems, historicalData, recurringDepositRules, stockSplits };
+      const d = { version:'2.0', user:currentUser, timestamp:new Date().toISOString(), transactions, accounts, cashFlows, currentPrices, priceDetails, ...rates, exchangeRate:rates.exchangeRateUsdToTwd, baseCurrency, rebalanceTargets, rebalanceEnabledItems, historicalData, recurringDepositRules, stockSplits, minDebtSafetySpread };
       const blob = new Blob([JSON.stringify(d,null,2)], { type:'application/json' });
       const filename = `TradeView_${(currentUser||'guest').replace(/[^a-zA-Z0-9@._-]/g,'_')}_${new Date().toISOString().split('T')[0]}.json`;
       if (navigator.share) {
@@ -318,6 +327,9 @@ const App: React.FC = () => {
         if (Object.keys(ru).length) updateRates(ru);
         const valid: BaseCurrency[] = ['TWD','USD','JPY','EUR','GBP','HKD','KRW','CAD','INR','CNY','AUD','SAR','BRL'];
         if (data.baseCurrency && valid.includes(data.baseCurrency)) setBaseCurrency(data.baseCurrency);
+        if (typeof data.minDebtSafetySpread === 'number' && Number.isFinite(data.minDebtSafetySpread)) {
+          handleMinDebtSafetySpreadChange(data.minDebtSafetySpread);
+        }
         showAlert(appText.restoreSuccess, appText.restoreSuccessTitle, 'success');
       } catch { showAlert(appText.importFailed, appText.importFailedTitle, 'error'); }
     };
@@ -338,16 +350,18 @@ const App: React.FC = () => {
       const account = accounts.find((a: Account) => a.id === cf.accountId);
       const accountCurrency = account?.currency ?? Currency.TWD;
       const rate = cf.exchangeRate ?? currencyToTWDRate(accountCurrency, rates);
-      if (cf.type === CashFlowType.DEPOSIT) netInvestedTWD += cf.amountTWD ?? cf.amount * rate;
-      else if (cf.type === CashFlowType.WITHDRAW) netInvestedTWD -= cf.amountTWD ?? cf.amount * rate;
+      netInvestedTWD += netInvestedDeltaForCashFlow(cf, accounts, rates);
       if (cf.type === CashFlowType.DEPOSIT && account?.currency === Currency.USD) { totalUsdInflow += cf.amount; totalTwdCostForUsd += cf.amountTWD ?? cf.amount * (cf.exchangeRate ?? exchangeRate); }
       if (cf.type === CashFlowType.TRANSFER && cf.targetAccountId) { const ta = accounts.find((a: Account) => a.id === cf.targetAccountId); if (account?.currency === Currency.TWD && ta?.currency === Currency.USD) { totalUsdInflow += cf.exchangeRate ? cf.amount/cf.exchangeRate : cf.amount/exchangeRate; totalTwdCostForUsd += cf.amount; } }
     });
     const stockValueTWD = baseHoldings.reduce((s: number, h: Holding) => s + holdingValueToTWD(h, accounts, rates), 0);
     const cashValueTWD = computedAccounts.reduce((s: number, a: Account) => {
+      if (!isBrokerageAccount(a)) return s;
       return s + (a.balance * currencyToTWDRate(a.currency, rates));
     }, 0);
+    const debt = computeDebtSummary(computedAccounts, cashFlows, rates);
     const totalValueTWD = stockValueTWD, totalAssets = totalValueTWD + cashValueTWD, totalPLTWD = totalAssets - netInvestedTWD;
+    const netWorthTWD = totalAssets - debt.totalDebtBalanceTWD;
     const sumDiv = (type: TransactionType) => transactions.filter((t: Transaction) => t.type === type).reduce((s: number, t: Transaction) => {
       const baseVal = t.price * t.quantity;
       const amt = (t.amount ?? baseVal) - t.fees;
@@ -388,8 +402,28 @@ const App: React.FC = () => {
       avgExchangeRate: totalUsdInflow > 0 ? totalTwdCostForUsd / totalUsdInflow : 0,
       yearWithheldNhiTwd,
       yearUsWithholdingTwd,
+      totalDebtBalanceTWD: debt.totalDebtBalanceTWD,
+      netWorthTWD,
+      leverageNetTWD: debt.leverageNetTWD,
+      hasDebtFunding: debt.hasDebtFunding,
     };
   }, [baseHoldings, computedAccounts, cashFlows, rates, accounts, transactions]);
+
+  const [minDebtSafetySpread, setMinDebtSafetySpread] = useState(DEFAULT_MIN_SAFETY_SPREAD_PERCENT);
+  useEffect(() => {
+    if (!userPrefix) {
+      setMinDebtSafetySpread(DEFAULT_MIN_SAFETY_SPREAD_PERCENT);
+      return;
+    }
+    const raw = localStorage.getItem(`${userPrefix}_minDebtSafetySpread`);
+    const n = raw != null ? parseFloat(raw) : DEFAULT_MIN_SAFETY_SPREAD_PERCENT;
+    setMinDebtSafetySpread(Number.isFinite(n) && n >= 0 ? n : DEFAULT_MIN_SAFETY_SPREAD_PERCENT);
+  }, [userPrefix]);
+  const handleMinDebtSafetySpreadChange = useCallback((n: number) => {
+    const v = Number.isFinite(n) && n >= 0 ? n : DEFAULT_MIN_SAFETY_SPREAD_PERCENT;
+    setMinDebtSafetySpread(v);
+    if (userPrefix) localStorage.setItem(`${userPrefix}_minDebtSafetySpread`, String(v));
+  }, [userPrefix]);
 
   const displayRate = useMemo(() => getDisplayRateForBaseCurrency(baseCurrency, rates), [baseCurrency, rates]);
 
@@ -474,6 +508,28 @@ const App: React.FC = () => {
   const accountPerformance = useMemo(() => calculateAccountPerformance(
     computedAccounts, holdings, cashFlows, transactions, rates, stockSplits
   ), [computedAccounts, holdings, cashFlows, transactions, rates, stockSplits]);
+
+  const debtPaymentAlerts = useMemo(
+    () => (debtBannerDismissed ? [] : checkDebtPaymentAlerts(recurringDepositRules, accounts)),
+    [recurringDepositRules, accounts, debtBannerDismissed]
+  );
+
+  const debtSpreadAlerts = useMemo(
+    () =>
+      computeDebtSpreadAlerts(
+        accounts,
+        accountPerformance.map(ap => ({ id: ap.id, name: ap.name, roi: ap.roi })),
+        minDebtSafetySpread
+      ),
+    [accounts, accountPerformance, minDebtSafetySpread]
+  );
+
+  const handleAcknowledgeDebtPayment = (ruleId: string) => {
+    const rule = recurringDepositRules.find(r => r.id === ruleId);
+    if (!rule) return;
+    const period = new Date().toISOString().slice(0, 7);
+    updateRecurringDepositRule({ ...rule, lastAcknowledgedPeriod: period });
+  };
 
   // ─── Combined Records & Filters ─────────────────────────────
 
@@ -657,6 +713,19 @@ const App: React.FC = () => {
           </h2>
         </div>
         <div className="animate-fade-in">
+          {(view === 'dashboard' || view === 'funds') && (
+            <DebtAlertsBanner
+              paymentAlerts={debtPaymentAlerts}
+              spreadAlerts={debtSpreadAlerts}
+              hasDebtFunding={!!summary.hasDebtFunding}
+              leverageNetTWD={summary.leverageNetTWD ?? 0}
+              language={language}
+              baseCurrency={baseCurrency}
+              rates={rates}
+              onAcknowledgePayment={handleAcknowledgeDebtPayment}
+              onDismissSession={() => setDebtBannerDismissed(true)}
+            />
+          )}
           {view==='dashboard'&&<Dashboard onUpdateHistorical={()=>setIsHistoricalModalOpen(true)} />}
           {view==='history'&&(
             <HistoryView
@@ -685,7 +754,7 @@ const App: React.FC = () => {
           )}
           {view==='accounts'&&<AccountManager />}
           {view==='splits'&&<StockSplitManager />}
-          {view==='funds'&&<FundManager />}
+          {view==='funds'&&<FundManager minDebtSafetySpread={minDebtSafetySpread} onMinDebtSafetySpreadChange={handleMinDebtSafetySpreadChange} />}
           {view==='rebalance'&&!isGuest&&<RebalanceView />}
           {view==='simulator'&&<AssetAllocationSimulator />}
           {view==='help'&&<HelpView onExport={handleExportData} onImport={handleImportData} />}
@@ -725,7 +794,7 @@ const App: React.FC = () => {
         const cf=cashFlows.find(c=>c.id===cashFlowToDelete); if(!cf) return null;
         const acc=accounts.find(a=>a.id===cf.accountId);
         const rTx=transactions.filter(tx=>[cf.accountId,cf.targetAccountId].filter(Boolean).includes(tx.accountId)).length;
-        const gTN=(type: CashFlowType)=>({[CashFlowType.DEPOSIT]: t(language).funds.deposit,[CashFlowType.WITHDRAW]: t(language).funds.withdraw,[CashFlowType.TRANSFER]: t(language).funds.transfer,[CashFlowType.INTEREST]: t(language).funds.interest}[type]??type);
+        const gTN=(type: CashFlowType)=>({[CashFlowType.DEPOSIT]: t(language).funds.deposit,[CashFlowType.WITHDRAW]: t(language).funds.withdraw,[CashFlowType.TRANSFER]: t(language).funds.transfer,[CashFlowType.INTEREST]: t(language).funds.interest,[CashFlowType.LOAN_INTEREST]: t(language).funds.loanInterest}[type]??type);
         return (<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in"><div className="bg-white rounded-lg shadow-xl p-6 max-w-md"><h3 className="text-lg font-bold text-red-600 mb-2">{appText.cashFlowDeleteTitle}</h3><div className="mb-4"><p className="text-slate-700 mb-2"><span className="font-semibold">{appText.accountLabel}</span>{acc?.name??appText.unknownAccount}</p><p className="text-slate-700 mb-2"><span className="font-semibold">{appText.dateLabel}</span>{cf.date}</p><p className="text-slate-700 mb-2"><span className="font-semibold">{appText.typeLabel}</span>{gTN(cf.type)}</p><p className="text-slate-700"><span className="font-semibold">{appText.amountLabel}</span>{acc?.currency===Currency.USD?`$${cf.amount.toLocaleString()}`:`NT$${cf.amount.toLocaleString()}`}</p></div>{rTx>0&&<div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4"><p className="text-sm text-amber-800 font-semibold mb-1">{appText.cashFlowDeleteWarningTitle}</p><p className="text-sm text-amber-700">{appText.cashFlowDeleteWarningBody(rTx)}</p></div>}<p className="text-slate-600 mb-6">{appText.cashFlowDeleteMessage}</p><div className="flex justify-end gap-3"><button onClick={cancelRemoveCashFlow} className="px-4 py-2 rounded border hover:bg-slate-50">{t(language).common.cancel}</button><button onClick={confirmRemoveCashFlow} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">{appText.confirmDeleteAction}</button></div></div></div>);
       })()}
 
