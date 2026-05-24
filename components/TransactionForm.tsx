@@ -152,34 +152,13 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
       }
     }
     
-    // 計算總金額邏輯
-    let finalAmount = 0;
-    
-    if (formData.type === TransactionType.BUY || formData.type === TransactionType.SELL) {
-        let baseAmount = price * quantity;
-        
-        // 台股特殊邏輯：無條件捨去
-        if (formData.market === Market.TW) {
-            baseAmount = Math.floor(baseAmount);
-        }
-        
-        // 加上/減去 手續費
-        if (formData.type === TransactionType.BUY) {
-            finalAmount = baseAmount + fees;
-        } else {
-            // 賣出時通常是 總金額 - 手續費 - 稅，這裡僅處理手續費欄位
-            finalAmount = baseAmount - fees;
-        }
-    } else if (formData.type === TransactionType.CASH_DIVIDEND) {
-        // 現金股息通常直接輸入總額於 Price 欄位，Quantity 設為 1
-        finalAmount = (price * quantity) - fees;
-    } else if (formData.type === TransactionType.TRANSFER_OUT) {
-        // 匯出持股：以持股金額為基礎，手續費僅記在匯出端
-        finalAmount = (price * quantity) - fees;
-    } else {
-        // 其他類別如股息再投入，這裡暫時使用基本乘積
-        finalAmount = price * quantity;
-    }
+    const finalAmount = computeTransactionAmount(
+      formData.type,
+      formData.market,
+      price,
+      quantity,
+      fees
+    );
 
     const newTx: Transaction = {
       id: isEditing && editingTransaction ? editingTransaction.id : uuidv4(),
@@ -277,6 +256,37 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     const a = accounts.find((x: Account) => x.id === accountId);
     return a ? String(a.currency) : 'TWD';
   };
+
+  const twFloorBaseAmount = (price: number, quantity: number, market: Market): number => {
+    const raw = price * quantity;
+    return market === Market.TW ? Math.floor(raw) : raw;
+  };
+
+  const computeTransactionAmount = (
+    type: TransactionType,
+    market: Market,
+    price: number,
+    quantity: number,
+    fees: number
+  ): number => {
+    if (type === TransactionType.BUY || type === TransactionType.SELL) {
+      const baseAmount = twFloorBaseAmount(price, quantity, market);
+      return type === TransactionType.BUY ? baseAmount + fees : baseAmount - fees;
+    }
+    if (type === TransactionType.DIVIDEND) {
+      return twFloorBaseAmount(price, quantity, market) + fees;
+    }
+    if (type === TransactionType.CASH_DIVIDEND) {
+      return price * quantity - fees;
+    }
+    if (type === TransactionType.TRANSFER_OUT) {
+      return twFloorBaseAmount(price, quantity, market) - fees;
+    }
+    return price * quantity;
+  };
+
+  const formatAmountForMarket = (value: number, market: Market): string =>
+    market === Market.TW ? Math.round(value).toString() : value.toFixed(2);
 
   const getPriceCurrencyOptions = (market: Market): { value: string; label: string }[] => {
     const base = marketToCurrency(market);
@@ -396,24 +406,12 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     setFormData(newFormData);
   };
 
-  // 計算預覽金額
   const calculatePreviewAmount = (): number => {
     const price = parseFloat(formData.price) || 0;
-    const quantity = formData.type === TransactionType.CASH_DIVIDEND ? 1 : (parseFloat(formData.quantity) || 0);
+    const quantity =
+      formData.type === TransactionType.CASH_DIVIDEND ? 1 : parseFloat(formData.quantity) || 0;
     const fees = parseFloat(formData.fees) || 0;
-    
-    if (formData.type === TransactionType.BUY || formData.type === TransactionType.SELL) {
-      let baseAmount = price * quantity;
-      if (formData.market === Market.TW) {
-        baseAmount = Math.floor(baseAmount);
-      }
-      return formData.type === TransactionType.BUY ? baseAmount + fees : baseAmount - fees;
-    } else if (formData.type === TransactionType.CASH_DIVIDEND) {
-      return (price * quantity) - fees;
-    } else if (formData.type === TransactionType.TRANSFER_OUT) {
-      return (price * quantity) - fees;
-    }
-    return price * quantity;
+    return computeTransactionAmount(formData.type, formData.market, price, quantity, fees);
   };
 
   // 取得帳戶名稱
@@ -519,7 +517,8 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                   <div className="flex justify-between">
                     <span className="text-slate-700 font-semibold">{tf.totalAmount}</span>
                     <span className="font-bold text-lg text-slate-900">
-                      {pendingTransaction.amount?.toFixed(2) || '0.00'} {getAccountCurrencyCode(pendingTransaction.accountId)}
+                      {formatAmountForMarket(pendingTransaction.amount ?? 0, pendingTransaction.market)}{' '}
+                      {getAccountCurrencyCode(pendingTransaction.accountId)}
                     </span>
                   </div>
                 </div>
@@ -726,7 +725,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
             <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
               <div className="text-xs text-slate-600 mb-1">{tf.previewTitle}</div>
               <div className="text-lg font-bold text-slate-800">
-                {calculatePreviewAmount().toFixed(2)}
+                {formatAmountForMarket(calculatePreviewAmount(), formData.market)}
                 <span className="text-xs text-slate-500 ml-2">
                   ({selectedAccountCurrency})
                 </span>
@@ -734,7 +733,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               <div className="text-xs text-slate-500 mt-1">
                 {tf.calculationFormula}{formData.price} × {formData.quantity} 
                 {formData.market === Market.TW ? tf.formulaNote : ''} 
-                {formData.type === TransactionType.BUY ? ' + ' : (formData.type === TransactionType.SELL || formData.type === TransactionType.TRANSFER_OUT) ? ' - ' : ''}
+                {(formData.type === TransactionType.BUY || formData.type === TransactionType.DIVIDEND) ? ' + ' : (formData.type === TransactionType.SELL || formData.type === TransactionType.TRANSFER_OUT) ? ' - ' : ''}
                 {formData.fees || 0} ({tf.feesShort})
               </div>
             </div>
