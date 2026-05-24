@@ -25,6 +25,14 @@ import {
   applyPendingSplitsToHolding,
   applyPendingSplitsToPosition,
 } from './stockSplitHelpers';
+import {
+  isLiabilityAccount,
+  isDebtFundedInflow,
+  ledgerBalanceChangeForCashFlow,
+  cashFlowAmountTWD,
+  netInvestedDeltaForCashFlow,
+  isDebtRepaymentOutflow,
+} from './debtAccountHelpers';
 
 /** 匯率物件（X→TWD：1 X = N TWD） */
 export interface ExchangeRates {
@@ -597,12 +605,15 @@ export function buildLedgerState(
       if (tx.type === TransactionType.DIVIDEND) return 0;
       return -r.fees;
     }
-    if (r.subType === CashFlowType.DEPOSIT) return r.amount;
-    if (r.subType === CashFlowType.WITHDRAW) return -r.amount;
-    if (r.subType === CashFlowType.TRANSFER) return -r.amount;
-    if (r.subType === 'TRANSFER_IN') return r.amount;
-    if (r.subType === CashFlowType.INTEREST) return r.amount;
-    return 0;
+    return ledgerBalanceChangeForCashFlow(
+      {
+        accountId: r.accountId,
+        subType: r.subType as string,
+        amount: r.amount,
+        isTargetRecord: r.isTargetRecord,
+      },
+      accounts
+    );
   };
 
   const tOrd = [...sorted].sort((a, b) => {
@@ -669,34 +680,33 @@ export const getPortfolioStateAtDate = (
     cashFlows.filter(cf => new Date(cf.date) <= targetDate).forEach(cf => {
         if (cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.INTEREST) {
             cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) + cf.amount;
-        } else if (cf.type === CashFlowType.WITHDRAW) {
+        } else if (cf.type === CashFlowType.WITHDRAW || cf.type === CashFlowType.LOAN_INTEREST) {
             cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) - cf.amount;
         } else if (cf.type === CashFlowType.TRANSFER) {
             const sourceAcc = accounts.find(a => a.id === cf.accountId);
-            // 內部轉帳：從來源帳戶扣除金額和手續費
             let feeAmount = cf.fee || 0;
-            // 如果手續費是 TWD 但來源帳戶不是 TWD，需要轉換
             if (feeAmount > 0 && sourceAcc && sourceAcc.currency !== Currency.TWD) {
-              // 使用轉帳匯率轉換手續費（如果有的話，且匯率不是 1）
-              // 匯率為 1 表示同幣種轉帳，此時手續費應該已經是帳戶幣種
               if (cf.exchangeRate && cf.exchangeRate > 0 && cf.exchangeRate !== 1) {
-                if (sourceAcc.currency === Currency.USD) {
-                  // TWD 手續費轉換為 USD：feeTWD / exchangeRate (exchangeRate 是 TWD/USD)
-                  feeAmount = feeAmount / cf.exchangeRate;
-                } else if (sourceAcc.currency === Currency.JPY) {
-                  // TWD 手續費轉換為 JPY：feeTWD / exchangeRate (exchangeRate 是 TWD/JPY)
+                if (sourceAcc.currency === Currency.USD || sourceAcc.currency === Currency.JPY) {
                   feeAmount = feeAmount / cf.exchangeRate;
                 }
               }
-              // 如果匯率是 1 或不存在（同幣種轉帳），假設手續費已經是帳戶幣種（保持原值）
             }
-            cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) - cf.amount - feeAmount;
+            if (isLiabilityAccount(sourceAcc)) {
+              cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) + cf.amount;
+            } else {
+              cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) - cf.amount - feeAmount;
+            }
             if (cf.targetAccountId) {
                 const targetAcc = accounts.find(a => a.id === cf.targetAccountId);
                 const inAmount = sourceAcc && targetAcc
                   ? getTransferTargetAmount(sourceAcc.currency, targetAcc.currency, cf.amount, cf.exchangeRate)
                   : cf.amount;
-                cashBalances[cf.targetAccountId] = (cashBalances[cf.targetAccountId] || 0) + inAmount;
+                if (isLiabilityAccount(targetAcc)) {
+                  cashBalances[cf.targetAccountId] = (cashBalances[cf.targetAccountId] || 0) - inAmount;
+                } else {
+                  cashBalances[cf.targetAccountId] = (cashBalances[cf.targetAccountId] || 0) + inAmount;
+                }
             }
         }
     });
@@ -799,8 +809,7 @@ export const generateAdvancedChartData = (
         if (cf.exchangeRate && cf.exchangeRate > 0) rate = cf.exchangeRate;
         amountTWD = cf.amount * rate;
       }
-      if (cf.type === CashFlowType.DEPOSIT) cumulativeNetInvestedTWD += amountTWD;
-      else if (cf.type === CashFlowType.WITHDRAW) cumulativeNetInvestedTWD -= amountTWD;
+      cumulativeNetInvestedTWD += netInvestedDeltaForCashFlow(cf, accounts, rates);
     });
 
     // 注意：不處理 TRANSFER_IN 和 TRANSFER_OUT
@@ -1320,8 +1329,9 @@ export const buildWaterfallYearRows = (
     let withdraw = 0;
     cashFlows.forEach(cf => {
       if (String(new Date(cf.date).getFullYear()) !== year) return;
-      if (cf.type === CashFlowType.DEPOSIT) deposit += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
-      else if (cf.type === CashFlowType.WITHDRAW) withdraw += cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+      const twd = cashFlowAmountTWDForWaterfall(cf, accounts, rates);
+      if (cf.type === CashFlowType.DEPOSIT || isDebtFundedInflow(cf, accounts)) deposit += twd;
+      else if (cf.type === CashFlowType.WITHDRAW || isDebtRepaymentOutflow(cf, accounts)) withdraw += twd;
     });
     return {
       period: year,
@@ -1579,8 +1589,7 @@ export const buildQuarterlyTrendData = (
         if (d.getFullYear() !== yearNum) return;
         const m = d.getMonth() + 1;
         if (m < qStart || m > qEnd) return;
-        if (cf.type === CashFlowType.DEPOSIT) cumulativeCostTWD += getCashFlowAmountTWD(cf);
-        else if (cf.type === CashFlowType.WITHDRAW) cumulativeCostTWD -= getCashFlowAmountTWD(cf);
+        cumulativeCostTWD += netInvestedDeltaForCashFlow(cf, accounts, rates);
       });
 
       let totalAssets: number;
@@ -1647,8 +1656,7 @@ export const buildQuarterlyTrendData = (
         const isInCurrentIncompleteWindow = month > completedQuarter * 3;
         const isNotFutureInThisMonth = month < calendarMonth || (month === calendarMonth && day <= buildDate.getDate());
         if (!isInCurrentIncompleteWindow || !isNotFutureInThisMonth) return;
-        if (cf.type === CashFlowType.DEPOSIT) cumulativeCostToDate += getCashFlowAmountTWD(cf);
-        else if (cf.type === CashFlowType.WITHDRAW) cumulativeCostToDate -= getCashFlowAmountTWD(cf);
+        cumulativeCostToDate += netInvestedDeltaForCashFlow(cf, accounts, rates);
       });
 
       if (hasStarted) {
@@ -1916,22 +1924,13 @@ export const calculateXIRR = (
   const xirrFlows: { amount: number, date: number }[] = [];
 
   cashFlows.forEach(cf => {
-    if (cf.type !== CashFlowType.DEPOSIT && cf.type !== CashFlowType.WITHDRAW) return;
-
-    let amountTWD = 0;
-    if (cf.amountTWD && cf.amountTWD > 0) {
-      amountTWD = cf.amountTWD;
+    const delta = netInvestedDeltaForCashFlow(cf, accounts, rates);
+    if (delta === 0) return;
+    const date = new Date(cf.date).getTime();
+    if (delta > 0) {
+      xirrFlows.push({ amount: -delta, date });
     } else {
-      const acc = accounts.find(a => a.id === cf.accountId);
-      const accountCurrency = acc?.currency ?? Currency.TWD;
-      const rate = cf.exchangeRate ?? currencyToTWDRate(accountCurrency, rates);
-      amountTWD = cf.amount * rate;
-    }
-
-    if (cf.type === CashFlowType.DEPOSIT) {
-      xirrFlows.push({ amount: -amountTWD, date: new Date(cf.date).getTime() });
-    } else if (cf.type === CashFlowType.WITHDRAW) {
-      xirrFlows.push({ amount: amountTWD, date: new Date(cf.date).getTime() });
+      xirrFlows.push({ amount: -delta, date });
     }
   });
 
