@@ -59,6 +59,77 @@ export function isDebtRelatedCashFlow(cf: CashFlow, accounts: Account[]): boolea
   return isDebtFundedInflow(cf, accounts) || isDebtRepaymentOutflow(cf, accounts);
 }
 
+/** 單月預計利息：balance × 年利率% ÷ 12 */
+export function estimateMonthlyInterest(
+  balance: number,
+  annualInterestRatePercent: number | undefined
+): number | null {
+  if (!Number.isFinite(balance) || balance <= 0) return null;
+  if (
+    annualInterestRatePercent == null ||
+    !Number.isFinite(annualInterestRatePercent) ||
+    annualInterestRatePercent <= 0
+  ) {
+    return null;
+  }
+  return (balance * annualInterestRatePercent) / 100 / 12;
+}
+
+/** 額度使用率 0–100；無額度或額度 ≤ 0 時回傳 null */
+export function creditUtilizationPercent(
+  balance: number,
+  creditLimit: number | undefined
+): number | null {
+  if (creditLimit == null || !Number.isFinite(creditLimit) || creditLimit <= 0) return null;
+  return Math.min(100, (Math.max(0, balance) / creditLimit) * 100);
+}
+
+export interface LiabilityAccountInsight {
+  accountId: string;
+  name: string;
+  currency: Currency;
+  balance: number;
+  balanceTWD: number;
+  creditLimit?: number;
+  creditLimitTWD?: number;
+  utilizationPercent: number | null;
+  annualInterestRate?: number;
+  estimatedMonthlyInterest: number | null;
+  estimatedMonthlyInterestTWD: number | null;
+}
+
+export function buildLiabilityAccountInsights(
+  accounts: Account[],
+  rates: ExchangeRates
+): LiabilityAccountInsight[] {
+  return accounts
+    .filter(isLiabilityAccount)
+    .filter(
+      a =>
+        a.balance > 0.000001 ||
+        (a.creditLimit != null && a.creditLimit > 0) ||
+        a.annualInterestRate != null
+    )
+    .map(a => {
+      const twdRate = currencyToTWDRate(a.currency, rates);
+      const monthly = estimateMonthlyInterest(a.balance, a.annualInterestRate);
+      return {
+        accountId: a.id,
+        name: a.name,
+        currency: a.currency,
+        balance: a.balance,
+        balanceTWD: a.balance * twdRate,
+        creditLimit: a.creditLimit,
+        creditLimitTWD:
+          a.creditLimit != null && a.creditLimit > 0 ? a.creditLimit * twdRate : undefined,
+        utilizationPercent: creditUtilizationPercent(a.balance, a.creditLimit),
+        annualInterestRate: a.annualInterestRate,
+        estimatedMonthlyInterest: monthly,
+        estimatedMonthlyInterestTWD: monthly != null ? monthly * twdRate : null,
+      };
+    });
+}
+
 /** Ledger / 餘額：負債戶上 TRANSFER（撥出）= 欠款增加 */
 export function ledgerBalanceChangeForCashFlow(
   record: {
