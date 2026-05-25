@@ -24,6 +24,7 @@ const AccountManager: React.FC<Props> = () => {
   const [accountKind, setAccountKind] = useState<AccountKind>(AccountKind.BROKERAGE);
   const [debtKind, setDebtKind] = useState<DebtKind>(DebtKind.PERSONAL_LOAN);
   const [annualInterestRate, setAnnualInterestRate] = useState('');
+  const [creditLimit, setCreditLimit] = useState('');
   const [linkedBrokerageAccountId, setLinkedBrokerageAccountId] = useState('');
   
   // State for custom delete confirmation modal
@@ -60,6 +61,7 @@ const AccountManager: React.FC<Props> = () => {
     
     const isLiability = accountKind === AccountKind.LIABILITY;
     const rateNum = annualInterestRate.trim() ? parseFloat(annualInterestRate) : undefined;
+    const limitNum = creditLimit.trim() ? parseFloat(creditLimit) : undefined;
     const accountPayload: Account = {
       id: editingAccount?.id ?? uuidv4(),
       name,
@@ -71,11 +73,13 @@ const AccountManager: React.FC<Props> = () => {
         ? {
             debtKind,
             annualInterestRate: rateNum,
+            creditLimit: limitNum != null && limitNum > 0 ? limitNum : undefined,
             linkedBrokerageAccountId: linkedBrokerageAccountId || undefined,
           }
         : {
             debtKind: undefined,
             annualInterestRate: undefined,
+            creditLimit: undefined,
             linkedBrokerageAccountId: undefined,
           }),
     };
@@ -96,6 +100,7 @@ const AccountManager: React.FC<Props> = () => {
     setAccountKind(AccountKind.BROKERAGE);
     setDebtKind(DebtKind.PERSONAL_LOAN);
     setAnnualInterestRate('');
+    setCreditLimit('');
     setLinkedBrokerageAccountId('');
   };
 
@@ -111,6 +116,7 @@ const AccountManager: React.FC<Props> = () => {
     setAnnualInterestRate(
       account.annualInterestRate != null ? String(account.annualInterestRate) : ''
     );
+    setCreditLimit(account.creditLimit != null ? String(account.creditLimit) : '');
     setLinkedBrokerageAccountId(account.linkedBrokerageAccountId ?? '');
     setIsEditModalOpen(true);
   };
@@ -205,6 +211,18 @@ const AccountManager: React.FC<Props> = () => {
                   onChange={e => setAnnualInterestRate(e.target.value)}
                   className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
                   placeholder="2.2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">{translations.accounts.creditLimit}</label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={creditLimit}
+                  onChange={e => setCreditLimit(e.target.value)}
+                  className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                  placeholder="3000000"
                 />
               </div>
               <div className="min-w-[200px] flex-1">
@@ -319,6 +337,9 @@ const AccountManager: React.FC<Props> = () => {
               {isLiabilityAccount(acc) && acc.annualInterestRate != null && (
                 <p className="text-xs text-slate-500 mt-1">{translations.accounts.annualInterestRate}: {acc.annualInterestRate}%</p>
               )}
+              {isLiabilityAccount(acc) && acc.creditLimit != null && acc.creditLimit > 0 && (
+                <p className="text-xs text-slate-500 mt-0.5">{translations.accounts.creditLimit}: {formatCurrency(acc.creditLimit, acc.currency)}</p>
+              )}
             </div>
           </div>
         ))}
@@ -380,6 +401,17 @@ const AccountManager: React.FC<Props> = () => {
                       min="0"
                       value={annualInterestRate}
                       onChange={e => setAnnualInterestRate(e.target.value)}
+                      className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.creditLimit}</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      value={creditLimit}
+                      onChange={e => setCreditLimit(e.target.value)}
                       className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
                     />
                   </div>
@@ -451,6 +483,7 @@ const AccountManager: React.FC<Props> = () => {
                     setAccountKind(AccountKind.BROKERAGE);
                     setDebtKind(DebtKind.PERSONAL_LOAN);
                     setAnnualInterestRate('');
+                    setCreditLimit('');
                     setLinkedBrokerageAccountId('');
                   }}
                   className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded transition"
