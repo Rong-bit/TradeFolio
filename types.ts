@@ -345,6 +345,9 @@ export interface HistoricalData {
     cnyExchangeRate?: number; // CNY to TWD on Dec 31 (optional)
     cadExchangeRate?: number; // CAD to TWD on Dec 31 (optional)
     audExchangeRate?: number; // AUD to TWD on Dec 31 (optional)
+    inrExchangeRate?: number; // INR to TWD on Dec 31 (optional)
+    sarExchangeRate?: number; // SAR to TWD on Dec 31 (optional)
+    brlExchangeRate?: number; // BRL to TWD on Dec 31 (optional)
   };
 }
 
