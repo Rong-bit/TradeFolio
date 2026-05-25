@@ -112,6 +112,17 @@ export const de: Translations = {
     chartLegendQuarterSnapshot: '✅ Quartalsende-Snapshot (Yahoo-Daten)',
     chartLegendLinearInterpolation:
       '⚠️ Lineare Interpolation — unter „Historische Kurse“ fehlende Daten abrufen',
+    netWorth: 'Reinvermögen',
+    totalDebt: 'Gesamtschuld',
+    leverageNetInvestedNote: 'Nettoinvestition kann Kreditauszahlungen enthalten (~{amount})',
+    leverageXirrWarning: 'XIRR enthält Fremdkapital – bitte vorsichtig interpretieren',
+    debtDisbursement: 'Kreditauszahlung',
+    debtRepayment: 'Kredittilgung',
+    leverageFormulaNote: 'Kreditauszahlung/-tilgung (Verbindlichkeit↔Depot) zählt zur Nettoinvestition und XIRR. Kreditzinsen nicht.',
+    debtAccountsTitle: 'Kredit & Verbindlichkeiten',
+    creditUsedOfLimit: 'Genutzt {used} / Limit {limit} ({percent}% Auslastung)',
+    estimatedMonthlyInterest: 'Geschätzte Zinsen nächsten Monat',
+    estimatedMonthlyInterestNote: 'Schätzung aus aktuellem Saldo und Jahreszins (ein Monat)',
   },
   marketChart: {
     title: 'Marktleistungsvergleich',
@@ -307,8 +318,30 @@ holdings: {
     noAccounts: 'Noch keine Konten. Bitte fügen Sie oben Ihr erstes Brokerage-Konto hinzu.',
     cashBalance: 'Bargeldbestand',
     editAccountTitle: 'Konto bearbeiten',
+    accountKind: 'Kontotyp',
+    accountKindBrokerage: 'Depot (Anlage)',
+    accountKindLiability: 'Verbindlichkeit (Kredit)',
+    debtKind: 'Kreditart',
+    debtKindPersonal: 'Privatkredit',
+    debtKindMortgage: 'Hypothek',
+    debtKindSecurities: 'Wertpapierkredit',
+    annualInterestRate: 'Jahreszins (%)',
+    creditLimit: 'Kreditlimit',
+    linkedBrokerageAccount: 'Verknüpftes Depotkonto',
+    debtBalance: 'Geschuldeter Betrag',
+    liabilityHint: 'Auszahlung nur per Überweisung: Verbindlichkeit → Depot.',
   },
-  debt: en.debt,
+  debt: {
+    paymentAlertTitle: 'Erinnerung Kreditrate',
+    paymentAlertBody: '„{name}“ fällig in {days} Tag(en) ({date}), ca. {amount}. Saldo prüfen.',
+    acknowledgePaid: 'Als bezahlt markieren',
+    remindLater: 'Später erinnern',
+    spreadDangerTitle: 'Warnung: negative Marge',
+    spreadWarningTitle: 'Warnung: geringe Marge',
+    spreadBody: '„{name}“ Rendite {ret}% vs. Kreditkosten {rate}% (unter Sicherheitsmarge).',
+    notAdvice: 'Nur zur Information, keine Anlageberatung.',
+    leverageNetNote: 'Nettoinvestition kann Fremdkapital enthalten (~{amount}). Rendite getrennt bewerten.',
+  },
   rebalance: { 
     ...en.rebalance, 
     title: 'Rebalancing',
@@ -440,6 +473,13 @@ TradeView ist ein Vermögensverwaltungstool für Taiwan- und US-Aktien, das Anle
 * **Auszahlung (Export)**: Geldabfluss (z.B. Lebenshaltungskosten).
 * **Überweisung (Transfer)**: Geldbewegung zwischen verschiedenen Konten (z.B. Bank zu Depotkonto).
 * **Zinsen**: Erfassung von Zinsen auf Einlagen oder Depotkonten.
+* **Kreditzinsen**: Zinsaufwand für Kredite; auf **Depotkonto** mindert Bargeld, auf **Verbindlichkeitskonto** erhöht die Schuld.
+
+### Kredit / Verbindlichkeiten
+* **Kontotyp**: In der Kontoverwaltung „Verbindlichkeit (Kredit)“ wählen; optional Kreditart, **Jahreszins (%)**, **Kreditlimit**, verknüpftes Depotkonto.
+* **Auszahlung (empfohlen)**: Nur **Überweisung** von **Verbindlichkeit → Depot**; kein zusätzliches **Einzahlung** auf dem Verbindlichkeitskonto (vermeidet doppelte Schuld / Nettoinvestition).
+* **Tilgung**: Überweisung Depot → Verbindlichkeit.
+* **Dashboard**: Schuldkarten (Saldo, Limitnutzung, geschätzte Zinsen nächsten Monat); Gesamtvermögen zeigt Gesamtschuld und Reinvermögen.
 
 ### Transaktionstypen
 * **Buy/Sell**: Allgemeine Käufe/Verkäufe.
@@ -472,6 +512,21 @@ A: Die Teile mit Häkchen zeigen die Leistung am Ende dieses Jahres. Die Teile o
 
 Q: Warum unterscheiden sich Aktienkurse und Wechselkurse von den aktuellen Preisen, die durch Klicken auf „KI aktualisiert Kurse & Wechselkurse" erhalten werden?
 A: Da Aktienkurse und Wechselkurse von Webseiten aktueller Werte abgerufen werden, können die aktuellen Werte um drei bis fünf Minuten verzögert sein. Verwenden Sie sie daher nicht als Referenzwerte für Kauf und Verkauf. Es wird empfohlen, sich bei Kauf und Verkauf hauptsächlich auf Wertpapierfirmen zu beziehen. Diese Software eignet sich nur für statistische Vermögensfunktionen wie Notfallreserven, Reisefonds, Rentenfonds, Festgeld, Aktien und Anleihen usw. Sie hat keine Wertpapierhandelsfunktionen. Außerdem haben Investitionen Gewinne und Verluste. Denken Sie daran, Notfallreserven bereitzustellen. Vielen Dank für Ihre Nutzung.
+
+Q: Wie richte ich ein Kreditkonto ein und erfasse Auszahlung/Tilgung?
+A: **Kontoverwaltung** → Typ „Verbindlichkeit (Kredit)“, Jahreszins, optional Kreditlimit. **Auszahlung**: Fonds → Überweisung → Verbindlichkeit → Depot. **Tilgung**: Depot → Verbindlichkeit. Der Verbindlichkeitssaldo ist die geschuldete Summe (inkl. auf dem Verbindlichkeitskonto gebuchter Kreditzinsen).
+
+Q: Warum kein „Einzahlung“ auf dem Verbindlichkeitskonto für die Bankauszahlung?
+A: Einzahlung plus Überweisung kann die Schuld **doppelt** erhöhen. Nettoinvestition/XIRR ignorieren Einzahlungen auf Verbindlichkeitskonten, der angezeigte Schuldensaldo kann trotzdem zu hoch sein. **Nur eine** Überweisung Verbindlichkeit→Depot verwenden.
+
+Q: Wie werden „genutzt / Limit / Auslastung %“ berechnet?
+A: **Genutzt** = aktueller Verbindlichkeitssaldo. **Limit** = eingetragenes Kreditlimit (gleiche Währung). **Auslastung** = genutzt ÷ Limit × 100 % (max. 100 %). Ohne Limit keine Fortschrittsanzeige.
+
+Q: Wie wird „geschätzte Zinsen nächsten Monat“ berechnet?
+A: **Monatszins** = Saldo × Jahreszins(%) ÷ 100 ÷ 12. Beispiel: 2.000.000 bei 2,2 % → ca. **3.667** pro Monat. Einfache Schätzung bei konstantem Saldo; die Bank kann abweichen.
+
+Q: Zusammenhang Kredit, Nettoinvestition, XIRR und Reinvermögen?
+A: **Kredit Auszahlung/Tilgung** (Verbindlichkeit↔Depot) zählt zur **Nettoinvestition** und **XIRR**; **Kreditzinsen** nicht. **Reinvermögen** = Gesamtvermögen − Gesamtschuld. XIRR bei Fremdkapital vorsichtig interpretieren.
 
 Q: Wie zeichnet man Aktienübertragungen (von Depot A zu Depot B) auf?
 A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out** → Konto = Quelle (A) → Datum, Markt, Symbol, Stückzahl → **Zielkonto** (B) wählen → speichern. Die App legt **TRANSFER_OUT und TRANSFER_IN paarweise** an—kein zweiter manueller Eintrag nötig. Die automatisch erzeugte Einbuchung hat **Gebühren = 0**; Übertragungsgebühren nur bei der **Ausbuchung** erfassen. Preis = durchschnittliche Anschaffungskosten (nicht Marktpreis).
@@ -637,6 +692,9 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     recurringAmountTwdHelp:
       'Fremdwährung: Kosten = Betrag × Kurs + Gebühren. Weicht der Auszugsbetrag ab, tragen Sie den Betrag ein, um die Umrechnung zu überschreiben. Leer = nur nach Kurs rechnen.',
     recurringNoteBadge: 'Dauer',
+    recurringKindDebtAlert: 'Erinnerung Kreditrate',
+    transferDebtDisbursementHint: 'Kreditauszahlung: Verbindlichkeit → Depot; zählt zur Nettoinvestition.',
+    transferDebtRepaymentHint: 'Kredittilgung: Depot → Verbindlichkeit.',
   },
   batchImportModal: {
     title: 'Stapelimport von Transaktionen',

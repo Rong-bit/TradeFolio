@@ -646,6 +646,13 @@ TradeView is an asset management tool that supports Taiwan and US stocks, helpin
 * **Export**: Fund outflow (e.g., living expenses withdrawal).
 * **Transfer**: Fund movement between different accounts (e.g., bank to brokerage account).
 * **Interest**: Record deposit or brokerage account interest.
+* **Loan interest**: Interest expense; on a **brokerage** account it reduces cash; on a **liability** account it increases debt balance.
+
+### Credit / liability accounts
+* **Account type**: In Account Management, choose **Liability (debt)** and optionally set debt type, **annual rate (%)**, **credit limit**, and linked brokerage account.
+* **Draw (recommended)**: Use Funds **Transfer** from **liability → brokerage** only. Do not also record a **Deposit** on the liability account (avoids duplicate debt balance).
+* **Repayment**: Transfer from brokerage → liability.
+* **Dashboard**: Shows debt cards (balance, limit utilization bar, estimated next-month interest); total assets card also shows total debt and net worth.
 
 ### Transaction Types
 * **Buy/Sell**: General buy/sell transactions.
@@ -678,6 +685,21 @@ A: The parts with checkmarks show the performance at the end of that year. The p
 
 Q: Why are stock prices and exchange rates different from the current prices obtained by clicking "AI Update Prices & Exchange Rates"?
 A: Stock prices and exchange rates are scraped from web current values, so the current values may lag by three to five minutes. Therefore, do not use them as references for buying and selling. It is recommended to use securities companies as the main reference for buying and selling. This software is only suitable for statistical asset functions, such as emergency funds, travel funds, retirement funds, fixed deposits, stocks and bonds, etc. It does not have securities trading functions. Additionally, investments have profits and losses. Remember to reserve emergency funds. Thank you for using.
+
+Q: How do I set up a loan account and record draws/repayments?
+A: In **Account Management**, add an account with type **Liability (debt)**; set name, currency, annual rate, and optional credit limit. **Draw**: Funds → Transfer → from liability to brokerage. **Repayment**: Transfer from brokerage to liability. The liability balance is principal owed (including loan interest recorded on the liability side).
+
+Q: Why not use Deposit on the liability account for bank disbursement?
+A: Deposit plus liability→brokerage transfer can **double-count** on the liability ledger. Net invested / XIRR already ignore liability deposits, but the displayed debt balance may still be too high. Use **only** a liability→brokerage transfer for the draw.
+
+Q: How are “used / limit / utilization %” calculated?
+A: **Used** = current liability account balance. **Limit** = credit limit (same currency as the account). **Utilization** = used ÷ limit × 100% (capped at 100%). No bar if limit is not set.
+
+Q: How is “estimated next-month interest” calculated?
+A: **Monthly estimate** = balance × annual rate(%) ÷ 100 ÷ 12. Example: 2,000,000 balance at 2.2% → about **3,667** per month. Simple interest, full balance for one month—an estimate only; your bank may accrue daily or vary with repayments.
+
+Q: How does debt relate to net invested, XIRR, and net worth?
+A: **Debt draws/repayments** (liability↔brokerage transfers) count in **net invested** and **XIRR**; **loan interest** does not. **Total assets** = holdings + brokerage cash; **total debt** = sum of liability balances (converted); **net worth** = total assets − total debt. Interpret XIRR carefully when using leverage.
 
 Q: How to record stock transfers (from Brokerage A to Brokerage B)?
 A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → account = source (A) → date, market, ticker, quantity → choose **Target brokerage account** (B) → confirm. The app saves **both** a TRANSFER_OUT and a paired TRANSFER_IN for you—no need to add the second leg manually. The auto-created Transfer In has **fees = 0**; enter any transfer **fees on the Transfer Out** row. Price defaults to average cost—use cost basis, not market price.

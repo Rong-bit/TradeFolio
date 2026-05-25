@@ -112,6 +112,17 @@ export const pt: Translations = {
     chartLegendQuarterSnapshot: '✅ Snapshot fim de trimestre (dados Yahoo)',
     chartLegendLinearInterpolation:
       '⚠️ Interpolação linear — abra Preços históricos para obter dados em falta',
+    netWorth: 'Património líquido',
+    totalDebt: 'Dívida total',
+    leverageNetInvestedNote: 'Investimento líquido pode incluir desembolsos de crédito (~{amount})',
+    leverageXirrWarning: 'XIRR inclui fundos emprestados — interprete com cuidado',
+    debtDisbursement: 'Desembolso de crédito',
+    debtRepayment: 'Amortização de crédito',
+    leverageFormulaNote: 'Desembolsos/amortizações (passivo↔corretagem) contam no investimento líquido e XIRR. Juros de empréstimo não.',
+    debtAccountsTitle: 'Crédito & dívida',
+    creditUsedOfLimit: 'Usado {used} / limite {limit} ({percent}% de utilização)',
+    estimatedMonthlyInterest: 'Juros estimados do próximo mês',
+    estimatedMonthlyInterestNote: 'Estimativa com saldo atual e taxa anual (um mês)',
   },
   marketChart: {
     title: 'Desempenho por Mercado',
@@ -174,6 +185,7 @@ export const pt: Translations = {
     withdraw: 'Saque', 
     transfer: 'Transferência', 
     interest: 'Juros',
+    loanInterest: 'Juros de empréstimo',
     showRecords: 'A mostrar {count} registos',
     totalRecords: 'Total {total}',
     last30Days: 'Últimos 30 dias',
@@ -299,6 +311,29 @@ export const pt: Translations = {
     noAccounts: 'Ainda não há contas. Por favor, adicione sua primeira conta corretora acima.',
     cashBalance: 'Saldo em dinheiro',
     editAccountTitle: 'Editar conta',
+    accountKind: 'Tipo de conta',
+    accountKindBrokerage: 'Corretagem (investimento)',
+    accountKindLiability: 'Passivo (dívida)',
+    debtKind: 'Tipo de crédito',
+    debtKindPersonal: 'Crédito pessoal',
+    debtKindMortgage: 'Hipoteca',
+    debtKindSecurities: 'Crédito de títulos',
+    annualInterestRate: 'Taxa anual (%)',
+    creditLimit: 'Limite de crédito',
+    linkedBrokerageAccount: 'Corretagem associada',
+    debtBalance: 'Principal em dívida',
+    liabilityHint: 'Desembolso: transferência passivo → corretagem apenas.',
+  },
+  debt: {
+    paymentAlertTitle: 'Lembrete de pagamento de crédito',
+    paymentAlertBody: '« {name} » vence em {days} dia(s) ({date}), cerca de {amount}. Verificar saldo.',
+    acknowledgePaid: 'Marcar como pago',
+    remindLater: 'Lembrar mais tarde',
+    spreadDangerTitle: 'Alerta: margem negativa',
+    spreadWarningTitle: 'Alerta: margem baixa',
+    spreadBody: '« {name} » retorno {ret}% vs custo do crédito {rate}% (abaixo da margem de segurança).',
+    notAdvice: 'Apenas referência, não é aconselhamento de investimento.',
+    leverageNetNote: 'Investimento líquido pode incluir empréstimo (~{amount}). Interprete os retornos em separado.',
   },
   rebalance: { 
     ...en.rebalance, 
@@ -432,6 +467,13 @@ TradeView é uma ferramenta de gestão de ativos para ações de Taiwan e EUA qu
 * **Exportar (Export)**: Saída de fundos (por exemplo, retirada de despesas de subsistência).
 * **Transferência (Transfer)**: Movimento de fundos entre diferentes contas (por exemplo, banco para conta de corretagem).
 * **Juros**: Registo de juros sobre depósitos ou contas de corretagem.
+* **Juros de empréstimo**: Despesa de juros; em **corretagem** reduz caixa, em **passivo** aumenta a dívida.
+
+### Crédito / passivo
+* **Tipo de conta**: Em Gestão de Contas, escolha « Passivo (dívida) »; opcional: tipo de crédito, **taxa anual (%)**, **limite de crédito**, corretora ligada.
+* **Desembolso (recomendado)**: Apenas **Transferência** **passivo → corretagem**; não use **Importar** extra no passivo (evita dívida duplicada).
+* **Amortização**: Transferência corretagem → passivo.
+* **Painel**: cartões de dívida (saldo, utilização do limite, juros estimados do próximo mês); ativo total mostra dívida total e património líquido.
 
 ### Tipos de Transações
 * **Buy/Sell**: Compra/venda geral.
@@ -464,6 +506,21 @@ R: As partes com marcas de verificação mostram o desempenho no final desse ano
 
 P: Por que os preços das ações e as taxas de câmbio diferem dos preços atuais obtidos ao clicar em "IA atualiza preços e taxas de câmbio"?
 R: Como os preços das ações e as taxas de câmbio são obtidos a partir dos valores atuais das páginas web, os valores atuais podem estar atrasados de três a cinco minutos. Portanto, não os use como valores de referência para compra e venda. É recomendado referir-se principalmente a empresas de valores mobiliários para compra e venda. Este software é adequado apenas para funções estatísticas de ativos, como reservas de emergência, fundos de viagem, fundos de reforma, depósitos a prazo, ações e obrigações, etc. Não tem funções de negociação de valores mobiliários. Além disso, os investimentos têm ganhos e perdas. Lembre-se de reservar reservas de emergência. Obrigado pelo seu uso.
+
+P: Como configurar conta de crédito e registar desembolso/amortização?
+R: **Gestão de Contas** → tipo « Passivo (dívida) », taxa anual, limite opcional. **Desembolso**: Fundos → Transferência → passivo → corretagem. **Amortização**: corretagem → passivo. O saldo do passivo é o principal em dívida (inclui juros registados no passivo).
+
+P: Por que não usar « Importar » no passivo para o desembolso do banco?
+R: Importar + transferência pode **duplicar** a dívida. Investimento líquido / XIRR já ignoram importações no passivo, mas o saldo pode ficar alto. Use **só** transferência passivo→corretagem.
+
+P: Como se calculam « usado / limite / utilização % »?
+R: **Usado** = saldo atual do passivo. **Limite** = limite de crédito (mesma moeda). **Utilização** = usado ÷ limite × 100 % (máx. 100 %). Sem limite, sem barra.
+
+P: Como se calcula « juros estimados do próximo mês »?
+R: **Estimativa** = saldo × taxa anual(%) ÷ 100 ÷ 12. Ex.: 2 000 000 a 2,2 % → cerca de **3 667** / mês. Estimativa com saldo constante; o banco pode diferir.
+
+P: Relação entre crédito, investimento líquido, XIRR e património líquido?
+R: **Desembolsos/amortizações** (passivo↔corretagem) entram no **investimento líquido** e **XIRR**; **juros de empréstimo** não. **Património líquido** = ativo total − dívida total. Interprete o XIRR com cuidado com alavancagem.
 
 P: Como registar transferências de ações (da Corretora A para a Corretora B)?
 R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → conta de origem (A) → data, mercado, símbolo, quantidade → escolher **conta de destino** (B) → confirmar. A aplicação grava **TRANSFER_OUT e TRANSFER_IN em par**—não precisa do segundo lançamento manual. A entrada automática tem **taxas = 0**; indique **taxas na Saída**. Preço predefinido = custo médio (não o preço de mercado).
@@ -629,6 +686,9 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     recurringAmountTwdHelp:
       'Moeda estrangeira: custo estimado como montante × taxa + encargos. Se o valor do extrato for diferente, introduza-o para substituir a conversão. Vazio = só pela taxa.',
     recurringNoteBadge: 'Recorrente',
+    recurringKindDebtAlert: 'Lembrete pagamento crédito',
+    transferDebtDisbursementHint: 'Desembolso: passivo → corretagem; conta no investimento líquido.',
+    transferDebtRepaymentHint: 'Amortização: corretagem → passivo.',
   },
   batchImportModal: {
     ...en.batchImportModal,

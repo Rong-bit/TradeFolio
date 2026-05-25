@@ -112,6 +112,17 @@ export const fr: Translations = {
     chartLegendQuarterSnapshot: '✅ Snapshot fin de trimestre (données Yahoo)',
     chartLegendLinearInterpolation:
       '⚠️ Interpolation linéaire — ouvrez Prix historiques pour récupérer les données manquantes',
+    netWorth: 'Patrimoine net',
+    totalDebt: 'Dette totale',
+    leverageNetInvestedNote: 'Investi net peut inclure des tirages de crédit (~{amount})',
+    leverageXirrWarning: 'XIRR inclut des fonds empruntés — interpréter avec prudence',
+    debtDisbursement: 'Tirage crédit',
+    debtRepayment: 'Remboursement crédit',
+    leverageFormulaNote: 'Tirages/remboursements (passif↔courtage) comptent dans investi net et XIRR. Intérêts d\'emprunt non.',
+    debtAccountsTitle: 'Crédit & passif',
+    creditUsedOfLimit: 'Emprunté {used} / plafond {limit} ({percent}% d\'utilisation)',
+    estimatedMonthlyInterest: 'Intérêts estimés mois prochain',
+    estimatedMonthlyInterestNote: 'Estimation selon solde actuel et taux annuel (un mois)',
   },
   marketChart: {
     title: 'Performance par Marché',
@@ -174,6 +185,7 @@ export const fr: Translations = {
     withdraw: 'Retrait', 
     transfer: 'Virement', 
     interest: 'Intérêts',
+    loanInterest: 'Intérêts d\'emprunt',
     showRecords: 'Affichage de {count} enregistrements',
     totalRecords: 'Total {total}',
     last30Days: '30 derniers jours',
@@ -299,6 +311,29 @@ export const fr: Translations = {
     noAccounts: 'Aucun compte pour le moment. Veuillez ajouter votre premier compte brokerage ci-dessus.',
     cashBalance: 'Solde en espèces',
     editAccountTitle: 'Modifier le compte',
+    accountKind: 'Type de compte',
+    accountKindBrokerage: 'Courtage (investissement)',
+    accountKindLiability: 'Passif (dette)',
+    debtKind: 'Type de crédit',
+    debtKindPersonal: 'Prêt personnel',
+    debtKindMortgage: 'Hypothèque',
+    debtKindSecurities: 'Crédit titres',
+    annualInterestRate: 'Taux annuel (%)',
+    creditLimit: 'Plafond de crédit',
+    linkedBrokerageAccount: 'Courtage lié',
+    debtBalance: 'Principal dû',
+    liabilityHint: 'Tirage : virement passif → courtage uniquement.',
+  },
+  debt: {
+    paymentAlertTitle: 'Rappel échéance crédit',
+    paymentAlertBody: '« {name} » échéance dans {days} jour(s) ({date}), env. {amount}. Vérifier le solde.',
+    acknowledgePaid: 'Marquer comme payé',
+    remindLater: 'Rappeler plus tard',
+    spreadDangerTitle: 'Alerte marge négative',
+    spreadWarningTitle: 'Alerte marge faible',
+    spreadBody: '« {name} » rendement {ret}% vs coût crédit {rate}% (sous marge de sécurité).',
+    notAdvice: 'À titre indicatif uniquement, pas un conseil en investissement.',
+    leverageNetNote: 'Investi net peut inclure emprunt (~{amount}). Interpréter les rendements à part.',
   },
   rebalance: { 
     ...en.rebalance, 
@@ -432,6 +467,13 @@ TradeView est un outil de gestion d'actifs pour actions Taiwan et US qui aide le
 * **Exporter (Export)** : Sortie de fonds (par exemple, retrait de frais de subsistance).
 * **Virement (Transfer)** : Mouvement de fonds entre différents comptes (par exemple, banque vers compte de courtage).
 * **Intérêts** : Enregistrement des intérêts sur dépôts ou comptes de courtage.
+* **Intérêts d'emprunt** : Charge d'intérêts ; sur un **compte de courtage** réduit la trésorerie, sur un **compte de passif** augmente la dette.
+
+### Crédit / passif
+* **Type de compte** : Dans Gestion des comptes, choisir « Passif (dette) » ; optionnel : type de crédit, **taux annuel (%)**, **plafond de crédit**, courtier lié.
+* **Tirage (recommandé)** : **Virement** uniquement **passif → courtage** ; pas de **Import** supplémentaire sur le passif (évite double dette / investissement net).
+* **Remboursement** : Virement courtage → passif.
+* **Tableau de bord** : cartes dette (solde, utilisation du plafond, intérêts estimés le mois prochain) ; actif total affiche dette totale et patrimoine net.
 
 ### Types de transactions
 * **Buy/Sell** : Achat/vente général.
@@ -464,6 +506,21 @@ R : Les parties avec coches montrent la performance à la fin de cette année. L
 
 Q : Pourquoi les prix des actions et les taux de change diffèrent-ils des prix actuels obtenus en cliquant sur « IA met à jour les prix et les taux de change » ?
 R : Comme les prix des actions et les taux de change sont récupérés à partir des valeurs actuelles des pages Web, les valeurs actuelles peuvent être retardées de trois à cinq minutes. Ne les utilisez donc pas comme valeurs de référence pour l'achat et la vente. Il est recommandé de se référer principalement aux sociétés de valeurs mobilières pour l'achat et la vente. Ce logiciel convient uniquement aux fonctions statistiques d'actifs telles que les réserves d'urgence, les fonds de voyage, les fonds de retraite, les dépôts à terme, les actions et obligations, etc. Il n'a pas de fonctions de trading de valeurs mobilières. De plus, les investissements ont des gains et des pertes. N'oubliez pas de prévoir des réserves d'urgence. Merci de votre utilisation.
+
+Q : Comment configurer un compte de crédit et enregistrer tirage/remboursement ?
+R : **Gestion des comptes** → type « Passif (dette) », taux annuel, plafond optionnel. **Tirage** : Fonds → Virement → passif → courtage. **Remboursement** : courtage → passif. Le solde passif = principal dû (y compris intérêts enregistrés côté passif).
+
+Q : Pourquoi éviter « Import » sur le compte passif pour le décaissement bancaire ?
+R : Import + virement peut **doubler** la dette affichée. L'investissement net / XIRR ignore déjà les imports passif, mais le solde peut rester trop élevé. **Un seul** virement passif→courtage.
+
+Q : Comment sont calculés « emprunté / plafond / utilisation % » ?
+R : **Emprunté** = solde passif actuel. **Plafond** = plafond de crédit saisi (même devise). **Utilisation** = emprunté ÷ plafond × 100 % (plafonné à 100 %). Pas de barre sans plafond.
+
+Q : Comment est calculé « intérêts estimés le mois prochain » ?
+R : **Estimation** = solde × taux annuel(%) ÷ 100 ÷ 12. Ex. : 2 000 000 à 2,2 % → env. **3 667** / mois. Estimation à solde constant ; la banque peut différer.
+
+Q : Lien entre crédit, investissement net, XIRR et patrimoine net ?
+R : **Tirages/remboursements** (passif↔courtage) comptent dans **investissement net** et **XIRR** ; **intérêts d'emprunt** non. **Patrimoine net** = actif total − dette totale. Interpréter le XIRR avec prudence si effet de levier.
 
 Q : Comment enregistrer les transferts d'actions (du courtier A au courtier B) ?
 R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sortie** → compte source (A) → date, marché, symbole, quantité → choisir le **compte cible** (B) → valider. L'application crée **TRANSFER_OUT et TRANSFER_IN ensemble**—pas besoin d'ajouter la 2e ligne à la main. L'entrée auto a **frais = 0** ; saisissez les **frais sur la sortie**. Prix par défaut = coût moyen (pas le cours du marché).
@@ -629,6 +686,9 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     recurringAmountTwdHelp:
       'Devise étrangère : coût estimé par montant × taux + frais. Si le montant du relevé diffère, saisissez-le pour remplacer le calcul. Vide = uniquement le taux.',
     recurringNoteBadge: 'Récurrent',
+    recurringKindDebtAlert: 'Rappel échéance crédit',
+    transferDebtDisbursementHint: 'Tirage crédit : passif → courtage ; compte dans investi net.',
+    transferDebtRepaymentHint: 'Remboursement : courtage → passif.',
   },
   batchImportModal: {
     title: 'Import groupé de transactions',
