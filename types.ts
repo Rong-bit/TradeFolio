@@ -100,6 +100,8 @@ export interface Account {
   debtKind?: DebtKind;
   /** Annual interest % e.g. 2.2 */
   annualInterestRate?: number;
+  /** Credit line limit (same currency as account); used for utilization display */
+  creditLimit?: number;
   linkedBrokerageAccountId?: string;
 }
 
