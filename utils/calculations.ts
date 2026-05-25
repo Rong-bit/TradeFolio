@@ -856,19 +856,22 @@ export const generateAdvancedChartData = (
           const histCnyRate = historicalData[yearKey].cnyExchangeRate || cnyExchangeRate;
           const histCadRate = historicalData[yearKey].cadExchangeRate || cadExchangeRate;
           const histAudRate = historicalData[yearKey].audExchangeRate || audExchangeRate;
+          const histInrRate = historicalData[yearKey].inrExchangeRate || inrExchangeRate;
+          const histSarRate = historicalData[yearKey].sarExchangeRate || sarExchangeRate;
+          const histBrlRate = historicalData[yearKey].brlExchangeRate || brlExchangeRate;
           const histRates: ExchangeRates = {
             exchangeRateUsdToTwd: histRate,
             jpyExchangeRate: histJpyRate,
             gbpExchangeRate: histGbpRate,
             eurExchangeRate: histEurRate,
             cnyExchangeRate: histCnyRate,
-            inrExchangeRate,
+            inrExchangeRate: histInrRate,
             cadExchangeRate: histCadRate,
             hkdExchangeRate: histHkdRate,
             krwExchangeRate: histKrwRate,
             audExchangeRate: histAudRate,
-            sarExchangeRate,
-            brlExchangeRate
+            sarExchangeRate: histSarRate,
+            brlExchangeRate: histBrlRate,
           };
           
           const yearEndDate = new Date(`${y}-12-31`);
@@ -1618,9 +1621,9 @@ export const buildQuarterlyTrendData = (
           cnyExchangeRate: snap.cnyExchangeRate ?? rates.cnyExchangeRate,
           cadExchangeRate: snap.cadExchangeRate ?? rates.cadExchangeRate,
           audExchangeRate: snap.audExchangeRate ?? rates.audExchangeRate,
-          inrExchangeRate: rates.inrExchangeRate,
-          sarExchangeRate: rates.sarExchangeRate,
-          brlExchangeRate: rates.brlExchangeRate,
+          inrExchangeRate: snap.inrExchangeRate ?? rates.inrExchangeRate,
+          sarExchangeRate: snap.sarExchangeRate ?? rates.sarExchangeRate,
+          brlExchangeRate: snap.brlExchangeRate ?? rates.brlExchangeRate,
         } : rates;
 
         const realAssets = snap ? calcAssetsFromSnapshot(yearNum, q, snapRates) : null;
