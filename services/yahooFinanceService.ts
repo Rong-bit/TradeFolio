@@ -882,8 +882,11 @@ export const fetchHistoricalYearEndData = async (
   hkdExchangeRate?: number;
   krwExchangeRate?: number;
   cnyExchangeRate?: number;
+  inrExchangeRate?: number;
   cadExchangeRate?: number;
   audExchangeRate?: number;
+  sarExchangeRate?: number;
+  brlExchangeRate?: number;
 }> => {
   const endTs   = Math.floor(Date.UTC(year, 11, 31, 23, 59, 59) / 1000);
   const startTs = Math.floor(Date.UTC(year, 11,  1,  0,  0,  0) / 1000);
@@ -936,8 +939,11 @@ export const fetchHistoricalYearEndData = async (
     hkdExchangeRate: rateMap['HKD'],
     krwExchangeRate: rateMap['KRW'],
     cnyExchangeRate: rateMap['CNY'],
+    inrExchangeRate: rateMap['INR'],
     cadExchangeRate: rateMap['CAD'],
     audExchangeRate: rateMap['AUD'],
+    sarExchangeRate: rateMap['SAR'],
+    brlExchangeRate: rateMap['BRL'],
   };
 };
 
@@ -967,8 +973,11 @@ export const fetchHistoricalQuarterEndData = async (
   hkdExchangeRate?: number;
   krwExchangeRate?: number;
   cnyExchangeRate?: number;
+  inrExchangeRate?: number;
   cadExchangeRate?: number;
   audExchangeRate?: number;
+  sarExchangeRate?: number;
+  brlExchangeRate?: number;
 }>> => {
   const neededRates = neededCurrencies(markets ?? []);
   const result: Record<string, any> = {};
@@ -1017,8 +1026,11 @@ export const fetchHistoricalQuarterEndData = async (
       hkdExchangeRate: rateMap['HKD'],
       krwExchangeRate: rateMap['KRW'],
       cnyExchangeRate: rateMap['CNY'],
+      inrExchangeRate: rateMap['INR'],
       cadExchangeRate: rateMap['CAD'],
       audExchangeRate: rateMap['AUD'],
+      sarExchangeRate: rateMap['SAR'],
+      brlExchangeRate: rateMap['BRL'],
     };
 
     // 季之間間隔，避免 rate limit
