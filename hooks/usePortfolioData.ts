@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
-import { useLocalStorageDebounced } from './useLocalStorageDebounced';
+import { usePortfolioLocalStorage } from './usePortfolioLocalStorage';
 import { Transaction, Account, CashFlow, HistoricalData, Market, RecurringDepositRule, StockSplitEvent } from '../types';
 import { applyRecurringDeposits } from '../utils/recurringDeposits';
 
-interface PortfolioDataState {
+export interface PortfolioDataState {
   transactions: Transaction[];
   accounts: Account[];
   cashFlows: CashFlow[];
@@ -14,6 +14,27 @@ interface PortfolioDataState {
   historicalData: HistoricalData;
   recurringDepositRules: RecurringDepositRule[];
   stockSplits: StockSplitEvent[];
+}
+
+/** 套用定期入金規則（單次 setState，避免 effect + cashFlows 依賴造成重複入帳） */
+function applyRecurringToPortfolioState(state: PortfolioDataState): PortfolioDataState {
+  const result = applyRecurringDeposits({
+    rules: state.recurringDepositRules,
+    cashFlows: state.cashFlows,
+    accounts: state.accounts,
+    today: new Date(),
+  });
+  if (
+    result.newCashFlows.length === 0 &&
+    result.updatedRules === state.recurringDepositRules
+  ) {
+    return state;
+  }
+  return {
+    ...state,
+    cashFlows: [...state.cashFlows, ...result.newCashFlows],
+    recurringDepositRules: result.updatedRules,
+  };
 }
 
 const INITIAL_STATE: PortfolioDataState = {
@@ -32,17 +53,7 @@ const INITIAL_STATE: PortfolioDataState = {
 export function usePortfolioData(userPrefix: string | undefined) {
   const [data, setData] = useState<PortfolioDataState>(INITIAL_STATE);
 
-  // 防抖儲存（只要 userPrefix 存在就儲存）
-  useLocalStorageDebounced('transactions', data.transactions, 500, userPrefix);
-  useLocalStorageDebounced('accounts', data.accounts, 500, userPrefix);
-  useLocalStorageDebounced('cashFlows', data.cashFlows, 500, userPrefix);
-  useLocalStorageDebounced('prices', data.currentPrices, 500, userPrefix);
-  useLocalStorageDebounced('priceDetails', data.priceDetails, 500, userPrefix);
-  useLocalStorageDebounced('rebalanceTargets', data.rebalanceTargets, 500, userPrefix);
-  useLocalStorageDebounced('rebalanceEnabledItems', data.rebalanceEnabledItems, 500, userPrefix);
-  useLocalStorageDebounced('historicalData', data.historicalData, 500, userPrefix);
-  useLocalStorageDebounced('recurringDepositRules', data.recurringDepositRules, 500, userPrefix);
-  useLocalStorageDebounced('stockSplits', data.stockSplits, 500, userPrefix);
+  usePortfolioLocalStorage(data, userPrefix, 500);
 
   /** 從 localStorage 載入所有投資組合資料 */
   const loadData = useCallback((getKey: (k: string) => string) => {
@@ -51,7 +62,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
       return item ? JSON.parse(item) : fallback;
     };
 
-    setData({
+    const loaded: PortfolioDataState = {
       transactions: parse('transactions', []),
       accounts: parse('accounts', []),
       cashFlows: parse('cashFlows', []),
@@ -62,7 +73,8 @@ export function usePortfolioData(userPrefix: string | undefined) {
       historicalData: parse('historicalData', {}),
       recurringDepositRules: parse('recurringDepositRules', []),
       stockSplits: parse('stockSplits', []),
-    });
+    };
+    setData(applyRecurringToPortfolioState(loaded));
   }, []);
 
   /** 重置所有資料（登出時使用） */
@@ -173,14 +185,21 @@ export function usePortfolioData(userPrefix: string | undefined) {
   // ── Recurring deposit rules ───────────────────────────────────
 
   const addRecurringDepositRule = useCallback((rule: RecurringDepositRule) => {
-    setData(prev => ({ ...prev, recurringDepositRules: [...prev.recurringDepositRules, rule] }));
+    setData(prev =>
+      applyRecurringToPortfolioState({
+        ...prev,
+        recurringDepositRules: [...prev.recurringDepositRules, rule],
+      })
+    );
   }, []);
 
   const updateRecurringDepositRule = useCallback((rule: RecurringDepositRule) => {
-    setData(prev => ({
-      ...prev,
-      recurringDepositRules: prev.recurringDepositRules.map(r => (r.id === rule.id ? rule : r)),
-    }));
+    setData(prev =>
+      applyRecurringToPortfolioState({
+        ...prev,
+        recurringDepositRules: prev.recurringDepositRules.map(r => (r.id === rule.id ? rule : r)),
+      })
+    );
   }, []);
 
   const removeRecurringDepositRule = useCallback((id: string) => {
@@ -191,30 +210,12 @@ export function usePortfolioData(userPrefix: string | undefined) {
   }, []);
 
   const setRecurringDepositRules = useCallback((rules: RecurringDepositRule[]) => {
-    setData(prev => ({ ...prev, recurringDepositRules: rules }));
+    setData(prev => applyRecurringToPortfolioState({ ...prev, recurringDepositRules: rules }));
   }, []);
 
-  /** 登入後套用每月定期入金（函式式更新，避免 Strict Mode 重複入帳） */
+  /** 手動觸發定期入金同步（登入時已於 loadData 內套用，勿再綁 cashFlows effect） */
   const syncRecurringDeposits = useCallback(() => {
-    setData(prev => {
-      const result = applyRecurringDeposits({
-        rules: prev.recurringDepositRules,
-        cashFlows: prev.cashFlows,
-        accounts: prev.accounts,
-        today: new Date(),
-      });
-      if (
-        result.newCashFlows.length === 0 &&
-        result.updatedRules === prev.recurringDepositRules
-      ) {
-        return prev;
-      }
-      return {
-        ...prev,
-        cashFlows: [...prev.cashFlows, ...result.newCashFlows],
-        recurringDepositRules: result.updatedRules,
-      };
-    });
+    setData(prev => applyRecurringToPortfolioState(prev));
   }, []);
 
   // ── Prices ────────────────────────────────────────────────────
@@ -262,7 +263,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
   }, []);
 
   const importData = useCallback((imported: Partial<PortfolioDataState>) => {
-    setData(prev => ({ ...prev, ...imported }));
+    setData(prev => applyRecurringToPortfolioState({ ...prev, ...imported }));
   }, []);
 
   return {
