@@ -557,41 +557,30 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
           </div>
       </div>
 
-      {/* 1b. 每月定期匯入 */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-          <div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-700">{ff.recurringSectionTitle}</h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-2xl">{ff.recurringDisclaimer}</p>
-            {onMinDebtSafetySpreadChange && (
-              <label className="flex items-center gap-2 mt-2 text-xs text-slate-600">
-                <span>{ff.minSafetySpread}</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={20}
-                  step={0.5}
-                  value={minDebtSafetySpread}
-                  onChange={e => onMinDebtSafetySpreadChange(parseFloat(e.target.value) || 0)}
-                  className={`w-20 border border-slate-300 rounded px-2 py-1 ${FORM_FIELD_THEME}`}
-                />
-              </label>
-            )}
+      {/* 1b. 定期規程與負債警示 */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 space-y-4">
+        <h3 className="text-base sm:text-lg font-bold text-slate-700">{ff.recurringSectionTitle}</h3>
+
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+            <div>
+              <h4 className="text-sm font-semibold text-slate-700">{ff.recurringRulesTitle}</h4>
+              <p className="text-xs text-slate-500 mt-1 max-w-2xl">{ff.recurringDisclaimer}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openRecModal()}
+              disabled={accounts.length === 0}
+              className="shrink-0 bg-indigo-600 text-white px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {ff.recurringAddRule}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => openRecModal()}
-            disabled={accounts.length === 0}
-            className="shrink-0 bg-indigo-600 text-white px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {ff.recurringAddRule}
-          </button>
-        </div>
-        {recurringDepositRules.length === 0 ? (
-          <p className="text-sm text-slate-400 py-2">{ff.recurringNoRules}</p>
-        ) : (
-          <ul className="divide-y divide-slate-100 border border-slate-100 rounded-lg">
-            {recurringDepositRules.map(r => {
+          {recurringDepositRules.length === 0 ? (
+            <p className="text-sm text-slate-400 py-2">{ff.recurringNoRules}</p>
+          ) : (
+            <ul className="divide-y divide-slate-100 border border-slate-100 rounded-lg">
+              {recurringDepositRules.map(r => {
               const acc = accounts.find(a => a.id === r.accountId);
               const isDebtAlert = r.kind === 'DEBT_PAYMENT_ALERT';
               return (
@@ -653,8 +642,28 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                   </div>
                 </li>
               );
-            })}
-          </ul>
+              })}
+            </ul>
+          )}
+        </div>
+
+        {onMinDebtSafetySpreadChange && (
+          <div className="space-y-2 border-t border-slate-200 pt-4">
+            <h4 className="text-sm font-semibold text-slate-700">{ff.debtAlertSettingsTitle}</h4>
+            <p className="text-xs text-slate-500 max-w-2xl">{ff.minSafetySpreadHelp}</p>
+            <label className="flex items-center gap-2 text-xs text-slate-600">
+              <span>{ff.minSafetySpread}</span>
+              <input
+                type="number"
+                min={0}
+                max={20}
+                step={0.5}
+                value={minDebtSafetySpread}
+                onChange={e => onMinDebtSafetySpreadChange(parseFloat(e.target.value) || 0)}
+                className={`w-20 border border-slate-300 rounded px-2 py-1 ${FORM_FIELD_THEME}`}
+              />
+            </label>
+          </div>
         )}
       </div>
 
