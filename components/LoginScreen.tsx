@@ -2,7 +2,7 @@ import React from 'react';
 import { t, Language } from '../utils/i18n';
 import { ADMIN_EMAIL } from '../hooks/useAuthSession';
 import type { AppText } from '../hooks/useAppText';
-import type { AlertDialogState } from '../types/alertDialog';
+import type { AlertDialogState } from '../types';
 import AlertDialog from './AlertDialog';
 
 interface Props {
