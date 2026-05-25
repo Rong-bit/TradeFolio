@@ -410,4 +410,11 @@ export interface CombinedRecord {
   isTargetRecord?: boolean;
 }
 
+/** 全域提示對話框 state（登入頁與主畫面共用） */
+export interface AlertDialogState {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'error';
+}
 
