@@ -3,12 +3,60 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 import { t } from '../utils/i18n';
-import { HistoricalData, Market } from '../types';
+import { HistoricalData, Market, Currency } from '../types';
 import { getPortfolioStateAtDate } from '../utils/calculations';
 import { fetchHistoricalYearEndData, fetchHistoricalQuarterEndData } from '../services/yahooFinanceService';
 
 const applyVars = (template: string, vars: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (m, key) => (key in vars ? String(vars[key]) : m));
+
+type HistPeriodSnapshot = HistoricalData[string];
+
+type FetchedHistRates = {
+  exchangeRate?: number;
+  jpyExchangeRate?: number;
+  eurExchangeRate?: number;
+  gbpExchangeRate?: number;
+  hkdExchangeRate?: number;
+  krwExchangeRate?: number;
+  cnyExchangeRate?: number;
+  cadExchangeRate?: number;
+  audExchangeRate?: number;
+  inrExchangeRate?: number;
+  sarExchangeRate?: number;
+  brlExchangeRate?: number;
+};
+
+const pickHistRate = (
+  current: number | undefined,
+  fetched: number | undefined,
+  overwrite: boolean
+) => (overwrite || !current || current === 0) && fetched && fetched > 0 ? fetched : current;
+
+const mergeFetchedRatesIntoPeriod = (
+  prev: HistPeriodSnapshot,
+  result: FetchedHistRates,
+  opts: { overwriteFx: boolean; defaultUsd?: number }
+): HistPeriodSnapshot => {
+  const defaultUsd = opts.defaultUsd ?? 30;
+  const shouldUpdateUsd =
+    opts.overwriteFx || !prev.exchangeRate || prev.exchangeRate === 0 || prev.exchangeRate === 30;
+  return {
+    ...prev,
+    exchangeRate: shouldUpdateUsd ? (result.exchangeRate || defaultUsd) : prev.exchangeRate,
+    jpyExchangeRate: pickHistRate(prev.jpyExchangeRate, result.jpyExchangeRate, opts.overwriteFx),
+    eurExchangeRate: pickHistRate(prev.eurExchangeRate, result.eurExchangeRate, opts.overwriteFx),
+    gbpExchangeRate: pickHistRate(prev.gbpExchangeRate, result.gbpExchangeRate, opts.overwriteFx),
+    hkdExchangeRate: pickHistRate(prev.hkdExchangeRate, result.hkdExchangeRate, opts.overwriteFx),
+    krwExchangeRate: pickHistRate(prev.krwExchangeRate, result.krwExchangeRate, opts.overwriteFx),
+    cnyExchangeRate: pickHistRate(prev.cnyExchangeRate, result.cnyExchangeRate, opts.overwriteFx),
+    cadExchangeRate: pickHistRate(prev.cadExchangeRate, result.cadExchangeRate, opts.overwriteFx),
+    audExchangeRate: pickHistRate(prev.audExchangeRate, result.audExchangeRate, opts.overwriteFx),
+    inrExchangeRate: pickHistRate(prev.inrExchangeRate, result.inrExchangeRate, opts.overwriteFx),
+    sarExchangeRate: pickHistRate(prev.sarExchangeRate, result.sarExchangeRate, opts.overwriteFx),
+    brlExchangeRate: pickHistRate(prev.brlExchangeRate, result.brlExchangeRate, opts.overwriteFx),
+  };
+};
 
 interface Props {
   onSave: (data: HistoricalData) => void;
@@ -18,6 +66,7 @@ interface Props {
 const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
   const { transactions, cashFlows, accounts, historicalData } = usePortfolio();
   const { language } = useUI();
+  const accTr = t(language).accounts;
   const tr = t(language).historicalModal;
   const currentYear = new Date().getFullYear();
   const completedQuarter = Math.floor((new Date().getMonth()) / 3) as 0 | 1 | 2 | 3;
@@ -71,6 +120,25 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
       });
   }, [selectedPeriodDate, transactions, cashFlows, accounts]);
 
+  const showInrFx = useMemo(
+    () =>
+      activeTickers.some(t => t.market === Market.IN) ||
+      accounts.some(a => a.currency === Currency.INR),
+    [activeTickers, accounts]
+  );
+  const showSarFx = useMemo(
+    () =>
+      activeTickers.some(t => t.market === Market.SA) ||
+      accounts.some(a => a.currency === Currency.SAR),
+    [activeTickers, accounts]
+  );
+  const showBrlFx = useMemo(
+    () =>
+      activeTickers.some(t => t.market === Market.BR) ||
+      accounts.some(a => a.currency === Currency.BRL),
+    [activeTickers, accounts]
+  );
+
   // Handle data updates
   const handlePriceChange = (ticker: string, value: string) => {
       const num = parseFloat(value);
@@ -78,11 +146,8 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
           ...prev,
           [selectedPeriodKey]: {
               ...prev[selectedPeriodKey],
-              prices: {
-                  ...prev[selectedPeriodKey]?.prices,
-                  [ticker]: isNaN(num) ? 0 : num
-              },
-              exchangeRate: prev[selectedPeriodKey]?.exchangeRate || 30
+              prices: { ...prev[selectedPeriodKey]?.prices, [ticker]: isNaN(num) ? 0 : num },
+              exchangeRate: prev[selectedPeriodKey]?.exchangeRate || 30,
           }
       }));
   };
@@ -94,9 +159,25 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
           [selectedPeriodKey]: {
               ...prev[selectedPeriodKey],
               prices: prev[selectedPeriodKey]?.prices || {},
-              exchangeRate: isNaN(num) ? 30 : num
+              exchangeRate: isNaN(num) ? 30 : num,
           }
       }));
+  };
+
+  const handleOptionalRateChange = (
+    field: 'inrExchangeRate' | 'sarExchangeRate' | 'brlExchangeRate',
+    value: string
+  ) => {
+    const num = parseFloat(value);
+    setLocalData(prev => ({
+      ...prev,
+      [selectedPeriodKey]: {
+        ...prev[selectedPeriodKey],
+        prices: prev[selectedPeriodKey]?.prices || {},
+        exchangeRate: prev[selectedPeriodKey]?.exchangeRate || 30,
+        [field]: isNaN(num) ? undefined : num,
+      },
+    }));
   };
 
   const handleAiFetch = async () => {
@@ -195,41 +276,15 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
           }
           
           setLocalData(prev => {
-              const prevData = prev[selectedYear] || { prices: {}, exchangeRate: 0 };
               const prevPeriodData = prev[selectedPeriodKey] || { prices: {}, exchangeRate: 0 };
-              
-              // Only update exchange rate if it was missing (0) or default (30)
-              const currentRate = prevPeriodData.exchangeRate;
-              const shouldUpdateRate = !currentRate || currentRate === 0 || currentRate === 30;
-              
-              const newRate = shouldUpdateRate 
-                  ? (result.exchangeRate || 30)
-                  : currentRate;
-
-              // 各地區歷史匯率：只在尚未設定（0 或 undefined）時才覆蓋
-              const pickRate = (current: number | undefined, fetched: number | undefined) =>
-                  (!current || current === 0) && fetched && fetched > 0 ? fetched : current;
-
-              const newJpyRate = pickRate(prevPeriodData.jpyExchangeRate, result.jpyExchangeRate);
-              const newEurRate = pickRate(prevPeriodData.eurExchangeRate, result.eurExchangeRate);
-              const newGbpRate = pickRate(prevPeriodData.gbpExchangeRate, result.gbpExchangeRate);
-              const newHkdRate = pickRate(prevPeriodData.hkdExchangeRate, result.hkdExchangeRate);
-              const newKrwRate = pickRate(prevPeriodData.krwExchangeRate, result.krwExchangeRate);
-              const newCnyRate = pickRate(prevPeriodData.cnyExchangeRate, result.cnyExchangeRate);
-              const newCadRate = pickRate(prevPeriodData.cadExchangeRate, result.cadExchangeRate);
-              const newAudRate = pickRate(prevPeriodData.audExchangeRate, result.audExchangeRate);
-
-              // 合併價格數據，確保兩種格式的 key 都能正確對應
               const mergedPrices = { ...prevPeriodData.prices };
 
               Object.entries(result.prices).forEach(([key, price]) => {
                   mergedPrices[key] = price;
-                  // 如果是 TPE: 格式，也同時儲存不帶前綴的版本
                   if (key.startsWith('TPE:')) {
                       const cleanKey = key.replace(/^TPE:/i, '');
                       mergedPrices[cleanKey] = price;
                   } else if (key.match(/^\d{4}$/)) {
-                      // 如果是純數字，也同時儲存 TPE: 前綴版本
                       mergedPrices[`TPE:${key}`] = price;
                   }
               });
@@ -237,18 +292,9 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
               return {
                   ...prev,
                   [selectedPeriodKey]: {
-                      ...prevPeriodData,
+                      ...mergeFetchedRatesIntoPeriod(prevPeriodData, result, { overwriteFx: false }),
                       prices: mergedPrices,
-                      exchangeRate: newRate,
-                      jpyExchangeRate: newJpyRate,
-                      eurExchangeRate: newEurRate,
-                      gbpExchangeRate: newGbpRate,
-                      hkdExchangeRate: newHkdRate,
-                      krwExchangeRate: newKrwRate,
-                      cnyExchangeRate: newCnyRate,
-                      cadExchangeRate: newCadRate,
-                      audExchangeRate: newAudRate,
-                  }
+                  },
               };
           });
       } catch (e) {
@@ -328,18 +374,12 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                       accumulated = {
                           ...accumulated,
                           [y]: {
-                              ...prevYearData,
+                              ...mergeFetchedRatesIntoPeriod(prevYearData, result, {
+                                  overwriteFx: forceRefresh || rateNeedsUpdate,
+                              }),
                               prices: mergedPrices,
                               exchangeRate: newRate,
-                              jpyExchangeRate: pickRate(prevYearData.jpyExchangeRate, result.jpyExchangeRate),
-                              eurExchangeRate: pickRate(prevYearData.eurExchangeRate, result.eurExchangeRate),
-                              gbpExchangeRate: pickRate(prevYearData.gbpExchangeRate, result.gbpExchangeRate),
-                              hkdExchangeRate: pickRate(prevYearData.hkdExchangeRate, result.hkdExchangeRate),
-                              krwExchangeRate: pickRate(prevYearData.krwExchangeRate, result.krwExchangeRate),
-                              cnyExchangeRate: pickRate(prevYearData.cnyExchangeRate, result.cnyExchangeRate),
-                              cadExchangeRate: pickRate(prevYearData.cadExchangeRate, result.cadExchangeRate),
-                              audExchangeRate: pickRate(prevYearData.audExchangeRate, result.audExchangeRate),
-                          }
+                          },
                       };
                   }
               }
@@ -378,21 +418,20 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                               if (ticker.startsWith('TPE:')) mergedPrices[ticker.replace(/^TPE:/i, '')] = price;
                               else if (ticker.match(/^\d{4}$/)) mergedPrices[`TPE:${ticker}`] = price;
                           });
+                          const usdNeedsUpdate =
+                              forceRefresh || !prevSnap.exchangeRate || prevSnap.exchangeRate === 0;
                           accumulated = {
                               ...accumulated,
                               [key]: {
+                                  ...mergeFetchedRatesIntoPeriod(prevSnap, result, {
+                                      overwriteFx: forceRefresh,
+                                      defaultUsd: 31.5,
+                                  }),
                                   prices: mergedPrices,
-                                  exchangeRate: (forceRefresh || !prevSnap.exchangeRate || prevSnap.exchangeRate === 0)
-                                      ? (result.exchangeRate || 31.5) : prevSnap.exchangeRate,
-                                  jpyExchangeRate: pickRate(prevSnap.jpyExchangeRate, result.jpyExchangeRate),
-                                  eurExchangeRate: pickRate(prevSnap.eurExchangeRate, result.eurExchangeRate),
-                                  gbpExchangeRate: pickRate(prevSnap.gbpExchangeRate, result.gbpExchangeRate),
-                                  hkdExchangeRate: pickRate(prevSnap.hkdExchangeRate, result.hkdExchangeRate),
-                                  krwExchangeRate: pickRate(prevSnap.krwExchangeRate, result.krwExchangeRate),
-                                  cnyExchangeRate: pickRate(prevSnap.cnyExchangeRate, result.cnyExchangeRate),
-                                  cadExchangeRate: pickRate(prevSnap.cadExchangeRate, result.cadExchangeRate),
-                                  audExchangeRate: pickRate(prevSnap.audExchangeRate, result.audExchangeRate),
-                              }
+                                  exchangeRate: usdNeedsUpdate
+                                      ? (result.exchangeRate || 31.5)
+                                      : prevSnap.exchangeRate,
+                              },
                           };
                       });
                   }
@@ -506,15 +545,56 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                    <h3 className="font-bold" style={{ color: "#334155" }}>
                     {selectedYear} Q{selectedQuarter} 數據
                    </h3>
-                   <div className="flex items-center gap-2">
-                       <label className="text-sm" style={{ color: "#475569" }}>{tr.exchangeRateLabel}</label>
-                       <input 
-                         type="number" 
-                         step="0.1"
-                         value={currentYearData.exchangeRate}
-                         onChange={(e) => handleRateChange(e.target.value)}
-                         className="w-20 border rounded p-1 text-right font-mono text-slate-800 bg-white"
-                       />
+                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2 justify-end max-w-[70%]">
+                       <div className="flex items-center gap-2">
+                         <label className="text-sm" style={{ color: "#475569" }}>{tr.exchangeRateLabel}</label>
+                         <input
+                           type="number"
+                           step="0.1"
+                           value={currentYearData.exchangeRate}
+                           onChange={(e) => handleRateChange(e.target.value)}
+                           className="w-20 border rounded p-1 text-right font-mono text-slate-800 bg-white"
+                         />
+                       </div>
+                       {showInrFx && (
+                         <div className="flex items-center gap-2">
+                           <label className="text-xs" style={{ color: "#475569" }}>{accTr.currencyINR}</label>
+                           <input
+                             type="number"
+                             step="0.001"
+                             value={currentYearData.inrExchangeRate ?? ''}
+                             onChange={(e) => handleOptionalRateChange('inrExchangeRate', e.target.value)}
+                             placeholder="TWD"
+                             className="w-16 border rounded p-1 text-right font-mono text-xs text-slate-800 bg-white"
+                           />
+                         </div>
+                       )}
+                       {showSarFx && (
+                         <div className="flex items-center gap-2">
+                           <label className="text-xs" style={{ color: "#475569" }}>{accTr.currencySAR}</label>
+                           <input
+                             type="number"
+                             step="0.01"
+                             value={currentYearData.sarExchangeRate ?? ''}
+                             onChange={(e) => handleOptionalRateChange('sarExchangeRate', e.target.value)}
+                             placeholder="TWD"
+                             className="w-16 border rounded p-1 text-right font-mono text-xs text-slate-800 bg-white"
+                           />
+                         </div>
+                       )}
+                       {showBrlFx && (
+                         <div className="flex items-center gap-2">
+                           <label className="text-xs" style={{ color: "#475569" }}>{accTr.currencyBRL}</label>
+                           <input
+                             type="number"
+                             step="0.01"
+                             value={currentYearData.brlExchangeRate ?? ''}
+                             onChange={(e) => handleOptionalRateChange('brlExchangeRate', e.target.value)}
+                             placeholder="TWD"
+                             className="w-16 border rounded p-1 text-right font-mono text-xs text-slate-800 bg-white"
+                           />
+                         </div>
+                       )}
                    </div>
                </div>
                
