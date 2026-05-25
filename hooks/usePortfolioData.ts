@@ -59,7 +59,12 @@ export function usePortfolioData(userPrefix: string | undefined) {
   const loadData = useCallback((getKey: (k: string) => string) => {
     const parse = <T>(key: string, fallback: T): T => {
       const item = localStorage.getItem(getKey(key));
-      return item ? JSON.parse(item) : fallback;
+      if (!item) return fallback;
+      try {
+        return JSON.parse(item) as T;
+      } catch {
+        return fallback;
+      }
     };
 
     const loaded: PortfolioDataState = {
