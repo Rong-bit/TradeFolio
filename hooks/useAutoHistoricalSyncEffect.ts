@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Account, CashFlow, HistoricalData, Transaction } from '../types';
-import { autoSyncMissingHistoricalData, findYearsNeedingAutoHistoricalSync } from '../utils/autoHistoricalSync';
+import { autoSyncMissingHistoricalData, hasAutoHistoricalSyncWork } from '../utils/autoHistoricalSync';
 
 interface Params {
   isAuthenticated: boolean;
@@ -23,17 +23,18 @@ export function useAutoHistoricalSyncEffect({
   historicalData,
   saveHistoricalData,
 }: Params) {
-  const yearsNeedingHistoricalAuto = useMemo(
+  const needsHistoricalAuto = useMemo(
     () =>
-      !isAuthenticated || isGuest || !userPrefix
-        ? []
-        : findYearsNeedingAutoHistoricalSync(transactions, cashFlows, accounts, historicalData),
+      isAuthenticated &&
+      !isGuest &&
+      !!userPrefix &&
+      hasAutoHistoricalSyncWork(transactions, cashFlows, accounts, historicalData),
     [isAuthenticated, isGuest, userPrefix, transactions, cashFlows, accounts, historicalData]
   );
 
   useEffect(() => {
     if (!isAuthenticated || isGuest || !userPrefix) return;
-    if (yearsNeedingHistoricalAuto.length === 0) return;
+    if (!needsHistoricalAuto) return;
     try {
       if (typeof localStorage !== 'undefined' && localStorage.getItem('tf_disable_auto_historical') === '1') {
         return;
@@ -74,6 +75,6 @@ export function useAutoHistoricalSyncEffect({
     accounts,
     historicalData,
     saveHistoricalData,
-    yearsNeedingHistoricalAuto.length,
+    needsHistoricalAuto,
   ]);
 }
