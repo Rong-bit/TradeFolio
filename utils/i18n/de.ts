@@ -672,7 +672,8 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     backToEdit: 'Zurück',
     confirmSave: 'Bestätigen',
     errorNoAccount: 'Bitte zuerst Konto anlegen.',
-    recurringSectionTitle: 'Monatliche Dauer-Einzahlung',
+    recurringSectionTitle: 'Dauer-Regeln & Schuld-Hinweise',
+    recurringRulesTitle: 'Dauer-Regeln',
     recurringDayShort: 'Tag {day} · {account} · {amount} {ccy}',
     recurringDisclaimer:
       'Einzahlungen nur bei geöffneter App. Verpasste Monate werden beim nächsten Start nachgezogen. Kein Hintergrund-Scheduler.',
@@ -695,6 +696,10 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     recurringKindDebtAlert: 'Erinnerung Kreditrate',
     transferDebtDisbursementHint: 'Kreditauszahlung: Verbindlichkeit → Depot; zählt zur Nettoinvestition.',
     transferDebtRepaymentHint: 'Kredittilgung: Depot → Verbindlichkeit.',
+    debtAlertSettingsTitle: 'Schuld-Hinweis-Einstellungen',
+    minSafetySpread: 'Mindest-Zinsspanne (%)',
+    minSafetySpreadHelp:
+      'Liegt die verknüpfte Depot-Rendite minus Kreditzins unter dieser Schwelle, erscheint auf dem Dashboard und hier ein Hinweis (nur zur Information). Rückzahlungs-Erinnerungen legen Sie oben unter „Regel hinzufügen“ an.',
   },
   batchImportModal: {
     title: 'Stapelimport von Transaktionen',

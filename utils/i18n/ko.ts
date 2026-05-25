@@ -817,7 +817,7 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     backToEdit: '돌아가기',
     confirmSave: '저장',
     errorNoAccount: '먼저 계좌를 생성하세요',
-    recurringSectionTitle: '월 정기 입금',
+    recurringSectionTitle: '정기 규칙 및 부채 알림',
     recurringDayShort: '매월 {day}일 · {account} · {amount} {ccy}',
     recurringDisclaimer:
       '입금 반영은 앱을 열었을 때만 수행됩니다. 미실행 기간은 다음 실행 시 소급 적용됩니다. 백그라운드 예약 없음.',
@@ -842,7 +842,11 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     recurringLeadDays: '사전 알림 (일)',
     transferDebtDisbursementHint: '차입 인출: 부채→증권. 순투입에 포함.',
     transferDebtRepaymentHint: '차입 상환: 증권→부채.',
+    recurringRulesTitle: '정기 규칙',
+    debtAlertSettingsTitle: '부채 알림 설정',
     minSafetySpread: '안전 마진 (%)',
+    minSafetySpreadHelp:
+      '연동 증권 계좌 수익률에서 대출 이율을 뺀 값이 이 기준보다 낮으면 대시보드와 이 페이지에 스프레드 경고가 표시됩니다(참고용). 상환 알림은 위 「규칙 추가」로 설정하세요.',
   },
   batchImportModal: {
     title: '일괄 거래 입력',

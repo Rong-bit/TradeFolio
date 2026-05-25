@@ -817,7 +817,7 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     backToEdit: '戻る',
     confirmSave: '保存',
     errorNoAccount: '口座を先に作成してください',
-    recurringSectionTitle: '毎月の定額入金',
+    recurringSectionTitle: '定期ルールと負債アラート',
     recurringDayShort: '毎月{day}日 · {account} · {amount} {ccy}',
     recurringDisclaimer:
       '入金の反映はアプリを開いたときのみ。未起動期間は次回起動で遡及。バックグラウンドの予定実行はありません。',
@@ -842,7 +842,11 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     recurringLeadDays: '事前通知（日）',
     transferDebtDisbursementHint: '借入引出し：負債口座→証券口座。純投資額に含まれます。',
     transferDebtRepaymentHint: '借入返済：証券口座→負債口座。',
+    recurringRulesTitle: '定期ルール',
+    debtAlertSettingsTitle: '負債アラート設定',
     minSafetySpread: '安全マージン (%)',
+    minSafetySpreadHelp:
+      '連動証券口座のリターンから借入金利を引いた差がこの値未満のとき、ダッシュボードと本ページにスプレッド警告を表示します（参考情報）。返済リマインダーは上の「ルール追加」から設定してください。',
   },
   batchImportModal: {
     title: '一括取引入力',

@@ -666,7 +666,8 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     backToEdit: 'Retour',
     confirmSave: 'Confirmer',
     errorNoAccount: 'Veuillez d\'abord créer un compte.',
-    recurringSectionTitle: 'Versement mensuel récurrent',
+    recurringSectionTitle: 'Règles récurrentes & alertes dette',
+    recurringRulesTitle: 'Règles récurrentes',
     recurringDayShort: 'Jour {day} · {account} · {amount} {ccy}',
     recurringDisclaimer:
       'Les dépôts ne sont appliqués qu’à l’ouverture de l’app. Les mois manqués sont rattrapés à la prochaine ouverture. Pas d’exécution en arrière-plan.',
@@ -689,6 +690,10 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     recurringKindDebtAlert: 'Rappel échéance crédit',
     transferDebtDisbursementHint: 'Tirage crédit : passif → courtage ; compte dans investi net.',
     transferDebtRepaymentHint: 'Remboursement : courtage → passif.',
+    debtAlertSettingsTitle: 'Alertes dette',
+    minSafetySpread: 'Marge de sécurité du spread (%)',
+    minSafetySpreadHelp:
+      'Si le rendement du courtage lié moins le taux d’emprunt est inférieur à ce seuil, un avertissement s’affiche sur le tableau de bord et ici (à titre indicatif). Ajoutez une règle ci-dessus pour les rappels d’échéance.',
   },
   batchImportModal: {
     title: 'Import groupé de transactions',

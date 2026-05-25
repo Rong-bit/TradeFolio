@@ -691,7 +691,8 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     backToEdit: 'رجوع',
     confirmSave: 'تأكيد',
     errorNoAccount: 'أنشئ حساباً أولاً.',
-    recurringSectionTitle: 'إيداع شهري متكرر',
+    recurringSectionTitle: 'الجداول وتنبيهات الدين',
+    recurringRulesTitle: 'قواعد متكررة',
     recurringDayShort: 'اليوم {day} · {account} · {amount} {ccy}',
     recurringDisclaimer:
       'تُطبَّق الإيداعات عند فتح التطبيق. تُستكمل الأشهر الفائتة عند الفتح التالي. لا يوجد جدولة في الخلفية.',
@@ -714,6 +715,10 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     recurringKindDebtAlert: 'تذكير سداد القرض',
     transferDebtDisbursementHint: 'سحب القرض: خصوم → وساطة؛ يُحسب في صافي الاستثمار.',
     transferDebtRepaymentHint: 'السداد: وساطة → خصوم.',
+    debtAlertSettingsTitle: 'إعدادات تنبيهات الدين',
+    minSafetySpread: 'هامش أمان الفارق (%)',
+    minSafetySpreadHelp:
+      'عندما يكون عائد الوساطة المرتبطة ناقص سعر القرض أقل من هذا الحد، يظهر تحذير في لوحة التحكم وهنا (للاسترشاد فقط). أضف قاعدة أعلاه لتذكيرات السداد.',
   },
   batchImportModal: {
     ...en.batchImportModal,

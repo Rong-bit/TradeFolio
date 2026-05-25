@@ -754,7 +754,12 @@ zhCN.appMessages = {
 
 zhCN.fundForm = {
   ...zhCN.fundForm,
-  recurringSectionTitle: '每月定期汇入',
+  recurringSectionTitle: '定期规程与负债警示',
+  recurringRulesTitle: '定期规程',
+  debtAlertSettingsTitle: '负债警示设定',
+  minSafetySpread: '利差安全边际 (%)',
+  minSafetySpreadHelp:
+    '当负债专户对应证券户之报酬率，扣除借贷年利率后低于此门槛时，于仪表板与本页显示利差偏低提示（仅供参考，非投资建议）。负债缴款提醒请以「新增规则」建立。',
   recurringDayShort: '每月 {day} 日 · {account} · {amount} {ccy}',
   recurringDisclaimer:
     '仅在打开本应用时检查并入账；若长期未开启，下次开启会尝试补上应入账的月份。不含后台排程。',

@@ -691,7 +691,8 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     backToEdit: 'वापस',
     confirmSave: 'पुष्टि',
     errorNoAccount: 'पहले खाता बनाएं।',
-    recurringSectionTitle: 'मासिक आवर्ती जमा',
+    recurringSectionTitle: 'नियमित अनुसूची और ऋण अलर्ट',
+    recurringRulesTitle: 'आवर्ती नियम',
     recurringDayShort: 'दिन {day} · {account} · {amount} {ccy}',
     recurringDisclaimer:
       'जमा केवल ऐप खोलने पर लागू होती है। छूटे महीने अगली बार खोलने पर भरे जाते हैं। पृष्ठभूमि में कोई अनुसूची नहीं।',
@@ -714,6 +715,10 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     recurringKindDebtAlert: 'ऋण भुगतान अनुस्मारक',
     transferDebtDisbursementHint: 'ऋण निकासी: देनदारी → ब्रोकरेज; शुद्ध निवेश में गिना जाता है।',
     transferDebtRepaymentHint: 'पुनर्भुगतान: ब्रोकरेज → देनदारी।',
+    debtAlertSettingsTitle: 'ऋण अलर्ट सेटिंग',
+    minSafetySpread: 'स्प्रेड सुरक्षा मार्जिन (%)',
+    minSafetySpreadHelp:
+      'जब लिंक्ड ब्रोकरेज रिटर्न में से ऋण दर घटाने पर यह सीमा से कम हो, तो डैशबोर्ड और यहाँ चेतावनी दिखेगी (केवल संदर्भ)। भुगतान अनुस्मारक के लिए ऊपर «नियम जोड़ें» का उपयोग करें।',
   },
   batchImportModal: {
     ...en.batchImportModal,

@@ -818,7 +818,11 @@ export interface Translations {
     recurringLeadDays: string;
     transferDebtDisbursementHint: string;
     transferDebtRepaymentHint: string;
+    /** 資金頁外層卡片標題 */
+    recurringRulesTitle: string;
+    debtAlertSettingsTitle: string;
     minSafetySpread: string;
+    minSafetySpreadHelp: string;
   };
   // 批次匯入模組
   batchImportModal: {

@@ -666,7 +666,8 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     backToEdit: 'Voltar',
     confirmSave: 'Confirmar',
     errorNoAccount: 'Crie uma conta primeiro.',
-    recurringSectionTitle: 'Depósito mensal recorrente',
+    recurringSectionTitle: 'Agendamentos e alertas de dívida',
+    recurringRulesTitle: 'Regras recorrentes',
     recurringDayShort: 'Dia {day} · {account} · {amount} {ccy}',
     recurringDisclaimer:
       'Os depósitos só são aplicados ao abrir a app. Meses em falta são repostos na próxima abertura. Sem agendamento em segundo plano.',
@@ -689,6 +690,10 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     recurringKindDebtAlert: 'Lembrete pagamento crédito',
     transferDebtDisbursementHint: 'Desembolso: passivo → corretagem; conta no investimento líquido.',
     transferDebtRepaymentHint: 'Amortização: corretagem → passivo.',
+    debtAlertSettingsTitle: 'Alertas de dívida',
+    minSafetySpread: 'Margem de segurança do spread (%)',
+    minSafetySpreadHelp:
+      'Quando o retorno da corretagem ligada menos a taxa do empréstimo ficar abaixo deste limiar, surge um aviso no painel e aqui (apenas informativo). Para lembretes de pagamento, use «Adicionar regra» acima.',
   },
   batchImportModal: {
     ...en.batchImportModal,

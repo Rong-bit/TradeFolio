@@ -838,7 +838,8 @@ A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」
     backToEdit: '返回修改',
     confirmSave: '確認儲存',
     errorNoAccount: '請先建立帳戶',
-    recurringSectionTitle: '定期排程與待辦警示',
+    recurringSectionTitle: '定期規程與負債警示',
+    recurringRulesTitle: '定期規程',
     recurringDayShort: '每月 {day} 日 · {account} · {amount} {ccy}',
     recurringDisclaimer:
       '僅在開啟本應用時檢查並入帳；若長期未開啟，下次開啟會嘗試補上應入帳之月份。不含背景排程。',
@@ -863,7 +864,10 @@ A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」
     recurringLeadDays: '提前提醒（天）',
     transferDebtDisbursementHint: '信貸撥款：從負債專戶轉入證券戶，將計入淨投入。',
     transferDebtRepaymentHint: '信貸還本：從證券戶轉回負債專戶。',
+    debtAlertSettingsTitle: '負債警示設定',
     minSafetySpread: '利差安全邊際 (%)',
+    minSafetySpreadHelp:
+      '當負債專戶對應證券戶之報酬率，扣除借貸年利率後低於此門檻時，於儀表板與本頁顯示利差偏低提示（僅供參考，非投資建議）。負債繳款提醒請以「新增規則」建立。',
   },
   batchImportModal: {
     title: '批次匯入交易 (Batch Import)',

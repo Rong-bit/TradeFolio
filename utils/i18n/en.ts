@@ -844,7 +844,8 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     backToEdit: 'Back to Edit',
     confirmSave: 'Confirm Save',
     errorNoAccount: 'Please create an account first',
-    recurringSectionTitle: 'Schedules & payment reminders',
+    recurringSectionTitle: 'Schedules & debt alerts',
+    recurringRulesTitle: 'Recurring rules',
     recurringDayShort: 'Day {day} · {account} · {amount} {ccy}',
     recurringDisclaimer:
       'Deposits are applied only when you open the app. Missed months are backfilled on next open. No background scheduling.',
@@ -869,7 +870,10 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     recurringLeadDays: 'Lead days',
     transferDebtDisbursementHint: 'Debt draw: transfer liability → brokerage; counts toward net invested.',
     transferDebtRepaymentHint: 'Debt repayment: transfer brokerage → liability.',
+    debtAlertSettingsTitle: 'Debt alert settings',
     minSafetySpread: 'Min safety spread (%)',
+    minSafetySpreadHelp:
+      'When linked brokerage return minus loan rate falls below this margin, a spread warning appears on the dashboard and here (informational only). Add a rule above for payment due reminders.',
   },
   batchImportModal: {
     title: 'Batch Import Transactions',
