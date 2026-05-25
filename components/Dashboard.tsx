@@ -16,6 +16,7 @@ import {
   isDebtFundedInflow,
   isDebtRepaymentOutflow,
   netInvestedDeltaForCashFlow,
+  buildLiabilityAccountInsights,
 } from '../utils/debtAccountHelpers';
 
 export interface DashboardProps {
@@ -104,7 +105,12 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
-  const displayRate = getDisplayRateForBaseCurrency(baseCurrency, rates); 
+  const displayRate = getDisplayRateForBaseCurrency(baseCurrency, rates);
+
+  const liabilityInsights = useMemo(
+    () => buildLiabilityAccountInsights(accounts, rates),
+    [accounts, rates]
+  ); 
   const overseasTaxProgress = useMemo(() => {
     const reportYear = new Date().getFullYear();
     const DECLARATION_THRESHOLD_TWD = 1_000_000;
@@ -730,6 +736,75 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
         </div>
 
       </div>
+
+      {liabilityInsights.length > 0 && (
+        <div className="mb-4">
+          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3">
+            {translations.dashboard.debtAccountsTitle}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {liabilityInsights.map(insight => {
+              const util = insight.utilizationPercent;
+              const barPct = util != null ? Math.min(100, Math.max(0, util)) : 0;
+              const barColor =
+                util == null
+                  ? 'bg-slate-400'
+                  : util >= 90
+                    ? 'bg-red-500'
+                    : util >= 70
+                      ? 'bg-amber-500'
+                      : 'bg-emerald-500';
+              return (
+                <div
+                  key={insight.accountId}
+                  className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-xl shadow border-l-4 border-red-500"
+                >
+                  <h4 className="font-semibold text-slate-800 dark:text-slate-100 truncate">{insight.name}</h4>
+                  <p className="text-xl font-mono font-bold text-red-600 mt-2 tabular-nums">
+                    ({formatCurrency(insight.balance, insight.currency)})
+                  </p>
+                  {insight.creditLimit != null && insight.creditLimit > 0 && util != null && (
+                    <div className="mt-3">
+                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                        {translate('dashboard.creditUsedOfLimit', language, {
+                          used: formatCurrency(insight.balance, insight.currency),
+                          limit: formatCurrency(insight.creditLimit, insight.currency),
+                          percent: util.toFixed(1),
+                        })}
+                      </p>
+                      <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 mt-2 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                          style={{ width: `${barPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {insight.estimatedMonthlyInterest != null && (
+                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-600">
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                        {translations.dashboard.estimatedMonthlyInterest}
+                      </p>
+                      <p className="text-lg font-bold text-slate-800 dark:text-slate-100 mt-0.5 tabular-nums">
+                        {formatCurrency(insight.estimatedMonthlyInterest, insight.currency)}
+                        {insight.annualInterestRate != null && (
+                          <span className="text-xs font-normal text-slate-500 ml-1">
+                            @ {insight.annualInterestRate}%
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        {translations.dashboard.estimatedMonthlyInterestNote}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Detailed Statistics Toggle */}
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <button 
