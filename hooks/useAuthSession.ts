@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from '../config';
 import { getLanguage, setLanguage as saveLanguage, Language } from '../utils/i18n';
 import { useAppText, AppText } from './useAppText';
-import type { AlertDialogState } from '../components/AlertDialog';
+import type { AlertDialogState } from '../types';
 
 export { ADMIN_EMAIL };
 
