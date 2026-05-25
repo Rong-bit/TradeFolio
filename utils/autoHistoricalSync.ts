@@ -118,6 +118,9 @@ export async function autoSyncMissingHistoricalData(
           cnyExchangeRate: pickRate(prevYearData.cnyExchangeRate, result.cnyExchangeRate),
           cadExchangeRate: pickRate(prevYearData.cadExchangeRate, result.cadExchangeRate),
           audExchangeRate: pickRate(prevYearData.audExchangeRate, result.audExchangeRate),
+          inrExchangeRate: pickRate(prevYearData.inrExchangeRate, result.inrExchangeRate),
+          sarExchangeRate: pickRate(prevYearData.sarExchangeRate, result.sarExchangeRate),
+          brlExchangeRate: pickRate(prevYearData.brlExchangeRate, result.brlExchangeRate),
         },
       };
       didUpdate = true;
