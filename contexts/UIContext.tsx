@@ -1,14 +1,11 @@
 import React, { createContext, useContext } from 'react';
+import type { AlertDialogState } from '../types';
 import { Language } from '../utils/i18n';
 
 export type View = 'dashboard' | 'history' | 'funds' | 'accounts' | 'splits' | 'rebalance' | 'simulator' | 'help';
 
-export interface AlertState {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'error';
-}
+/** @deprecated 請改用 AlertDialogState */
+export type AlertState = AlertDialogState;
 
 export interface UIContextValue {
   // 語言
