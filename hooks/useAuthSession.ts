@@ -52,7 +52,7 @@ export function useAuthSession(): AuthSession {
   );
 
   const closeAlert = useCallback(() => {
-    setAlertDialog(prev => ({ ...prev, isOpen: false }));
+    setAlertDialog((prev: AlertDialogState) => ({ ...prev, isOpen: false }));
   }, []);
 
   useEffect(() => {
