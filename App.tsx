@@ -40,6 +40,7 @@ import StockSplitManager from './components/StockSplitManager';
 import DarkModeToggle from './components/DarkModeToggle';
 import * as YahooFinance from './services/yahooFinanceService';
 import { autoSyncMissingHistoricalData, findYearsNeedingAutoHistoricalSync } from './utils/autoHistoricalSync';
+import { ImportValidationError, parseImportBackup } from './utils/validateImportBackup';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from './config';
 import { Language, getLanguage, setLanguage as saveLanguage, t, translate, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from './utils/i18n';
 import { PortfolioContext } from './contexts/PortfolioContext';
@@ -78,7 +79,7 @@ const App: React.FC = () => {
   const { rates, loadRates, saveRates, updateRates, setUsdRate, resetRates, exchangeRate, jpyExchangeRate, eurExchangeRate, gbpExchangeRate, hkdExchangeRate, krwExchangeRate, cadExchangeRate, inrExchangeRate, cnyExchangeRate, audExchangeRate, sarExchangeRate, brlExchangeRate } = useExchangeRates();
 
   const userPrefix = isAuthenticated && currentUser ? `tf_${currentUser}` : undefined;
-  const { transactions, accounts, cashFlows, currentPrices, priceDetails, rebalanceTargets, rebalanceEnabledItems, historicalData, recurringDepositRules, stockSplits, loadData, resetData, importData, addTransaction, updateTransaction, removeTransaction, addBatchTransactions, clearTransactions, batchUpdateMarket, addAccount, updateAccount, removeAccount, addCashFlow, updateCashFlow, removeCashFlow, addBatchCashFlows, clearCashFlows, addRecurringDepositRule, updateRecurringDepositRule, removeRecurringDepositRule, setRecurringDepositRules, syncRecurringDeposits, updatePrice, updatePricesAndDetails, updateRebalanceTargets, setRebalanceEnabledItems, saveHistoricalData, addStockSplit, removeStockSplit } = usePortfolioData(userPrefix);
+  const { transactions, accounts, cashFlows, currentPrices, priceDetails, rebalanceTargets, rebalanceEnabledItems, historicalData, recurringDepositRules, stockSplits, loadData, resetData, importData, addTransaction, updateTransaction, removeTransaction, addBatchTransactions, clearTransactions, batchUpdateMarket, addAccount, updateAccount, removeAccount, addCashFlow, updateCashFlow, removeCashFlow, addBatchCashFlows, clearCashFlows, addRecurringDepositRule, updateRecurringDepositRule, removeRecurringDepositRule, setRecurringDepositRules, updatePrice, updatePricesAndDetails, updateRebalanceTargets, setRebalanceEnabledItems, saveHistoricalData, addStockSplit, removeStockSplit } = usePortfolioData(userPrefix);
 
   useLocalStorageDebouncedSimple('baseCurrency', baseCurrency, 500, userPrefix);
 
@@ -225,11 +226,6 @@ const App: React.FC = () => {
   }, [isAuthenticated, currentUser]);
 
   useEffect(() => {
-    if (!userPrefix || !isAuthenticated) return;
-    syncRecurringDeposits();
-  }, [userPrefix, isAuthenticated, recurringDepositRules, accounts, cashFlows, syncRecurringDeposits]);
-
-  useEffect(() => {
     if (!userPrefix) return;
     const timer = setTimeout(() => saveRates(rates, `tf_${currentUser}`), 500);
     return () => clearTimeout(timer);
@@ -308,30 +304,33 @@ const App: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string);
-        if (!data.transactions && !data.accounts) throw new Error('Invalid format');
-        importData({ transactions:data.transactions??[], accounts:data.accounts??[], cashFlows:data.cashFlows??[], currentPrices:data.currentPrices??{}, priceDetails:data.priceDetails??{}, rebalanceTargets:data.rebalanceTargets??{}, rebalanceEnabledItems:data.rebalanceEnabledItems??[], historicalData:data.historicalData??{}, recurringDepositRules:data.recurringDepositRules??[], stockSplits:data.stockSplits??[] });
-        const ru: Partial<ExchangeRateState> = {};
-        const usd = data.exchangeRate ?? data.exchangeRateUsdToTwd; if (usd) ru.exchangeRateUsdToTwd = usd;
-        if (data.jpyExchangeRate) ru.jpyExchangeRate = data.jpyExchangeRate;
-        if (data.eurExchangeRate) ru.eurExchangeRate = data.eurExchangeRate;
-        if (data.gbpExchangeRate) ru.gbpExchangeRate = data.gbpExchangeRate;
-        if (data.hkdExchangeRate) ru.hkdExchangeRate = data.hkdExchangeRate;
-        if (data.krwExchangeRate) ru.krwExchangeRate = data.krwExchangeRate;
-        if (data.cnyExchangeRate) ru.cnyExchangeRate = data.cnyExchangeRate;
-        if (data.inrExchangeRate) ru.inrExchangeRate = data.inrExchangeRate;
-        if (data.cadExchangeRate) ru.cadExchangeRate = data.cadExchangeRate;
-        if (data.audExchangeRate) ru.audExchangeRate = data.audExchangeRate;
-        if (data.sarExchangeRate) ru.sarExchangeRate = data.sarExchangeRate;
-        if (data.brlExchangeRate) ru.brlExchangeRate = data.brlExchangeRate;
-        if (Object.keys(ru).length) updateRates(ru);
-        const valid: BaseCurrency[] = ['TWD','USD','JPY','EUR','GBP','HKD','KRW','CAD','INR','CNY','AUD','SAR','BRL'];
-        if (data.baseCurrency && valid.includes(data.baseCurrency)) setBaseCurrency(data.baseCurrency);
-        if (typeof data.minDebtSafetySpread === 'number' && Number.isFinite(data.minDebtSafetySpread)) {
-          handleMinDebtSafetySpreadChange(data.minDebtSafetySpread);
+        const text = e.target?.result as string;
+        const validated = parseImportBackup(text);
+        importData({
+          transactions: validated.transactions,
+          accounts: validated.accounts,
+          cashFlows: validated.cashFlows,
+          currentPrices: validated.currentPrices,
+          priceDetails: validated.priceDetails,
+          rebalanceTargets: validated.rebalanceTargets,
+          rebalanceEnabledItems: validated.rebalanceEnabledItems,
+          historicalData: validated.historicalData,
+          recurringDepositRules: validated.recurringDepositRules,
+          stockSplits: validated.stockSplits,
+        });
+        if (Object.keys(validated.rates).length) updateRates(validated.rates);
+        if (validated.baseCurrency) setBaseCurrency(validated.baseCurrency);
+        if (validated.minDebtSafetySpread !== undefined) {
+          handleMinDebtSafetySpreadChange(validated.minDebtSafetySpread);
         }
         showAlert(appText.restoreSuccess, appText.restoreSuccessTitle, 'success');
-      } catch { showAlert(appText.importFailed, appText.importFailedTitle, 'error'); }
+      } catch (err) {
+        const message =
+          err instanceof ImportValidationError
+            ? (isChinese ? `匯入失敗：${err.message}` : `Import failed: ${err.message}`)
+            : appText.importFailed;
+        showAlert(message, appText.importFailedTitle, 'error');
+      }
     };
     reader.readAsText(file);
   };
