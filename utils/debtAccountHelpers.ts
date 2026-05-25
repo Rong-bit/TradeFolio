@@ -1,138 +1,166 @@
-import { describe, expect, it } from 'vitest';
 import {
   Account,
   AccountKind,
   CashFlow,
   CashFlowType,
   Currency,
+  DebtKind,
+  RecurringDepositRule,
 } from '../types';
-import {
-  ledgerBalanceChangeForCashFlow,
-  netInvestedDeltaForCashFlow,
-} from './debtAccountHelpers';
-import { calculateAccountBalances } from './calculations';
-import type { ExchangeRates } from './calculations';
+import { ExchangeRates, currencyToTWDRate } from './calculations';
 
-const rates: ExchangeRates = { exchangeRateUsdToTwd: 32 };
+export const DEFAULT_DEBT_LEAD_DAYS = 3;
+export const DEFAULT_MIN_SAFETY_SPREAD_PERCENT = 2;
 
-const brokerage: Account = {
-  id: 'brk',
-  name: '證券戶',
-  currency: Currency.TWD,
-  isSubBrokerage: false,
-  balance: 0,
-  accountKind: AccountKind.BROKERAGE,
-};
-
-const liability: Account = {
-  id: 'debt',
-  name: '信貸戶',
-  currency: Currency.TWD,
-  isSubBrokerage: false,
-  balance: 0,
-  accountKind: AccountKind.LIABILITY,
-};
-
-const accounts = [brokerage, liability];
-
-function cf(partial: Partial<CashFlow> & Pick<CashFlow, 'type' | 'amount'>): CashFlow {
-  return {
-    id: partial.id ?? 'cf-1',
-    date: partial.date ?? '2025-01-15',
-    accountId: partial.accountId ?? 'debt',
-    amount: partial.amount,
-    amountTWD: partial.amountTWD,
-    type: partial.type,
-    targetAccountId: partial.targetAccountId,
-    exchangeRate: partial.exchangeRate,
-    note: partial.note,
-    fee: partial.fee,
-    category: partial.category,
-  };
+export function getAccountKind(account: Account | undefined): AccountKind {
+  return account?.accountKind ?? AccountKind.BROKERAGE;
 }
 
-describe('netInvestedDeltaForCashFlow', () => {
-  it('負債戶 DEPOSIT 不計入淨投入', () => {
-    const delta = netInvestedDeltaForCashFlow(
-      cf({ type: CashFlowType.DEPOSIT, amount: 1_000_000, accountId: 'debt', amountTWD: 1_000_000 }),
-      accounts,
-      rates
-    );
-    expect(delta).toBe(0);
+export function isLiabilityAccount(account: Account | undefined): boolean {
+  return getAccountKind(account) === AccountKind.LIABILITY;
+}
+
+export function isBrokerageAccount(account: Account | undefined): boolean {
+  return getAccountKind(account) === AccountKind.BROKERAGE;
+}
+
+export function cashFlowAmountTWD(
+  cf: CashFlow,
+  accounts: Account[],
+  rates: ExchangeRates
+): number {
+  if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
+  const account = accounts.find(a => a.id === cf.accountId);
+  const sourceCurrency = account?.currency ?? Currency.TWD;
+  const rate =
+    cf.exchangeRate && cf.exchangeRate > 0
+      ? cf.exchangeRate
+      : currencyToTWDRate(sourceCurrency, rates);
+  return cf.amount * rate;
+}
+
+/** 負債戶 → 證券戶轉帳（信貸撥款） */
+export function isDebtFundedInflow(cf: CashFlow, accounts: Account[]): boolean {
+  if (cf.type !== CashFlowType.TRANSFER || !cf.targetAccountId) return false;
+  const source = accounts.find(a => a.id === cf.accountId);
+  const target = accounts.find(a => a.id === cf.targetAccountId);
+  return isLiabilityAccount(source) && isBrokerageAccount(target);
+}
+
+/** 證券戶 → 負債戶轉帳（還本） */
+export function isDebtRepaymentOutflow(cf: CashFlow, accounts: Account[]): boolean {
+  if (cf.type !== CashFlowType.TRANSFER || !cf.targetAccountId) return false;
+  const source = accounts.find(a => a.id === cf.accountId);
+  const target = accounts.find(a => a.id === cf.targetAccountId);
+  return isBrokerageAccount(source) && isLiabilityAccount(target);
+}
+
+export function isDebtRelatedCashFlow(cf: CashFlow, accounts: Account[]): boolean {
+  return isDebtFundedInflow(cf, accounts) || isDebtRepaymentOutflow(cf, accounts);
+}
+
+/** Ledger / 餘額：負債戶上 TRANSFER（撥出）= 欠款增加 */
+export function ledgerBalanceChangeForCashFlow(
+  record: {
+    accountId: string;
+    subType: string;
+    amount: number;
+    isTargetRecord?: boolean;
+  },
+  accounts: Account[]
+): number {
+  const acc = accounts.find(a => a.id === record.accountId);
+  if (!isLiabilityAccount(acc)) {
+    if (record.subType === CashFlowType.DEPOSIT) return record.amount;
+    if (record.subType === CashFlowType.WITHDRAW) return -record.amount;
+    if (record.subType === CashFlowType.LOAN_INTEREST) return -record.amount;
+    if (record.subType === CashFlowType.TRANSFER) return -record.amount;
+    if (record.subType === 'TRANSFER_IN') return record.amount;
+    if (record.subType === CashFlowType.INTEREST) return record.amount;
+    return 0;
+  }
+
+  if (record.subType === CashFlowType.TRANSFER && !record.isTargetRecord) {
+    return record.amount;
+  }
+  if (record.subType === 'TRANSFER_IN' && record.isTargetRecord) {
+    return -record.amount;
+  }
+  if (record.subType === CashFlowType.DEPOSIT) return record.amount;
+  if (record.subType === CashFlowType.WITHDRAW) return -record.amount;
+  if (record.subType === CashFlowType.LOAN_INTEREST) return record.amount;
+  return 0;
+}
+
+export function computeDebtSummary(
+  accounts: Account[],
+  cashFlows: CashFlow[],
+  rates: ExchangeRates
+) {
+  let totalDebtBalanceTWD = 0;
+  let leverageNetTWD = 0;
+  let hasDebtFunding = false;
+
+  accounts.forEach(a => {
+    if (!isLiabilityAccount(a)) return;
+    totalDebtBalanceTWD += a.balance * currencyToTWDRate(a.currency, rates);
   });
 
-  it('負債戶 DEPOSIT + 撥款轉帳只計一次（轉帳）', () => {
-    const deposit = netInvestedDeltaForCashFlow(
-      cf({ id: 'd1', type: CashFlowType.DEPOSIT, amount: 1_000_000, accountId: 'debt', amountTWD: 1_000_000 }),
-      accounts,
-      rates
-    );
-    const transfer = netInvestedDeltaForCashFlow(
-      cf({
-        id: 't1',
-        type: CashFlowType.TRANSFER,
-        amount: 1_000_000,
-        accountId: 'debt',
-        targetAccountId: 'brk',
-        amountTWD: 1_000_000,
-      }),
-      accounts,
-      rates
-    );
-    expect(deposit + transfer).toBe(1_000_000);
+  cashFlows.forEach(cf => {
+    const twd = cashFlowAmountTWD(cf, accounts, rates);
+    if (isDebtFundedInflow(cf, accounts)) {
+      leverageNetTWD += twd;
+      hasDebtFunding = true;
+    } else if (isDebtRepaymentOutflow(cf, accounts)) {
+      leverageNetTWD -= twd;
+      hasDebtFunding = true;
+    }
   });
 
-  it('證券戶自有資金 DEPOSIT 仍計入淨投入', () => {
-    const delta = netInvestedDeltaForCashFlow(
-      cf({ type: CashFlowType.DEPOSIT, amount: 50_000, accountId: 'brk', amountTWD: 50_000 }),
-      accounts,
-      rates
-    );
-    expect(delta).toBe(50_000);
-  });
-});
+  if (accounts.some(isLiabilityAccount)) hasDebtFunding = true;
 
-describe('ledgerBalanceChangeForCashFlow', () => {
-  it('負債戶 LOAN_INTEREST 增加欠款餘額', () => {
-    const change = ledgerBalanceChangeForCashFlow(
-      { accountId: 'debt', subType: CashFlowType.LOAN_INTEREST, amount: 3_500 },
-      accounts
-    );
-    expect(change).toBe(3_500);
-  });
+  return { totalDebtBalanceTWD, leverageNetTWD, hasDebtFunding };
+}
 
-  it('證券戶 LOAN_INTEREST 減少現金餘額', () => {
-    const change = ledgerBalanceChangeForCashFlow(
-      { accountId: 'brk', subType: CashFlowType.LOAN_INTEREST, amount: 3_500 },
-      accounts
-    );
-    expect(change).toBe(-3_500);
-  });
-});
+export function netInvestedDeltaForCashFlow(
+  cf: CashFlow,
+  accounts: Account[],
+  rates: ExchangeRates
+): number {
+  const twd = cashFlowAmountTWD(cf, accounts, rates);
+  const source = accounts.find(a => a.id === cf.accountId);
+  if (cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.WITHDRAW) {
+    // 負債戶入金／提款僅調整欠款，非自有資金淨投入
+    if (isLiabilityAccount(source)) return 0;
+    if (cf.type === CashFlowType.DEPOSIT) return twd;
+    return -twd;
+  }
+  if (isDebtFundedInflow(cf, accounts)) return twd;
+  if (isDebtRepaymentOutflow(cf, accounts)) return -twd;
+  return 0;
+}
 
-describe('calculateAccountBalances 整合', () => {
-  it('信貸撥款轉帳後，負債戶 LOAN_INTEREST 使欠款餘額含利息', () => {
-    const cashFlows: CashFlow[] = [
-      cf({
-        id: 't1',
-        type: CashFlowType.TRANSFER,
-        amount: 1_000_000,
-        accountId: 'debt',
-        targetAccountId: 'brk',
-        date: '2025-01-02',
-      }),
-      cf({
-        id: 'i1',
-        type: CashFlowType.LOAN_INTEREST,
-        amount: 5_000,
-        accountId: 'debt',
-        date: '2025-02-01',
-      }),
-    ];
-    const updated = calculateAccountBalances(accounts, cashFlows, []);
-    const debtAcc = updated.find(a => a.id === 'debt');
-    expect(debtAcc?.balance).toBe(1_005_000);
-    const brkAcc = updated.find(a => a.id === 'brk');
-    expect(brkAcc?.balance).toBe(1_000_000);
-  });
-});
+export function isRecurringDepositRule(rule: RecurringDepositRule): boolean {
+  return !rule.kind || rule.kind === 'RECURRING_DEPOSIT';
+}
+
+export function isDebtPaymentAlertRule(rule: RecurringDepositRule): boolean {
+  return rule.kind === 'DEBT_PAYMENT_ALERT';
+}
+
+export function getDebtKindLabel(
+  kind: DebtKind | undefined,
+  language: string
+): string {
+  const zh = language === 'zh-TW' || language === 'zh-CN';
+  switch (kind) {
+    case DebtKind.PERSONAL_LOAN:
+      return zh ? '個人信貸' : 'Personal loan';
+    case DebtKind.MORTGAGE:
+      return zh ? '房屋信貸' : 'Mortgage';
+    case DebtKind.SECURITIES_LENDING:
+      return zh ? '借券信貸' : 'Securities lending';
+    default:
+      return zh ? '負債' : 'Liability';
+  }
+}
