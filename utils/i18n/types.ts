@@ -210,6 +210,10 @@ export interface Translations {
     debtDisbursement: string;
     debtRepayment: string;
     leverageFormulaNote: string;
+    debtAccountsTitle: string;
+    creditUsedOfLimit: string;
+    estimatedMonthlyInterest: string;
+    estimatedMonthlyInterestNote: string;
     aiCorrectHistoryTitle: string;
     aiAdvisor: string;
     aiAdvisorDesc: string;
@@ -477,6 +481,7 @@ export interface Translations {
     debtKindMortgage: string;
     debtKindSecurities: string;
     annualInterestRate: string;
+    creditLimit: string;
     linkedBrokerageAccount: string;
     debtBalance: string;
     liabilityHint: string;
