@@ -1,6 +1,6 @@
 import React from 'react';
 import { Language, t } from '../utils/i18n';
-import type { AlertDialogState } from '../types/alertDialog';
+import type { AlertDialogState } from '../types';
 
 export type { AlertDialogState };
 
