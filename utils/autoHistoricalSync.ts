@@ -1,8 +1,8 @@
 /**
- * 登入後自動補齊歷史快照（Yahoo 股價／匯率），不需先開歷史校正彈窗：
- * - 過去年度：尚無 historicalData[year] 的年底（12/31）
- * - 過去／當年：尚無或空白的 YYYY-Q1～Q3（僅「已結束」的季度；與圖表／彈窗一致）
- * 若該期間已有非空快照則不覆寫；部分缺價請改用手動／彈窗補齊。
+ * 登入後自動補齊歷史快照（Yahoo 股價／匯率）：
+ * - 投資區間內每年（最早交易年～今年）：依季末／年底實際持倉判斷要補的期間
+ * - 失敗不寫入空快照，下次登入再試
+ * - 已有快照時只補缺價或預設匯率（30），不覆寫既有有效價格
  */
 import type { Account, CashFlow, HistoricalData, Transaction } from '../types';
 import { Market } from '../types';
@@ -10,6 +10,10 @@ import { getPortfolioStateAtDate } from './calculations';
 import { fetchHistoricalQuarterEndData, fetchHistoricalYearEndData } from '../services/yahooFinanceService';
 
 type MarketCode = 'US' | 'TW' | 'UK' | 'JP' | 'CN' | 'SZ' | 'IN' | 'CA' | 'FR' | 'HK' | 'KR' | 'DE' | 'AU' | 'SA' | 'BR';
+
+type HoldingTicker = { market: string; ticker: string; display: string };
+
+type PeriodSnap = HistoricalData[string];
 
 function toMarketCode(m: Market): MarketCode {
   if (m === Market.TW) return 'TW';
@@ -34,21 +38,70 @@ export function getCompletedQuarterCount(month0 = new Date().getMonth()): number
   return Math.floor(month0 / 3);
 }
 
-function quarterSnapMissing(historicalData: HistoricalData, key: string): boolean {
-  const snap = historicalData[key];
-  return !snap || Object.keys(snap.prices).length === 0;
+function getInvestmentYearSpan(
+  transactions: Transaction[],
+  cashFlows: CashFlow[]
+): { minYear: number; maxYear: number } {
+  const currentYear = new Date().getFullYear();
+  let minYear = currentYear;
+  let maxYear = currentYear;
+
+  transactions.forEach(t => {
+    const y = new Date(t.date).getFullYear();
+    minYear = Math.min(minYear, y);
+    maxYear = Math.max(maxYear, y);
+  });
+  cashFlows.forEach(c => {
+    const y = new Date(c.date).getFullYear();
+    minYear = Math.min(minYear, y);
+    maxYear = Math.max(maxYear, y);
+  });
+
+  return { minYear, maxYear: Math.max(maxYear, currentYear) };
 }
 
-function hasHoldingsAtQuarterEnd(
-  year: number,
-  quarter: 1 | 2 | 3,
+function getHoldingsTickersAtDate(
+  date: Date,
   transactions: Transaction[],
   cashFlows: CashFlow[],
   accounts: Account[]
-): boolean {
-  const qDate = new Date(year, quarter * 3, 0);
-  const { holdings } = getPortfolioStateAtDate(qDate, transactions, cashFlows, accounts);
-  return Object.values(holdings).some(q => q > 0.000001);
+): HoldingTicker[] {
+  const { holdings } = getPortfolioStateAtDate(date, transactions, cashFlows, accounts);
+  return Object.keys(holdings)
+    .filter(k => holdings[k] > 0.000001)
+    .map(k => {
+      const [market, ticker] = k.split('-');
+      const clean = ticker.replace(/\(BAK\)/gi, '');
+      const display = market === Market.TW && !clean.includes('TPE:') ? `TPE:${clean}` : clean;
+      return { market, ticker, display };
+    });
+}
+
+function getPriceInSnap(prices: Record<string, number>, t: HoldingTicker): number | undefined {
+  const clean = t.ticker.replace(/\(BAK\)/gi, '');
+  const v = prices[t.display] ?? prices[clean] ?? prices[t.ticker];
+  return v === undefined || v === null ? undefined : v;
+}
+
+function rateNeedsSync(snap: PeriodSnap | undefined): boolean {
+  if (!snap) return true;
+  return !snap.exchangeRate || snap.exchangeRate === 0 || snap.exchangeRate === 30;
+}
+
+function filterTickersNeedingSync(tickers: HoldingTicker[], snap: PeriodSnap | undefined): HoldingTicker[] {
+  if (!snap || Object.keys(snap.prices).length === 0) return tickers;
+  return tickers.filter(t => {
+    const v = getPriceInSnap(snap.prices, t);
+    return v === undefined || v === 0;
+  });
+}
+
+/** 該期間是否仍需自動補齊（缺價、空快照、或匯率仍為預設） */
+function periodNeedsSync(snap: PeriodSnap | undefined, tickers: HoldingTicker[]): boolean {
+  if (tickers.length === 0) return false;
+  if (!snap || Object.keys(snap.prices).length === 0) return true;
+  if (filterTickersNeedingSync(tickers, snap).length > 0) return true;
+  return rateNeedsSync(snap);
 }
 
 const pickRate = (current: number | undefined, fetched: number | undefined) =>
@@ -65,7 +118,32 @@ function mergeFetchedPrices(
   });
 }
 
-/** 過去年度、年底有持倉、且從未寫入過 historicalData[year] 的年份（由新到舊） */
+function mergePeriodSnap(prevSnap: PeriodSnap | undefined, result: PeriodSnap): PeriodSnap {
+  const prev = prevSnap || { prices: {}, exchangeRate: 0 };
+  const mergedPrices = { ...prev.prices };
+  mergeFetchedPrices(mergedPrices, result.prices);
+  const shouldUpdateRate = rateNeedsSync(prev);
+  const newRate = shouldUpdateRate ? (result.exchangeRate || 31.5) : prev.exchangeRate;
+
+  return {
+    ...prev,
+    prices: mergedPrices,
+    exchangeRate: newRate,
+    jpyExchangeRate: pickRate(prev.jpyExchangeRate, result.jpyExchangeRate),
+    eurExchangeRate: pickRate(prev.eurExchangeRate, result.eurExchangeRate),
+    gbpExchangeRate: pickRate(prev.gbpExchangeRate, result.gbpExchangeRate),
+    hkdExchangeRate: pickRate(prev.hkdExchangeRate, result.hkdExchangeRate),
+    krwExchangeRate: pickRate(prev.krwExchangeRate, result.krwExchangeRate),
+    cnyExchangeRate: pickRate(prev.cnyExchangeRate, result.cnyExchangeRate),
+    cadExchangeRate: pickRate(prev.cadExchangeRate, result.cadExchangeRate),
+    audExchangeRate: pickRate(prev.audExchangeRate, result.audExchangeRate),
+    inrExchangeRate: pickRate(prev.inrExchangeRate, result.inrExchangeRate),
+    sarExchangeRate: pickRate(prev.sarExchangeRate, result.sarExchangeRate),
+    brlExchangeRate: pickRate(prev.brlExchangeRate, result.brlExchangeRate),
+  };
+}
+
+/** 過去年度、年底有持倉、且快照仍缺價／匯率（由新到舊） */
 export function findYearsNeedingAutoHistoricalSync(
   transactions: Transaction[],
   cashFlows: CashFlow[],
@@ -73,20 +151,20 @@ export function findYearsNeedingAutoHistoricalSync(
   historicalData: HistoricalData
 ): number[] {
   const currentYear = new Date().getFullYear();
-  const allYears = new Set<number>();
-  transactions.forEach(t => allYears.add(new Date(t.date).getFullYear()));
-  cashFlows.forEach(c => allYears.add(new Date(c.date).getFullYear()));
-
-  const pastYears = [...allYears].filter(y => y < currentYear).sort((a, b) => b - a);
+  const { minYear, maxYear } = getInvestmentYearSpan(transactions, cashFlows);
   const result: number[] = [];
 
-  for (const y of pastYears) {
-    if (historicalData[String(y)] !== undefined) continue;
+  for (let y = maxYear; y >= minYear; y--) {
+    if (y >= currentYear) continue;
 
-    const yearEnd = new Date(`${y}-12-31`);
-    const { holdings } = getPortfolioStateAtDate(yearEnd, transactions, cashFlows, accounts);
-    const hasHoldings = Object.values(holdings).some(q => q > 0.000001);
-    if (hasHoldings) result.push(y);
+    const tickers = getHoldingsTickersAtDate(
+      new Date(`${y}-12-31`),
+      transactions,
+      cashFlows,
+      accounts
+    );
+    if (!periodNeedsSync(historicalData[String(y)], tickers)) continue;
+    result.push(y);
   }
 
   return result;
@@ -101,22 +179,24 @@ export function findQuartersNeedingAutoHistoricalSync(
 ): Array<{ year: number; quarters: (1 | 2 | 3)[] }> {
   const currentYear = new Date().getFullYear();
   const completedQuarter = getCompletedQuarterCount();
-  const allYears = new Set<number>();
-  transactions.forEach(t => allYears.add(new Date(t.date).getFullYear()));
-  cashFlows.forEach(c => allYears.add(new Date(c.date).getFullYear()));
-  allYears.add(currentYear);
+  const { minYear, maxYear } = getInvestmentYearSpan(transactions, cashFlows);
 
   const result: Array<{ year: number; quarters: (1 | 2 | 3)[] }> = [];
 
-  for (const y of [...allYears].sort((a, b) => b - a)) {
+  for (let y = maxYear; y >= minYear; y--) {
     const maxQ = y < currentYear ? 3 : completedQuarter;
     if (maxQ < 1) continue;
 
     const quarters: (1 | 2 | 3)[] = [];
     for (let q = 1 as 1 | 2 | 3; q <= maxQ; q++) {
+      const tickers = getHoldingsTickersAtDate(
+        new Date(y, q * 3, 0),
+        transactions,
+        cashFlows,
+        accounts
+      );
       const key = `${y}-Q${q}`;
-      if (!quarterSnapMissing(historicalData, key)) continue;
-      if (!hasHoldingsAtQuarterEnd(y, q, transactions, cashFlows, accounts)) continue;
+      if (!periodNeedsSync(historicalData[key], tickers)) continue;
       quarters.push(q);
     }
 
@@ -138,6 +218,12 @@ export function hasAutoHistoricalSyncWork(
   );
 }
 
+function buildQueryFromTickers(toQuery: HoldingTicker[]): { queryTickers: string[]; queryMarkets: MarketCode[] } {
+  const queryTickers = toQuery.map(t => t.display);
+  const queryMarkets = toQuery.map(t => toMarketCode(t.market as Market));
+  return { queryTickers, queryMarkets };
+}
+
 async function syncMissingQuarterSnapshots(
   transactions: Transaction[],
   cashFlows: CashFlow[],
@@ -146,75 +232,45 @@ async function syncMissingQuarterSnapshots(
   jobs: Array<{ year: number; quarters: (1 | 2 | 3)[] }>
 ): Promise<{ data: HistoricalData; didUpdate: boolean }> {
   let didUpdate = false;
+  let delayAfter = false;
 
-  for (let i = 0; i < jobs.length; i++) {
-    const { year: y, quarters: quartersToFetch } = jobs[i];
-    try {
-      const allQTickers = new Map<string, string>();
-      for (const q of quartersToFetch) {
-        const qDate = new Date(y, q * 3, 0);
-        const { holdings } = getPortfolioStateAtDate(qDate, transactions, cashFlows, accounts);
-        Object.keys(holdings)
-          .filter(k => holdings[k] > 0.000001)
-          .forEach(k => {
-            const [market, ticker] = k.split('-');
-            const clean = ticker.replace(/\(BAK\)/gi, '');
-            const display = market === Market.TW && !clean.includes('TPE:') ? `TPE:${clean}` : clean;
-            allQTickers.set(display, market);
-          });
-      }
+  for (const { year: y, quarters } of jobs) {
+    for (const q of quarters) {
+      const tickers = getHoldingsTickersAtDate(
+        new Date(y, q * 3, 0),
+        transactions,
+        cashFlows,
+        accounts
+      );
+      if (tickers.length === 0) continue;
 
-      const queryTickers = Array.from(allQTickers.keys());
-      if (queryTickers.length === 0) continue;
+      const key = `${y}-Q${q}`;
+      const prevSnap = accumulated[key];
+      const missing = filterTickersNeedingSync(tickers, prevSnap);
+      const needsRate = rateNeedsSync(prevSnap);
 
-      const queryMarkets = queryTickers.map(t => toMarketCode(allQTickers.get(t) as Market));
-      const quarterResults = await fetchHistoricalQuarterEndData(y, queryTickers, queryMarkets, quartersToFetch);
+      if (missing.length === 0 && !needsRate) continue;
 
-      Object.entries(quarterResults).forEach(([key, result]) => {
-        const prevSnap = accumulated[key] || { prices: {}, exchangeRate: 0 };
-        const mergedPrices = { ...prevSnap.prices };
-        mergeFetchedPrices(mergedPrices, result.prices);
+      const toQuery = missing.length > 0 ? missing : [tickers[0]];
+      const { queryTickers, queryMarkets } = buildQueryFromTickers(toQuery);
 
-        const shouldUpdateRate =
-          !prevSnap.exchangeRate || prevSnap.exchangeRate === 0 || prevSnap.exchangeRate === 30;
-        const newRate = shouldUpdateRate ? (result.exchangeRate || 31.5) : prevSnap.exchangeRate;
+      if (delayAfter) await new Promise(r => setTimeout(r, 500));
+      delayAfter = true;
 
-        accumulated = {
-          ...accumulated,
-          [key]: {
-            ...prevSnap,
-            prices: mergedPrices,
-            exchangeRate: newRate,
-            jpyExchangeRate: pickRate(prevSnap.jpyExchangeRate, result.jpyExchangeRate),
-            eurExchangeRate: pickRate(prevSnap.eurExchangeRate, result.eurExchangeRate),
-            gbpExchangeRate: pickRate(prevSnap.gbpExchangeRate, result.gbpExchangeRate),
-            hkdExchangeRate: pickRate(prevSnap.hkdExchangeRate, result.hkdExchangeRate),
-            krwExchangeRate: pickRate(prevSnap.krwExchangeRate, result.krwExchangeRate),
-            cnyExchangeRate: pickRate(prevSnap.cnyExchangeRate, result.cnyExchangeRate),
-            cadExchangeRate: pickRate(prevSnap.cadExchangeRate, result.cadExchangeRate),
-            audExchangeRate: pickRate(prevSnap.audExchangeRate, result.audExchangeRate),
-            inrExchangeRate: pickRate(prevSnap.inrExchangeRate, result.inrExchangeRate),
-            sarExchangeRate: pickRate(prevSnap.sarExchangeRate, result.sarExchangeRate),
-            brlExchangeRate: pickRate(prevSnap.brlExchangeRate, result.brlExchangeRate),
-          },
-        };
+      try {
+        const quarterResults = await fetchHistoricalQuarterEndData(y, queryTickers, queryMarkets, [q]);
+        const result = quarterResults[key];
+        if (!result) continue;
+
+        const merged = mergePeriodSnap(prevSnap, result);
+        if (Object.keys(merged.prices).length === 0) continue;
+
+        accumulated = { ...accumulated, [key]: merged };
         didUpdate = true;
-      });
-    } catch (e) {
-      console.warn(`[autoHistorical] ${y} 季末抓取失敗`, e);
-      for (const q of quartersToFetch) {
-        const key = `${y}-Q${q}`;
-        if (quarterSnapMissing(accumulated, key)) {
-          accumulated = {
-            ...accumulated,
-            [key]: { prices: {}, exchangeRate: 30 },
-          };
-          didUpdate = true;
-        }
+      } catch (e) {
+        console.warn(`[autoHistorical] ${key} 季末抓取失敗`, e);
       }
     }
-
-    if (i < jobs.length - 1) await new Promise(r => setTimeout(r, 500));
   }
 
   return { data: accumulated, didUpdate };
@@ -235,67 +291,39 @@ export async function autoSyncMissingHistoricalData(
 
   let accumulated: HistoricalData = { ...historicalData };
   let didUpdate = false;
+  let delayAfter = false;
 
-  for (let i = 0; i < years.length; i++) {
-    const y = years[i];
+  for (const y of years) {
+    const tickers = getHoldingsTickersAtDate(
+      new Date(`${y}-12-31`),
+      transactions,
+      cashFlows,
+      accounts
+    );
+    if (tickers.length === 0) continue;
+
+    const prevYearData = accumulated[String(y)];
+    const missing = filterTickersNeedingSync(tickers, prevYearData);
+    const needsRate = rateNeedsSync(prevYearData);
+
+    if (missing.length === 0 && !needsRate) continue;
+
+    const toQuery = missing.length > 0 ? missing : [tickers[0]];
+    const { queryTickers, queryMarkets } = buildQueryFromTickers(toQuery);
+
+    if (delayAfter) await new Promise(r => setTimeout(r, 500));
+    delayAfter = true;
+
     try {
-      const yearEndDate = new Date(`${y}-12-31`);
-      const { holdings } = getPortfolioStateAtDate(yearEndDate, transactions, cashFlows, accounts);
-      const yearTickers = Object.keys(holdings)
-        .filter(k => holdings[k] > 0.000001)
-        .map(k => {
-          const [market, ticker] = k.split('-');
-          return { market, ticker };
-        });
-
-      if (yearTickers.length === 0) continue;
-
-      const prevYearData = accumulated[y] || { prices: {}, exchangeRate: 0 };
-
-      const queryTickers = yearTickers.map(t => {
-        const clean = t.ticker.replace(/\(BAK\)/gi, '');
-        return t.market === Market.TW && !clean.includes('TPE:') ? `TPE:${clean}` : clean;
-      });
-      const queryMarkets = yearTickers.map(t => toMarketCode(t.market as Market));
-
       const result = await fetchHistoricalYearEndData(y, queryTickers, queryMarkets);
+      const merged = mergePeriodSnap(prevYearData, result);
+      if (Object.keys(merged.prices).length === 0) continue;
 
-      const shouldUpdateRate = !prevYearData.exchangeRate || prevYearData.exchangeRate === 0 || prevYearData.exchangeRate === 30;
-      const newRate = shouldUpdateRate ? (result.exchangeRate || 30) : prevYearData.exchangeRate;
-
-      const mergedPrices = { ...prevYearData.prices };
-      mergeFetchedPrices(mergedPrices, result.prices);
-
-      accumulated = {
-        ...accumulated,
-        [y]: {
-          ...prevYearData,
-          prices: mergedPrices,
-          exchangeRate: newRate,
-          jpyExchangeRate: pickRate(prevYearData.jpyExchangeRate, result.jpyExchangeRate),
-          eurExchangeRate: pickRate(prevYearData.eurExchangeRate, result.eurExchangeRate),
-          gbpExchangeRate: pickRate(prevYearData.gbpExchangeRate, result.gbpExchangeRate),
-          hkdExchangeRate: pickRate(prevYearData.hkdExchangeRate, result.hkdExchangeRate),
-          krwExchangeRate: pickRate(prevYearData.krwExchangeRate, result.krwExchangeRate),
-          cnyExchangeRate: pickRate(prevYearData.cnyExchangeRate, result.cnyExchangeRate),
-          cadExchangeRate: pickRate(prevYearData.cadExchangeRate, result.cadExchangeRate),
-          audExchangeRate: pickRate(prevYearData.audExchangeRate, result.audExchangeRate),
-          inrExchangeRate: pickRate(prevYearData.inrExchangeRate, result.inrExchangeRate),
-          sarExchangeRate: pickRate(prevYearData.sarExchangeRate, result.sarExchangeRate),
-          brlExchangeRate: pickRate(prevYearData.brlExchangeRate, result.brlExchangeRate),
-        },
-      };
+      accumulated = { ...accumulated, [String(y)]: merged };
       didUpdate = true;
     } catch (e) {
-      console.warn(`[autoHistorical] ${y} 年抓取失敗`, e);
-      accumulated = {
-        ...accumulated,
-        [y]: { prices: {}, exchangeRate: accumulated[y]?.exchangeRate || 30 },
-      };
-      didUpdate = true;
+      console.warn(`[autoHistorical] ${y} 年底抓取失敗`, e);
     }
-
-    if (i < years.length - 1) await new Promise(r => setTimeout(r, 500));
   }
 
   if (quarterJobs.length > 0) {
