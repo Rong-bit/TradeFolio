@@ -678,12 +678,18 @@ export const getPortfolioStateAtDate = (
     accounts.forEach(a => cashBalances[a.id] = 0);
 
     cashFlows.filter(cf => new Date(cf.date) <= targetDate).forEach(cf => {
+        const sourceAcc = accounts.find(a => a.id === cf.accountId);
         if (cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.INTEREST) {
             cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) + cf.amount;
-        } else if (cf.type === CashFlowType.WITHDRAW || cf.type === CashFlowType.LOAN_INTEREST) {
+        } else if (cf.type === CashFlowType.WITHDRAW) {
             cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) - cf.amount;
+        } else if (cf.type === CashFlowType.LOAN_INTEREST) {
+            if (isLiabilityAccount(sourceAcc)) {
+              cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) + cf.amount;
+            } else {
+              cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) - cf.amount;
+            }
         } else if (cf.type === CashFlowType.TRANSFER) {
-            const sourceAcc = accounts.find(a => a.id === cf.accountId);
             let feeAmount = cf.fee || 0;
             if (feeAmount > 0 && sourceAcc && sourceAcc.currency !== Currency.TWD) {
               if (cf.exchangeRate && cf.exchangeRate > 0 && cf.exchangeRate !== 1) {
@@ -1735,9 +1741,9 @@ export const calculateAccountPerformance = (
 
       if (cf.accountId === acc.id) {
         if (cf.type === CashFlowType.DEPOSIT) {
-          netInvestedTWD += amountFlowTWD;
+          if (!isLiabilityAccount(acc)) netInvestedTWD += amountFlowTWD;
         } else if (cf.type === CashFlowType.WITHDRAW) {
-          netInvestedTWD -= amountFlowTWD;
+          if (!isLiabilityAccount(acc)) netInvestedTWD -= amountFlowTWD;
         } else if (cf.type === CashFlowType.TRANSFER) {
           netInvestedTWD -= amountFlowTWD;
         }
