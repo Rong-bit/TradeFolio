@@ -99,6 +99,7 @@ export interface Account {
   accountKind?: AccountKind;
   debtKind?: DebtKind;
   annualInterestRate?: number;
+  creditLimit?: number;
   linkedBrokerageAccountId?: string;
 }
 
