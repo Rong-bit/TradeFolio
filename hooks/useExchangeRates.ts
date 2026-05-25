@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { ExchangeRates } from '../utils/calculations';
 
 export interface ExchangeRateState extends ExchangeRates {
@@ -45,8 +45,11 @@ const RATE_KEYS: Record<keyof ExchangeRateState, string> = {
   brlExchangeRate: 'brlExchangeRate',
 };
 
-export function useExchangeRates() {
+export function useExchangeRates(persistUserPrefix?: string) {
   const [rates, setRates] = useState<ExchangeRateState>(DEFAULT_RATES);
+  const skipFirstSave = useRef(true);
+  const ratesRef = useRef(rates);
+  ratesRef.current = rates;
 
   /** 從 localStorage 載入所有匯率 */
   const loadRates = useCallback((getKey: (k: string) => string) => {
@@ -120,6 +123,31 @@ export function useExchangeRates() {
   const resetRates = useCallback(() => {
     setRates(DEFAULT_RATES);
   }, []);
+
+  useEffect(() => {
+    skipFirstSave.current = true;
+  }, [persistUserPrefix]);
+
+  useEffect(() => {
+    if (!persistUserPrefix) return;
+    if (skipFirstSave.current) {
+      skipFirstSave.current = false;
+      return;
+    }
+
+    let pending = true;
+    const timer = setTimeout(() => {
+      saveRates(ratesRef.current, persistUserPrefix);
+      pending = false;
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      if (pending) {
+        saveRates(ratesRef.current, persistUserPrefix);
+      }
+    };
+  }, [rates, persistUserPrefix, saveRates]);
 
   return {
     rates,
