@@ -73,7 +73,8 @@ export function useLocalStorageDebouncedSimple(
       clearTimeout(timeoutRef.current);
     }
 
-    timeoutRef.current = setTimeout(() => {
+    let pending = true;
+    const write = () => {
       try {
         const fullKey = userPrefix ? `${userPrefix}_${key}` : key;
         if (value !== undefined) {
@@ -84,12 +85,14 @@ export function useLocalStorageDebouncedSimple(
       } catch (error) {
         console.error(`[useLocalStorageDebouncedSimple] 儲存失敗 (key: ${key}):`, error);
       }
-    }, delay);
+      pending = false;
+    };
+
+    timeoutRef.current = setTimeout(write, delay);
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (pending) write();
     };
   }, [key, value, delay, userPrefix]);
 }
