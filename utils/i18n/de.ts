@@ -478,8 +478,10 @@ TradeView ist ein Vermögensverwaltungstool für Taiwan- und US-Aktien, das Anle
 ### Kredit / Verbindlichkeiten
 * **Kontotyp**: In der Kontoverwaltung „Verbindlichkeit (Kredit)“ wählen; optional Kreditart, **Jahreszins (%)**, **Kreditlimit**, verknüpftes Depotkonto.
 * **Auszahlung (empfohlen)**: Nur **Überweisung** von **Verbindlichkeit → Depot**; kein zusätzliches **Einzahlung** auf dem Verbindlichkeitskonto (vermeidet doppelte Schuld / Nettoinvestition).
-* **Tilgung**: Überweisung Depot → Verbindlichkeit.
-* **Dashboard**: Schuldkarten (Saldo, Limitnutzung, geschätzte Zinsen nächsten Monat); Gesamtvermögen zeigt Gesamtschuld und Reinvermögen.
+* **Tilgung**: Überweisung Depot → Verbindlichkeit (tatsächlich gezahlter Betrag—nur Tilgung oder Tilgung+Zinsen).
+* **Getilgt**: beurteilt am **Saldo des Verbindlichkeitskontos** (kumulierte Buchungen). **Saldo null = getilgt**; Gesamtrückzahlung kann den ursprünglichen Betrag übersteigen (normal mit Zinsen).
+* **Nach Tilgung**: Konto und Buchungen behalten; in Kontoverwaltung / Fonds einsehbar.
+* **Dashboard**: Schuldkarten, Warnungen und Hebel-Hinweise nur bei **Saldo > 0**. Bei Saldo null wird der Schuldbereich ausgeblendet. Gesamtschuld und Reinvermögen nur bei offenem Saldo.
 
 ### Transaktionstypen
 * **Buy/Sell**: Allgemeine Käufe/Verkäufe.
@@ -519,14 +521,17 @@ A: **Kontoverwaltung** → Typ „Verbindlichkeit (Kredit)“, Jahreszins, optio
 Q: Warum kein „Einzahlung“ auf dem Verbindlichkeitskonto für die Bankauszahlung?
 A: Einzahlung plus Überweisung kann die Schuld **doppelt** erhöhen. Nettoinvestition/XIRR ignorieren Einzahlungen auf Verbindlichkeitskonten, der angezeigte Schuldensaldo kann trotzdem zu hoch sein. **Nur eine** Überweisung Verbindlichkeit→Depot verwenden.
 
+Q: Wann ist der Kredit vollständig getilgt? Was, wenn die Gesamtrückzahlung den ursprünglichen Betrag übersteigt?
+A: Maßstab ist **Saldo des Verbindlichkeitskontos = 0**, nicht „Gesamtrückzahlung = ursprüngliche Auszahlung“. Auszahlungen und auf dem Verbindlichkeitskonto gebuchte Zinsen erhöhen den Saldo; Tilgungen senken ihn. Mehr zurückzuzahlen als der ursprüngliche Kreditbetrag ist normal. Jede Bankabbuchung erfassen; bei Saldo null blendet das Dashboard Schulden-UI aus—in der Kontoverwaltung prüfen.
+
 Q: Wie werden „genutzt / Limit / Auslastung %“ berechnet?
-A: **Genutzt** = aktueller Verbindlichkeitssaldo. **Limit** = eingetragenes Kreditlimit (gleiche Währung). **Auslastung** = genutzt ÷ Limit × 100 % (max. 100 %). Ohne Limit keine Fortschrittsanzeige.
+A: Nur bei **Saldo > 0** sichtbar. **Genutzt** = aktueller Verbindlichkeitssaldo. **Limit** = eingetragenes Kreditlimit (gleiche Währung). **Auslastung** = genutzt ÷ Limit × 100 % (max. 100 %). Ohne Limit keine Fortschrittsanzeige.
 
 Q: Wie wird „geschätzte Zinsen nächsten Monat“ berechnet?
 A: **Monatszins** = Saldo × Jahreszins(%) ÷ 100 ÷ 12. Beispiel: 2.000.000 bei 2,2 % → ca. **3.667** pro Monat. Einfache Schätzung bei konstantem Saldo; die Bank kann abweichen.
 
 Q: Zusammenhang Kredit, Nettoinvestition, XIRR und Reinvermögen?
-A: **Kredit Auszahlung/Tilgung** (Verbindlichkeit↔Depot) zählt zur **Nettoinvestition** und **XIRR**; **Kreditzinsen** nicht. **Reinvermögen** = Gesamtvermögen − Gesamtschuld. XIRR bei Fremdkapital vorsichtig interpretieren.
+A: **Kredit Auszahlung/Tilgung** (Verbindlichkeit↔Depot) zählt zur **Nettoinvestition** und **XIRR**; **Kreditzinsen** nicht. **Reinvermögen** = Gesamtvermögen − Gesamtschuld. Bei **Saldo null** werden Schuldkarten und Warnungen ausgeblendet, Verlauf bleibt in der Nettoinvestitions-Aufstellung. XIRR bei früherem Fremdkapital vorsichtig interpretieren.
 
 Q: Wie zeichnet man Aktienübertragungen (von Depot A zu Depot B) auf?
 A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out** → Konto = Quelle (A) → Datum, Markt, Symbol, Stückzahl → **Zielkonto** (B) wählen → speichern. Die App legt **TRANSFER_OUT und TRANSFER_IN paarweise** an—kein zweiter manueller Eintrag nötig. Die automatisch erzeugte Einbuchung hat **Gebühren = 0**; Übertragungsgebühren nur bei der **Ausbuchung** erfassen. Preis = durchschnittliche Anschaffungskosten (nicht Marktpreis).
@@ -699,7 +704,7 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     debtAlertSettingsTitle: 'Schuld-Hinweis-Einstellungen',
     minSafetySpread: 'Mindest-Zinsspanne (%)',
     minSafetySpreadHelp:
-      'Liegt die verknüpfte Depot-Rendite minus Kreditzins unter dieser Schwelle, erscheint auf dem Dashboard und hier ein Hinweis (nur zur Information). Rückzahlungs-Erinnerungen legen Sie oben unter „Regel hinzufügen“ an.',
+      'Solange auf dem Verbindlichkeitskonto noch **Schuldsaldo** besteht und verknüpfte Depot-Rendite minus Kreditzins unter dieser Schwelle liegt, Hinweis auf Dashboard und hier (nur Information). Bei Saldo null ausgeblendet. Rückzahlungs-Erinnerungen: „Regel hinzufügen“ oben.',
   },
   batchImportModal: {
     title: 'Stapelimport von Transaktionen',

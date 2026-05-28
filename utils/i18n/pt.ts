@@ -472,8 +472,10 @@ TradeView é uma ferramenta de gestão de ativos para ações de Taiwan e EUA qu
 ### Crédito / passivo
 * **Tipo de conta**: Em Gestão de Contas, escolha « Passivo (dívida) »; opcional: tipo de crédito, **taxa anual (%)**, **limite de crédito**, corretora ligada.
 * **Desembolso (recomendado)**: Apenas **Transferência** **passivo → corretagem**; não use **Importar** extra no passivo (evita dívida duplicada).
-* **Amortização**: Transferência corretagem → passivo.
-* **Painel**: cartões de dívida (saldo, utilização do limite, juros estimados do próximo mês); ativo total mostra dívida total e património líquido.
+* **Amortização**: Transferência corretagem → passivo (valor real pago—só capital ou capital+juros).
+* **Quitado**: julga-se pelo **saldo do passivo** (registos acumulados). **Saldo zero = quitado**; o total pago pode exceder o valor inicial (normal com juros).
+* **Após quitação**: mantenha conta e registos; consulte em Gestão de Contas / Fundos.
+* **Painel**: cartões, alertas e notas de alavancagem só com **saldo > 0**. Com saldo zero, a secção de dívida fica oculta. Dívida e património líquido no ativo total só quando há saldo.
 
 ### Tipos de Transações
 * **Buy/Sell**: Compra/venda geral.
@@ -513,14 +515,17 @@ R: **Gestão de Contas** → tipo « Passivo (dívida) », taxa anual, limite op
 P: Por que não usar « Importar » no passivo para o desembolso do banco?
 R: Importar + transferência pode **duplicar** a dívida. Investimento líquido / XIRR já ignoram importações no passivo, mas o saldo pode ficar alto. Use **só** transferência passivo→corretagem.
 
+P: Como saber se o empréstimo está quitado? E se o total pago for maior que o valor inicial?
+R: O critério é **saldo do passivo = 0**, não « total pago = valor inicial ». Desembolsos e juros no passivo aumentam o saldo; amortizações reduzem. Pagar mais que o principal é normal. Registe cada débito bancário; com saldo zero o painel oculta a dívida—confirme em Gestão de Contas.
+
 P: Como se calculam « usado / limite / utilização % »?
-R: **Usado** = saldo atual do passivo. **Limite** = limite de crédito (mesma moeda). **Utilização** = usado ÷ limite × 100 % (máx. 100 %). Sem limite, sem barra.
+R: Só com **saldo > 0**. **Usado** = saldo atual do passivo. **Limite** = limite de crédito (mesma moeda). **Utilização** = usado ÷ limite × 100 % (máx. 100 %). Sem limite, sem barra.
 
 P: Como se calcula « juros estimados do próximo mês »?
 R: **Estimativa** = saldo × taxa anual(%) ÷ 100 ÷ 12. Ex.: 2 000 000 a 2,2 % → cerca de **3 667** / mês. Estimativa com saldo constante; o banco pode diferir.
 
 P: Relação entre crédito, investimento líquido, XIRR e património líquido?
-R: **Desembolsos/amortizações** (passivo↔corretagem) entram no **investimento líquido** e **XIRR**; **juros de empréstimo** não. **Património líquido** = ativo total − dívida total. Interprete o XIRR com cuidado com alavancagem.
+R: **Desembolsos/amortizações** (passivo↔corretagem) entram no **investimento líquido** e **XIRR**; **juros de empréstimo** não. **Património líquido** = ativo total − dívida total. Com **saldo zero**, o painel oculta cartões e alertas de dívida, mas o histórico permanece no detalhe do investimento líquido. Interprete o XIRR com cuidado se usou alavancagem.
 
 P: Como registar transferências de ações (da Corretora A para a Corretora B)?
 R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → conta de origem (A) → data, mercado, símbolo, quantidade → escolher **conta de destino** (B) → confirmar. A aplicação grava **TRANSFER_OUT e TRANSFER_IN em par**—não precisa do segundo lançamento manual. A entrada automática tem **taxas = 0**; indique **taxas na Saída**. Preço predefinido = custo médio (não o preço de mercado).
@@ -693,7 +698,7 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     debtAlertSettingsTitle: 'Alertas de dívida',
     minSafetySpread: 'Margem de segurança do spread (%)',
     minSafetySpreadHelp:
-      'Quando o retorno da corretagem ligada menos a taxa do empréstimo ficar abaixo deste limiar, surge um aviso no painel e aqui (apenas informativo). Para lembretes de pagamento, use «Adicionar regra» acima.',
+      'Com **saldo em dívida** no passivo, se o retorno da corretagem ligada menos a taxa do empréstimo ficar abaixo deste limiar, surge aviso no painel e aqui (informativo). Oculto com saldo zero. Lembretes de pagamento: «Adicionar regra» acima.',
   },
   batchImportModal: {
     ...en.batchImportModal,

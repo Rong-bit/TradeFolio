@@ -472,8 +472,10 @@ TradeView est un outil de gestion d'actifs pour actions Taiwan et US qui aide le
 ### Crédit / passif
 * **Type de compte** : Dans Gestion des comptes, choisir « Passif (dette) » ; optionnel : type de crédit, **taux annuel (%)**, **plafond de crédit**, courtier lié.
 * **Tirage (recommandé)** : **Virement** uniquement **passif → courtage** ; pas de **Import** supplémentaire sur le passif (évite double dette / investissement net).
-* **Remboursement** : Virement courtage → passif.
-* **Tableau de bord** : cartes dette (solde, utilisation du plafond, intérêts estimés le mois prochain) ; actif total affiche dette totale et patrimoine net.
+* **Remboursement** : Virement courtage → passif (montant réel payé—capital seul ou capital+intérêts).
+* **Soldé** : jugé sur le **solde du passif** (cumul des écritures). **Solde zéro = soldé** ; le total remboursé peut dépasser le montant initial (normal avec intérêts).
+* **Après remboursement** : conservez compte et écritures ; consultez dans Gestion des comptes / Fonds.
+* **Tableau de bord** : cartes, alertes et notes d’effet de levier uniquement si **solde > 0**. À solde zéro, la section dette est masquée. Dette et patrimoine net sur l’actif total seulement s’il reste un solde.
 
 ### Types de transactions
 * **Buy/Sell** : Achat/vente général.
@@ -513,14 +515,17 @@ R : **Gestion des comptes** → type « Passif (dette) », taux annuel, plafond 
 Q : Pourquoi éviter « Import » sur le compte passif pour le décaissement bancaire ?
 R : Import + virement peut **doubler** la dette affichée. L'investissement net / XIRR ignore déjà les imports passif, mais le solde peut rester trop élevé. **Un seul** virement passif→courtage.
 
+Q : Comment savoir si le crédit est entièrement remboursé ? Et si le total payé dépasse le montant initial ?
+R : Le critère est **solde passif = 0**, pas « total remboursé = montant initial ». Tirages et intérêts côté passif augmentent le solde ; remboursements le diminuent. Payer plus que le principal est normal. Enregistrez chaque prélèvement bancaire ; à solde zéro le tableau de bord masque la dette—vérifiez dans Gestion des comptes.
+
 Q : Comment sont calculés « emprunté / plafond / utilisation % » ?
-R : **Emprunté** = solde passif actuel. **Plafond** = plafond de crédit saisi (même devise). **Utilisation** = emprunté ÷ plafond × 100 % (plafonné à 100 %). Pas de barre sans plafond.
+R : Affiché seulement si **solde > 0**. **Emprunté** = solde passif actuel. **Plafond** = plafond de crédit saisi (même devise). **Utilisation** = emprunté ÷ plafond × 100 % (plafonné à 100 %). Pas de barre sans plafond.
 
 Q : Comment est calculé « intérêts estimés le mois prochain » ?
 R : **Estimation** = solde × taux annuel(%) ÷ 100 ÷ 12. Ex. : 2 000 000 à 2,2 % → env. **3 667** / mois. Estimation à solde constant ; la banque peut différer.
 
 Q : Lien entre crédit, investissement net, XIRR et patrimoine net ?
-R : **Tirages/remboursements** (passif↔courtage) comptent dans **investissement net** et **XIRR** ; **intérêts d'emprunt** non. **Patrimoine net** = actif total − dette totale. Interpréter le XIRR avec prudence si effet de levier.
+R : **Tirages/remboursements** (passif↔courtage) comptent dans **investissement net** et **XIRR** ; **intérêts d'emprunt** non. **Patrimoine net** = actif total − dette totale. À **solde zéro**, cartes et alertes dette masquées, mais l’historique reste dans le détail d’investissement net. Interpréter le XIRR avec prudence si effet de levier.
 
 Q : Comment enregistrer les transferts d'actions (du courtier A au courtier B) ?
 R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sortie** → compte source (A) → date, marché, symbole, quantité → choisir le **compte cible** (B) → valider. L'application crée **TRANSFER_OUT et TRANSFER_IN ensemble**—pas besoin d'ajouter la 2e ligne à la main. L'entrée auto a **frais = 0** ; saisissez les **frais sur la sortie**. Prix par défaut = coût moyen (pas le cours du marché).
@@ -693,7 +698,7 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     debtAlertSettingsTitle: 'Alertes dette',
     minSafetySpread: 'Marge de sécurité du spread (%)',
     minSafetySpreadHelp:
-      'Si le rendement du courtage lié moins le taux d’emprunt est inférieur à ce seuil, un avertissement s’affiche sur le tableau de bord et ici (à titre indicatif). Ajoutez une règle ci-dessus pour les rappels d’échéance.',
+      'Tant qu’il reste un **solde de dette** sur le passif, si rendement du courtage lié − taux d’emprunt est sous ce seuil, avertissement sur le tableau de bord et ici (indicatif). Masqué à solde zéro. Rappels d’échéance : règle ci-dessus.',
   },
   batchImportModal: {
     title: 'Import groupé de transactions',
