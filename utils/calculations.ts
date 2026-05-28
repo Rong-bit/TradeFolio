@@ -457,6 +457,20 @@ function patchFirstBuyDate(h: Holding, dateMs: number): void {
   if (!h.firstBuyDate || iso < h.firstBuyDate) h.firstBuyDate = iso;
 }
 
+/** 轉出後剩餘部位過少時不顯示年化（持股表以 0 顯示為「-」） */
+const TRANSFER_OUT_REMAINDER_QTY_RATIO = 0.1;
+const TRANSFER_OUT_REMAINDER_MIN_WHOLE_SHARES = 1;
+
+function shouldSuppressAnnualizedAfterTransferOut(
+  quantity: number,
+  maxTransferOutQty: number
+): boolean {
+  if (maxTransferOutQty <= QTY_EPS) return false;
+  if (quantity <= QTY_EPS) return true;
+  if (quantity < TRANSFER_OUT_REMAINDER_MIN_WHOLE_SHARES) return true;
+  return quantity < maxTransferOutQty * TRANSFER_OUT_REMAINDER_QTY_RATIO;
+}
+
 /** 配對同日、同標的、同股數的 TRANSFER_OUT ↔ TRANSFER_IN */
 function matchStockTransferPairs(transactions: Transaction[]): Map<string, string> {
   const pairs = new Map<string, string>();
@@ -507,6 +521,7 @@ export const calculateHoldings = (
   const lotsMap = new Map<string, InvestCostLot[]>();
   const transferPairs = matchStockTransferPairs(transactions);
   const transferLotsByOutId = new Map<string, InvestCostLot[]>();
+  const maxTransferOutQtyByKey = new Map<string, number>();
   const sortedTx = [...transactions].sort((a, b) => {
     const dA = new Date(a.date).getTime();
     const dB = new Date(b.date).getTime();
@@ -619,6 +634,8 @@ export const calculateHoldings = (
           const migrated = consumeInvestLotsFIFO(lots, tx.quantity);
           transferLotsByOutId.set(tx.id, migrated);
           replenishLotsFromRemainingHolding(lots, h, flowDate);
+          const prevMax = maxTransferOutQtyByKey.get(key) ?? 0;
+          if (tx.quantity > prevMax) maxTransferOutQtyByKey.set(key, tx.quantity);
         }
       }
     } else if (tx.type === TransactionType.CASH_DIVIDEND) {
@@ -703,7 +720,11 @@ export const calculateHoldings = (
         const fallbackDate = h.firstBuyDate ? new Date(h.firstBuyDate).getTime() : Date.now();
         investFlows = [{ amount: -h.totalCost, date: fallbackDate }];
       }
-      const annualizedReturn = computeHoldingAnnualizedReturn(h, investFlows, cashFlows, outValue);
+      let annualizedReturn = computeHoldingAnnualizedReturn(h, investFlows, cashFlows, outValue);
+      const maxTransferOut = maxTransferOutQtyByKey.get(holdingKey) ?? 0;
+      if (shouldSuppressAnnualizedAfterTransferOut(h.quantity, maxTransferOut)) {
+        annualizedReturn = 0;
+      }
 
       return { 
         ...h, 
