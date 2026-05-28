@@ -292,6 +292,14 @@ export const calculateHoldings = (
   const flowsMap = new Map<string, { amount: number, date: number }[]>();
   const sortedTx = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   const splitCursors = new Map<string, { splits: StockSplitEvent[]; index: number }>();
+  const resolveCostAmount = (tx: Transaction, baseVal: number): number => {
+    if (Number.isFinite(tx.amount) && (tx.amount as number) > 0) return tx.amount as number;
+    return baseVal + (tx.fees || 0);
+  };
+  const resolveProceedAmount = (tx: Transaction, baseVal: number): number => {
+    if (Number.isFinite(tx.amount) && (tx.amount as number) > 0) return tx.amount as number;
+    return baseVal - (tx.fees || 0);
+  };
 
   sortedTx.forEach(tx => {
      const key = `${tx.accountId}-${tx.ticker}`;
@@ -334,7 +342,7 @@ export const calculateHoldings = (
        let baseVal = tx.price * tx.quantity;
        if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
 
-       const txCost = tx.amount !== undefined ? tx.amount : (baseVal + (tx.fees || 0));
+       const txCost = resolveCostAmount(tx, baseVal);
        const newTotalCost = h.totalCost + txCost;
        const newQty = h.quantity + tx.quantity;
       h.avgCost = newQty > 0 ? newTotalCost / newQty : 0;
@@ -364,7 +372,7 @@ export const calculateHoldings = (
          let baseVal = tx.price * tx.quantity;
          if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
 
-         const proceeds = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
+        const proceeds = resolveProceedAmount(tx, baseVal);
          const flowDate = new Date(tx.date).getTime();
          
          if (tx.type === TransactionType.SELL) {
@@ -374,7 +382,8 @@ export const calculateHoldings = (
          }
        }
      } else if (tx.type === TransactionType.CASH_DIVIDEND) {
-        const proceeds = tx.amount !== undefined ? tx.amount : ((tx.price * tx.quantity) - (tx.fees || 0));
+       const baseDividend = tx.price * tx.quantity;
+       const proceeds = resolveProceedAmount(tx, baseDividend);
         flows.push({ amount: proceeds, date: new Date(tx.date).getTime() });
      }
   });
