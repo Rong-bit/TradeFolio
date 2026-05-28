@@ -386,6 +386,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
   }, [holdings, rates, tickerClassOverrides, portfolioAccounts, translations]);
 
   const totalAssetsWithCashTwd = summary.totalValueTWD + summary.cashBalanceTWD;
+  const hasDebtOnBooks = (summary.totalDebtBalanceTWD ?? 0) > 0;
+  const assetsCardHeadlineTwd = hasDebtOnBooks
+    ? (summary.netWorthTWD ?? totalAssetsWithCashTwd)
+    : totalAssetsWithCashTwd;
   const cashRatioOfTotalAssets = totalAssetsWithCashTwd > 0
     ? (summary.cashBalanceTWD / totalAssetsWithCashTwd) * 100
     : 0;
@@ -633,20 +637,20 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           )}
         </div>
 
-        {/* Total Assets Card */}
+        {/* Total Assets / Net Worth Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-green-500 relative overflow-hidden group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalAssets}</h4>
+          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+            {hasDebtOnBooks ? translations.dashboard.netWorth : translations.dashboard.totalAssets}
+          </h4>
           <div className="flex items-center gap-2 mt-2">
             <p className="text-xl sm:text-2xl font-bold text-slate-800 tabular-nums">
-              {formatCurrency(toBase(summary.totalValueTWD + summary.cashBalanceTWD), baseCurrency)}
+              {formatCurrency(toBase(assetsCardHeadlineTwd), baseCurrency)}
             </p>
           </div>
           <p className="text-[10px] text-slate-400 mt-0.5">{translations.dashboard.includeCash}: {formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</p>
-          {(summary.totalDebtBalanceTWD ?? 0) > 0 && (
+          {hasDebtOnBooks && (
             <p className="text-[10px] text-red-600 mt-0.5">
               {translations.dashboard.totalDebt}: {formatCurrency(toBase(summary.totalDebtBalanceTWD ?? 0), baseCurrency)}
-              {' · '}
-              {translations.dashboard.netWorth}: {formatCurrency(toBase(summary.netWorthTWD ?? 0), baseCurrency)}
             </p>
           )}
           {isMounted && chartData.length > 1 && (
