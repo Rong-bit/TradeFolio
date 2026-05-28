@@ -311,16 +311,112 @@ function investFlowsFromLots(lots: InvestCostLot[]): { amount: number; date: num
     .map(lot => ({ amount: -lot.cost, date: lot.date }));
 }
 
+/** 賣出／轉出時扣減成本：台股先算「剩餘成本」再反推轉出成本，避免四捨五入後剩餘成本趨近 0 */
+function allocateCostReductionForOutflow(
+  totalCost: number,
+  totalQty: number,
+  outQty: number,
+  market: Market
+): { costOfOut: number; remainingCost: number; remainingQty: number } {
+  const remainingQty = totalQty - outQty;
+  if (remainingQty <= QTY_EPS) {
+    return { costOfOut: totalCost, remainingCost: 0, remainingQty: 0 };
+  }
+  if (market === Market.TW) {
+    const remainingCost = Math.round(totalCost * (remainingQty / totalQty));
+    return { costOfOut: totalCost - remainingCost, remainingCost, remainingQty };
+  }
+  const costOfOut = totalCost * (outQty / totalQty);
+  return { costOfOut, remainingCost: totalCost - costOfOut, remainingQty };
+}
+
+/** 修正轉出／賣出後 totalCost 與股數不一致（台股四捨五入殘差） */
+function reconcileHoldingCostBasis(
+  h: { quantity: number; totalCost: number; avgCost: number },
+  market: Market
+): void {
+  if (h.quantity <= QTY_EPS) {
+    h.totalCost = 0;
+    h.avgCost = 0;
+    return;
+  }
+  const implied = h.avgCost > 0 ? h.avgCost * h.quantity : h.totalCost;
+  if (market === Market.TW) {
+    const rounded = Math.round(implied);
+    if (rounded > 0 && (h.totalCost <= 1e-9 || h.totalCost < rounded * 0.25)) {
+      h.totalCost = rounded;
+    }
+  } else if (implied > 0 && h.totalCost < implied * 0.01) {
+    h.totalCost = implied;
+  }
+  h.avgCost = h.quantity > 0 ? h.totalCost / h.quantity : 0;
+}
+
 /** 持倉仍有股數/成本，但 lots 已空（例如轉出後剩餘零股、股息未入 lots）時補回成本批次 */
 function replenishLotsFromRemainingHolding(
   lots: InvestCostLot[],
-  h: { quantity: number; totalCost: number; firstBuyDate?: string },
+  h: { quantity: number; totalCost: number; avgCost: number; firstBuyDate?: string },
   referenceDateMs: number
 ): void {
   if (lots.length > 0) return;
-  if (h.quantity <= QTY_EPS || h.totalCost <= 1e-9) return;
+  if (h.quantity <= QTY_EPS) return;
+  const cost = h.totalCost > 1e-9 ? h.totalCost : h.avgCost * h.quantity;
+  if (cost <= 1e-9) return;
   const date = h.firstBuyDate ? new Date(h.firstBuyDate).getTime() : referenceDateMs;
-  lots.push({ date, cost: h.totalCost, qty: h.quantity });
+  lots.push({ date, cost, qty: h.quantity });
+}
+
+function holdingYearsFromFirstBuy(firstBuyDate: string | undefined): number {
+  if (!firstBuyDate) return 0;
+  const ms = Date.now() - new Date(firstBuyDate).getTime();
+  return ms > 0 ? ms / (365.25 * 24 * 60 * 60 * 1000) : 0;
+}
+
+/** 依總成本與現值估算單筆複利年化（XIRR 異常時的備援） */
+function simpleCagrFromHolding(
+  firstBuyDate: string | undefined,
+  totalCost: number,
+  currentValue: number
+): number {
+  if (totalCost <= 1e-9 || currentValue <= 0) return 0;
+  const years = holdingYearsFromFirstBuy(firstBuyDate);
+  if (years < 1 / 365) return 0;
+  const growth = currentValue / totalCost;
+  if (growth <= 0 || !Number.isFinite(growth)) return 0;
+  return (Math.pow(growth, 1 / years) - 1) * 100;
+}
+
+function sanitizeHoldingAnnualized(xirr: number, fallback: number): number {
+  const pick = (v: number) => {
+    if (!Number.isFinite(v)) return 0;
+    if (Math.abs(v) > 500) return 0;
+    return v;
+  };
+  const primary = pick(xirr);
+  if (primary !== 0) return primary;
+  return pick(fallback);
+}
+
+function computeHoldingAnnualizedReturn(
+  h: Holding,
+  investFlows: { amount: number; date: number }[],
+  cashFlows: { amount: number; date: number }[],
+  outValue: number
+): number {
+  const cagrFallback = simpleCagrFromHolding(h.firstBuyDate, h.totalCost, outValue);
+  const allFlows = [...investFlows, ...cashFlows];
+  if (allFlows.length === 0) return sanitizeHoldingAnnualized(0, cagrFallback);
+
+  const xirr = calculateGenericXIRR([...allFlows, { amount: outValue, date: Date.now() }]);
+  if (!Number.isFinite(xirr)) return sanitizeHoldingAnnualized(0, cagrFallback);
+
+  if (Math.abs(xirr) > 100 && h.totalCost > 1e-9) {
+    const years = holdingYearsFromFirstBuy(h.firstBuyDate);
+    if (years > 0.02 && Math.abs(cagrFallback) < Math.abs(xirr) * 0.2) {
+      return sanitizeHoldingAnnualized(cagrFallback, cagrFallback);
+    }
+  }
+  return sanitizeHoldingAnnualized(xirr, cagrFallback);
 }
 
 /** 與 applyPendingSplitsToHolding 同步調整 lots 股數 */
@@ -500,14 +596,16 @@ export const calculateHoldings = (
       }
     } else if (tx.type === TransactionType.SELL || tx.type === TransactionType.TRANSFER_OUT) {
       if (h.quantity > 0) {
-        const ratio = tx.quantity / h.quantity;
-        let costOfSold = h.totalCost * ratio;
-        if (tx.market === Market.TW) {
-          costOfSold = Math.round(costOfSold);
-        }
-
-        h.totalCost -= costOfSold;
-        h.quantity -= tx.quantity;
+        const { costOfOut, remainingCost, remainingQty } = allocateCostReductionForOutflow(
+          h.totalCost,
+          h.quantity,
+          tx.quantity,
+          tx.market
+        );
+        h.totalCost = remainingCost;
+        h.quantity = remainingQty;
+        h.avgCost = remainingQty > QTY_EPS ? remainingCost / remainingQty : 0;
+        reconcileHoldingCostBasis(h, tx.market);
 
         let baseVal = tx.price * tx.quantity;
         if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
@@ -548,6 +646,7 @@ export const calculateHoldings = (
       splitCursors.get(key)!,
       asOfDate
     );
+    reconcileHoldingCostBasis(h, h.market);
     replenishLotsFromRemainingHolding(lots, h, Date.now());
     lotsMap.set(key, lots);
   });
@@ -604,12 +703,7 @@ export const calculateHoldings = (
         const fallbackDate = h.firstBuyDate ? new Date(h.firstBuyDate).getTime() : Date.now();
         investFlows = [{ amount: -h.totalCost, date: fallbackDate }];
       }
-      const allFlows = [...investFlows, ...cashFlows];
-      let annualizedReturn = 0;
-      if (allFlows.length > 0) {
-        const xirrFlows = [...allFlows, { amount: outValue, date: Date.now() }];
-        annualizedReturn = calculateGenericXIRR(xirrFlows);
-      }
+      const annualizedReturn = computeHoldingAnnualizedReturn(h, investFlows, cashFlows, outValue);
 
       return { 
         ...h, 
