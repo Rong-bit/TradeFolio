@@ -306,10 +306,10 @@ function consumeInvestLotsFIFO(lots: InvestCostLot[], quantity: number): InvestC
   return removed;
 }
 
-function appendInvestFlows(flows: { amount: number; date: number }[], lots: InvestCostLot[]): void {
-  lots.forEach(lot => {
-    if (lot.cost > 1e-9) flows.push({ amount: -lot.cost, date: lot.date });
-  });
+function investFlowsFromLots(lots: InvestCostLot[]): { amount: number; date: number }[] {
+  return lots
+    .filter(lot => lot.cost > 1e-9)
+    .map(lot => ({ amount: -lot.cost, date: lot.date }));
 }
 
 function mergeInvestLots(target: InvestCostLot[], lots: InvestCostLot[]): void {
@@ -443,7 +443,6 @@ export const calculateHoldings = (
 
       if (tx.type === TransactionType.BUY) {
         lots.push({ date: flowDate, cost: txCost, qty: tx.quantity });
-        flows.push({ amount: -txCost, date: flowDate });
         patchFirstBuyDate(h, flowDate);
       } else if (tx.type === TransactionType.TRANSFER_IN) {
         const pairedOutId = transferPairs.get(tx.id);
@@ -453,7 +452,6 @@ export const calculateHoldings = (
             : [{ date: flowDate, cost: txCost, qty: tx.quantity }];
         if (pairedOutId) transferLotsByOutId.delete(pairedOutId);
         mergeInvestLots(lots, migrated);
-        appendInvestFlows(flows, migrated);
         h.firstBuyDate = earliestIsoDateFromLots(migrated, h.firstBuyDate ?? tx.date);
       }
     } else if (tx.type === TransactionType.SELL || tx.type === TransactionType.TRANSFER_OUT) {
@@ -543,10 +541,13 @@ export const calculateHoldings = (
       const unrealizedPL = outValue - h.totalCost;
       const unrealizedPLPercent = h.totalCost > 0 ? (unrealizedPL / h.totalCost) * 100 : 0;
       
-      const flows = flowsMap.get(`${h.accountId}-${h.ticker}`) || [];
+      const holdingKey = `${h.accountId}-${h.ticker}`;
+      const cashFlows = flowsMap.get(holdingKey) || [];
+      const investFlows = investFlowsFromLots(lotsMap.get(holdingKey) || []);
+      const allFlows = [...investFlows, ...cashFlows];
       let annualizedReturn = 0;
-      if (flows.length > 0) {
-        const xirrFlows = [...flows, { amount: outValue, date: Date.now() }];
+      if (allFlows.length > 0) {
+        const xirrFlows = [...allFlows, { amount: outValue, date: Date.now() }];
         annualizedReturn = calculateGenericXIRR(xirrFlows);
       }
 
