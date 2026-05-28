@@ -3,6 +3,7 @@ import { currentYearMonth, scheduledDateInPeriod } from './recurringDeposits';
 import {
   DEFAULT_DEBT_LEAD_DAYS,
   DEFAULT_MIN_SAFETY_SPREAD_PERCENT,
+  hasActiveDebtBalance,
   isDebtPaymentAlertRule,
   isLiabilityAccount,
 } from './debtAccountHelpers';
@@ -47,7 +48,7 @@ export function checkDebtPaymentAlerts(
     if (rule.lastAcknowledgedPeriod === period) return;
 
     const acc = accounts.find(a => a.id === rule.accountId);
-    if (!acc || !isLiabilityAccount(acc)) return;
+    if (!acc || !isLiabilityAccount(acc) || !hasActiveDebtBalance(acc)) return;
 
     const lead = rule.leadDays ?? DEFAULT_DEBT_LEAD_DAYS;
     const dueDay = Math.min(rule.dayOfMonth, daysInMonth(y, m));
@@ -78,7 +79,7 @@ export function computeDebtSpreadAlerts(
   const alerts: DebtSpreadAlert[] = [];
 
   accounts.forEach(liability => {
-    if (!isLiabilityAccount(liability)) return;
+    if (!isLiabilityAccount(liability) || !hasActiveDebtBalance(liability)) return;
     const rate = liability.annualInterestRate;
     if (rate == null || !Number.isFinite(rate) || rate <= 0) return;
 
