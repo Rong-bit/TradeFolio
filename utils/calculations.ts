@@ -22,7 +22,6 @@ import {
 } from '../types';
 import {
   getSplitsForSymbol,
-  applyPendingSplitsToHolding,
   applyPendingSplitsToPosition,
 } from './stockSplitHelpers';
 import {
@@ -312,6 +311,41 @@ function investFlowsFromLots(lots: InvestCostLot[]): { amount: number; date: num
     .map(lot => ({ amount: -lot.cost, date: lot.date }));
 }
 
+/** 持倉仍有股數/成本，但 lots 已空（例如轉出後剩餘零股、股息未入 lots）時補回成本批次 */
+function replenishLotsFromRemainingHolding(
+  lots: InvestCostLot[],
+  h: { quantity: number; totalCost: number; firstBuyDate?: string },
+  referenceDateMs: number
+): void {
+  if (lots.length > 0) return;
+  if (h.quantity <= QTY_EPS || h.totalCost <= 1e-9) return;
+  const date = h.firstBuyDate ? new Date(h.firstBuyDate).getTime() : referenceDateMs;
+  lots.push({ date, cost: h.totalCost, qty: h.quantity });
+}
+
+/** 與 applyPendingSplitsToHolding 同步調整 lots 股數 */
+function applyPendingSplitsToHoldingAndLots(
+  h: { quantity: number; avgCost: number; totalCost: number },
+  lots: InvestCostLot[],
+  splits: StockSplitEvent[],
+  splitCursor: { index: number },
+  txDate: string
+): void {
+  const txTs = new Date(txDate).getTime();
+  while (splitCursor.index < splits.length) {
+    const split = splits[splitCursor.index];
+    if (new Date(split.effectiveDate).getTime() > txTs) break;
+    if (h.quantity > 0) {
+      h.quantity *= split.ratio;
+      h.avgCost = h.quantity > 0 ? h.totalCost / h.quantity : 0;
+      lots.forEach(l => {
+        if (l.qty > QTY_EPS) l.qty *= split.ratio;
+      });
+      splitCursor.index += 1;
+    }
+  }
+}
+
 function mergeInvestLots(target: InvestCostLot[], lots: InvestCostLot[]): void {
   lots.forEach(l => target.push({ date: l.date, cost: l.cost, qty: l.qty }));
 }
@@ -422,8 +456,15 @@ export const calculateHoldings = (
         index: 0,
       });
     }
-    applyPendingSplitsToHolding(h, splitCursors.get(key)!.splits, splitCursors.get(key)!, tx.date);
-    return { key, h, flows: flowsMap.get(key)!, lots: lotsMap.get(key)! };
+    const lots = lotsMap.get(key)!;
+    applyPendingSplitsToHoldingAndLots(
+      h,
+      lots,
+      splitCursors.get(key)!.splits,
+      splitCursors.get(key)!,
+      tx.date
+    );
+    return { key, h, flows: flowsMap.get(key)!, lots };
   };
 
   sortedTx.forEach(tx => {
@@ -442,6 +483,9 @@ export const calculateHoldings = (
       h.quantity = newQty;
 
       if (tx.type === TransactionType.BUY) {
+        lots.push({ date: flowDate, cost: txCost, qty: tx.quantity });
+        patchFirstBuyDate(h, flowDate);
+      } else if (tx.type === TransactionType.DIVIDEND) {
         lots.push({ date: flowDate, cost: txCost, qty: tx.quantity });
         patchFirstBuyDate(h, flowDate);
       } else if (tx.type === TransactionType.TRANSFER_IN) {
@@ -472,9 +516,11 @@ export const calculateHoldings = (
           const proceeds = resolveProceedAmount(tx, baseVal);
           consumeInvestLotsFIFO(lots, tx.quantity);
           flows.push({ amount: proceeds, date: flowDate });
+          replenishLotsFromRemainingHolding(lots, h, flowDate);
         } else {
           const migrated = consumeInvestLotsFIFO(lots, tx.quantity);
           transferLotsByOutId.set(tx.id, migrated);
+          replenishLotsFromRemainingHolding(lots, h, flowDate);
         }
       }
     } else if (tx.type === TransactionType.CASH_DIVIDEND) {
@@ -494,7 +540,16 @@ export const calculateHoldings = (
         index: 0,
       });
     }
-    applyPendingSplitsToHolding(h, splitCursors.get(key)!.splits, splitCursors.get(key)!, asOfDate);
+    const lots = lotsMap.get(key) || [];
+    applyPendingSplitsToHoldingAndLots(
+      h,
+      lots,
+      splitCursors.get(key)!.splits,
+      splitCursors.get(key)!,
+      asOfDate
+    );
+    replenishLotsFromRemainingHolding(lots, h, Date.now());
+    lotsMap.set(key, lots);
   });
   
   return Array.from(map.values())
@@ -543,7 +598,12 @@ export const calculateHoldings = (
       
       const holdingKey = `${h.accountId}-${h.ticker}`;
       const cashFlows = flowsMap.get(holdingKey) || [];
-      const investFlows = investFlowsFromLots(lotsMap.get(holdingKey) || []);
+      const lotsForXirr = [...(lotsMap.get(holdingKey) || [])];
+      let investFlows = investFlowsFromLots(lotsForXirr);
+      if (investFlows.length === 0 && h.totalCost > 1e-9 && h.quantity > QTY_EPS) {
+        const fallbackDate = h.firstBuyDate ? new Date(h.firstBuyDate).getTime() : Date.now();
+        investFlows = [{ amount: -h.totalCost, date: fallbackDate }];
+      }
       const allFlows = [...investFlows, ...cashFlows];
       let annualizedReturn = 0;
       if (allFlows.length > 0) {
