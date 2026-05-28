@@ -277,6 +277,91 @@ export function fundFormTwdPerNativeToAccountBasePair(
   return Number.isFinite(v) && v > 0 ? v : undefined;
 }
 
+/** 年化 XIRR 用的成本批次（FIFO） */
+interface InvestCostLot {
+  date: number;
+  cost: number;
+  qty: number;
+}
+
+const QTY_EPS = 1e-6;
+
+function consumeInvestLotsFIFO(lots: InvestCostLot[], quantity: number): InvestCostLot[] {
+  const removed: InvestCostLot[] = [];
+  let remaining = quantity;
+  while (remaining > QTY_EPS && lots.length > 0) {
+    const head = lots[0];
+    if (head.qty <= remaining + QTY_EPS) {
+      remaining -= head.qty;
+      removed.push(lots.shift()!);
+    } else {
+      const fraction = remaining / head.qty;
+      const partialCost = head.cost * fraction;
+      removed.push({ date: head.date, cost: partialCost, qty: remaining });
+      head.qty -= remaining;
+      head.cost -= partialCost;
+      remaining = 0;
+    }
+  }
+  return removed;
+}
+
+function appendInvestFlows(flows: { amount: number; date: number }[], lots: InvestCostLot[]): void {
+  lots.forEach(lot => {
+    if (lot.cost > 1e-9) flows.push({ amount: -lot.cost, date: lot.date });
+  });
+}
+
+function mergeInvestLots(target: InvestCostLot[], lots: InvestCostLot[]): void {
+  lots.forEach(l => target.push({ date: l.date, cost: l.cost, qty: l.qty }));
+}
+
+function earliestIsoDateFromLots(lots: InvestCostLot[], fallback: string): string {
+  if (lots.length === 0) return fallback;
+  const minMs = Math.min(...lots.map(l => l.date));
+  return new Date(minMs).toISOString().split('T')[0];
+}
+
+function patchFirstBuyDate(h: Holding, dateMs: number): void {
+  const iso = new Date(dateMs).toISOString().split('T')[0];
+  if (!h.firstBuyDate || iso < h.firstBuyDate) h.firstBuyDate = iso;
+}
+
+/** 配對同日、同標的、同股數的 TRANSFER_OUT ↔ TRANSFER_IN */
+function matchStockTransferPairs(transactions: Transaction[]): Map<string, string> {
+  const pairs = new Map<string, string>();
+  const outs = transactions.filter(t => t.type === TransactionType.TRANSFER_OUT);
+  const ins = transactions.filter(t => t.type === TransactionType.TRANSFER_IN);
+  const usedIn = new Set<string>();
+
+  outs.forEach(out => {
+    const match = ins.find(
+      inTx =>
+        !usedIn.has(inTx.id) &&
+        inTx.date === out.date &&
+        inTx.market === out.market &&
+        inTx.ticker.toUpperCase() === out.ticker.toUpperCase() &&
+        Math.abs(inTx.quantity - out.quantity) < QTY_EPS &&
+        inTx.accountId !== out.accountId
+    );
+    if (match) {
+      usedIn.add(match.id);
+      pairs.set(out.id, match.id);
+      pairs.set(match.id, out.id);
+    }
+  });
+  return pairs;
+}
+
+const TX_CHRONO_ORDER: Partial<Record<TransactionType, number>> = {
+  [TransactionType.BUY]: 1,
+  [TransactionType.DIVIDEND]: 2,
+  [TransactionType.TRANSFER_OUT]: 3,
+  [TransactionType.TRANSFER_IN]: 4,
+  [TransactionType.SELL]: 5,
+  [TransactionType.CASH_DIVIDEND]: 6,
+};
+
 export const calculateHoldings = (
   transactions: Transaction[], 
   currentPrices: Record<string, number>,
@@ -288,8 +373,16 @@ export const calculateHoldings = (
 ): Holding[] => {
   const dbgOnceKey = new Set<string>();
   const map = new Map<string, Holding>();
-  const flowsMap = new Map<string, { amount: number, date: number }[]>();
-  const sortedTx = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const flowsMap = new Map<string, { amount: number; date: number }[]>();
+  const lotsMap = new Map<string, InvestCostLot[]>();
+  const transferPairs = matchStockTransferPairs(transactions);
+  const transferLotsByOutId = new Map<string, InvestCostLot[]>();
+  const sortedTx = [...transactions].sort((a, b) => {
+    const dA = new Date(a.date).getTime();
+    const dB = new Date(b.date).getTime();
+    if (dA !== dB) return dA - dB;
+    return (TX_CHRONO_ORDER[a.type] ?? 9) - (TX_CHRONO_ORDER[b.type] ?? 9);
+  });
   const splitCursors = new Map<string, { splits: StockSplitEvent[]; index: number }>();
   const resolveCostAmount = (tx: Transaction, baseVal: number): number => {
     if (Number.isFinite(tx.amount) && (tx.amount as number) > 0) return tx.amount as number;
@@ -300,91 +393,97 @@ export const calculateHoldings = (
     return baseVal - (tx.fees || 0);
   };
 
+  const ensureHoldingState = (tx: Transaction) => {
+    const key = `${tx.accountId}-${tx.ticker}`;
+    if (!map.has(key)) {
+      map.set(key, {
+        ticker: tx.ticker,
+        market: tx.market,
+        quantity: 0,
+        avgCost: 0,
+        totalCost: 0,
+        currentPrice: 0,
+        currentValue: 0,
+        unrealizedPL: 0,
+        unrealizedPLPercent: 0,
+        accountId: tx.accountId,
+        weight: 0,
+        annualizedReturn: 0,
+        firstBuyDate: tx.date,
+        priceCurrency: tx.priceCurrency,
+      });
+    }
+    if (!flowsMap.has(key)) flowsMap.set(key, []);
+    if (!lotsMap.has(key)) lotsMap.set(key, []);
+    const h = map.get(key)!;
+    if (!splitCursors.has(key)) {
+      splitCursors.set(key, {
+        splits: getSplitsForSymbol(stockSplits, tx.market, tx.ticker),
+        index: 0,
+      });
+    }
+    applyPendingSplitsToHolding(h, splitCursors.get(key)!.splits, splitCursors.get(key)!, tx.date);
+    return { key, h, flows: flowsMap.get(key)!, lots: lotsMap.get(key)! };
+  };
+
   sortedTx.forEach(tx => {
-     const key = `${tx.accountId}-${tx.ticker}`;
-     if (!map.has(key)) {
-       map.set(key, {
-         ticker: tx.ticker,
-         market: tx.market,
-         quantity: 0,
-         avgCost: 0,
-         totalCost: 0,
-         currentPrice: 0,
-         currentValue: 0,
-         unrealizedPL: 0,
-         unrealizedPLPercent: 0,
-         accountId: tx.accountId,
-         weight: 0,
-         annualizedReturn: 0,
-         firstBuyDate: tx.date,
-         priceCurrency: tx.priceCurrency,
-       });
-     }
-     
-     if (!flowsMap.has(key)) {
-       flowsMap.set(key, []);
-     }
-     const flows = flowsMap.get(key)!;
+    const { key, h, flows, lots } = ensureHoldingState(tx);
+    const flowDate = new Date(tx.date).getTime();
 
-     const h = map.get(key)!;
+    if (tx.type === TransactionType.BUY || tx.type === TransactionType.TRANSFER_IN || tx.type === TransactionType.DIVIDEND) {
+      let baseVal = tx.price * tx.quantity;
+      if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
 
-     if (!splitCursors.has(key)) {
-       splitCursors.set(key, {
-         splits: getSplitsForSymbol(stockSplits, tx.market, tx.ticker),
-         index: 0,
-       });
-     }
-     applyPendingSplitsToHolding(h, splitCursors.get(key)!.splits, splitCursors.get(key)!, tx.date);
-     
-     if (tx.type === TransactionType.BUY || tx.type === TransactionType.TRANSFER_IN || tx.type === TransactionType.DIVIDEND) {
-       // 台股邏輯：股價 * 股數 無條件捨去 + 手續費
-       let baseVal = tx.price * tx.quantity;
-       if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
-
-       const txCost = resolveCostAmount(tx, baseVal);
-       const newTotalCost = h.totalCost + txCost;
-       const newQty = h.quantity + tx.quantity;
+      const txCost = resolveCostAmount(tx, baseVal);
+      const newTotalCost = h.totalCost + txCost;
+      const newQty = h.quantity + tx.quantity;
       h.avgCost = newQty > 0 ? newTotalCost / newQty : 0;
       h.totalCost = newTotalCost;
       h.quantity = newQty;
-      
-      const flowDate = new Date(tx.date).getTime();
-       if (tx.type === TransactionType.BUY) {
-          flows.push({ amount: -txCost, date: flowDate });
-       } else if (tx.type === TransactionType.TRANSFER_IN) {
-          flows.push({ amount: -txCost, date: flowDate });
-       }
-       
-     } else if (tx.type === TransactionType.SELL || tx.type === TransactionType.TRANSFER_OUT) {
-       if (h.quantity > 0) {
-         const ratio = tx.quantity / h.quantity;
-         let costOfSold = h.totalCost * ratio;
-         
-         // 修正邏輯：若是台股，將扣除的成本進行四捨五入取整，確保剩餘總成本為整數
-         if (tx.market === Market.TW) {
-            costOfSold = Math.round(costOfSold);
-         }
 
-         h.totalCost -= costOfSold;
-         h.quantity -= tx.quantity;
-         
-         let baseVal = tx.price * tx.quantity;
-         if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+      if (tx.type === TransactionType.BUY) {
+        lots.push({ date: flowDate, cost: txCost, qty: tx.quantity });
+        flows.push({ amount: -txCost, date: flowDate });
+        patchFirstBuyDate(h, flowDate);
+      } else if (tx.type === TransactionType.TRANSFER_IN) {
+        const pairedOutId = transferPairs.get(tx.id);
+        const migrated =
+          pairedOutId && transferLotsByOutId.has(pairedOutId)
+            ? transferLotsByOutId.get(pairedOutId)!
+            : [{ date: flowDate, cost: txCost, qty: tx.quantity }];
+        if (pairedOutId) transferLotsByOutId.delete(pairedOutId);
+        mergeInvestLots(lots, migrated);
+        appendInvestFlows(flows, migrated);
+        h.firstBuyDate = earliestIsoDateFromLots(migrated, h.firstBuyDate ?? tx.date);
+      }
+    } else if (tx.type === TransactionType.SELL || tx.type === TransactionType.TRANSFER_OUT) {
+      if (h.quantity > 0) {
+        const ratio = tx.quantity / h.quantity;
+        let costOfSold = h.totalCost * ratio;
+        if (tx.market === Market.TW) {
+          costOfSold = Math.round(costOfSold);
+        }
 
-        const proceeds = resolveProceedAmount(tx, baseVal);
-         const flowDate = new Date(tx.date).getTime();
-         
-         if (tx.type === TransactionType.SELL) {
-            flows.push({ amount: proceeds, date: flowDate });
-         } else {
-            flows.push({ amount: proceeds, date: flowDate });
-         }
-       }
-     } else if (tx.type === TransactionType.CASH_DIVIDEND) {
-       const baseDividend = tx.price * tx.quantity;
-       const proceeds = resolveProceedAmount(tx, baseDividend);
-        flows.push({ amount: proceeds, date: new Date(tx.date).getTime() });
-     }
+        h.totalCost -= costOfSold;
+        h.quantity -= tx.quantity;
+
+        let baseVal = tx.price * tx.quantity;
+        if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+
+        if (tx.type === TransactionType.SELL) {
+          const proceeds = resolveProceedAmount(tx, baseVal);
+          consumeInvestLotsFIFO(lots, tx.quantity);
+          flows.push({ amount: proceeds, date: flowDate });
+        } else {
+          const migrated = consumeInvestLotsFIFO(lots, tx.quantity);
+          transferLotsByOutId.set(tx.id, migrated);
+        }
+      }
+    } else if (tx.type === TransactionType.CASH_DIVIDEND) {
+      const baseDividend = tx.price * tx.quantity;
+      const proceeds = resolveProceedAmount(tx, baseDividend);
+      flows.push({ amount: proceeds, date: flowDate });
+    }
   });
 
   // 生效日之後若無新交易，仍依「今日」套用尚未處理的拆分（目前持倉）
