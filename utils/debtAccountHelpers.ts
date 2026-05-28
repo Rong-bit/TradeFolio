@@ -11,6 +11,13 @@ import { ExchangeRates, currencyToTWDRate } from './calculations';
 
 export const DEFAULT_DEBT_LEAD_DAYS = 3;
 export const DEFAULT_MIN_SAFETY_SPREAD_PERCENT = 2;
+/** 欠款餘額低於此值視為已結清（儀表板不顯示信貸區塊） */
+export const ACTIVE_DEBT_BALANCE_EPSILON = 0.000001;
+
+export function hasActiveDebtBalance(account: Account | undefined): boolean {
+  if (!account || !isLiabilityAccount(account)) return false;
+  return account.balance > ACTIVE_DEBT_BALANCE_EPSILON;
+}
 
 export function getAccountKind(account: Account | undefined): AccountKind {
   return account?.accountKind ?? AccountKind.BROKERAGE;
@@ -104,12 +111,7 @@ export function buildLiabilityAccountInsights(
 ): LiabilityAccountInsight[] {
   return accounts
     .filter(isLiabilityAccount)
-    .filter(
-      a =>
-        a.balance > 0.000001 ||
-        (a.creditLimit != null && a.creditLimit > 0) ||
-        a.annualInterestRate != null
-    )
+    .filter(hasActiveDebtBalance)
     .map(a => {
       const twdRate = currencyToTWDRate(a.currency, rates);
       const monthly = estimateMonthlyInterest(a.balance, a.annualInterestRate);
@@ -188,7 +190,9 @@ export function computeDebtSummary(
     }
   });
 
-  if (accounts.some(isLiabilityAccount)) hasDebtFunding = true;
+  if (totalDebtBalanceTWD <= ACTIVE_DEBT_BALANCE_EPSILON) {
+    hasDebtFunding = false;
+  }
 
   return { totalDebtBalanceTWD, leverageNetTWD, hasDebtFunding };
 }
