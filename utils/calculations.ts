@@ -286,7 +286,6 @@ export const calculateHoldings = (
   rates?: ExchangeRates,
   stockSplits: StockSplitEvent[] = []
 ): Holding[] => {
-  const MIN_ANNUALIZED_DAYS = 30;
   const dbgOnceKey = new Set<string>();
   const map = new Map<string, Holding>();
   const flowsMap = new Map<string, { amount: number, date: number }[]>();
@@ -448,12 +447,8 @@ export const calculateHoldings = (
       const flows = flowsMap.get(`${h.accountId}-${h.ticker}`) || [];
       let annualizedReturn = 0;
       if (flows.length > 0) {
-        const firstFlowDate = Math.min(...flows.map(f => f.date));
-        const holdingDays = (Date.now() - firstFlowDate) / (24 * 60 * 60 * 1000);
-        if (holdingDays >= MIN_ANNUALIZED_DAYS) {
-          const xirrFlows = [...flows, { amount: outValue, date: Date.now() }];
-          annualizedReturn = calculateGenericXIRR(xirrFlows);
-        }
+        const xirrFlows = [...flows, { amount: outValue, date: Date.now() }];
+        annualizedReturn = calculateGenericXIRR(xirrFlows);
       }
 
       return { 
