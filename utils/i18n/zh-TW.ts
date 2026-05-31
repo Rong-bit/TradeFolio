@@ -193,7 +193,7 @@ export const zhTW: Translations = {
     riskWarning: '投資風險警告',
     riskWarningDesc: '投資有風險，過往績效不代表未來表現。',
     chartLegendQuarterSnapshot: '✅ 有季末快照（Yahoo 真實數據）',
-    chartLegendLinearInterpolation: '⚠️ 線性插值估算（請至歷史股價校正 → 一鍵抓取補充）',
+    chartLegendLinearInterpolation: '部分季度總資產為線性插值估算，建議補齊季末快照以提高準確度。',
     notInvestmentAdvice: '本應用程式不提供投資建議，所有分析結果僅供參考。',
   },
   marketChart: {
