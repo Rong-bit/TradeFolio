@@ -149,6 +149,7 @@ export interface Translations {
     totalAssetsNT: string;
     marketValueNT: string;
     balanceNT: string;
+    balanceColumnTooltip: string;
     profitNT: string;
     profitFormulaTooltip: string;
     unrealizedPL: string;

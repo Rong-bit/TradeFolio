@@ -51,11 +51,13 @@ export const de: Translations = {
     endAssets: 'Endvermögen',
     annualProfit: 'Jahresgewinn',
     annualROI: 'Jährliche ROI',
-    brokerageAccounts: 'Depotkonten',
+    brokerageAccounts: 'Kontenliste',
     accountName: 'Kontoname',
     totalAssetsNT: 'Gesamtvermögen',
     marketValueNT: 'Marktwert',
-    balanceNT: 'Saldo',
+    balanceNT: 'Saldo / Schuld',
+    balanceColumnTooltip:
+      'Depot: Bargeldsaldo. Verbindlichkeit: geschuldetes Kapital. Bereich „Kredit & Verbindlichkeiten“ erscheint, wenn diese Spalte > 0 ist.',
     profitNT: 'Gewinn',
     profitFormulaTooltip: 'Gesamt G/V = Nicht realisiert + Realisiert + Div./Zinsen. Realisiert wird nur aus SELL berechnet, Überträge sind ausgeschlossen.',
     unrealizedPL: 'Nicht real. G/V',
@@ -473,15 +475,33 @@ TradeView ist ein Vermögensverwaltungstool für Taiwan- und US-Aktien, das Anle
 * **Auszahlung (Export)**: Geldabfluss (z.B. Lebenshaltungskosten).
 * **Überweisung (Transfer)**: Geldbewegung zwischen verschiedenen Konten (z.B. Bank zu Depotkonto).
 * **Zinsen**: Erfassung von Zinsen auf Einlagen oder Depotkonten.
-* **Kreditzinsen**: Zinsaufwand für Kredite; auf **Depotkonto** mindert Bargeld, auf **Verbindlichkeitskonto** erhöht die Schuld.
+* **Kreditzinsen**: Zinsaufwand; auf **Depotkonto** gebucht mindert es Bargeld (Verbindlichkeitskonten erscheinen nicht in der Auswahl).
 
-### Kredit / Verbindlichkeiten
-* **Kontotyp**: In der Kontoverwaltung „Verbindlichkeit (Kredit)“ wählen; optional Kreditart, **Jahreszins (%)**, **Kreditlimit**, verknüpftes Depotkonto.
-* **Auszahlung (empfohlen)**: Nur **Überweisung** von **Verbindlichkeit → Depot**; kein zusätzliches **Einzahlung** auf dem Verbindlichkeitskonto (vermeidet doppelte Schuld / Nettoinvestition).
-* **Tilgung**: Überweisung Depot → Verbindlichkeit (tatsächlich gezahlter Betrag—nur Tilgung oder Tilgung+Zinsen).
-* **Getilgt**: beurteilt am **Saldo des Verbindlichkeitskontos** (kumulierte Buchungen). **Saldo null = getilgt**; Gesamtrückzahlung kann den ursprünglichen Betrag übersteigen (normal mit Zinsen).
-* **Nach Tilgung**: Konto und Buchungen behalten; in Kontoverwaltung / Fonds einsehbar.
-* **Dashboard**: Schuldkarten, Warnungen und Hebel-Hinweise nur bei **Saldo > 0**. Bei Saldo null wird der Schuldbereich ausgeblendet. Gesamtschuld und Reinvermögen nur bei offenem Saldo.
+### Kredit / Verbindlichkeiten (Q&A)
+
+Q: Was bedeutet der Saldo eines Verbindlichkeitskontos?
+A: **Geschuldetes Kapital** (wie viel Sie der Bank schulden), nicht verfügbares Bargeld. Saldo null = getilgt.
+
+Q: Wie lege ich ein Verbindlichkeitskonto an?
+A: **Kontoverwaltung** → Konto hinzufügen → Typ **Verbindlichkeit (Kredit)** → Name, Währung, Jahreszins, optional Kreditlimit. Anfangssaldo **0**.
+
+Q: Wie erfasse ich eine Bankauszahlung aufs Depot?
+A: Fonds → **Überweisung** → **Verbindlichkeit → Depot** → Auszahlungsbetrag. **Nur ein Eintrag**; kein zusätzliches **Einzahlung** auf dem Verbindlichkeitskonto (Doppelzählung vermeiden).
+
+Q: Wie erfasse ich Tilgung?
+A: Fonds → **Überweisung** → **Depot → Verbindlichkeit** → Betrag = **nur Tilgung**. Der Saldo verfolgt nur Kapital und sollte bei Tilgung null sein.
+
+Q: Wo erfasse ich Kreditzinsen?
+A: **Depotkonto**. Fonds → Kreditzinsen → Depot wählen (nur Depotkonten in der Liste). Bei Bankabbuchung **Tilgung+Zinsen** **zwei Einträge**: ① Überweisung (Depot→Verbindlichkeit) **Tilgung**; ② Kreditzinsen auf **Depot** für Zinsen.
+
+Q: Wann gilt der Kredit als getilgt?
+A: Wenn der **Saldo null** ist (Überzahlung gilt ebenfalls als getilgt). Gesamtrückzahlung inkl. Zinsen übersteigt oft die ursprüngliche Auszahlung—normal.
+
+Q: Konto nach Tilgung löschen?
+A: Nein. Konto und Verlauf behalten. Bei Saldo null blendet das Dashboard den Schuldbereich aus.
+
+Q: Dashboard bei offener Schuld?
+A: **Spalte „Saldo / Schuld“ > 0** (geschuldetes Kapital): Karten „Kredit & Verbindlichkeiten“, Hauptkarte **Reinvermögen** (Gesamtvermögen − Gesamtschuld). **Spalte = 0**: Schuldbereich aus, Hauptkarte **Gesamtvermögen**.
 
 ### Transaktionstypen
 * **Buy/Sell**: Allgemeine Käufe/Verkäufe.
@@ -515,23 +535,14 @@ A: Die Teile mit Häkchen zeigen die Leistung am Ende dieses Jahres. Die Teile o
 Q: Warum unterscheiden sich Aktienkurse und Wechselkurse von den aktuellen Preisen, die durch Klicken auf „KI aktualisiert Kurse & Wechselkurse" erhalten werden?
 A: Da Aktienkurse und Wechselkurse von Webseiten aktueller Werte abgerufen werden, können die aktuellen Werte um drei bis fünf Minuten verzögert sein. Verwenden Sie sie daher nicht als Referenzwerte für Kauf und Verkauf. Es wird empfohlen, sich bei Kauf und Verkauf hauptsächlich auf Wertpapierfirmen zu beziehen. Diese Software eignet sich nur für statistische Vermögensfunktionen wie Notfallreserven, Reisefonds, Rentenfonds, Festgeld, Aktien und Anleihen usw. Sie hat keine Wertpapierhandelsfunktionen. Außerdem haben Investitionen Gewinne und Verluste. Denken Sie daran, Notfallreserven bereitzustellen. Vielen Dank für Ihre Nutzung.
 
-Q: Wie richte ich ein Kreditkonto ein und erfasse Auszahlung/Tilgung?
-A: **Kontoverwaltung** → Typ „Verbindlichkeit (Kredit)“, Jahreszins, optional Kreditlimit. **Auszahlung**: Fonds → Überweisung → Verbindlichkeit → Depot. **Tilgung**: Depot → Verbindlichkeit. Der Verbindlichkeitssaldo ist die geschuldete Summe (inkl. auf dem Verbindlichkeitskonto gebuchter Kreditzinsen).
-
-Q: Warum kein „Einzahlung“ auf dem Verbindlichkeitskonto für die Bankauszahlung?
-A: Einzahlung plus Überweisung kann die Schuld **doppelt** erhöhen. Nettoinvestition/XIRR ignorieren Einzahlungen auf Verbindlichkeitskonten, der angezeigte Schuldensaldo kann trotzdem zu hoch sein. **Nur eine** Überweisung Verbindlichkeit→Depot verwenden.
-
-Q: Wann ist der Kredit vollständig getilgt? Was, wenn die Gesamtrückzahlung den ursprünglichen Betrag übersteigt?
-A: Maßstab ist **Saldo des Verbindlichkeitskontos = 0**, nicht „Gesamtrückzahlung = ursprüngliche Auszahlung“. Auszahlungen und auf dem Verbindlichkeitskonto gebuchte Zinsen erhöhen den Saldo; Tilgungen senken ihn. Mehr zurückzuzahlen als der ursprüngliche Kreditbetrag ist normal. Jede Bankabbuchung erfassen; bei Saldo null blendet das Dashboard Schulden-UI aus—in der Kontoverwaltung prüfen.
-
 Q: Wie werden „genutzt / Limit / Auslastung %“ berechnet?
-A: Nur bei **Saldo > 0** sichtbar. **Genutzt** = aktueller Verbindlichkeitssaldo. **Limit** = eingetragenes Kreditlimit (gleiche Währung). **Auslastung** = genutzt ÷ Limit × 100 % (max. 100 %). Ohne Limit keine Fortschrittsanzeige.
+A: Nur wenn **Spalte „Saldo / Schuld“ > 0** für das Verbindlichkeitskonto. **Genutzt** = dieser Wert (Kapital aus Fondsbuchungen). **Limit** = Kreditlimit (gleiche Währung). **Auslastung** = genutzt ÷ Limit × 100 % (max. 100 %). Ohne Limit keine Fortschrittsanzeige.
 
 Q: Wie wird „geschätzte Zinsen nächsten Monat“ berechnet?
-A: **Monatszins** = Saldo × Jahreszins(%) ÷ 100 ÷ 12. Beispiel: 2.000.000 bei 2,2 % → ca. **3.667** pro Monat. Einfache Schätzung bei konstantem Saldo; die Bank kann abweichen.
+A: **Monatszins** = aktueller Saldo × Jahreszins(%) ÷ 100 ÷ 12. Beispiel: 2.000.000 bei 2,2 % → ca. **3.667** pro Monat. Einfache Schätzung; Bank kann abweichen. @ = Jahreszins des Kontos.
 
 Q: Zusammenhang Kredit, Nettoinvestition, XIRR und Reinvermögen?
-A: **Kredit Auszahlung/Tilgung** (Verbindlichkeit↔Depot) zählt zur **Nettoinvestition** und **XIRR**; **Kreditzinsen** nicht. **Reinvermögen** = Gesamtvermögen − Gesamtschuld. Bei **Saldo null** werden Schuldkarten und Warnungen ausgeblendet, Verlauf bleibt in der Nettoinvestitions-Aufstellung. XIRR bei früherem Fremdkapital vorsichtig interpretieren.
+A: **Auszahlung/Tilgung** (Verbindlichkeit↔Depot) zählt zu **Nettoinvestition** und **XIRR** (Hebel); **Kreditzinsen** nicht. **Gesamtvermögen** = Bestände + Depot-Bargeld; **Gesamtschuld** = Summe der Verbindlichkeitssalden (umgerechnet); **Reinvermögen** = Gesamtvermögen − Gesamtschuld. Bei Saldo null werden Schuldkarten ausgeblendet, Verlauf bleibt in der Nettoinvestitions-Aufstellung. XIRR bei früherem Fremdkapital vorsichtig interpretieren.
 
 Q: Wie zeichnet man Aktienübertragungen (von Depot A zu Depot B) auf?
 A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out** → Konto = Quelle (A) → Datum, Markt, Symbol, Stückzahl → **Zielkonto** (B) wählen → speichern. Die App legt **TRANSFER_OUT und TRANSFER_IN paarweise** an—kein zweiter manueller Eintrag nötig. Die automatisch erzeugte Einbuchung hat **Gebühren = 0**; Übertragungsgebühren nur bei der **Ausbuchung** erfassen. Preis = durchschnittliche Anschaffungskosten (nicht Marktpreis).

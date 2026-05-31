@@ -116,11 +116,13 @@ export const en: Translations = {
     endAssets: 'End Assets',
     annualProfit: 'Annual Profit',
     annualROI: 'Annual ROI',
-    brokerageAccounts: 'Brokerage Accounts',
+    brokerageAccounts: 'Account list',
     accountName: 'Account Name',
     totalAssetsNT: 'Total Assets',
     marketValueNT: 'Market Value',
-    balanceNT: 'Balance',
+    balanceNT: 'Balance / Debt',
+    balanceColumnTooltip:
+      'Brokerage: cash balance. Liability: principal owed. The Credit & debt section appears when this column is > 0 for a liability account.',
     profitNT: 'Profit',
     profitFormulaTooltip:
       'Total P/L = Unrealized + Realized + Div/Interest. Realized P/L includes SELL only; transfers are excluded.',
@@ -646,15 +648,33 @@ TradeView is an asset management tool that supports Taiwan and US stocks, helpin
 * **Export**: Fund outflow (e.g., living expenses withdrawal).
 * **Transfer**: Fund movement between different accounts (e.g., bank to brokerage account).
 * **Interest**: Record deposit or brokerage account interest.
-* **Loan interest**: Interest expense; on a **brokerage** account it reduces cash; on a **liability** account it increases debt balance.
+* **Loan interest**: Loan interest expense; recorded on a **brokerage** account it reduces cash (liability accounts are not shown in the dropdown).
 
-### Credit / liability accounts
-* **Account type**: In Account Management, choose **Liability (debt)** and optionally set debt type, **annual rate (%)**, **credit limit**, and linked brokerage account.
-* **Draw (recommended)**: Use Funds **Transfer** from **liability → brokerage** only. Do not also record a **Deposit** on the liability account (avoids duplicate debt balance).
-* **Repayment**: Transfer from brokerage → liability (amount as actually paid—principal or combined principal+interest).
-* **Paid off**: Judged by **liability balance reaching zero** (ledger total), not by matching total repayments to the original draw.
-* **After payoff**: Keep the liability account and fund records for audit; no need to delete the account.
-* **Dashboard**: Debt cards, payment/spread alerts, and leverage notes appear only while **balance > 0**. At zero balance the main dashboard hides the debt section (like having no loan). Total assets card shows debt and net worth only when debt > 0.
+### Credit / liability accounts (Q&A)
+
+Q: What does the liability account balance mean?
+A: It is **principal owed** (how much you owe the bank), not spendable cash. Zero balance = paid off.
+
+Q: How do I create a liability account?
+A: **Account Management** → Add account → type **Liability (debt)** → name, currency, annual rate, optional credit limit. Leave initial balance at **0**.
+
+Q: How do I record a bank draw to my brokerage?
+A: Funds → **Transfer** → **liability → brokerage** → disbursement amount. **One entry only**; do not also record **Deposit** on the liability account (avoids double-counting debt).
+
+Q: How do I record principal repayment?
+A: Funds → **Transfer** → **brokerage → liability** → amount = **principal only**. Liability balance tracks principal only and should reach zero when paid off.
+
+Q: Where do I record loan interest?
+A: **Brokerage account**. Funds → Loan interest → choose a brokerage account (dropdown lists brokerage accounts only). If the bank debits principal+interest together, use **two entries**: ① Transfer (brokerage→liability) for **principal**; ② Loan interest on the **brokerage** for interest.
+
+Q: When is the loan considered paid off?
+A: When the liability **balance reaches zero** (overpayment is also treated as paid off). Total repayments including interest often exceed the original draw—this is normal.
+
+Q: Should I delete the account after payoff?
+A: No. Keep the account and history. At zero balance the dashboard hides the debt section.
+
+Q: How does the dashboard look when there is debt?
+A: **Liability "Balance / Debt" column > 0** (principal owed): shows Credit & debt cards; main card shows **net worth** (total assets − total debt). **Column = 0**: debt section hidden; main card shows **total assets**.
 
 ### Transaction Types
 * **Buy/Sell**: General buy/sell transactions.
@@ -688,23 +708,14 @@ A: The parts with checkmarks show the performance at the end of that year. The p
 Q: Why are stock prices and exchange rates different from the current prices obtained by clicking "AI Update Prices & Exchange Rates"?
 A: Stock prices and exchange rates are scraped from web current values, so the current values may lag by three to five minutes. Therefore, do not use them as references for buying and selling. It is recommended to use securities companies as the main reference for buying and selling. This software is only suitable for statistical asset functions, such as emergency funds, travel funds, retirement funds, fixed deposits, stocks and bonds, etc. It does not have securities trading functions. Additionally, investments have profits and losses. Remember to reserve emergency funds. Thank you for using.
 
-Q: How do I set up a loan account and record draws/repayments?
-A: In **Account Management**, add an account with type **Liability (debt)**; set name, currency, annual rate, and optional credit limit. **Draw**: Funds → Transfer → from liability to brokerage. **Repayment**: Transfer from brokerage to liability. The liability balance is principal owed (including loan interest recorded on the liability side).
-
-Q: Why not use Deposit on the liability account for bank disbursement?
-A: Deposit plus liability→brokerage transfer can **double-count** on the liability ledger. Net invested / XIRR already ignore liability deposits, but the displayed debt balance may still be too high. Use **only** a liability→brokerage transfer for the draw.
-
-Q: How do I know the loan is fully repaid? What if total paid exceeds the original draw?
-A: The app uses **liability balance = 0**, not “total repaid = original borrow.” Draws and loan interest (on the liability account) increase balance; repayments decrease it. Paying more than the original principal is normal when interest is included. Record each bank payment; at zero balance the dashboard hides debt UI—confirm in Account Management.
-
 Q: How are “used / limit / utilization %” calculated?
-A: Shown only while **balance > 0**. **Used** = current liability account balance. **Limit** = credit limit (same currency). **Utilization** = used ÷ limit × 100% (capped at 100%). No bar if limit is not set.
+A: Shown only when the liability account **“Balance / Debt” column > 0**. **Used** = that column (principal owed from fund records). **Limit** = credit limit (same currency). **Utilization** = used ÷ limit × 100% (capped at 100%). No progress bar if limit is not set.
 
 Q: How is “estimated next-month interest” calculated?
-A: **Monthly estimate** = balance × annual rate(%) ÷ 100 ÷ 12. Example: 2,000,000 balance at 2.2% → about **3,667** per month. Simple interest, full balance for one month—an estimate only; your bank may accrue daily or vary with repayments.
+A: **Monthly estimate** = current balance × annual rate(%) ÷ 100 ÷ 12. Example: 2,000,000 owed at 2.2% → about **3,667** per month. Simple-interest estimate for a full month; banks may accrue daily or vary with repayments; @ shows the account annual rate.
 
 Q: How does debt relate to net invested, XIRR, and net worth?
-A: **Debt draws/repayments** (liability↔brokerage transfers) count in **net invested** and **XIRR**; **loan interest** does not. **Total assets** = holdings + brokerage cash; **total debt** = sum of liability balances (converted); **net worth** = total assets − total debt. After **balance reaches zero**, debt cards and alerts hide on the dashboard, but historical draws/repayments remain in the net-invested breakdown. Interpret XIRR carefully if you used leverage.
+A: **Debt draws/repayments** (liability↔brokerage transfers) count in **net invested** and **XIRR** (leverage); **loan interest** does not. **Total assets** = holdings + brokerage cash; **total debt** = sum of liability balances (converted); **net worth** = total assets − total debt. After balance reaches zero, debt cards and alerts hide, but historical draws/repayments remain in the net-invested breakdown. Interpret XIRR carefully if you used leverage.
 
 Q: How to record stock transfers (from Brokerage A to Brokerage B)?
 A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → account = source (A) → date, market, ticker, quantity → choose **Target brokerage account** (B) → confirm. The app saves **both** a TRANSFER_OUT and a paired TRANSFER_IN for you—no need to add the second leg manually. The auto-created Transfer In has **fees = 0**; enter any transfer **fees on the Transfer Out** row. Price defaults to average cost—use cost basis, not market price.
