@@ -57,7 +57,7 @@ export const fr: Translations = {
     marketValueNT: 'Valeur Marchande',
     balanceNT: 'Solde / Dette',
     balanceColumnTooltip:
-      'Courtage : solde de trésorerie. Passif : capital dû. La section Crédit & passif s\'affiche lorsque cette colonne > 0 pour un compte passif.',
+      'Courtage : solde de trésorerie ; passif : capital dû.',
     profitNT: 'Profit',
     profitFormulaTooltip: 'P/L total = Non realise + Realise + Div./Interets. Le realise ne compte que les SELL, les transferts sont exclus.',
     unrealizedPL: 'P/L non realise',

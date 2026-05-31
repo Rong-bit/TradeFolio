@@ -57,7 +57,7 @@ export const pt: Translations = {
     marketValueNT: 'Valor de Mercado',
     balanceNT: 'Saldo / Dívida',
     balanceColumnTooltip:
-      'Corretagem: saldo em caixa. Passivo: capital em dívida. A secção Crédito & passivo aparece quando esta coluna > 0 numa conta passivo.',
+      'Corretagem: saldo em caixa; passivo: capital em dívida.',
     profitNT: 'Lucro',
     profitFormulaTooltip: 'P/L Total = Nao Realizado + Realizado + Dividendos/Juros. O realizado considera apenas SELL; transferências são excluídas.',
     unrealizedPL: 'P/L Não Realizado',

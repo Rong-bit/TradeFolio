@@ -123,7 +123,7 @@ export const ko: Translations = {
     marketValueNT: '시가총액',
     balanceNT: '잔액／차입',
     balanceColumnTooltip:
-      '증권 계좌: 현금 잔액. 부채 계좌: 차입 원금. 대시보드 「신용·부채」는 이 열이 > 0인 부채 계좌에서 표시됩니다.',
+      '증권 계좌: 현금 잔액; 부채 계좌: 차입 원금.',
     profitNT: '손익',
     profitFormulaTooltip: '총 손익 = 미실현 + 실현 + 배당/이자. 실현 손익은 SELL만 집계하며, 계좌 간 이관은 제외됩니다.',
     unrealizedPL: '미실현 손익',

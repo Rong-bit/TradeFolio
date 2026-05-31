@@ -122,7 +122,7 @@ export const en: Translations = {
     marketValueNT: 'Market Value',
     balanceNT: 'Balance / Debt',
     balanceColumnTooltip:
-      'Brokerage: cash balance. Liability: principal owed. The Credit & debt section appears when this column is > 0 for a liability account.',
+      'Brokerage: cash balance; liability: principal owed.',
     profitNT: 'Profit',
     profitFormulaTooltip:
       'Total P/L = Unrealized + Realized + Div/Interest. Realized P/L includes SELL only; transfers are excluded.',

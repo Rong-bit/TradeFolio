@@ -123,7 +123,7 @@ export const ja: Translations = {
     marketValueNT: '時価',
     balanceNT: '残高／借入',
     balanceColumnTooltip:
-      '証券口座：現金残高。負債口座：借入元本。ダッシュボード「借入・負債」はこの欄が > 0 の負債口座で表示されます。',
+      '証券口座：現金残高；負債口座：借入元本。',
     profitNT: '損益',
     profitFormulaTooltip: '総損益 = 含み + 実現 + 配当/利息。実現損益は SELL のみ集計し、移管は含めません。',
     unrealizedPL: '含み損益',

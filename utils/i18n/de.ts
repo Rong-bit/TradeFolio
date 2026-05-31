@@ -57,7 +57,7 @@ export const de: Translations = {
     marketValueNT: 'Marktwert',
     balanceNT: 'Saldo / Schuld',
     balanceColumnTooltip:
-      'Depot: Bargeldsaldo. Verbindlichkeit: geschuldetes Kapital. Bereich „Kredit & Verbindlichkeiten“ erscheint, wenn diese Spalte > 0 ist.',
+      'Depot: Bargeldsaldo; Verbindlichkeit: geschuldetes Kapital.',
     profitNT: 'Gewinn',
     profitFormulaTooltip: 'Gesamt G/V = Nicht realisiert + Realisiert + Div./Zinsen. Realisiert wird nur aus SELL berechnet, Überträge sind ausgeschlossen.',
     unrealizedPL: 'Nicht real. G/V',

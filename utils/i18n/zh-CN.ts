@@ -59,7 +59,7 @@ zhCN.dashboard = {
   marketValueNT: '市值',
   balanceNT: '余额／欠款',
   balanceColumnTooltip:
-    '证券户：现金余额。信贷专户：欠款本金。仪表板「信贷／负债」区块以信贷专户此栏 > 0 为准。',
+    '证券户：现金余额；信贷专户：欠款本金。',
   profitNT: '损益',
   profitFormulaTooltip:
     '总损益 = 未实现 + 已实现 + 股息/利息。已实现仅统计 SELL，转仓不计入已实现。',
