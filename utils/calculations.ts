@@ -31,6 +31,7 @@ import {
   cashFlowAmountTWD,
   netInvestedDeltaForCashFlow,
   isDebtRepaymentOutflow,
+  effectiveLiabilityBalance,
 } from './debtAccountHelpers';
 
 /** 匯率物件（X→TWD：1 X = N TWD） */
@@ -927,7 +928,11 @@ export function buildLedgerState(
 
 export const calculateAccountBalances = (accounts: Account[], cashFlows: CashFlow[], transactions: Transaction[]): Account[] => {
   const { finalBalancesByAccountId } = buildLedgerState(transactions, cashFlows, accounts);
-  return accounts.map(a => ({ ...a, balance: finalBalancesByAccountId[a.id] ?? 0 }));
+  return accounts.map(a => {
+    const raw = finalBalancesByAccountId[a.id] ?? 0;
+    const balance = isLiabilityAccount(a) ? effectiveLiabilityBalance(raw) : raw;
+    return { ...a, balance };
+  });
 };
 
 /** 年底/某日持倉（依帳戶拆開，供正確依證券戶幣別換匯） */
