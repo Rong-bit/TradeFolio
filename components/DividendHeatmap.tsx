@@ -91,7 +91,7 @@ const DividendHeatmap: React.FC = () => {
   const tr = t(language);
   const [hoveredCell, setHoveredCell] = useState<{ year: number; month: number } | null>(null);
   const [showUpcomingDetails, setShowUpcomingDetails] = useState(false);
-  const [deductTwWireFee, setDeductTwWireFee] = useState(false);
+  const [deductTwWireFee, setDeductTwWireFee] = useState(true);
   /** 每個 pending row 的「選擇入帳帳戶」狀態，key = `${market}|${ticker}|${exDate}` */
   const [pendingAccountByKey, setPendingAccountByKey] = useState<Record<string, string>>({});
   /** 按下「新增至交易記錄」後待使用者確認的 transaction（暫存於 state，按確認後才 addTransaction） */
