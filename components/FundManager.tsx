@@ -202,10 +202,14 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
 
   // 當帳戶列表變更或初始化時，確保 accountId 有效
   useEffect(() => {
-    if (accounts.length > 0 && !accounts.find(a => a.id === accountId)) {
-      setAccountId(accounts[0].id);
+    const eligible =
+      type === CashFlowType.LOAN_INTEREST
+        ? accounts.filter(a => isBrokerageAccount(a))
+        : accounts;
+    if (eligible.length > 0 && !eligible.find(a => a.id === accountId)) {
+      setAccountId(eligible[0].id);
     }
-  }, [accounts, accountId]);
+  }, [accounts, accountId, type]);
 
   // 當進入編輯模式時，載入現有資金記錄資料
   useEffect(() => {
@@ -410,6 +414,11 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
   const isTransfer = type === CashFlowType.TRANSFER;
   const isInterest = type === CashFlowType.INTEREST;
   const isLoanInterest = type === CashFlowType.LOAN_INTEREST;
+  const cashFlowSourceAccounts = useMemo(
+    () =>
+      isLoanInterest ? accounts.filter(a => isBrokerageAccount(a)) : accounts,
+    [accounts, isLoanInterest]
+  );
   const isCrossCurrencyTransfer = isTransfer && selectedAccount && targetAccount && selectedAccount.currency !== targetAccount.currency;
   const transferDebtHint =
     isTransfer && selectedAccount && targetAccount
@@ -1294,7 +1303,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                         {type === CashFlowType.TRANSFER ? ff.sourceAccount : ff.account}
                       </label>
                       <select value={accountId} onChange={e => setAccountId(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}>
-                        {accounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
+                        {cashFlowSourceAccounts.map(a => <option key={a.id} value={a.id}>{a.name} ({a.currency})</option>)}
                       </select>
                     </div>
                     <div>
