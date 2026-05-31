@@ -19,6 +19,12 @@ export function hasActiveDebtBalance(account: Account | undefined): boolean {
   return account.balance > ACTIVE_DEBT_BALANCE_EPSILON;
 }
 
+/** 儀表板／負債合計：信貸戶逾還（負餘額）視為 0，避免淨資產高估 */
+export function effectiveLiabilityBalance(balance: number): number {
+  if (!Number.isFinite(balance)) return 0;
+  return balance > 0 ? balance : 0;
+}
+
 export function getAccountKind(account: Account | undefined): AccountKind {
   return account?.accountKind ?? AccountKind.BROKERAGE;
 }
@@ -176,7 +182,8 @@ export function computeDebtSummary(
 
   accounts.forEach(a => {
     if (!isLiabilityAccount(a)) return;
-    totalDebtBalanceTWD += a.balance * currencyToTWDRate(a.currency, rates);
+    totalDebtBalanceTWD +=
+      effectiveLiabilityBalance(a.balance) * currencyToTWDRate(a.currency, rates);
   });
 
   cashFlows.forEach(cf => {
