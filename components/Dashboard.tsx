@@ -573,6 +573,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     });
   }, [chartData, attributionSeries, cashFlows, transactions, portfolioAccounts, rates, historicalData, toBase, translations, roiByCalendarYear]);
 
+  const hasInterpolatedQuarterData = useMemo(
+    () => quarterlyTrendData.some(d => !d.isRealData),
+    [quarterlyTrendData]
+  );
+
   const hasAttributionMismatch = attributionSeries.some(item => !item.isConsistent);
 
   const waterfallYearRows = useMemo(
@@ -1260,15 +1265,24 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   )}
                 </div>
                 {hasAttributionMismatch && (
-                  <div className="max-sm:mx-3 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <div className="max-sm:mx-3 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
                     資料對帳提醒：部分年度「資產變化」與「淨流入 + 收益 + 市場損益」存在微小差異，請檢查匯率或歷史估值來源。
                   </div>
                 )}
-                <div className="max-sm:px-3 mt-2 text-xs text-slate-400 dark:text-slate-300 flex flex-wrap gap-x-2 gap-y-1 items-baseline">
-                  <span>{translations.dashboard.chartLegendQuarterSnapshot}</span>
-                  <span>{translations.dashboard.chartLegendLinearInterpolation}</span>
-                  <span>{translations.dashboard.chartLabels.chartLegendYearlyPeriodRoi}</span>
-                </div>
+                {hasInterpolatedQuarterData && (
+                  <div className="max-sm:mx-3 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span>{translations.dashboard.chartLegendLinearInterpolation}</span>
+                    {onUpdateHistorical && (
+                      <button
+                        type="button"
+                        onClick={onUpdateHistorical}
+                        className="font-medium text-indigo-700 hover:text-indigo-900 underline dark:text-indigo-300 dark:hover:text-indigo-200"
+                      >
+                        {translations.dashboard.aiCorrectHistory}
+                      </button>
+                    )}
+                  </div>
+                )}
               </>
             ) : (
               <div className="max-sm:px-3">
