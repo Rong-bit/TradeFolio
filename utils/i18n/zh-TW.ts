@@ -120,7 +120,7 @@ export const zhTW: Translations = {
     marketValueNT: '市值',
     balanceNT: '餘額／欠款',
     balanceColumnTooltip:
-      '證券戶：現金餘額。信貸專戶：欠款本金。儀表板「信貸／負債」區塊以信貸專戶此欄 > 0 為準。',
+      '證券戶：現金餘額。信貸專戶：欠款本金。',
     profitNT: '損益',
     profitFormulaTooltip:
       '總損益 = 未實現 + 已實現 + 股利/利息。已實現僅計 SELL，轉倉不列入已實現。',
