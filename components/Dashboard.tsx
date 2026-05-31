@@ -1686,7 +1686,17 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 </th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.totalAssetsNT}</th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.marketValueNT}</th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.balanceNT}</th>
+                <th className="px-3 py-2 text-right">
+                  <span className="inline-flex items-center justify-end gap-1">
+                    {translations.dashboard.balanceNT}
+                    <span
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-[10px] text-slate-500 dark:text-slate-400 cursor-help"
+                      title={translations.dashboard.balanceColumnTooltip}
+                    >
+                      i
+                    </span>
+                  </span>
+                </th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.unrealizedPL}</th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.realizedPL}</th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.dividendInterest}</th>
