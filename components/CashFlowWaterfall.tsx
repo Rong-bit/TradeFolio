@@ -56,7 +56,7 @@ export const WaterfallLegendHints: React.FC = () => {
   const tr = t(language);
 
   return (
-    <div className="mt-3 max-sm:px-3 border-t border-slate-200 dark:border-slate-600 pt-2.5 space-y-2 text-sm leading-snug text-slate-600 dark:text-slate-400">
+    <div className="mt-3 max-sm:px-3 border-t border-slate-200 dark:border-slate-600 pt-2.5 space-y-2 text-[14px] leading-snug text-slate-600 dark:text-slate-400">
       <div className="flex flex-wrap gap-x-5 gap-y-2">
         <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)] grow max-w-full">
           <span className="inline-flex gap-0.5 shrink-0 mt-0.5">
@@ -261,7 +261,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader, fillParent, isCo
               content={waterfallTooltipContent}
             />
             <Legend
-              wrapperStyle={{ color: axisTextColor, fontSize: 12, paddingTop: 6 }}
+              wrapperStyle={{ color: axisTextColor, fontSize: 14, paddingTop: 6 }}
               formatter={(value: string) => {
                 if (value === 'segPLPosSwapped' || value === 'segPLPosDefault') return tr.waterfall.stockPL;
                 if (value === 'segFlowPosDefault' || value === 'segFlowPosSwapped') return tr.dashboard.annualNetInflow;
