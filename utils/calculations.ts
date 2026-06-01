@@ -966,7 +966,15 @@ export const getPortfolioStateAtDate = (
         if (cf.type === CashFlowType.DEPOSIT || cf.type === CashFlowType.INTEREST) {
             cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) + cf.amount;
         } else if (cf.type === CashFlowType.WITHDRAW) {
-            cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) - cf.amount;
+            let feeAmount = cf.fee || 0;
+            if (feeAmount > 0 && sourceAcc && sourceAcc.currency !== Currency.TWD) {
+              if (cf.exchangeRate && cf.exchangeRate > 0 && cf.exchangeRate !== 1) {
+                if (sourceAcc.currency === Currency.USD || sourceAcc.currency === Currency.JPY) {
+                  feeAmount = feeAmount / cf.exchangeRate;
+                }
+              }
+            }
+            cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) - cf.amount - feeAmount;
         } else if (cf.type === CashFlowType.LOAN_INTEREST) {
             if (isLiabilityAccount(sourceAcc)) {
               cashBalances[cf.accountId] = (cashBalances[cf.accountId] || 0) + cf.amount;
@@ -1530,21 +1538,11 @@ export const buildAttributionSeries = (
 ): AttributionPoint[] => {
   if (chartData.length === 0) return [];
 
-  const getCashFlowAmountTWD = (cf: CashFlow): number => {
-    if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
-    const account = accounts.find(a => a.id === cf.accountId);
-    const sourceCurrency = account?.currency ?? Currency.TWD;
-    const rate = (cf.exchangeRate && cf.exchangeRate > 0)
-      ? cf.exchangeRate
-      : currencyToTWDRate(sourceCurrency, rates);
-    return cf.amount * rate;
-  };
-
   const incomeByYear: Record<string, number> = {};
   cashFlows.forEach(cf => {
     if (cf.type !== CashFlowType.INTEREST) return;
     const year = String(new Date(cf.date).getFullYear());
-    incomeByYear[year] = (incomeByYear[year] || 0) + getCashFlowAmountTWD(cf);
+    incomeByYear[year] = (incomeByYear[year] || 0) + cashFlowAmountTWD(cf, accounts, rates);
   });
   transactions.forEach(tx => {
     if (tx.type !== TransactionType.CASH_DIVIDEND) return;
@@ -1593,15 +1591,7 @@ const cashFlowAmountTWDForWaterfall = (
   cf: CashFlow,
   accounts: Account[],
   rates: ExchangeRates
-): number => {
-  if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
-  const account = accounts.find(a => a.id === cf.accountId);
-  const sourceCurrency = account?.currency ?? Currency.TWD;
-  const rate = (cf.exchangeRate && cf.exchangeRate > 0)
-    ? cf.exchangeRate
-    : currencyToTWDRate(sourceCurrency, rates);
-  return cf.amount * rate;
-};
+): number => cashFlowAmountTWD(cf, accounts, rates);
 
 const monthInQuarter = (monthIndex0: number, quarter: number): boolean => {
   const m = monthIndex0 + 1;
@@ -1763,16 +1753,6 @@ export const buildQuarterlyTrendData = (
   isRealData: boolean;
 }> => {
   if (chartData.length === 0 || attribution.length === 0) return [];
-
-  const getCashFlowAmountTWD = (cf: CashFlow): number => {
-    if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
-    const account = accounts.find(a => a.id === cf.accountId);
-    const sourceCurrency = account?.currency ?? Currency.TWD;
-    const rate = (cf.exchangeRate && cf.exchangeRate > 0)
-      ? cf.exchangeRate
-      : currencyToTWDRate(sourceCurrency, rates);
-    return cf.amount * rate;
-  };
 
   // 建立年底資產快照 map
   const assetsByYear = new Map<number, number>();
@@ -1989,21 +1969,6 @@ export const calculateAccountPerformance = (
     return 1;
   };
 
-  const getCashFlowAmountTWD = (cf: CashFlow): number => {
-    if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
-
-    const sourceAccount = accounts.find(a => a.id === cf.accountId);
-    if (!sourceAccount) return cf.amount;
-
-    if (sourceAccount.currency === Currency.TWD) {
-      return cf.amount;
-    }
-
-    const sourceRate = getRateByCurrency(sourceAccount.currency);
-    const effectiveRate = (cf.exchangeRate && cf.exchangeRate > 0) ? cf.exchangeRate : sourceRate;
-    return cf.amount * effectiveRate;
-  };
-
   return accounts.map(acc => {
     const accountRate = getRateByCurrency(acc.currency);
     const normalizedAccountRate = accountRate > 0 ? accountRate : 1;
@@ -2024,7 +1989,7 @@ export const calculateAccountPerformance = (
     
     // 1. Process Cash Flows (Deposits / Withdrawals)
     cashFlows.forEach(cf => {
-      const amountFlowTWD = getCashFlowAmountTWD(cf);
+      const amountFlowTWD = cashFlowAmountTWD(cf, accounts, rates);
 
       if (cf.accountId === acc.id) {
         if (cf.type === CashFlowType.DEPOSIT) {
@@ -2058,7 +2023,7 @@ export const calculateAccountPerformance = (
     cashFlows.forEach(cf => {
       if (cf.accountId !== acc.id) return;
       if (cf.type !== CashFlowType.INTEREST) return;
-      incomeTWD += getCashFlowAmountTWD(cf);
+      incomeTWD += cashFlowAmountTWD(cf, accounts, rates);
     });
 
     // 已實現採券商常見口徑：僅統計 SELL，且以「賣出淨額 - 對應成本」計算。
