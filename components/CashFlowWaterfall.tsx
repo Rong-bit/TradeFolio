@@ -55,9 +55,13 @@ export const WaterfallLegendHints: React.FC = () => {
   const tr = t(language);
 
   return (
-    <div className="mt-3 border-t border-slate-200 dark:border-slate-600 pt-2.5 space-y-2 text-[11px] leading-snug text-slate-600 dark:text-slate-400">
-      <div className="flex flex-wrap gap-x-5 gap-y-2">
-        <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
+    <div className="mt-3 border-t border-slate-200 dark:border-slate-600 pt-2.5 text-[11px] leading-snug text-slate-600 dark:text-slate-400">
+      {/*
+        避免 flex-wrap + min-width 在中等寬度讓第三項單獨換行、右側留大片空白；
+        手機直排、md 以上三等分欄。
+      */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2.5">
+        <div className="flex items-start gap-2 min-w-0">
           <span className="inline-flex gap-0.5 shrink-0 mt-0.5">
             <span
               className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
@@ -68,22 +72,22 @@ export const WaterfallLegendHints: React.FC = () => {
               style={{ backgroundColor: WF_COLOR_INFLOW_NEG }}
             />
           </span>
-          <span>
+          <p className="min-w-0">
             <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.dashboard.annualNetInflow}</span>
             <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintInflow}</span>
-          </span>
-        </span>
-        <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
+          </p>
+        </div>
+        <div className="flex items-start gap-2 min-w-0">
           <span
             className="w-3 h-3 rounded-sm shrink-0 mt-0.5 ring-1 ring-slate-200/80 dark:ring-slate-600"
             style={{ backgroundColor: WF_COLOR_DIVIDEND }}
           />
-          <span>
+          <p className="min-w-0">
             <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.waterfall.dividend}</span>
             <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintDividend}</span>
-          </span>
-        </span>
-        <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
+          </p>
+        </div>
+        <div className="flex items-start gap-2 min-w-0">
           <span className="inline-flex gap-0.5 shrink-0 mt-0.5">
             <span
               className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
@@ -94,11 +98,11 @@ export const WaterfallLegendHints: React.FC = () => {
               style={{ backgroundColor: WF_COLOR_PL_NEG }}
             />
           </span>
-          <span>
+          <p className="min-w-0">
             <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.waterfall.stockPL}</span>
             <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintPL}</span>
-          </span>
-        </span>
+          </p>
+        </div>
       </div>
     </div>
   );
