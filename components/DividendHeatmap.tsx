@@ -9,6 +9,7 @@ import { t, translate } from '../utils/i18n';
 import { useDividendSchedules } from '../hooks/useDividendSchedules';
 import { useActualDividends } from '../hooks/useActualDividends';
 import { findExistingCashDividendInSameMonth } from '../utils/dividendMatching';
+import { formatLocalYmd } from '../utils/recurringDeposits';
 import {
   dividendScheduleMapKey,
   marketToYahooMarketForDividends,
@@ -81,6 +82,41 @@ function pickNextUpcomingMonth(
 function shiftMonthForTwPayout(month: number, market: Market): number {
   if (market !== Market.TW) return month;
   return (month + 1) % 12;
+}
+
+/** 除息日 YYYY-MM-DD 的本地年月（避免 UTC 切日誤差） */
+function exYmdYearMonth(ymd: string): { year: number; month: number } | null {
+  const d = new Date(`${ymd}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  return { year: d.getFullYear(), month: d.getMonth() };
+}
+
+/**
+ * 本列「確認除息日」：Yahoo 日曆／最近除息日，或與推估月一致且有待補登的實績除息日。
+ * 例：BNDW 6/1 除息當天，日曆 nextExDate 可能尚未列入，但 lastExDate 或實績為 2026-06-01。
+ */
+function resolveConfirmedExDateYmd(
+  row: { exDate: string; lastExDate?: string },
+  paList: Array<{ exDate: string }>,
+  displayMonthIndex: number | null,
+  displayYear: number
+): string {
+  if (row.exDate?.trim()) return row.exDate.trim();
+  if (displayMonthIndex == null) return '';
+
+  const sameDisplayMonth = (ymd: string) => {
+    const ym = exYmdYearMonth(ymd);
+    return !!ym && ym.year === displayYear && ym.month === displayMonthIndex;
+  };
+
+  if (row.lastExDate && sameDisplayMonth(row.lastExDate)) return row.lastExDate;
+
+  const pendingInMonth = paList
+    .filter(p => sameDisplayMonth(p.exDate))
+    .sort((a, b) => b.exDate.localeCompare(a.exDate));
+  if (pendingInMonth.length > 0) return pendingInMonth[0].exDate;
+
+  return '';
 }
 
 
@@ -304,7 +340,7 @@ const DividendHeatmap: React.FC = () => {
    * 其餘 gating（MoneyDJ/Yahoo 來源、90 天回溯窗、除息日 ≤ 今天）與單帳戶版本相同。
    */
   const pendingActualRows = useMemo(() => {
-    const todayYmd = new Date().toISOString().slice(0, 10);
+    const todayYmd = formatLocalYmd(new Date());
     const PENDING_LOOKBACK_DAYS = 90;
     const lookbackCutoffMs = Date.now() - PENDING_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
     type Row = {
@@ -985,24 +1021,29 @@ const DividendHeatmap: React.FC = () => {
                       );
                       const displayInferredMonth = preferredInferredMonth ?? r.inferredMonth;
                       const displayMonthIndex = r.exDate
-                        ? new Date(`${r.exDate}T12:00:00`).getMonth()
+                        ? exYmdYearMonth(r.exDate)?.month ?? null
                         : (displayInferredMonth ?? null);
-                      // 「新增至交易記錄」：僅在 Yahoo 有確定除息日，且待補登實績的除息「年月」與該除息日一致
-                      const hasConfirmedExDate = Boolean(r.exDate?.trim());
-                      const confirmedExDt = hasConfirmedExDate
-                        ? new Date(`${r.exDate}T12:00:00`)
+                      const displayYear = r.exDate
+                        ? exYmdYearMonth(r.exDate)?.year ?? new Date().getFullYear()
+                        : new Date().getFullYear();
+                      const confirmedExDateYmd = resolveConfirmedExDateYmd(
+                        r,
+                        paList,
+                        displayMonthIndex,
+                        displayYear
+                      );
+                      const confirmedYm = confirmedExDateYmd
+                        ? exYmdYearMonth(confirmedExDateYmd)
                         : null;
                       const visiblePaList =
-                        !hasConfirmedExDate ||
-                        !confirmedExDt ||
-                        Number.isNaN(confirmedExDt.getTime())
+                        !confirmedYm
                           ? []
                           : paList.filter(p => {
-                              const paDt = new Date(`${p.exDate}T12:00:00`);
-                              if (Number.isNaN(paDt.getTime())) return false;
+                              const paYm = exYmdYearMonth(p.exDate);
                               return (
-                                paDt.getFullYear() === confirmedExDt.getFullYear() &&
-                                paDt.getMonth() === confirmedExDt.getMonth()
+                                !!paYm &&
+                                paYm.year === confirmedYm.year &&
+                                paYm.month === confirmedYm.month
                               );
                             });
                       return (
@@ -1010,13 +1051,13 @@ const DividendHeatmap: React.FC = () => {
                           <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
                           <td className="px-2 py-1.5">{r.market}</td>
                           <td className="px-2 py-1.5 tabular-nums">
-                            {r.exDate || '—'}
+                            {confirmedExDateYmd || '—'}
                           </td>
                           <td className="px-2 py-1.5 tabular-nums">
                             {displayMonthIndex != null ? (
                               <span
-                                className={!r.exDate ? 'cursor-help border-b border-dotted border-slate-300' : undefined}
-                                title={!r.exDate ? dtx.upcomingInferredMonthHint : undefined}
+                                className={!confirmedExDateYmd ? 'cursor-help border-b border-dotted border-slate-300' : undefined}
+                                title={!confirmedExDateYmd ? dtx.upcomingInferredMonthHint : undefined}
                               >
                                 {`${displayMonthIndex + 1}月`}
                               </span>
@@ -1072,7 +1113,7 @@ const DividendHeatmap: React.FC = () => {
                               '—'
                             )}
                           </td>
-                          {/* 操作欄：有 Yahoo 確定除息日，且該月有待補登實績配息時才顯示 */}
+                          {/* 操作欄：有確認除息日（日曆／最近除息／實績），且該月有待補登實績配息 */}
                           <td className="px-2 py-1.5">
                             {visiblePaList.length > 0 ? (
                               <div className="flex flex-col gap-1.5">
