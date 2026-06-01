@@ -81,7 +81,8 @@ export function useActualDividends(
     for (const j of jobs) {
       const hit = cached[j.key];
       const isFresh = !!hit && Date.now() - hit.at < CACHE_TTL_MS;
-      if (isFresh) {
+      // 僅快取成功結果（含空陣列）；舊版曾把 fetch 失敗寫成 null 並快取 24h，導致手機整欄「—」
+      if (isFresh && Array.isArray(hit.data)) {
         initial[j.key] = hit.data;
       } else {
         initial[j.key] = 'loading';
@@ -107,7 +108,6 @@ export function useActualDividends(
           setMap(prev => ({ ...prev, [job.key]: data }));
         } catch {
           if (cancelled) return;
-          writeCacheEntry(job.key, null);
           setMap(prev => ({ ...prev, [job.key]: null }));
         }
       }
