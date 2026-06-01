@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
   Brush,
   TooltipProps,
   ReferenceLine,
@@ -258,6 +259,15 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader, fillParent, isCo
             <Tooltip
               contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0' }}
               content={waterfallTooltipContent}
+            />
+            <Legend
+              wrapperStyle={{ color: axisTextColor, fontSize: 12, paddingTop: 6 }}
+              formatter={(value: string) => {
+                if (value === 'segPLPosSwapped' || value === 'segPLPosDefault') return tr.waterfall.stockPL;
+                if (value === 'segFlowPosDefault' || value === 'segFlowPosSwapped') return tr.dashboard.annualNetInflow;
+                if (value === 'segIncomeDefault' || value === 'segIncomeSwapped') return tr.waterfall.dividend;
+                return value;
+              }}
             />
             <Bar
               dataKey="segFlowPosSwapped"
