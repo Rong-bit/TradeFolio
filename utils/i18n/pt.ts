@@ -84,6 +84,7 @@ export const pt: Translations = {
     deposit: 'Depósito(+)',
     withdraw: 'Saque(-)',
     taiwanDollar: 'TWD',
+    twdIncludesFee: 'TWD (incl. fee)',
     aiAdvisor: 'Assistente Gemini AI',
     aiAdvisorDesc: 'Análise de Carteira',
     notInvestmentAdvice: 'Não é aconselhamento de investimento.',

@@ -158,6 +158,7 @@ export const ja: Translations = {
     historicalRate: '履歴為替',
     currentRate: '現在為替',
     taiwanDollar: '台湾ドル',
+    twdIncludesFee: 'TWD（手数料込）',
     chartLabels: {
       investmentCost: '投資コスト',
       accumulatedPL: '累積損益',

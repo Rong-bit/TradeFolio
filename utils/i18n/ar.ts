@@ -92,6 +92,7 @@ export const ar: Translations = {
     historicalRate: 'السعر التاريخي',
     currentRate: 'السعر الحالي',
     taiwanDollar: 'TWD',
+    twdIncludesFee: 'TWD (يشمل الرسوم)',
     chartLabels: {
       investmentCost: 'تكلفة الاستثمار',
       accumulatedPL: 'الربح/الخسارة المتراكم',

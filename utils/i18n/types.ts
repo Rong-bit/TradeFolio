@@ -185,6 +185,7 @@ export interface Translations {
     historicalRate: string;
     currentRate: string;
     taiwanDollar: string;
+    twdIncludesFee: string;
     chartLabels: {
       investmentCost: string;
       accumulatedPL: string;

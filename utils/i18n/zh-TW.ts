@@ -156,6 +156,7 @@ export const zhTW: Translations = {
     historicalRate: '歷史匯率',
     currentRate: '目前匯率',
     taiwanDollar: '台幣',
+    twdIncludesFee: '台幣（含手續費）',
     chartLabels: {
       investmentCost: '投資成本',
       accumulatedPL: '累積損益',

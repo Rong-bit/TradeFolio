@@ -95,6 +95,7 @@ zhCN.dashboard = {
   historicalRate: '历史汇率',
   currentRate: '目前汇率',
   taiwanDollar: '台币',
+  twdIncludesFee: '台币（含手续费）',
   chartLabels: {
     investmentCost: '投资成本',
     accumulatedPL: '累积损益',

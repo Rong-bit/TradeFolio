@@ -92,6 +92,7 @@ export const hi: Translations = {
     historicalRate: 'ऐतिहासिक दर',
     currentRate: 'वर्तमान दर',
     taiwanDollar: 'TWD',
+    twdIncludesFee: 'TWD (incl. fee)',
     chartLabels: {
       investmentCost: 'निवेश लागत',
       accumulatedPL: 'संचित लाभ/हानि',

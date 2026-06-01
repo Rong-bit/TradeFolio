@@ -158,6 +158,7 @@ export const ko: Translations = {
     historicalRate: '기록 환율',
     currentRate: '현재 환율',
     taiwanDollar: '대만 달러',
+    twdIncludesFee: 'TWD (수수료 포함)',
     chartLabels: {
       investmentCost: '투자 비용',
       accumulatedPL: '누적 손익',

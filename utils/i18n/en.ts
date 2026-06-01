@@ -158,6 +158,7 @@ export const en: Translations = {
     historicalRate: 'Historical Rate',
     currentRate: 'Current Rate',
     taiwanDollar: 'TWD',
+    twdIncludesFee: 'TWD (incl. fee)',
     chartLabels: {
       investmentCost: 'Investment Cost',
       accumulatedPL: 'Accumulated P/L',
