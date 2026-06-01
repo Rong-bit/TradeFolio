@@ -336,14 +336,14 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
        if (type === CashFlowType.DEPOSIT) {
           calculatedTWD = (numAmount * numRate) + numFee;
        } else if (type === CashFlowType.WITHDRAW || type === CashFlowType.LOAN_INTEREST) {
-          calculatedTWD = (numAmount * numRate) - numFee;
+          calculatedTWD = (numAmount * numRate) + numFee;
        } else {
           calculatedTWD = (numAmount * numRate);
        }
     } else if (account?.currency === Currency.TWD) {
         // TWD Logic
         if (type === CashFlowType.DEPOSIT) calculatedTWD = numAmount + numFee;
-        else if (type === CashFlowType.WITHDRAW || type === CashFlowType.LOAN_INTEREST) calculatedTWD = numAmount - numFee;
+        else if (type === CashFlowType.WITHDRAW || type === CashFlowType.LOAN_INTEREST) calculatedTWD = numAmount + numFee;
         else calculatedTWD = numAmount;
     }
     
@@ -1020,22 +1020,23 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                    const needsTwdPerAccountForCost = account && account.currency !== Currency.TWD;
 
                    // 總計成本 (TWD)，用於換算為基準幣顯示
+                   const rate =
+                     cf.exchangeRate ??
+                     (needsTwdPerAccountForCost ? currencyToTWDRate(accountCurrency, rates) : 1);
+                   const baseAmt = needsTwdPerAccountForCost ? cf.amount * (rate || 1) : cf.amount;
+                   const feeVal = cf.fee || 0;
                    let displayTotalTWD = 0;
-                   if (cf.amountTWD != null) {
+                   if (
+                     cf.type === CashFlowType.DEPOSIT ||
+                     cf.type === CashFlowType.WITHDRAW ||
+                     cf.type === CashFlowType.LOAN_INTEREST
+                   ) {
+                       // 匯入／匯出／信貸利息：總計成本 = 金額 + 手續費（與儲存邏輯一致）
+                       displayTotalTWD = baseAmt + feeVal;
+                   } else if (cf.amountTWD != null) {
                        displayTotalTWD = cf.amountTWD;
                    } else {
-                       const rate =
-                         cf.exchangeRate ??
-                         (needsTwdPerAccountForCost ? currencyToTWDRate(accountCurrency, rates) : 1);
-                       const baseAmt = needsTwdPerAccountForCost ? cf.amount * (rate || 1) : cf.amount;
-                       const feeVal = cf.fee || 0;
-                       if (cf.type === CashFlowType.DEPOSIT) {
-                           displayTotalTWD = baseAmt + feeVal;
-                       } else if (cf.type === CashFlowType.WITHDRAW) {
-                           displayTotalTWD = baseAmt - feeVal;
-                       } else {
-                           displayTotalTWD = baseAmt;
-                       }
+                       displayTotalTWD = baseAmt;
                    }
 
                    let displayExRateStr = '-';
