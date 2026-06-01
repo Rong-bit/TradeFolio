@@ -7,7 +7,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
   Brush,
   TooltipProps,
   ReferenceLine,
@@ -201,9 +200,11 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader, fillParent, isCo
   );
 
   const chartHeightClass = isCompact ? STANDALONE_CHART_HEIGHT_COMPACT : STANDALONE_CHART_HEIGHT;
+  /** 與儀表板累積損益圖相同：固定 Y 軸寬，避免 Recharts 預設 ~60px 把繪圖區往右推 */
+  const leftAxisWidth = isCompact ? 30 : 39;
   const chartMargin = isCompact
-    ? { top: 8, left: 8, right: 2, bottom: 58 }
-    : { top: 10, right: 16, left: 4, bottom: 56 };
+    ? { top: 8, left: 2, right: 2, bottom: 58 }
+    : { top: 10, left: 4, right: 16, bottom: 56 };
 
   if (rows.length === 0) {
     return (
@@ -240,11 +241,13 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader, fillParent, isCo
               interval={0}
             />
             <YAxis
+              orientation="left"
               stroke={axisTextColor}
-              tick={{ fill: axisTextColor }}
+              tick={{ fill: axisTextColor, fontSize: 9 }}
               axisLine={{ stroke: axisLineColor }}
               tickLine={{ stroke: axisLineColor }}
-              fontSize={10}
+              width={leftAxisWidth}
+              tickMargin={2}
               tickFormatter={(val: number) => {
                 if (Math.abs(val) >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
                 if (Math.abs(val) >= 1_000) return `${(val / 1_000).toFixed(0)}k`;
@@ -255,15 +258,6 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader, fillParent, isCo
             <Tooltip
               contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0' }}
               content={waterfallTooltipContent}
-            />
-            <Legend
-              wrapperStyle={{ color: axisTextColor }}
-              formatter={(value: string) => {
-                if (value === 'segPLPosSwapped' || value === 'segPLPosDefault') return tr.waterfall.stockPL;
-                if (value === 'segFlowPosDefault' || value === 'segFlowPosSwapped') return tr.dashboard.annualNetInflow;
-                if (value === 'segIncomeDefault' || value === 'segIncomeSwapped') return tr.waterfall.dividend;
-                return value;
-              }}
             />
             <Bar
               dataKey="segFlowPosSwapped"
