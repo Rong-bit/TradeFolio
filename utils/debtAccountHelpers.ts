@@ -42,13 +42,25 @@ export function cashFlowAmountTWD(
   accounts: Account[],
   rates: ExchangeRates
 ): number {
-  if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
   const account = accounts.find(a => a.id === cf.accountId);
   const sourceCurrency = account?.currency ?? Currency.TWD;
   const rate =
     cf.exchangeRate && cf.exchangeRate > 0
       ? cf.exchangeRate
       : currencyToTWDRate(sourceCurrency, rates);
+  const baseAmt = sourceCurrency === Currency.TWD ? cf.amount : cf.amount * rate;
+  const feeVal = cf.fee || 0;
+
+  // 匯出／信貸利息：總流出 = 金額 + 手續費（覆蓋舊版 amount - fee 的錯誤 amountTWD）
+  if (cf.type === CashFlowType.WITHDRAW || cf.type === CashFlowType.LOAN_INTEREST) {
+    return baseAmt + feeVal;
+  }
+  if (cf.type === CashFlowType.DEPOSIT) {
+    if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
+    return baseAmt + feeVal;
+  }
+
+  if (cf.amountTWD && cf.amountTWD > 0) return cf.amountTWD;
   return cf.amount * rate;
 }
 
