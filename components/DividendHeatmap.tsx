@@ -995,6 +995,9 @@ const DividendHeatmap: React.FC = () => {
                               const m = new Date(`${p.exDate}T12:00:00`).getMonth();
                               return m === displayMonthIndex;
                             });
+                      // 推估月與實際除息月常不一致（例：5 月已除息、表顯 6 月）；仍顯示近 90 天最新待補登
+                      const effectivePaList =
+                        visiblePaList.length > 0 ? visiblePaList : paList;
                       return (
                         <tr key={r.key} className="text-slate-600">
                           <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
@@ -1002,8 +1005,8 @@ const DividendHeatmap: React.FC = () => {
                           <td className="px-2 py-1.5 tabular-nums">
                             {r.exDate
                               ? r.exDate
-                              : visiblePaList.length > 0
-                                ? visiblePaList[0].exDate
+                              : effectivePaList.length > 0
+                                ? effectivePaList[0].exDate
                                 : '—'}
                           </td>
                           <td className="px-2 py-1.5 tabular-nums">
@@ -1069,9 +1072,9 @@ const DividendHeatmap: React.FC = () => {
                           {/* 操作欄：每個持倉帳戶各一筆「實領金額 + 帳戶 + 新增按鈕」；
                               只在「pending 除息月 = 推估月」（同一輪）時顯示，避免季／年配把上一輪當這輪提醒 */}
                           <td className="px-2 py-1.5">
-                            {visiblePaList.length > 0 ? (
+                            {effectivePaList.length > 0 ? (
                               <div className="flex flex-col gap-1.5">
-                                {visiblePaList.map(pa => {
+                                {effectivePaList.map(pa => {
                                   const paSelectedAccount =
                                     pendingAccountByKey[pa.key] ??
                                     pa.accountId ??
