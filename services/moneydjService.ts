@@ -76,8 +76,15 @@ function buildProxyUrls(target: string): string[] {
     urls.push(`/api/yahoo-proxy?target=${enc}`);
   }
 
-  // MoneyDJ 在瀏覽器 CORS 必擋；非瀏覽器環境（例如 SSR/build script）才允許直連備援。
-  if (typeof window === 'undefined') urls.push(target);
+  // 與 yahooFinanceService.proxyUrls 一致：Yahoo chart API 在瀏覽器可直連備援；
+  // MoneyDJ / TWSE 等仍僅走 proxy（CORS 會擋）。
+  const isBrowser = typeof window !== 'undefined';
+  const blockDirectInBrowser =
+    /^https:\/\/(www\.)?moneydj\.com\//i.test(target) ||
+    /^https:\/\/(tw\.stock\.yahoo\.com|mis\.twse\.com\.tw|stockanalysis\.com)\//i.test(target);
+  if (!isBrowser || !blockDirectInBrowser) {
+    urls.push(target);
+  }
   return urls;
 }
 
