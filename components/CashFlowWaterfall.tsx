@@ -22,6 +22,10 @@ interface Props {
   rows: WaterfallPeriodRow[];
   /** 與外層標題合併顯示時隱藏內建標題 */
   hideHeader?: boolean;
+  /** 外層容器已設高度時，圖表區填滿剩餘空間（儀表板主圖同款） */
+  fillParent?: boolean;
+  /** 窄螢幕：較緊 margin，繪圖區較大 */
+  isCompact?: boolean;
 }
 
 const WF_COLOR_INFLOW_POS = '#3b82f6';
@@ -44,7 +48,64 @@ type WfDatum = {
   segFlowForTooltip: number;
 };
 
-const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
+const STANDALONE_CHART_HEIGHT = 'h-[380px] md:h-[540px]';
+const STANDALONE_CHART_HEIGHT_COMPACT = 'h-[400px] md:h-[540px]';
+
+export const WaterfallLegendHints: React.FC = () => {
+  const { language } = useUI();
+  const tr = t(language);
+
+  return (
+    <div className="mt-3 border-t border-slate-200 dark:border-slate-600 pt-2.5 space-y-2 text-[11px] leading-snug text-slate-600 dark:text-slate-400">
+      <div className="flex flex-wrap gap-x-5 gap-y-2">
+        <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
+          <span className="inline-flex gap-0.5 shrink-0 mt-0.5">
+            <span
+              className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
+              style={{ backgroundColor: WF_COLOR_INFLOW_POS }}
+            />
+            <span
+              className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
+              style={{ backgroundColor: WF_COLOR_INFLOW_NEG }}
+            />
+          </span>
+          <span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.dashboard.annualNetInflow}</span>
+            <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintInflow}</span>
+          </span>
+        </span>
+        <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
+          <span
+            className="w-3 h-3 rounded-sm shrink-0 mt-0.5 ring-1 ring-slate-200/80 dark:ring-slate-600"
+            style={{ backgroundColor: WF_COLOR_DIVIDEND }}
+          />
+          <span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.waterfall.dividend}</span>
+            <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintDividend}</span>
+          </span>
+        </span>
+        <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
+          <span className="inline-flex gap-0.5 shrink-0 mt-0.5">
+            <span
+              className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
+              style={{ backgroundColor: WF_COLOR_PL_POS }}
+            />
+            <span
+              className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
+              style={{ backgroundColor: WF_COLOR_PL_NEG }}
+            />
+          </span>
+          <span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.waterfall.stockPL}</span>
+            <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintPL}</span>
+          </span>
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader, fillParent, isCompact }) => {
   const { baseCurrency, rates } = useMarket();
   const { language } = useUI();
   const tr = t(language);
@@ -139,25 +200,32 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
     [baseCurrency, tr, isDarkMode]
   );
 
+  const chartHeightClass = isCompact ? STANDALONE_CHART_HEIGHT_COMPACT : STANDALONE_CHART_HEIGHT;
+  const chartMargin = isCompact
+    ? { top: 8, left: 8, right: 2, bottom: 58 }
+    : { top: 10, right: 16, left: 4, bottom: 56 };
+
   if (rows.length === 0) {
     return (
-      <div className="h-[300px] md:h-[450px] flex items-center justify-center text-slate-400 text-sm">
+      <div
+        className={`${fillParent ? 'h-full' : chartHeightClass} flex items-center justify-center text-slate-400 text-sm`}
+      >
         {tr.waterfall.noData}
       </div>
     );
   }
 
   return (
-    <div className="w-full">
+    <div className={fillParent ? 'w-full h-full min-h-0' : 'w-full'}>
       {!hideHeader && (
         <div className="mb-1">
           <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">{tr.waterfall.title}</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">{tr.waterfall.subtitle}</p>
         </div>
       )}
-      <div className="w-full h-[300px] md:h-[450px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 16, left: 4, bottom: 56 }} stackOffset="sign">
+      <div className={fillParent ? 'h-full w-full min-h-0' : `w-full ${chartHeightClass}`}>
+        <ResponsiveContainer width="100%" height="100%" debounce={50}>
+          <BarChart data={data} margin={chartMargin} stackOffset="sign">
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" className="dark:stroke-slate-700" />
             <XAxis
               dataKey="period"
@@ -232,52 +300,7 @@ const CashFlowWaterfall: React.FC<Props> = ({ rows, hideHeader }) => {
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-3 border-t border-slate-200 dark:border-slate-600 pt-2.5 space-y-2 text-[11px] leading-snug text-slate-600 dark:text-slate-400">
-        <div className="flex flex-wrap gap-x-5 gap-y-2">
-          <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
-            <span className="inline-flex gap-0.5 shrink-0 mt-0.5">
-              <span
-                className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
-                style={{ backgroundColor: WF_COLOR_INFLOW_POS }}
-              />
-              <span
-                className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
-                style={{ backgroundColor: WF_COLOR_INFLOW_NEG }}
-              />
-            </span>
-            <span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.dashboard.annualNetInflow}</span>
-              <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintInflow}</span>
-            </span>
-          </span>
-          <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
-            <span
-              className="w-3 h-3 rounded-sm shrink-0 mt-0.5 ring-1 ring-slate-200/80 dark:ring-slate-600"
-              style={{ backgroundColor: WF_COLOR_DIVIDEND }}
-            />
-            <span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.waterfall.dividend}</span>
-              <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintDividend}</span>
-            </span>
-          </span>
-          <span className="inline-flex items-start gap-2 min-w-[min(100%,280px)]">
-            <span className="inline-flex gap-0.5 shrink-0 mt-0.5">
-              <span
-                className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
-                style={{ backgroundColor: WF_COLOR_PL_POS }}
-              />
-              <span
-                className="w-3 h-3 rounded-sm ring-1 ring-slate-200/80 dark:ring-slate-600"
-                style={{ backgroundColor: WF_COLOR_PL_NEG }}
-              />
-            </span>
-            <span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{tr.waterfall.stockPL}</span>
-              <span className="text-slate-500 dark:text-slate-400"> — {tr.waterfall.legendHintPL}</span>
-            </span>
-          </span>
-        </div>
-      </div>
+      {!fillParent && <WaterfallLegendHints />}
     </div>
   );
 };
