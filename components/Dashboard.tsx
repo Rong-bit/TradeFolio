@@ -482,12 +482,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           if (cf.amountTWD && cf.amountTWD > 0) {
              amountTWD = cf.amountTWD;
              if (account.currency === Currency.TWD) {
-               // 台幣帳戶：amountTWD 常為「金額+手續費」，勿誤顯示為外匯匯率
+               // 台幣帳戶：amountTWD 常為「金額+手續費」，匯率固定顯示 1.00／台幣
                rate = 1;
-               rateSource =
-                 cf.fee && cf.fee > 0
-                   ? translations.dashboard.twdIncludesFee
-                   : translations.dashboard.taiwanDollar;
+               rateSource = translations.dashboard.taiwanDollar;
              } else {
                rate = cf.amount > 0 ? amountTWD / cf.amount : 0;
                rateSource = translations.dashboard.fixedTWD;
