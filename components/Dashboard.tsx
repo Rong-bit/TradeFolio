@@ -1291,14 +1291,14 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 )}
               </>
             ) : (
-              <>
-                <div
-                  className={
-                    isTrendChartCompact
-                      ? `w-screen max-w-[100vw] min-w-0 ${cumulativeChartHeightClass} ml-[calc(50%-50vw)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]`
-                      : `w-full min-w-0 ${cumulativeChartHeightClass} -ml-2 sm:ml-0 -mr-10 sm:-mr-5 md:-mr-3 md:ml-0 lg:mx-0`
-                  }
-                >
+              <div
+                className={
+                  isTrendChartCompact
+                    ? 'w-screen max-w-[100vw] min-w-0 ml-[calc(50%-50vw)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]'
+                    : 'w-full min-w-0 -ml-2 sm:ml-0 -mr-10 sm:-mr-5 md:-mr-3 md:ml-0 lg:mx-0'
+                }
+              >
+                <div className={cumulativeChartHeightClass}>
                   <CashFlowWaterfall
                     hideHeader
                     fillParent
@@ -1306,10 +1306,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     rows={waterfallYearRows}
                   />
                 </div>
-                <div className={isTrendChartCompact ? 'max-sm:px-3' : undefined}>
-                  <WaterfallLegendHints />
-                </div>
-              </>
+                <WaterfallLegendHints />
+              </div>
             )}
           </div>
         </div>
