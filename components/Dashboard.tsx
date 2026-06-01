@@ -7,7 +7,7 @@ import { useUI } from '../contexts/UIContext';
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, Brush, AreaChart, Area, Rectangle } from 'recharts';
 import HoldingsTable from './HoldingsTable';
 import MarketPerformanceChart from './MarketPerformanceChart';
-import CashFlowWaterfall from './CashFlowWaterfall';
+import CashFlowWaterfall, { WaterfallLegendHints } from './CashFlowWaterfall';
 import DividendHeatmap from './DividendHeatmap';
 import { t, translate } from '../utils/i18n';
 import { ALLOCATION_INNER_BOND_COLOR, ALLOCATION_INNER_EQUITY_COLOR } from '../utils/allocationDonutColors';
@@ -1291,9 +1291,25 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 )}
               </>
             ) : (
-              <div className="max-sm:px-3">
-                <CashFlowWaterfall hideHeader rows={waterfallYearRows} />
-              </div>
+              <>
+                <div
+                  className={
+                    isTrendChartCompact
+                      ? `w-screen max-w-[100vw] min-w-0 ${cumulativeChartHeightClass} ml-[calc(50%-50vw)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]`
+                      : `w-full min-w-0 ${cumulativeChartHeightClass} -ml-2 sm:ml-0 -mr-10 sm:-mr-5 md:-mr-3 md:ml-0 lg:mx-0`
+                  }
+                >
+                  <CashFlowWaterfall
+                    hideHeader
+                    fillParent
+                    isCompact={isTrendChartCompact}
+                    rows={waterfallYearRows}
+                  />
+                </div>
+                <div className={isTrendChartCompact ? 'max-sm:px-3' : undefined}>
+                  <WaterfallLegendHints />
+                </div>
+              </>
             )}
           </div>
         </div>
