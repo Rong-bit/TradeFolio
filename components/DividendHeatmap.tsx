@@ -987,27 +987,30 @@ const DividendHeatmap: React.FC = () => {
                       const displayMonthIndex = r.exDate
                         ? new Date(`${r.exDate}T12:00:00`).getMonth()
                         : (displayInferredMonth ?? null);
-                      // 過濾出「除息月 = 推估月」的 pending — 季配同一輪才顯示按鈕，不被上一輪干擾
+                      // 「新增至交易記錄」：僅在 Yahoo 有確定除息日，且待補登實績的除息「年月」與該除息日一致
+                      const hasConfirmedExDate = Boolean(r.exDate?.trim());
+                      const confirmedExDt = hasConfirmedExDate
+                        ? new Date(`${r.exDate}T12:00:00`)
+                        : null;
                       const visiblePaList =
-                        displayMonthIndex == null
+                        !hasConfirmedExDate ||
+                        !confirmedExDt ||
+                        Number.isNaN(confirmedExDt.getTime())
                           ? []
                           : paList.filter(p => {
-                              const m = new Date(`${p.exDate}T12:00:00`).getMonth();
-                              return m === displayMonthIndex;
+                              const paDt = new Date(`${p.exDate}T12:00:00`);
+                              if (Number.isNaN(paDt.getTime())) return false;
+                              return (
+                                paDt.getFullYear() === confirmedExDt.getFullYear() &&
+                                paDt.getMonth() === confirmedExDt.getMonth()
+                              );
                             });
-                      // 推估月與實際除息月常不一致（例：5 月已除息、表顯 6 月）；仍顯示近 90 天最新待補登
-                      const effectivePaList =
-                        visiblePaList.length > 0 ? visiblePaList : paList;
                       return (
                         <tr key={r.key} className="text-slate-600">
                           <td className="px-2 py-1.5 font-mono font-medium">{r.ticker}</td>
                           <td className="px-2 py-1.5">{r.market}</td>
                           <td className="px-2 py-1.5 tabular-nums">
-                            {r.exDate
-                              ? r.exDate
-                              : effectivePaList.length > 0
-                                ? effectivePaList[0].exDate
-                                : '—'}
+                            {r.exDate || '—'}
                           </td>
                           <td className="px-2 py-1.5 tabular-nums">
                             {displayMonthIndex != null ? (
@@ -1069,12 +1072,11 @@ const DividendHeatmap: React.FC = () => {
                               '—'
                             )}
                           </td>
-                          {/* 操作欄：每個持倉帳戶各一筆「實領金額 + 帳戶 + 新增按鈕」；
-                              只在「pending 除息月 = 推估月」（同一輪）時顯示，避免季／年配把上一輪當這輪提醒 */}
+                          {/* 操作欄：有 Yahoo 確定除息日，且該月有待補登實績配息時才顯示 */}
                           <td className="px-2 py-1.5">
-                            {effectivePaList.length > 0 ? (
+                            {visiblePaList.length > 0 ? (
                               <div className="flex flex-col gap-1.5">
-                                {effectivePaList.map(pa => {
+                                {visiblePaList.map(pa => {
                                   const paSelectedAccount =
                                     pendingAccountByKey[pa.key] ??
                                     pa.accountId ??
