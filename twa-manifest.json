@@ -1,8 +1,8 @@
 {
   "packageId": "com.tradefolio.app",
   "host": "rong-bit.github.io",
-  "name": "TradeFolio",
-  "launcherName": "TradeFolio",
+  "name": "TradeView 投資資產管家",
+  "launcherName": "TradeView",
   "display": "standalone",
   "themeColor": "#000000",
   "themeColorDark": "#000000",
