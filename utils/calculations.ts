@@ -282,6 +282,8 @@ interface InvestCostLot {
   date: number;
   cost: number;
   qty: number;
+  /** 是否屬於外部投入資金（XIRR 只計入 true） */
+  contributed: boolean;
 }
 
 const QTY_EPS = 1e-6;
@@ -297,7 +299,7 @@ function consumeInvestLotsFIFO(lots: InvestCostLot[], quantity: number): InvestC
     } else {
       const fraction = remaining / head.qty;
       const partialCost = head.cost * fraction;
-      removed.push({ date: head.date, cost: partialCost, qty: remaining });
+      removed.push({ date: head.date, cost: partialCost, qty: remaining, contributed: head.contributed });
       head.qty -= remaining;
       head.cost -= partialCost;
       remaining = 0;
@@ -308,7 +310,7 @@ function consumeInvestLotsFIFO(lots: InvestCostLot[], quantity: number): InvestC
 
 function investFlowsFromLots(lots: InvestCostLot[]): { amount: number; date: number }[] {
   return lots
-    .filter(lot => lot.cost > 1e-9)
+    .filter(lot => lot.cost > 1e-9 && lot.contributed)
     .map(lot => ({ amount: -lot.cost, date: lot.date }));
 }
 
@@ -364,7 +366,7 @@ function replenishLotsFromRemainingHolding(
   const cost = h.totalCost > 1e-9 ? h.totalCost : h.avgCost * h.quantity;
   if (cost <= 1e-9) return;
   const date = h.firstBuyDate ? new Date(h.firstBuyDate).getTime() : referenceDateMs;
-  lots.push({ date, cost, qty: h.quantity });
+  lots.push({ date, cost, qty: h.quantity, contributed: true });
 }
 
 function holdingYearsFromFirstBuy(firstBuyDate: string | undefined): number {
@@ -444,7 +446,7 @@ function applyPendingSplitsToHoldingAndLots(
 }
 
 function mergeInvestLots(target: InvestCostLot[], lots: InvestCostLot[]): void {
-  lots.forEach(l => target.push({ date: l.date, cost: l.cost, qty: l.qty }));
+  lots.forEach(l => target.push({ date: l.date, cost: l.cost, qty: l.qty, contributed: l.contributed }));
 }
 
 function earliestIsoDateFromLots(lots: InvestCostLot[], fallback: string): string {
@@ -595,17 +597,18 @@ export const calculateHoldings = (
       h.quantity = newQty;
 
       if (tx.type === TransactionType.BUY) {
-        lots.push({ date: flowDate, cost: txCost, qty: tx.quantity });
+        lots.push({ date: flowDate, cost: txCost, qty: tx.quantity, contributed: true });
         patchFirstBuyDate(h, flowDate);
       } else if (tx.type === TransactionType.DIVIDEND) {
-        lots.push({ date: flowDate, cost: txCost, qty: tx.quantity });
+        // DRIP 屬於內部再投入：保留成本批次供 FIFO 計算，但不視為外部投入現金。
+        lots.push({ date: flowDate, cost: txCost, qty: tx.quantity, contributed: false });
         patchFirstBuyDate(h, flowDate);
       } else if (tx.type === TransactionType.TRANSFER_IN) {
         const pairedOutId = transferPairs.get(tx.id);
         const migrated =
           pairedOutId && transferLotsByOutId.has(pairedOutId)
             ? transferLotsByOutId.get(pairedOutId)!
-            : [{ date: flowDate, cost: txCost, qty: tx.quantity }];
+            : [{ date: flowDate, cost: txCost, qty: tx.quantity, contributed: true }];
         if (pairedOutId) transferLotsByOutId.delete(pairedOutId);
         mergeInvestLots(lots, migrated);
         h.firstBuyDate = earliestIsoDateFromLots(migrated, h.firstBuyDate ?? tx.date);
