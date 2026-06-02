@@ -1,11 +1,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import RefreshCountdown from './RefreshCountdown';
-import { Holding, Market, Account, Currency } from '../types';
+import { Holding, Market, Account, Currency, TransactionType, Transaction } from '../types';
 import {
   formatCurrency,
   convertAccountCurrencyToMarketQuote,
   valuationCurrencyForHolding,
+  calculateGenericXIRR,
 } from '../utils/calculations';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
@@ -16,8 +17,60 @@ interface Props {}
 
 type DisplayMode = 'merged' | 'detailed';
 
+function sanitizeAnnualized(v: number): number {
+  if (!Number.isFinite(v)) return 0;
+  if (Math.abs(v) > 500) return 0;
+  return v;
+}
+
+function resolveTxCost(tx: Transaction): number {
+  let baseVal = tx.price * tx.quantity;
+  if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+  if (Number.isFinite(tx.amount) && (tx.amount as number) > 0) return tx.amount as number;
+  return baseVal + (tx.fees || 0);
+}
+
+function resolveTxProceeds(tx: Transaction): number {
+  let baseVal = tx.price * tx.quantity;
+  if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
+  if (Number.isFinite(tx.amount) && (tx.amount as number) > 0) return tx.amount as number;
+  return baseVal - (tx.fees || 0);
+}
+
+function computeMergedAnnualizedXirr(
+  market: Market,
+  ticker: string,
+  accountIds: Set<string>,
+  transactions: Transaction[],
+  outValue: number
+): number {
+  if (outValue <= 0 || accountIds.size === 0) return 0;
+  const flows: { amount: number; date: number }[] = [];
+  const targetTicker = ticker.toUpperCase();
+
+  transactions.forEach(tx => {
+    if (tx.market !== market) return;
+    if (tx.ticker.toUpperCase() !== targetTicker) return;
+    if (!accountIds.has(tx.accountId)) return;
+    const date = new Date(tx.date).getTime();
+    if (!Number.isFinite(date)) return;
+    if (tx.type === TransactionType.BUY) {
+      flows.push({ amount: -resolveTxCost(tx), date });
+      return;
+    }
+    if (tx.type === TransactionType.SELL || tx.type === TransactionType.CASH_DIVIDEND) {
+      flows.push({ amount: resolveTxProceeds(tx), date });
+    }
+  });
+
+  const invested = flows.some(f => f.amount < 0);
+  if (!invested) return 0;
+  const xirr = calculateGenericXIRR([...flows, { amount: outValue, date: Date.now() }]);
+  return sanitizeAnnualized(xirr);
+}
+
 const HoldingsTable: React.FC<Props> = () => {
-  const { holdings, accounts, updatePrice: onUpdatePrice,
+  const { holdings, accounts, transactions, updatePrice: onUpdatePrice,
     handleAutoUpdatePrices: onAutoUpdate, refreshIntervalMs } = usePortfolio();
   const { rates } = useMarket();
   const { language } = useUI();
@@ -57,11 +110,14 @@ const HoldingsTable: React.FC<Props> = () => {
   // 合併相同標的 (Ticker + Market) 的持倉
   const mergedHoldings = useMemo(() => {
     const map = new Map<string, Holding>();
+    const accountIdsByKey = new Map<string, Set<string>>();
 
     const MS = '\x1e';
     holdings.forEach(h => {
       // 不同證券戶幣別不可合併加總市值（幣別維度不同）
       const key = `${h.market}${MS}${h.ticker}${MS}${valuationCurrencyForHolding(h, accounts)}`;
+      if (!accountIdsByKey.has(key)) accountIdsByKey.set(key, new Set<string>());
+      accountIdsByKey.get(key)!.add(h.accountId);
       if (!map.has(key)) {
         map.set(key, { ...h, accountId: `merged${MS}${key}` });
       } else {
@@ -77,17 +133,9 @@ const HoldingsTable: React.FC<Props> = () => {
         const newAvgCost = newQuantity > 0 ? newTotalCost / newQuantity : 0;
         const newUnrealizedPLPercent = newTotalCost > 0 ? (newUnrealizedPL / newTotalCost) * 100 : 0;
 
-        // Weighted Average for Annualized Return (by Cost, or Value?)
-        // Standard practice for Portfolio level XIRR is complex. 
-        // For simple display, weighted average of individual XIRRs by current value is a reasonable approximation for UI if not strictly calculating flow.
-        let newAnnualizedReturn = existing.annualizedReturn;
-        const combinedValue = existing.currentValue + h.currentValue;
-        if (combinedValue > 0) {
-            newAnnualizedReturn = (
-                (existing.annualizedReturn * existing.currentValue) + 
-                (h.annualizedReturn * h.currentValue)
-            ) / combinedValue;
-        }
+        const earliestFirstBuyDate = [existing.firstBuyDate, h.firstBuyDate]
+          .filter((d): d is string => Boolean(d))
+          .sort()[0];
 
         // Daily Change should be the same for same ticker. 
         // Take from existing (or new, they should match).
@@ -101,14 +149,27 @@ const HoldingsTable: React.FC<Props> = () => {
           weight: newWeight,
           avgCost: newAvgCost,
           unrealizedPLPercent: newUnrealizedPLPercent,
-          annualizedReturn: newAnnualizedReturn
+          annualizedReturn: existing.annualizedReturn,
+          firstBuyDate: earliestFirstBuyDate,
         });
       }
     });
 
+    const merged = Array.from(map.entries()).map(([key, h]) => {
+      const accountIds = accountIdsByKey.get(key) ?? new Set<string>();
+      const annualizedReturn = computeMergedAnnualizedXirr(
+        h.market,
+        h.ticker,
+        accountIds,
+        transactions,
+        h.currentValue
+      );
+      return { ...h, annualizedReturn };
+    });
+
     // Sort by Weight Descending
-    return Array.from(map.values()).sort((a, b) => b.weight - a.weight);
-  }, [holdings, accounts]);
+    return merged.sort((a, b) => b.weight - a.weight);
+  }, [holdings, accounts, transactions]);
 
   // ⑤ Apply sort to mergedHoldings
   const sortedMergedHoldings = useMemo(() => {
