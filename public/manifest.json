@@ -2,6 +2,7 @@
   "id": "/TradeFolio/",
   "short_name": "TradeView",
   "name": "TradeView 投資資產管家",
+  "description": "投資組合管理與資產追蹤",
   "icons": [
     {
       "src": "https://rong-bit.github.io/TradeFolio/icon-512.png",
@@ -13,7 +14,7 @@
       "src": "https://rong-bit.github.io/TradeFolio/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ],
   "start_url": "https://rong-bit.github.io/TradeFolio/",
