@@ -13,7 +13,7 @@
   "backgroundColor": "#000000",
   "enableNotifications": false,
   "startUrl": "/TradeFolio/",
-  "iconUrl": "https://cdn-icons-png.flaticon.com/512/3314/3314353.png",
+  "iconUrl": "https://rong-bit.github.io/TradeFolio/icon-512.png",
   "signingKey": {
     "path": "C:\\Users\\User\\android.keystore",
     "alias": "android"
