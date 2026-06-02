@@ -40,18 +40,16 @@ function resolveTxProceeds(tx: Transaction): number {
 function computeMergedAnnualizedXirr(
   market: Market,
   ticker: string,
-  accountIds: Set<string>,
   transactions: Transaction[],
   outValue: number
 ): number {
-  if (outValue <= 0 || accountIds.size === 0) return 0;
+  if (outValue <= 0) return 0;
   const flows: { amount: number; date: number }[] = [];
   const targetTicker = ticker.toUpperCase();
 
   transactions.forEach(tx => {
     if (tx.market !== market) return;
     if (tx.ticker.toUpperCase() !== targetTicker) return;
-    if (!accountIds.has(tx.accountId)) return;
     const date = new Date(tx.date).getTime();
     if (!Number.isFinite(date)) return;
     if (tx.type === TransactionType.BUY) {
@@ -110,14 +108,11 @@ const HoldingsTable: React.FC<Props> = () => {
   // 合併相同標的 (Ticker + Market) 的持倉
   const mergedHoldings = useMemo(() => {
     const map = new Map<string, Holding>();
-    const accountIdsByKey = new Map<string, Set<string>>();
 
     const MS = '\x1e';
     holdings.forEach(h => {
       // 不同證券戶幣別不可合併加總市值（幣別維度不同）
       const key = `${h.market}${MS}${h.ticker}${MS}${valuationCurrencyForHolding(h, accounts)}`;
-      if (!accountIdsByKey.has(key)) accountIdsByKey.set(key, new Set<string>());
-      accountIdsByKey.get(key)!.add(h.accountId);
       if (!map.has(key)) {
         map.set(key, { ...h, accountId: `merged${MS}${key}` });
       } else {
@@ -156,11 +151,9 @@ const HoldingsTable: React.FC<Props> = () => {
     });
 
     const merged = Array.from(map.entries()).map(([key, h]) => {
-      const accountIds = accountIdsByKey.get(key) ?? new Set<string>();
       const annualizedReturn = computeMergedAnnualizedXirr(
         h.market,
         h.ticker,
-        accountIds,
         transactions,
         h.currentValue
       );
