@@ -763,7 +763,7 @@ export const getTransferTargetAmount = (
 };
 
 /**
- * 與「歷史記錄」頁合併列表相同的入帳順序、金額欄位與每筆餘額四捨五入至分；
+ * 與「歷史紀錄」頁合併列表相同的入帳順序、金額欄位與每筆餘額四捨五入至分；
  * 證券戶列表的 balance 應與此一致，避免與交易紀錄餘額欄差 0.0x（例如轉帳手續費只在一側入帳、或台股 floor 與顯示金額不一致）。
  */
 export function buildLedgerState(
