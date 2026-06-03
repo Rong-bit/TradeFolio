@@ -3,6 +3,7 @@ import { t, Language } from '../utils/i18n';
 import { ADMIN_EMAIL } from '../hooks/useAuthSession';
 import type { AppText } from '../hooks/useAppText';
 import type { AlertDialogState } from '../types';
+import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 import AlertDialog from './AlertDialog';
 
 interface Props {
@@ -46,7 +47,7 @@ const LoginScreen: React.FC<Props> = ({
               required
               value={loginEmail}
               onChange={e => setLoginEmail(e.target.value)}
-              className="mt-1 w-full border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              className={`mt-1 w-full border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 ${FORM_FIELD_THEME}`}
               placeholder="name@example.com"
             />
           </div>
@@ -57,7 +58,7 @@ const LoginScreen: React.FC<Props> = ({
                 type="password"
                 value={loginPassword}
                 onChange={e => setLoginPassword(e.target.value)}
-                className="mt-1 w-full border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                className={`mt-1 w-full border border-slate-300 rounded-md p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 ${FORM_FIELD_THEME}`}
                 placeholder={appText.loginPasswordPlaceholder}
               />
             </div>
