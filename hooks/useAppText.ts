@@ -121,14 +121,20 @@ export function useAppText(language: Language, currentUser: string): AppText {
         'importFailed',
         isChinese ? '匯入失敗：檔案格式錯誤。' : 'Import failed: invalid file format.'
       ),
-      txUpdated: tx('txUpdated', isChinese ? '交易記錄已更新' : 'Transaction updated'),
+      txUpdated: tx(
+        'txUpdated',
+        language === 'zh-TW' ? '交易紀錄已更新' : isChinese ? '交易记录已更新' : 'Transaction updated'
+      ),
       marketUpdated: (count: number) =>
         tx(
           'marketUpdated',
           isChinese ? `成功更新 ${count} 筆交易的市場設置` : `Updated market settings for ${count} transactions`,
           { count }
         ),
-      txDeleted: tx('txDeleted', isChinese ? '交易記錄已刪除' : 'Transaction deleted'),
+      txDeleted: tx(
+        'txDeleted',
+        language === 'zh-TW' ? '交易紀錄已刪除' : isChinese ? '交易记录已删除' : 'Transaction deleted'
+      ),
       txCleared: (count: number) =>
         tx(
           'txCleared',
@@ -183,9 +189,11 @@ export function useAppText(language: Language, currentUser: string): AppText {
       cashFlowDeleteWarningBody: (count: number) =>
         tx(
           'cashFlowDeleteWarningBody',
-          isChinese
-            ? `此帳戶有 ${count} 筆相關交易記錄。刪除此資金紀錄可能會影響帳戶餘額計算的準確性。`
-            : `This account has ${count} related transactions. Deleting this fund record may affect account balance accuracy.`,
+          language === 'zh-TW'
+            ? `此帳戶有 ${count} 筆相關交易紀錄。刪除此資金紀錄可能會影響帳戶餘額計算的準確性。`
+            : isChinese
+              ? `此账户有 ${count} 笔相关交易记录。删除此资金记录可能会影响账户余额计算的准确性。`
+              : `This account has ${count} related transactions. Deleting this fund record may affect account balance accuracy.`,
           { count }
         ),
       cashFlowDeleteMessage: tx(
