@@ -130,7 +130,7 @@ const DividendHeatmap: React.FC = () => {
   const [deductTwWireFee, setDeductTwWireFee] = useState(true);
   /** 每個 pending row 的「選擇入帳帳戶」狀態，key = `${market}|${ticker}|${exDate}` */
   const [pendingAccountByKey, setPendingAccountByKey] = useState<Record<string, string>>({});
-  /** 按下「新增至交易記錄」後待使用者確認的 transaction（暫存於 state，按確認後才 addTransaction） */
+  /** 按下「新增至交易紀錄」後待使用者確認的 transaction（暫存於 state，按確認後才 addTransaction） */
   const [confirmState, setConfirmState] = useState<{ tx: Transaction; rowKey: string } | null>(null);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
@@ -159,7 +159,7 @@ const DividendHeatmap: React.FC = () => {
   };
 
   /**
-   * 把 pending row 換算成「最終要寫入交易記錄」的金額。UI 顯示與 handleAddPendingActual 都走這條，避免兩處數字飄移。
+   * 把 pending row 換算成「最終要寫入交易紀錄」的金額。UI 顯示與 handleAddPendingActual 都走這條，避免兩處數字飄移。
    *  - 美股：以美分整數運算先四捨入毛額，再 round(×30%) 為稅，淨 = 毛 − 稅
    *  - 台股：毛額入 price/amount，超過門檻時另算二代健保補充保費（不影響入帳金額）
    *  - 其他市場：以毛額入帳（暫無預扣模型）
@@ -448,7 +448,7 @@ const DividendHeatmap: React.FC = () => {
 
   /**
    * 以 dividendScheduleMapKey（同 ticker × market）為 key 的 pending 索引；用於上方預估列表 inline 顯示按鈕。
-   * 因為單一 ticker 可能在多個帳戶都需補登，這裡保留陣列（一帳戶一筆），UI 會逐筆顯示「新增至交易記錄」按鈕。
+   * 因為單一 ticker 可能在多個帳戶都需補登，這裡保留陣列（一帳戶一筆），UI 會逐筆顯示「新增至交易紀錄」按鈕。
    */
   const pendingActualByTickerKey = useMemo(() => {
     const m = new Map<string, Array<(typeof pendingActualRows)[number]>>();
@@ -462,7 +462,7 @@ const DividendHeatmap: React.FC = () => {
   }, [pendingActualRows]);
 
   /**
-   * 點「新增至交易記錄」時，先組裝 CASH_DIVIDEND 並把它放進 confirmState，由確認 modal 接手；
+   * 點「新增至交易紀錄」時，先組裝 CASH_DIVIDEND 並把它放進 confirmState，由確認 modal 接手；
    * 真正的 addTransaction 在使用者按下「確認儲存」後才執行（confirmAndSavePendingActual）。
    *
    * 入帳金額（price/amount）以「實領金額」為準，與券商對帳單一致；計算邏輯統一走 getCashDividendCalc。
