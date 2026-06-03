@@ -54,7 +54,7 @@ export const en: Translations = {
   },
   login: {
     title: 'TradeView Login',
-    subtitle: 'Taiwan & US Stock Portfolio Management',
+    subtitle: 'Investment Asset Steward',
     email: 'Email',
     password: 'Password',
     login: 'Login',

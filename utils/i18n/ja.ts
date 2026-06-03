@@ -54,7 +54,7 @@ export const ja: Translations = {
   },
   login: {
     title: 'TradeView ログイン',
-    subtitle: '台湾・米国株ポートフォリオ管理',
+    subtitle: '投資資産マネージャー',
     email: 'メール',
     password: 'パスワード',
     login: 'ログイン',

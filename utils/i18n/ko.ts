@@ -54,7 +54,7 @@ export const ko: Translations = {
   },
   login: {
     title: 'TradeView 로그인',
-    subtitle: '대만·미국 주식 포트폴리오 관리',
+    subtitle: '투자 자산 매니저',
     email: '이메일',
     password: '비밀번호',
     login: '로그인',

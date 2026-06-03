@@ -31,7 +31,7 @@ export const de: Translations = {
     deleteConfirmTitle: 'Loeschen des Split-Ereignisses bestaetigen',
     deleteConfirmMessage: 'Soll das Split-Ereignis fuer {ticker} ({date}) wirklich geloescht werden?',
   },
-  login: { title: 'TradeView Anmeldung', subtitle: 'Taiwan- & US-Aktien Portfolio', email: 'E-Mail', password: 'Passwort', login: 'Anmelden', privacy: 'Datenschutz', privacyDesc: 'Daten werden lokal gespeichert. Keine Erfassung personenbezogener Daten.', riskDisclaimer: 'Risikohinweis', riskDisclaimerDesc: 'Investitionen bergen Risiken. Vergangene Performance garantiert keine zukünftigen Ergebnisse.' },
+  login: { title: 'TradeView Anmeldung', subtitle: 'Investment-Asset-Manager', email: 'E-Mail', password: 'Passwort', login: 'Anmelden', privacy: 'Datenschutz', privacyDesc: 'Daten werden lokal gespeichert. Keine Erfassung personenbezogener Daten.', riskDisclaimer: 'Risikohinweis', riskDisclaimerDesc: 'Investitionen bergen Risiken. Vergangene Performance garantiert keine zukünftigen Ergebnisse.' },
   dashboard: {
     ...en.dashboard,
     netCost: 'Nettokosten',

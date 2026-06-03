@@ -32,7 +32,7 @@ export const fr: Translations = {
     deleteConfirmTitle: 'Confirmer la suppression du split',
     deleteConfirmMessage: 'Supprimer l\'evenement de split de {ticker} ({date}) ?',
   },
-  login: { title: 'Connexion TradeView', subtitle: 'Portefeuille actions Taiwan et US', email: 'E-mail', password: 'Mot de passe', login: 'Connexion', privacy: 'Confidentialité', privacyDesc: 'Données stockées localement. Aucune collecte de données personnelles.', riskDisclaimer: 'Avertissement', riskDisclaimerDesc: 'Les investissements comportent des risques. Les performances passées ne garantissent pas les résultats futurs.' },
+  login: { title: 'Connexion TradeView', subtitle: 'Gestionnaire d\'actifs d\'investissement', email: 'E-mail', password: 'Mot de passe', login: 'Connexion', privacy: 'Confidentialité', privacyDesc: 'Données stockées localement. Aucune collecte de données personnelles.', riskDisclaimer: 'Avertissement', riskDisclaimerDesc: 'Les investissements comportent des risques. Les performances passées ne garantissent pas les résultats futurs.' },
   dashboard: {
     ...en.dashboard,
     netCost: 'Investi net',

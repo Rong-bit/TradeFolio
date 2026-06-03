@@ -7,7 +7,7 @@ export const pt: Translations = {
   common: { ...en.common, confirm: 'Confirmar', cancel: 'Cancelar', delete: 'Excluir', edit: 'Editar', save: 'Salvar', close: 'Fechar', loading: 'Carregando...', search: 'Buscar', logoutConfirm: 'Sair?', baseCurrency: 'Moeda base', upgrade: 'Atualizar', footerLocalDataPrivacy: 'Todos os dados de transações ficam armazenados localmente no seu dispositivo para proteger a sua privacidade.' },
   nav: { dashboard: 'Painel', history: 'Histórico', funds: 'Fundos', accounts: 'Contas', rebalance: 'Rebalanceamento', simulator: 'Simulador', splits: 'Desdobramentos', help: 'Sistema', logout: 'Sair' },
   pages: { ...en.pages, dashboard: 'Painel da carteira', history: 'Histórico (transações e fluxo)', funds: 'Gestão de fundos', accounts: 'Gestão de contas', rebalance: 'Rebalanceamento', simulator: 'Simulador de alocação', splits: 'Gestão de desdobramentos', help: 'Sistema e backup' },
-  login: { title: 'Login TradeView', subtitle: 'Carteira de ações Taiwan e EUA', email: 'E-mail', password: 'Senha', login: 'Entrar', privacy: 'Privacidade', privacyDesc: 'Dados armazenados localmente. Sem coleta de dados pessoais.', riskDisclaimer: 'Aviso', riskDisclaimerDesc: 'Investimentos envolvem riscos.' },
+  login: { title: 'Login TradeView', subtitle: 'Gestor de Ativos de Investimento', email: 'E-mail', password: 'Senha', login: 'Entrar', privacy: 'Privacidade', privacyDesc: 'Dados armazenados localmente. Sem coleta de dados pessoais.', riskDisclaimer: 'Aviso', riskDisclaimerDesc: 'Investimentos envolvem riscos.' },
   dashboard: {
     ...en.dashboard,
     netCost: 'Investimento líquido',

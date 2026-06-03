@@ -7,7 +7,7 @@ export const hi: Translations = {
   common: { ...en.common, confirm: 'पुष्टि', cancel: 'रद्द', delete: 'हटाएं', edit: 'संपादित', save: 'सहेजें', close: 'बंद', loading: 'लोड हो रहा...', search: 'खोज', logoutConfirm: 'लॉग आउट करें?', baseCurrency: 'आधार मुद्रा', upgrade: 'अपग्रेड', footerLocalDataPrivacy: 'आपकी गोपनीयता के लिए सभी लेनदेन डेटा केवल आपके डिवाइस पर संग्रहीत होता है।' },
   nav: { dashboard: 'डैशबोर्ड', history: 'इतिहास', funds: 'निधि', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'सिम्युलेटर', splits: 'स्टॉक स्प्लिट', help: 'सहायता', logout: 'लॉग आउट' },
   pages: { ...en.pages, dashboard: 'पोर्टफोलियो', history: 'लेनदेन और नकदी प्रवाह', funds: 'निधि प्रबंधन', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'आवंटन सिम्युलेटर', splits: 'स्टॉक स्प्लिट प्रबंधन', help: 'सेटिंग और बैकअप' },
-  login: { title: 'TradeView लॉगिन', subtitle: 'ताइवान और US स्टॉक पोर्टफोलियो', email: 'ईमेल', password: 'पासवर्ड', login: 'लॉग इन', privacy: 'गोपनीयता', privacyDesc: 'डेटा लोकल संग्रहीत। कोई निजी डेटा एकत्र नहीं।', riskDisclaimer: 'चेतावनी', riskDisclaimerDesc: 'निवेश में जोखिम है।' },
+  login: { title: 'TradeView लॉगिन', subtitle: 'निवेश संपत्ति प्रबंधक', email: 'ईमेल', password: 'पासवर्ड', login: 'लॉग इन', privacy: 'गोपनीयता', privacyDesc: 'डेटा लोकल संग्रहीत। कोई निजी डेटा एकत्र नहीं।', riskDisclaimer: 'चेतावनी', riskDisclaimerDesc: 'निवेश में जोखिम है।' },
   dashboard: { 
     ...en.dashboard, 
     netCost: 'कुल निवेश', 

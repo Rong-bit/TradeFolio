@@ -53,7 +53,7 @@ export const zhTW: Translations = {
   },
   login: {
     title: 'TradeView 登入',
-    subtitle: '資產管理系統',
+    subtitle: '投資資產管家',
     email: 'Email',
     password: 'Password',
     login: '登入',

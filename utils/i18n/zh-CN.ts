@@ -6,7 +6,7 @@ zhCN.baseCurrency = { TWD: '台币', USD: '美元', JPY: '日元', EUR: '欧元'
 zhCN.pages = { dashboard: '投资组合仪表板', history: '历史记录（交易 + 资金流动）', funds: '资金存取与管理', accounts: '证券账户管理', rebalance: '投资组合再平衡', simulator: '资产配置模拟', splits: '股票拆分管理', help: '系统管理与备份' };
 zhCN.common = { confirm: '确认', cancel: '取消', delete: '删除', edit: '编辑', save: '保存', close: '关闭', loading: '加载中...', search: '搜索', logoutConfirm: '确定要登出系统吗？', baseCurrency: '基准币', upgrade: '升级', footerLocalDataPrivacy: '本应用所有交易数据均存储在本地，保障您的隐私安全。' };
 zhCN.nav = { dashboard: '仪表板', history: '交易记录', funds: '资金管理', accounts: '证券户', rebalance: '再平衡', simulator: '配置模拟', splits: '股票拆分', help: '系统管理', logout: '登出' };
-zhCN.login = { title: 'TradeView 登录', subtitle: '资产管理', email: '邮箱', password: '密码', login: '登录', privacy: '隐私声明', privacyDesc: '数据存储在个人设备，不涉及个人隐私，请定时备份。', riskDisclaimer: '风险声明', riskDisclaimerDesc: '投资有风险，过往绩效不代表未来表现。' };
+zhCN.login = { title: 'TradeView 登录', subtitle: '投资资产管家', email: '邮箱', password: '密码', login: '登录', privacy: '隐私声明', privacyDesc: '数据存储在个人设备，不涉及个人隐私，请定时备份。', riskDisclaimer: '风险声明', riskDisclaimerDesc: '投资有风险，过往绩效不代表未来表现。' };
 zhCN.dashboard = {
   ...zhTW.dashboard,
   netCost: '净投入',
