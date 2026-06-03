@@ -25,11 +25,18 @@ const BatchUpdateMarketModal: React.FC<Props> = ({ onUpdate, onClose }) => {
     tickerPlaceholder: isChinese ? '例如：VWRA' : 'e.g. VWRA',
     marketLabel: isChinese ? '新的市場設置' : 'New Market',
     foundRecords: (count: number) =>
-      isChinese ? `找到 ${count} 筆交易記錄` : `Found ${count} matching transactions`,
+      language === 'zh-TW'
+        ? `找到 ${count} 筆交易紀錄`
+        : language === 'zh-CN'
+          ? `找到 ${count} 笔交易记录`
+          : `Found ${count} matching transactions`,
     updateTargetPrefix: isChinese ? '將把這些記錄的市場設置更新為：' : 'These records will be updated to market:',
-    noMatchesAlert: isChinese
-      ? '找不到匹配的交易記錄，請確認股票代號是否正確。'
-      : 'No matching transactions found. Please verify the ticker symbol.',
+    noMatchesAlert:
+      language === 'zh-TW'
+        ? '找不到匹配的交易紀錄，請確認股票代號是否正確。'
+        : language === 'zh-CN'
+          ? '找不到匹配的交易记录，请确认股票代号是否正确。'
+          : 'No matching transactions found. Please verify the ticker symbol.',
     confirmUpdate: isChinese ? '確認修改' : 'Confirm Update',
   };
 
