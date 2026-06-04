@@ -10,7 +10,7 @@ import {
   calculateGenericXIRR,
 } from '../utils/calculations';
 import { t } from '../utils/i18n';
-import { formatHoldingUnitPrice, parseHoldingUnitPrice } from '../utils/formatDisplay';
+import { formatHoldingPrice, parseHoldingUnitPrice } from '../utils/formatDisplay';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 
@@ -236,7 +236,7 @@ const HoldingsTable: React.FC<Props> = () => {
     const priceDisplay =
       editingPriceKey === uniqueKey
         ? editPriceText
-        : formatCurrency(h.currentPrice, currency);
+        : formatHoldingPrice(h.currentPrice, currency);
 
     return (
       <tr
@@ -296,11 +296,11 @@ const HoldingsTable: React.FC<Props> = () => {
             type="text"
             inputMode="decimal"
             readOnly={editingPriceKey !== uniqueKey}
-            className="w-full min-w-[5.5rem] text-right bg-transparent border-none focus:ring-0 p-0 font-medium text-inherit tabular-nums cursor-text"
+            className="w-full text-right bg-transparent border-none focus:ring-0 p-0 font-medium text-inherit tabular-nums cursor-text truncate"
             value={priceDisplay}
             onFocus={() => {
               setEditingPriceKey(uniqueKey);
-              setEditPriceText(formatHoldingUnitPrice(h.currentPrice));
+              setEditPriceText(formatHoldingPrice(h.currentPrice));
             }}
             onChange={(e) => setEditPriceText(e.target.value)}
             onBlur={() => {
@@ -431,7 +431,12 @@ const HoldingsTable: React.FC<Props> = () => {
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-base text-left">
+        <table className="min-w-full w-full table-fixed text-base text-left">
+          <colgroup>
+            <col className="w-14" />
+            <col className="w-[5rem]" />
+            <col span={9} />
+          </colgroup>
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
@@ -440,7 +445,7 @@ const HoldingsTable: React.FC<Props> = () => {
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
               <th className="px-3 py-2 text-right whitespace-nowrap">{translations.holdings.currentPrice}</th>
               <th
-                className="px-3 py-2 w-32 text-right cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('weight')}
               >{translations.holdings.weight}<SortIcon col="weight" /></th>
               <th className="px-3 py-2 text-right">{translations.holdings.cost}</th>
