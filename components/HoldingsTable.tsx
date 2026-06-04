@@ -255,8 +255,8 @@ const HoldingsTable: React.FC<Props> = () => {
           e.currentTarget.style.backgroundColor = '';
         }}
       >
-        <td className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">
-          <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
+        <td className="px-3 py-2.5 sticky left-0 z-10 bg-white dark:bg-slate-800">
+          <span className={`px-2 py-0.5 rounded text-xs font-bold tracking-wide border ${
             h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' :
             h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' :
             h.market === Market.JP ? 'bg-orange-50 text-orange-600 border-orange-100' :
@@ -276,11 +276,11 @@ const HoldingsTable: React.FC<Props> = () => {
           </span>
         </td>
 
-        <td className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100">
+        <td className="px-3 py-2.5 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100">
           {h.ticker}
         </td>
 
-        <td className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-100 text-xs sm:text-sm">
+        <td className="px-3 py-2.5 text-right font-mono transition-colors text-slate-600 dark:text-slate-100">
           {(() => {
             const num = h.quantity;
             if (num % 1 === 0) {
@@ -291,16 +291,16 @@ const HoldingsTable: React.FC<Props> = () => {
           })()}
         </td>
 
-        <td className="px-2 py-2 text-right">
+        <td className="px-2 py-2.5 text-right">
            <div
             className="inline-flex items-center justify-end gap-0 rounded-sm px-0.5 py-0 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-200/80 dark:group-hover:bg-slate-600"
            >
-             <span className="text-slate-500 dark:text-slate-300 text-[10px] leading-none shrink-0 w-[1.65rem] text-right">{currency}</span>
+             <span className="text-slate-500 dark:text-slate-300 text-xs leading-none shrink-0 w-[1.75rem] text-right">{currency}</span>
              <input
               type="text"
               inputMode="decimal"
               size={7}
-              className="w-[7ch] min-w-0 max-w-[9ch] text-right text-xs bg-transparent border-none focus:ring-0 p-0 font-medium text-slate-800 dark:text-slate-100 tabular-nums"
+              className="w-[8ch] min-w-0 max-w-[10ch] text-right text-sm bg-transparent border-none focus:ring-0 p-0 font-medium text-slate-800 dark:text-slate-100 tabular-nums"
               value={priceDisplay}
               onFocus={() => {
                 setEditingPriceKey(uniqueKey);
@@ -317,10 +317,10 @@ const HoldingsTable: React.FC<Props> = () => {
            </div>
         </td>
 
-        <td className="px-3 py-2">
+        <td className="px-3 py-2.5">
           <div className="flex flex-col gap-1">
             <span
-              className={`text-xs font-medium text-right ${
+              className={`text-sm font-medium text-right ${
                 isDarkMode ? 'text-[#94a3b8]' : 'text-[#475569] group-hover:text-[#1e293b]'
               }`}
             >
@@ -345,31 +345,31 @@ const HoldingsTable: React.FC<Props> = () => {
           </div>
         </td>
 
-        <td className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-100">
+        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100">
           {formatCurrency(h.totalCost, currency)}
         </td>
 
         <td
-          className="px-3 py-2 text-right font-medium"
+          className="px-3 py-2.5 text-right font-medium"
           style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
         >
           {formatCurrency(h.currentValue, currency)}
         </td>
 
         <td
-          className={`px-3 py-2 text-right font-bold ${plColor}`}
+          className={`px-3 py-2.5 text-right font-bold ${plColor}`}
         >
           <div className="flex flex-col items-end leading-tight">
             <span>{formatCurrency(h.unrealizedPL, currency)}</span>
-            <span className="text-[10px] opacity-80">{isProfit ? '+' : ''}{h.unrealizedPLPercent.toFixed(2)}%</span>
+            <span className="text-xs opacity-80">{isProfit ? '+' : ''}{h.unrealizedPLPercent.toFixed(2)}%</span>
           </div>
         </td>
 
-        <td className={`px-3 py-2 text-right font-bold ${roiColor}`}>
+        <td className={`px-3 py-2.5 text-right font-bold ${roiColor}`}>
           {h.annualizedReturn && h.annualizedReturn !== 0 ? `${h.annualizedReturn.toFixed(1)}%` : '-'}
         </td>
 
-        <td className={`px-3 py-2 text-right text-xs font-bold ${dailyChangeColor}`}>
+        <td className={`px-3 py-2.5 text-right text-sm font-bold ${dailyChangeColor}`}>
           {h.dailyChange !== undefined && h.dailyChange !== null ? (
              <div className="flex flex-col items-end">
                <span>{h.dailyChange > 0 ? '+' : ''}{h.dailyChange.toFixed(2)}</span>
@@ -382,7 +382,7 @@ const HoldingsTable: React.FC<Props> = () => {
           )}
         </td>
 
-        <td className="px-3 py-2 text-right text-xs text-slate-600 dark:text-slate-100">
+        <td className="px-3 py-2.5 text-right text-slate-600 dark:text-slate-100">
            {new Intl.NumberFormat('zh-TW', {
               style: 'currency',
               currency: currency,
@@ -436,7 +436,7 @@ const HoldingsTable: React.FC<Props> = () => {
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm text-left">
+        <table className="min-w-full text-base text-left">
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
