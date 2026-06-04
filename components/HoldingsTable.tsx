@@ -291,15 +291,16 @@ const HoldingsTable: React.FC<Props> = () => {
           })()}
         </td>
 
-        <td className="px-3 py-2 text-right">
+        <td className="px-2 py-2 text-right">
            <div
-            className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-200/80 dark:group-hover:bg-slate-600"
+            className="inline-flex items-center justify-end gap-0 rounded-sm px-0.5 py-0 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-200/80 dark:group-hover:bg-slate-600"
            >
-             <span className="text-slate-500 dark:text-slate-200 text-xs">{currency}</span>
+             <span className="text-slate-500 dark:text-slate-300 text-[10px] leading-none shrink-0 w-[1.65rem] text-right">{currency}</span>
              <input
               type="text"
               inputMode="decimal"
-              className="w-24 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
+              size={7}
+              className="w-[7ch] min-w-0 max-w-[9ch] text-right text-xs bg-transparent border-none focus:ring-0 p-0 font-medium text-slate-800 dark:text-slate-100 tabular-nums"
               value={priceDisplay}
               onFocus={() => {
                 setEditingPriceKey(uniqueKey);
@@ -442,7 +443,7 @@ const HoldingsTable: React.FC<Props> = () => {
               <th className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">{translations.holdings.market}</th>
               <th className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800">{translations.holdings.ticker}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
-              <th className="px-3 py-2 text-right">{translations.holdings.currentPrice}</th>
+              <th className="px-2 py-2 text-right whitespace-nowrap">{translations.holdings.currentPrice}</th>
               <th
                 className="px-3 py-2 w-32 text-left cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('weight')}
