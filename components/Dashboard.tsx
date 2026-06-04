@@ -1840,6 +1840,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             >
                               ({acc.currency})
                             </span>
+                            {acc.isClosed ? (
+                              <span className="ml-1.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-200">
+                                {translations.dashboard.accountClosedBadge}
+                              </span>
+                            ) : null}
                           </div>
                         </td>
                         <td
