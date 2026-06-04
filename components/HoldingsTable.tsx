@@ -430,13 +430,8 @@ const HoldingsTable: React.FC<Props> = () => {
           />
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full w-full table-fixed text-base text-left">
-          <colgroup>
-            <col className="w-14" />
-            <col className="w-[5rem]" />
-            <col span={9} />
-          </colgroup>
+      <div className="overflow-x-auto touch-pan-x [-webkit-overflow-scrolling:touch]">
+        <table className="min-w-[72rem] w-max text-base text-left">
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
