@@ -130,28 +130,17 @@ export function parsePriceCurrencyCode(code?: string): Currency | undefined {
   return PRICE_CURRENCY_CODE_MAP[cur];
 }
 
-/**
- * 持倉／Yahoo 下游使用的「報價幣別」：
- * 1) priceCurrency（如 VWRA 設 USD）
- * 2) 證券戶幣別與市場預設不同時用證券戶幣別（UK+USD 戶）
- * 3) 否則市場預設（UK→GBP）
- */
+/** 持倉／Yahoo 報價幣別 = 證券戶幣別；找不到帳戶時退回市場預設 */
 export function quoteCurrencyForHolding(h: Holding, accounts: Account[]): Currency {
-  const fromField = parsePriceCurrencyCode(h.priceCurrency);
-  if (fromField) return fromField;
   const acc = accounts.find(a => a.id === h.accountId);
-  const marketCcy = marketToCurrency(h.market);
-  if (acc?.currency && acc.currency !== marketCcy) return acc.currency;
-  return marketCcy;
+  if (acc?.currency) return acc.currency;
+  return marketToCurrency(h.market);
 }
 
 export function quoteCurrencyForTransaction(tx: Transaction, accounts: Account[]): Currency {
-  const fromField = parsePriceCurrencyCode(tx.priceCurrency);
-  if (fromField) return fromField;
   const acc = accounts.find(a => a.id === tx.accountId);
-  const marketCcy = marketToCurrency(tx.market);
-  if (acc?.currency && acc.currency !== marketCcy) return acc.currency;
-  return marketCcy;
+  if (acc?.currency) return acc.currency;
+  return marketToCurrency(tx.market);
 }
 
 /** currentPrices / priceDetails 的 key；非市場預設報價幣時加後綴（如 UK-VWRA-USD） */
@@ -625,7 +614,6 @@ export const calculateHoldings = (
         weight: 0,
         annualizedReturn: 0,
         firstBuyDate: tx.date,
-        priceCurrency: tx.priceCurrency,
       });
     }
     if (!flowsMap.has(key)) flowsMap.set(key, []);
