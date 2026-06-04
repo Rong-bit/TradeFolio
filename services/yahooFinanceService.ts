@@ -740,7 +740,7 @@ async function fetchHistoricalRate(currency: string, year: number): Promise<numb
 export const fetchCurrentPrices = async (
   tickers: string[],
   markets?: YahooMarket[],
-  options?: { skipCache?: boolean },
+  options?: { skipCache?: boolean; /** 與 tickers 對齊；覆蓋市場預設報價幣（如 UK+USD 的 VWRA） */ quoteCurrencies?: string[] },
 ): Promise<{
   prices: Record<string, PriceData>;
   exchangeRate: number;
@@ -782,10 +782,10 @@ export const fetchCurrentPrices = async (
     const p = priceList[i];
     if (!p) return;
 
-    // 目標：讓 prices[t].price / change 都成為「程式下游期待的市場幣別」。
-    // 例如：Holding.market=UK -> utils/calculations.ts 期望 quote 幣別是 GBP，
-    // 但 Yahoo 可能回傳 currency=USD，此時要先 USD->GBP 再存入 currentPrices。
-    const expectedCcy = markets?.[i] ? marketToExpectedQuoteCurrency(markets[i]) : null;
+    // 目標：讓 prices[t].price / change 都成為「下游報價幣別」（預設=市場幣；可覆蓋為 USD 等）。
+    const expectedCcy =
+      options?.quoteCurrencies?.[i]?.toUpperCase() ||
+      (markets?.[i] ? marketToExpectedQuoteCurrency(markets[i]) : null);
     if (!expectedCcy) {
       prices[t] = p;
       return;
@@ -812,12 +812,6 @@ export const fetchCurrentPrices = async (
     const toRate = rateToTwd(toCcy, rateMap);
     if (fromRate > 0 && toRate > 0) {
       const factor = fromRate / toRate; // (from->TWD) / (to->TWD)
-      if (t.toUpperCase().includes('DTLA') || t.toUpperCase().includes('VOD')) {
-        const converted = normalizedPrice * factor;
-        console.log(
-          `[PRICE_CONVERT_DEBUG] ${t}: ${fromCcy}->${toCcy} raw=${p.price} normalized=${normalizedPrice} fromRate=${fromRate} toRate=${toRate} factor=${factor} convertedGBP=${converted}`
-        );
-      }
       prices[t] = {
         ...p,
         price: normalizedPrice * factor,
