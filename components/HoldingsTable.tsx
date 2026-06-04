@@ -302,12 +302,12 @@ const HoldingsTable: React.FC<Props> = () => {
 
         <td className="px-3 py-2 text-right whitespace-nowrap">
            <div
-            className="inline-flex max-w-full items-center justify-end gap-0.5 rounded px-0.5 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-200/80 dark:group-hover:bg-slate-600"
+            className="inline-flex w-full max-w-full items-center justify-end gap-1 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-200/80 dark:group-hover:bg-slate-600"
            >
-             <span className="text-slate-500 dark:text-slate-200 text-[10px] shrink-0">$</span>
+             <span className="text-slate-500 dark:text-slate-200 text-xs shrink-0">$</span>
              <input
               type="number"
-              className="w-12 min-w-0 max-w-full text-right bg-transparent border-none focus:ring-0 p-0 text-xs font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
+              className="w-[4.75rem] sm:w-20 min-w-0 flex-1 max-w-full text-right bg-transparent border-none focus:ring-0 p-0 text-sm font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
               value={displayCurrentPrice}
               onChange={(e) => {
                 const raw = parseFloat(e.target.value) || 0;
