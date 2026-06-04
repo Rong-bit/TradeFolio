@@ -63,7 +63,11 @@ function tsToYmd(secondsOrMs: number): string | null {
   return d.toISOString().slice(0, 10);
 }
 
-async function fetchAsText(target: string): Promise<string | null> {
+function isMoneyDjTarget(target: string): boolean {
+  return /^https:\/\/(www\.)?moneydj\.com\//i.test(target);
+}
+
+async function fetchAsTextOnce(target: string): Promise<string | null> {
   const candidates = buildProxiedFetchUrls(target);
   const FETCH_TIMEOUT_MS = proxyFetchTimeoutMs();
   for (const url of candidates) {
@@ -85,6 +89,19 @@ async function fetchAsText(target: string): Promise<string | null> {
     } catch {
       /* timeout / CORS → 換下一個 */
     }
+  }
+  return null;
+}
+
+/** MoneyDJ 在手機網路易逾時；多試幾次再退回 Yahoo 粗精度（0.197） */
+async function fetchAsText(target: string): Promise<string | null> {
+  const maxAttempts = isMoneyDjTarget(target) ? 3 : 1;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      await new Promise(r => setTimeout(r, 500 * attempt));
+    }
+    const text = await fetchAsTextOnce(target);
+    if (text) return text;
   }
   return null;
 }
@@ -347,16 +364,16 @@ export async function fetchActualDividendHistory(
   market: Market,
   yahooMarket: YahooMarket
 ): Promise<ActualDividendRecord[]> {
-  // 1) Yahoo events=div 永遠抓（普及度最高，作為通用 fallback / 追加來源）
-  const yahoo = await fetchYahooDividendEvents(ticker, yahooMarket);
-
-  // 2) 台股 cross-check 用：MoneyDJ 個股股利政策頁（年度／季度合計金額）
-  const mdjTw =
-    market === Market.TW ? await fetchMoneyDjTwAmounts(ticker).catch(() => null) : null;
-
-  // 3) 非台股優先來源：MoneyDJ ETF 配息頁；提供精確每股 + 真實發放日（非推估）
-  const mdjEtfRows =
-    market !== Market.TW ? await fetchMoneyDjEtfHistory(ticker).catch(() => null) : null;
+  // 並行抓取：避免 MoneyDJ 排在 Yahoo 後面且逾時時，整段只拿到 Yahoo 0.197
+  const [yahoo, mdjEtfRows, mdjTw] = await Promise.all([
+    fetchYahooDividendEvents(ticker, yahooMarket),
+    market !== Market.TW
+      ? fetchMoneyDjEtfHistory(ticker).catch(() => null)
+      : Promise.resolve(null as MoneyDjEtfDividendRow[] | null),
+    market === Market.TW
+      ? fetchMoneyDjTwAmounts(ticker).catch(() => null)
+      : Promise.resolve(null as MoneyDjAmountByPeriod | null),
+  ]);
 
   const offset = payDateOffsetDays(market);
   const today = new Date().toISOString().slice(0, 10);
