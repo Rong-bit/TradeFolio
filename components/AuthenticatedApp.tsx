@@ -435,7 +435,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
   const mainMaxW = view === 'dashboard' ? 'max-w-[1800px]' : 'max-w-7xl';
   const mainPadding =
     view === 'dashboard'
-      ? 'max-sm:overflow-x-clip max-sm:px-0 max-sm:pt-4 max-sm:pb-4 sm:pl-3 sm:pr-2 md:p-8 max-w-[1800px]'
+      ? 'max-sm:px-0 max-sm:pt-4 max-sm:pb-4 sm:pl-3 sm:pr-2 md:p-8 max-w-[1800px]'
       : 'p-4 max-w-7xl';
 
   return (
