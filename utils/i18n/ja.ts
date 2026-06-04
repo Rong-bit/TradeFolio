@@ -126,7 +126,8 @@ export const ja: Translations = {
     profitNT: '損益',
     profitFormulaTooltip: '総損益 = 含み + 実現 + 配当/利息。実現損益は SELL のみ集計し、移管は含めません。',
     accountReturnRateTooltip:
-      '累積リターン = 損益 ÷ 分母 × 100%。分母は純入金優先。純入金≤0のときは累計投入コスト（保有コスト＋売却済みコスト）。',
+      '累積リターン = 損益 ÷ 分母 × 100%。分母は純入金優先。純入金≤0のときは累計投入コスト。転換に時価を入力した場合は転出側で実現、転入側は時価原価。保有なし=決済済み。',
+    accountClosedBadge: '決済済み',
     unrealizedPL: '含み損益',
     realizedPL: '実現損益',
     dividendInterest: '配当/利息',

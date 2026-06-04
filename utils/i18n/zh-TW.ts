@@ -125,7 +125,8 @@ export const zhTW: Translations = {
     profitFormulaTooltip:
       '總損益 = 未實現 + 已實現 + 股利/利息。已實現僅計 SELL，轉倉不列入已實現。',
     accountReturnRateTooltip:
-      '累積報酬率 = 損益 ÷ 分母 × 100%。分母優先為淨入金（入金−出金±現金轉帳）；若淨入金≤0，改為累計投入成本（目前持倉成本＋已賣出部位成本）。不含股票轉倉市值結案。',
+      '累積報酬率 = 損益 ÷ 分母 × 100%。分母優先為淨入金（入金−出金±現金轉帳）；若淨入金≤0，改為累計投入成本（目前持倉成本＋已賣出部位成本）。轉倉若填轉移日市值，轉出戶認列已實現、轉入戶成本以市值為準。無持股標示已結清。',
+    accountClosedBadge: '已結清',
     unrealizedPL: '未實現損益',
     realizedPL: '已實現損益',
     dividendInterest: '累積股利/利息',

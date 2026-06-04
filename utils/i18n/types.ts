@@ -153,6 +153,7 @@ export interface Translations {
     profitNT: string;
     profitFormulaTooltip: string;
     accountReturnRateTooltip: string;
+    accountClosedBadge: string;
     unrealizedPL: string;
     realizedPL: string;
     dividendInterest: string;

@@ -97,7 +97,8 @@ export const fr: Translations = {
     profitNT: 'Resultat',
     profitFormulaTooltip: 'P/L total = Non realise + Realise + Div./Interets. Le realise ne compte que les SELL, les transferts sont exclus.',
     accountReturnRateTooltip:
-      'Rendement cumule = P/L ÷ denominateur × 100 %. Denominateur : encaisse nette ; si ≤ 0 : cout cumule (positions ouvertes + lots vendus).',
+      'Rendement cumule = P/L ÷ denominateur. Encaisse nette ; si ≤ 0 cout cumule. Transfert avec valeur de marche : realise source, cout cible. Sans position = cloture.',
+    accountClosedBadge: 'Cloture',
     unrealizedPL: 'P/L non realise',
     realizedPL: 'P/L realise',
     dividendInterest: 'Div./Interets',

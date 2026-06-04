@@ -96,7 +96,8 @@ export const de: Translations = {
     profitNT: 'Gewinn',
     profitFormulaTooltip: 'Gesamt G/V = Nicht realisiert + Realisiert + Div./Zinsen. Realisiert wird nur aus SELL berechnet, Überträge sind ausgeschlossen.',
     accountReturnRateTooltip:
-      'Kumulierte Rendite = G/V ÷ Nenner × 100 %. Nenner: Netto-Einzahlung; bei ≤ 0: kumulierte Kostenbasis (offene Positionen + verkaufte Lots).',
+      'Kumulierte Rendite = G/V ÷ Nenner × 100 %. Netto-Einzahlung; bei ≤ 0 Kostenbasis. Uebertrag mit Marktwert: Quelle realisiert, Ziel zu Marktkosten. Keine Position = geschlossen.',
+    accountClosedBadge: 'Geschlossen',
     unrealizedPL: 'Nicht real. G/V',
     realizedPL: 'Real. G/V',
     dividendInterest: 'Div./Zinsen',

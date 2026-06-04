@@ -127,7 +127,8 @@ export const en: Translations = {
     profitFormulaTooltip:
       'Total P/L = Unrealized + Realized + Div/Interest. Realized P/L includes SELL only; transfers are excluded.',
     accountReturnRateTooltip:
-      'Cumulative return = P/L ÷ denominator × 100%. Denominator prefers net cash in (deposits − withdrawals ± cash transfers). If net cash in ≤ 0, uses cumulative cost basis (open holdings cost + cost of sold lots). Stock transfers at market value are not included.',
+      'Cumulative return = P/L ÷ denominator × 100%. Denominator prefers net cash in (deposits − withdrawals ± cash transfers). If net cash in ≤ 0, uses cumulative cost basis. Transfers with market value: source realizes P/L, target cost at market. No holdings = closed.',
+    accountClosedBadge: 'Closed',
     unrealizedPL: 'Unrealized P/L',
     realizedPL: 'Realized P/L',
     dividendInterest: 'Div/Interest',

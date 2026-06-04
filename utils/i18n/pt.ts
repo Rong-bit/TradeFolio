@@ -72,7 +72,8 @@ export const pt: Translations = {
     profitNT: 'Lucro',
     profitFormulaTooltip: 'P/L Total = Nao Realizado + Realizado + Dividendos/Juros. O realizado considera apenas SELL; transferências são excluídas.',
     accountReturnRateTooltip:
-      'Retorno acumulado = P/L ÷ denominador × 100%. Denominador: entrada líquida; se ≤ 0, custo acumulado (posições abertas + vendidas).',
+      'Retorno acumulado = P/L ÷ denominador. Entrada líquida; se ≤ 0, custo acumulado. Transferência com valor de mercado: realizado na origem, custo de mercado no destino. Sem posições = encerrado.',
+    accountClosedBadge: 'Encerrado',
     unrealizedPL: 'P/L Não Realizado',
     realizedPL: 'P/L Realizado',
     dividendInterest: 'Dividendos/Juros',

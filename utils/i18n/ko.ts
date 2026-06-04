@@ -126,7 +126,8 @@ export const ko: Translations = {
     profitNT: '손익',
     profitFormulaTooltip: '총 손익 = 미실현 + 실현 + 배당/이자. 실현 손익은 SELL만 집계하며, 계좌 간 이관은 제외됩니다.',
     accountReturnRateTooltip:
-      '누적 수익률 = 손익 ÷ 분모 × 100%. 분모는 순입금 우선; 순입금≤0이면 누적 투입 원가(보유 원가+매도 원가).',
+      '누적 수익률 = 손익 ÷ 분모 × 100%. 순입금 우선; ≤0이면 누적 원가. 이체 시가 입력 시 출금 계좌 실현·입금 계좌 시가 원가. 보유 없음=결산.',
+    accountClosedBadge: '결산',
     unrealizedPL: '미실현 손익',
     realizedPL: '실현 손익',
     dividendInterest: '배당/이자',
