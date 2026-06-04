@@ -6,8 +6,6 @@ import { t } from '../utils/i18n';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
-import { marketToCurrency } from '../utils/calculations';
-
 interface Props {
   onAdd: (tx: Transaction) => void;
   onUpdate: (tx: Transaction) => void;
@@ -33,7 +31,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     fees: '0',
     accountId: accounts[0]?.id || '',
     note: '',
-    priceCurrency: '',
   });
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -67,7 +64,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         fees: editingTransaction.fees.toString(),
         accountId: editingTransaction.accountId,
         note: editingTransaction.note || '',
-        priceCurrency: editingTransaction.priceCurrency || '',
       });
       setTargetAccountId('');
     } else {
@@ -82,7 +78,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         fees: '0',
         accountId: accounts[0]?.id || '',
         note: '',
-        priceCurrency: '',
       });
       setTargetAccountId('');
     }
@@ -171,7 +166,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
       fees: fees,
       accountId: formData.accountId,
       note: formData.note,
-      priceCurrency: formData.priceCurrency || undefined,
       amount: finalAmount // 儲存計算後的總金額
     };
 
@@ -200,7 +194,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         fees: 0,
         accountId: targetAccountId,
         note: formData.note,
-        priceCurrency: formData.priceCurrency || undefined,
         amount: price * quantity
       };
       setPendingTransferInTransaction(transferInTx);
@@ -251,7 +244,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     }
   };
 
-  /** 交易入帳幣別 = 所選證券戶幣別（與市場報價幣別無須一致） */
+  /** 單價／金額皆以所選證券戶幣別輸入（如 USD 戶填美元價） */
   const getAccountCurrencyCode = (accountId: string): string => {
     const a = accounts.find((x: Account) => x.id === accountId);
     return a ? String(a.currency) : 'TWD';
@@ -287,25 +280,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
 
   const formatAmountForMarket = (value: number, market: Market): string =>
     market === Market.TW ? Math.round(value).toString() : value.toFixed(2);
-
-  const getPriceCurrencyOptions = (market: Market): { value: string; label: string }[] => {
-    const base = marketToCurrency(market);
-    const opts: { value: string; label: string }[] = [{
-      value: '',
-      label: isChinese ? `預設（${base}）` : `Default (${base})`,
-    }];
-    if (market === Market.UK) {
-      opts.push({ value: 'GBP', label: isChinese ? 'GBP（英鎊）' : 'GBP (British Pound)' });
-      opts.push({ value: 'USD', label: isChinese ? 'USD（美元 ETF，如 VWRA）' : 'USD (USD-denominated ETF, e.g. VWRA)' });
-    } else if (market === Market.DE || market === Market.FR) {
-      opts.push({ value: 'EUR', label: isChinese ? 'EUR（歐元）' : 'EUR (Euro)' });
-      opts.push({ value: 'USD', label: isChinese ? 'USD（美元計價 ETF）' : 'USD (USD-denominated ETF)' });
-    } else if (market === Market.AU || market === Market.CA) {
-      opts.push({ value: base, label: base });
-      opts.push({ value: 'USD', label: isChinese ? 'USD（美元計價 ETF）' : 'USD (USD-denominated ETF)' });
-    }
-    return opts;
-  };
 
   // 從 holdings 中根據 ticker 查找對應的市場
   const findMarketFromHoldings = (ticker: string): Market | null => {
@@ -601,27 +575,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               </select>
             </div>
 
-          {(formData.market === Market.UK || formData.market === Market.DE ||
-            formData.market === Market.FR || formData.market === Market.AU ||
-            formData.market === Market.CA) && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                {isChinese ? '報價幣別' : 'Quote Currency'}
-                <span className="ml-1 text-xs text-slate-400">
-                  {isChinese ? '（選填，覆蓋預設）' : '(Optional, overrides default)'}
-                </span>
-              </label>
-              <select
-                value={formData.priceCurrency}
-                onChange={e => setFormData(prev => ({ ...prev, priceCurrency: e.target.value }))}
-                className={`mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none ${FORM_FIELD_THEME}`}
-              >
-                {getPriceCurrencyOptions(formData.market).map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-          )}
             <div>
               <label className="block text-sm font-medium text-slate-700">{tf.ticker}</label>
               <input 
