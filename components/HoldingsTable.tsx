@@ -445,7 +445,7 @@ const HoldingsTable: React.FC<Props> = () => {
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
               <th className="px-2 py-2 text-right whitespace-nowrap">{translations.holdings.currentPrice}</th>
               <th
-                className="px-3 py-2 w-32 text-left cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 w-32 text-right cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('weight')}
               >{translations.holdings.weight}<SortIcon col="weight" /></th>
               <th className="px-3 py-2 text-right">{translations.holdings.cost}</th>
