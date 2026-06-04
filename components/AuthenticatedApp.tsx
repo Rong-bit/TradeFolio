@@ -227,6 +227,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
   const handleAutoUpdatePrices = usePriceAutoUpdate({
     baseHoldings,
     holdings,
+    accounts: computedAccounts,
     updatePricesAndDetails,
     updateRates,
     showAlert,
