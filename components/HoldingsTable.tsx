@@ -4,14 +4,15 @@ import RefreshCountdown from './RefreshCountdown';
 import { Holding, Market, Account, Currency, TransactionType, Transaction } from '../types';
 import {
   formatCurrency,
+  convertAccountCurrencyToMarketQuote,
   valuationCurrencyForHolding,
   quoteCurrencyForHolding,
   holdingPriceKey,
   calculateGenericXIRR,
 } from '../utils/calculations';
 import { t } from '../utils/i18n';
-import { formatHoldingPrice, parseHoldingUnitPrice } from '../utils/formatDisplay';
 import { usePortfolio } from '../contexts/PortfolioContext';
+import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 
 interface Props {}
@@ -71,13 +72,12 @@ function computeMergedAnnualizedXirr(
 const HoldingsTable: React.FC<Props> = () => {
   const { holdings, accounts, transactions, updatePrice: onUpdatePrice,
     handleAutoUpdatePrices: onAutoUpdate, refreshIntervalMs } = usePortfolio();
+  const { rates } = useMarket();
   const { language } = useUI();
   const translations = t(language);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('merged');
-  const [editingPriceKey, setEditingPriceKey] = useState<string | null>(null);
-  const [editPriceText, setEditPriceText] = useState('');
   // ⑤ Sortable columns
   type SortKey = 'weight' | 'unrealizedPL' | 'unrealizedPLPercent' | 'annualizedReturn' | 'dailyChangePercent' | 'currentValue';
   const [sortKey, setSortKey] = useState<SortKey>('weight');
@@ -220,12 +220,22 @@ const HoldingsTable: React.FC<Props> = () => {
     }
   };
 
+  function marketNativeCurrency(m: Market): string {
+    return m === Market.TW ? 'TWD' : m === Market.JP ? 'JPY' : m === Market.CN ? 'CNY' : m === Market.SZ ? 'CNY' : m === Market.IN ? 'INR' : m === Market.CA ? 'CAD' : m === Market.FR ? 'EUR' : m === Market.HK ? 'HKD' : m === Market.KR ? 'KRW' : m === Market.DE ? 'EUR' : m === Market.AU ? 'AUD' : m === Market.SA ? 'SAR' : m === Market.BR ? 'BRL' : m === Market.UK ? 'GBP' : 'USD';
+  }
+
   const MS_ROW = '\x1e';
 
   function renderHoldingRow(h: Holding, isDetailedMode: boolean = false) {
     const isProfit = h.unrealizedPL >= 0;
     const acc = accounts.find(a => a.id === h.accountId);
-    const currency = String(quoteCurrencyForHolding(h, accounts));
+    const mergedCurrency =
+      h.accountId.startsWith('merged') && h.accountId.includes(MS_ROW)
+        ? h.accountId.split(MS_ROW).slice(-1)[0]
+        : null;
+    const currency = isDetailedMode && acc
+      ? String(acc.currency)
+      : mergedCurrency ?? marketNativeCurrency(h.market);
     const plColor = isProfit ? 'text-success' : 'text-danger';
     const roiColor = h.annualizedReturn >= 0 ? 'text-blue-600' : 'text-orange-600';
     const dailyChangeColor = h.dailyChange !== undefined && h.dailyChange !== null
@@ -233,10 +243,9 @@ const HoldingsTable: React.FC<Props> = () => {
       : 'text-slate-500';
     const uniqueKey = `${h.accountId}-${h.market}-${h.ticker}`;
 
-    const priceDisplay =
-      editingPriceKey === uniqueKey
-        ? editPriceText
-        : formatHoldingPrice(h.currentPrice, currency);
+    const displayCurrentPrice = Number.isFinite(h.currentPrice)
+      ? Number(h.currentPrice.toFixed(2))
+      : 0;
 
     return (
       <tr
@@ -255,8 +264,8 @@ const HoldingsTable: React.FC<Props> = () => {
           e.currentTarget.style.backgroundColor = '';
         }}
       >
-        <td className="px-3 py-2.5 sticky left-0 z-10 bg-white dark:bg-slate-800">
-          <span className={`px-2 py-0.5 rounded text-xs font-bold tracking-wide border ${
+        <td className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
             h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' :
             h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' :
             h.market === Market.JP ? 'bg-orange-50 text-orange-600 border-orange-100' :
@@ -276,46 +285,55 @@ const HoldingsTable: React.FC<Props> = () => {
           </span>
         </td>
 
-        <td className="px-3 py-2.5 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100">
+        <td className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100">
           {h.ticker}
         </td>
 
-        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100 whitespace-nowrap">
+        <td className="px-3 py-2 text-right font-mono transition-colors text-slate-600 dark:text-slate-100 text-xs sm:text-sm">
           {(() => {
             const num = h.quantity;
             if (num % 1 === 0) {
-              return num.toLocaleString('zh-TW');
+              return num.toLocaleString('en-US');
             }
             const fixed = num.toFixed(5);
             return fixed.replace(/\.?0+$/, '');
           })()}
         </td>
 
-        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100 whitespace-nowrap">
-          <input
-            type="text"
-            inputMode="decimal"
-            readOnly={editingPriceKey !== uniqueKey}
-            className="w-full min-w-0 text-right bg-transparent border-none focus:ring-0 p-0 font-medium text-inherit tabular-nums cursor-text truncate"
-            value={priceDisplay}
-            onFocus={() => {
-              setEditingPriceKey(uniqueKey);
-              setEditPriceText(formatHoldingPrice(h.currentPrice));
-            }}
-            onChange={(e) => setEditPriceText(e.target.value)}
-            onBlur={() => {
-              const raw = parseHoldingUnitPrice(editPriceText);
-              const quoteCcy = quoteCurrencyForHolding(h, accounts);
-              onUpdatePrice(holdingPriceKey(h.market, h.ticker, quoteCcy), raw);
-              setEditingPriceKey(null);
-            }}
-          />
+        <td className="px-3 py-2 text-right">
+           <div
+            className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-200/80 dark:group-hover:bg-slate-600"
+           >
+             <span className="text-slate-500 dark:text-slate-200 text-xs">$</span>
+             <input
+              type="number"
+              className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
+              value={displayCurrentPrice}
+              onChange={(e) => {
+                const raw = parseFloat(e.target.value) || 0;
+                const quoteCcy = quoteCurrencyForHolding(h, accounts);
+                let marketPrice = raw;
+                if (isDetailedMode && acc && !h.accountId.startsWith('merged')) {
+                  marketPrice = convertAccountCurrencyToMarketQuote(raw, quoteCcy, acc.currency, rates);
+                } else if (mergedCurrency && mergedCurrency !== quoteCcy) {
+                  marketPrice = convertAccountCurrencyToMarketQuote(
+                    raw,
+                    quoteCcy,
+                    mergedCurrency as Currency,
+                    rates
+                  );
+                }
+                onUpdatePrice(holdingPriceKey(h.market, h.ticker, quoteCcy), marketPrice);
+              }}
+              step="0.01"
+             />
+           </div>
         </td>
 
-        <td className="px-3 py-2.5 whitespace-nowrap">
+        <td className="px-3 py-2">
           <div className="flex flex-col gap-1">
             <span
-              className={`text-sm font-medium text-right ${
+              className={`text-xs font-medium text-right ${
                 isDarkMode ? 'text-[#94a3b8]' : 'text-[#475569] group-hover:text-[#1e293b]'
               }`}
             >
@@ -340,31 +358,31 @@ const HoldingsTable: React.FC<Props> = () => {
           </div>
         </td>
 
-        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100 whitespace-nowrap">
+        <td className="px-3 py-2 text-right font-medium text-slate-600 dark:text-slate-100">
           {formatCurrency(h.totalCost, currency)}
         </td>
 
         <td
-          className="px-3 py-2.5 text-right font-medium whitespace-nowrap"
+          className="px-3 py-2 text-right font-medium"
           style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
         >
           {formatCurrency(h.currentValue, currency)}
         </td>
 
         <td
-          className={`px-3 py-2.5 text-right font-bold whitespace-nowrap ${plColor}`}
+          className={`px-3 py-2 text-right font-bold ${plColor}`}
         >
           <div className="flex flex-col items-end leading-tight">
             <span>{formatCurrency(h.unrealizedPL, currency)}</span>
-            <span className="text-xs opacity-80">{isProfit ? '+' : ''}{h.unrealizedPLPercent.toFixed(2)}%</span>
+            <span className="text-[10px] opacity-80">{isProfit ? '+' : ''}{h.unrealizedPLPercent.toFixed(2)}%</span>
           </div>
         </td>
 
-        <td className={`px-3 py-2.5 text-right font-bold whitespace-nowrap ${roiColor}`}>
+        <td className={`px-3 py-2 text-right font-bold ${roiColor}`}>
           {h.annualizedReturn && h.annualizedReturn !== 0 ? `${h.annualizedReturn.toFixed(1)}%` : '-'}
         </td>
 
-        <td className={`px-3 py-2.5 text-right text-sm font-bold whitespace-nowrap ${dailyChangeColor}`}>
+        <td className={`px-3 py-2 text-right text-xs font-bold ${dailyChangeColor}`}>
           {h.dailyChange !== undefined && h.dailyChange !== null ? (
              <div className="flex flex-col items-end">
                <span>{h.dailyChange > 0 ? '+' : ''}{h.dailyChange.toFixed(2)}</span>
@@ -377,7 +395,7 @@ const HoldingsTable: React.FC<Props> = () => {
           )}
         </td>
 
-        <td className="px-3 py-2.5 text-right text-slate-600 dark:text-slate-100 whitespace-nowrap">
+        <td className="px-3 py-2 text-right text-xs text-slate-600 dark:text-slate-100">
            {new Intl.NumberFormat('zh-TW', {
               style: 'currency',
               currency: currency,
@@ -430,42 +448,37 @@ const HoldingsTable: React.FC<Props> = () => {
           />
         </div>
       </div>
-      <div className="holdings-table-x-scroll overflow-x-auto overscroll-x-contain">
-        <table className="min-w-[72rem] w-full table-fixed text-base text-left">
-          <colgroup>
-            <col className="w-14" />
-            <col className="w-20" />
-            <col span={9} />
-          </colgroup>
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm text-left">
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
-              <th className="holdings-th-sticky holdings-th-sticky-corner px-3 py-2 sticky top-16 left-0 z-30 bg-white dark:bg-slate-800">{translations.holdings.market}</th>
-              <th className="holdings-th-sticky holdings-th-sticky-corner px-3 py-2 sticky top-16 left-14 z-30 bg-white dark:bg-slate-800">{translations.holdings.ticker}</th>
-              <th className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800">{translations.holdings.quantity}</th>
-              <th className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800">{translations.holdings.currentPrice}</th>
+              <th className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">{translations.holdings.market}</th>
+              <th className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800">{translations.holdings.ticker}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.currentPrice}</th>
               <th
-                className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800 cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 w-32 text-left cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('weight')}
               >{translations.holdings.weight}<SortIcon col="weight" /></th>
-              <th className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800">{translations.holdings.cost}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.cost}</th>
               <th
-                className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800 cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('currentValue')}
               >{translations.holdings.marketValue}<SortIcon col="currentValue" /></th>
               <th
-                className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800 cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('unrealizedPL')}
               >{translations.holdings.profitLoss}<SortIcon col="unrealizedPL" /></th>
               <th
-                className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800 cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('annualizedReturn')}
               >{translations.holdings.annualizedROI}<SortIcon col="annualizedReturn" /></th>
               <th
-                className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800 cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('dailyChangePercent')}
               >{translations.holdings.dailyChange}<SortIcon col="dailyChangePercent" /></th>
-              <th className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800">{translations.holdings.avgPrice}</th>
+              <th className="px-3 py-2 text-right">{translations.holdings.avgPrice}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800">
@@ -515,17 +528,17 @@ const HoldingsTable: React.FC<Props> = () => {
                             <span className="text-xs font-normal opacity-75">({account.currency})</span>
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">-</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">-</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">{accountTotalWeight.toFixed(1)}%</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">{formatCurrency(accountTotalCost, currency)}</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">{formatCurrency(accountTotalValue, currency)}</td>
-                        <td className={`px-3 py-2 text-right whitespace-nowrap ${accountTotalPL >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                        <td className="px-3 py-2 text-right">-</td>
+                        <td className="px-3 py-2 text-right">-</td>
+                        <td className="px-3 py-2 text-right">{accountTotalWeight.toFixed(1)}%</td>
+                        <td className="px-3 py-2 text-right">{formatCurrency(accountTotalCost, currency)}</td>
+                        <td className="px-3 py-2 text-right">{formatCurrency(accountTotalValue, currency)}</td>
+                        <td className={`px-3 py-2 text-right ${accountTotalPL >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
                           {formatCurrency(accountTotalPL, currency)}
                         </td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">-</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">-</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">-</td>
+                        <td className="px-3 py-2 text-right">-</td>
+                        <td className="px-3 py-2 text-right">-</td>
+                        <td className="px-3 py-2 text-right">-</td>
                       </tr>
                       {/* 該帳戶的持倉明細 */}
                       {accountHoldings.map((h) => renderHoldingRow(h, true))}
@@ -542,4 +555,3 @@ const HoldingsTable: React.FC<Props> = () => {
 };
 
 export default HoldingsTable;
-
