@@ -1745,7 +1745,17 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     </span>
                   </span>
                 </th>
-                <th className="px-3 py-2 text-right">{translations.dashboard.totalReturnRate}</th>
+                <th className="px-3 py-2 text-right">
+                  <span className="inline-flex items-center justify-end gap-1">
+                    {translations.dashboard.totalReturnRate}
+                    <span
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-[10px] text-slate-500 dark:text-slate-400 cursor-help"
+                      title={translations.dashboard.accountReturnRateTooltip}
+                    >
+                      i
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800">
@@ -1863,7 +1873,12 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           {formatCurrency(profit, displayCurrency)}
                         </td>
                         <td className={`px-3 py-2 text-right font-bold ${acc.roi >= 0 ? 'text-success' : 'text-danger'}`}>
-                          {acc.roi.toFixed(2)}%
+                          <span>{acc.roi.toFixed(2)}%</span>
+                          {acc.isClosed && (
+                            <span className="ml-1 text-[10px] font-normal text-slate-500 dark:text-slate-400">
+                              {translations.dashboard.accountClosedBadge}
+                            </span>
+                          )}
                         </td>
                       </tr>
                   );
