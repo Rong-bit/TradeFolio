@@ -298,6 +298,8 @@ export interface AccountPerformance {
   cashBalanceTWD: number;
   profitTWD: number;
   roi: number;
+  /** 無持股時視為該證券戶績效已結清（轉倉結案後常見） */
+  isClosed?: boolean;
   // 原始幣種數值（用於切換顯示）
   totalAssetsNative?: number;
   marketValueNative?: number;
