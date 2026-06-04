@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { usePortfolioLocalStorage } from './usePortfolioLocalStorage';
 import { Transaction, Account, CashFlow, HistoricalData, Market, RecurringDepositRule, StockSplitEvent } from '../types';
 import { applyRecurringDeposits } from '../utils/recurringDeposits';
+import { holdingPriceKey, quoteCurrencyForTransaction } from '../utils/calculations';
 
 export interface PortfolioDataState {
   transactions: Transaction[];
@@ -92,7 +93,11 @@ export function usePortfolioData(userPrefix: string | undefined) {
   const addTransaction = useCallback((tx: Transaction) => {
     setData(prev => {
       const newPrices = { ...prev.currentPrices };
-      const key = `${tx.market}-${tx.ticker}`;
+      const key = holdingPriceKey(
+        tx.market,
+        tx.ticker,
+        quoteCurrencyForTransaction(tx, prev.accounts)
+      );
       if (!newPrices[key]) newPrices[key] = tx.price;
       return {
         ...prev,
@@ -120,7 +125,11 @@ export function usePortfolioData(userPrefix: string | undefined) {
     setData(prev => {
       const newPrices = { ...prev.currentPrices };
       txs.forEach(tx => {
-        const key = `${tx.market}-${tx.ticker}`;
+        const key = holdingPriceKey(
+          tx.market,
+          tx.ticker,
+          quoteCurrencyForTransaction(tx, prev.accounts)
+        );
         if (!newPrices[key] && tx.price > 0) newPrices[key] = tx.price;
       });
       return {
