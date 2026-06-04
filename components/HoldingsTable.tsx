@@ -10,6 +10,7 @@ import {
   calculateGenericXIRR,
 } from '../utils/calculations';
 import { t } from '../utils/i18n';
+import { formatHoldingUnitPrice, parseHoldingUnitPrice } from '../utils/formatDisplay';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 
@@ -75,6 +76,8 @@ const HoldingsTable: React.FC<Props> = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('merged');
+  const [editingPriceKey, setEditingPriceKey] = useState<string | null>(null);
+  const [editPriceText, setEditPriceText] = useState('');
   // ⑤ Sortable columns
   type SortKey = 'weight' | 'unrealizedPL' | 'unrealizedPLPercent' | 'annualizedReturn' | 'dailyChangePercent' | 'currentValue';
   const [sortKey, setSortKey] = useState<SortKey>('weight');
@@ -230,9 +233,10 @@ const HoldingsTable: React.FC<Props> = () => {
       : 'text-slate-500';
     const uniqueKey = `${h.accountId}-${h.market}-${h.ticker}`;
 
-    const displayCurrentPrice = Number.isFinite(h.currentPrice)
-      ? Number(h.currentPrice.toFixed(2))
-      : 0;
+    const priceDisplay =
+      editingPriceKey === uniqueKey
+        ? editPriceText
+        : formatHoldingUnitPrice(h.currentPrice, h.market);
 
     return (
       <tr
@@ -293,15 +297,21 @@ const HoldingsTable: React.FC<Props> = () => {
            >
              <span className="text-slate-500 dark:text-slate-200 text-xs">{currency}</span>
              <input
-              type="number"
-              className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
-              value={displayCurrentPrice}
-              onChange={(e) => {
-                const raw = parseFloat(e.target.value) || 0;
+              type="text"
+              inputMode="decimal"
+              className="w-24 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
+              value={priceDisplay}
+              onFocus={() => {
+                setEditingPriceKey(uniqueKey);
+                setEditPriceText(formatHoldingUnitPrice(h.currentPrice, h.market));
+              }}
+              onChange={(e) => setEditPriceText(e.target.value)}
+              onBlur={() => {
+                const raw = parseHoldingUnitPrice(editPriceText, h.market);
                 const quoteCcy = quoteCurrencyForHolding(h, accounts);
                 onUpdatePrice(holdingPriceKey(h.market, h.ticker, quoteCcy), raw);
+                setEditingPriceKey(null);
               }}
-              step="0.01"
              />
            </div>
         </td>
