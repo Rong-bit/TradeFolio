@@ -280,7 +280,7 @@ const HoldingsTable: React.FC<Props> = () => {
           {h.ticker}
         </td>
 
-        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100">
+        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100 whitespace-nowrap">
           {(() => {
             const num = h.quantity;
             if (num % 1 === 0) {
@@ -291,12 +291,12 @@ const HoldingsTable: React.FC<Props> = () => {
           })()}
         </td>
 
-        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100">
+        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100 whitespace-nowrap">
           <input
             type="text"
             inputMode="decimal"
             readOnly={editingPriceKey !== uniqueKey}
-            className="w-full text-right bg-transparent border-none focus:ring-0 p-0 font-medium text-inherit tabular-nums cursor-text truncate"
+            className="w-full min-w-0 text-right bg-transparent border-none focus:ring-0 p-0 font-medium text-inherit tabular-nums cursor-text truncate"
             value={priceDisplay}
             onFocus={() => {
               setEditingPriceKey(uniqueKey);
@@ -312,7 +312,7 @@ const HoldingsTable: React.FC<Props> = () => {
           />
         </td>
 
-        <td className="px-3 py-2.5">
+        <td className="px-3 py-2.5 whitespace-nowrap">
           <div className="flex flex-col gap-1">
             <span
               className={`text-sm font-medium text-right ${
@@ -340,19 +340,19 @@ const HoldingsTable: React.FC<Props> = () => {
           </div>
         </td>
 
-        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100">
+        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100 whitespace-nowrap">
           {formatCurrency(h.totalCost, currency)}
         </td>
 
         <td
-          className="px-3 py-2.5 text-right font-medium"
+          className="px-3 py-2.5 text-right font-medium whitespace-nowrap"
           style={{ color: isDarkMode ? "#94a3b8" : "#64748b" }}
         >
           {formatCurrency(h.currentValue, currency)}
         </td>
 
         <td
-          className={`px-3 py-2.5 text-right font-bold ${plColor}`}
+          className={`px-3 py-2.5 text-right font-bold whitespace-nowrap ${plColor}`}
         >
           <div className="flex flex-col items-end leading-tight">
             <span>{formatCurrency(h.unrealizedPL, currency)}</span>
@@ -360,11 +360,11 @@ const HoldingsTable: React.FC<Props> = () => {
           </div>
         </td>
 
-        <td className={`px-3 py-2.5 text-right font-bold ${roiColor}`}>
+        <td className={`px-3 py-2.5 text-right font-bold whitespace-nowrap ${roiColor}`}>
           {h.annualizedReturn && h.annualizedReturn !== 0 ? `${h.annualizedReturn.toFixed(1)}%` : '-'}
         </td>
 
-        <td className={`px-3 py-2.5 text-right text-sm font-bold ${dailyChangeColor}`}>
+        <td className={`px-3 py-2.5 text-right text-sm font-bold whitespace-nowrap ${dailyChangeColor}`}>
           {h.dailyChange !== undefined && h.dailyChange !== null ? (
              <div className="flex flex-col items-end">
                <span>{h.dailyChange > 0 ? '+' : ''}{h.dailyChange.toFixed(2)}</span>
@@ -377,7 +377,7 @@ const HoldingsTable: React.FC<Props> = () => {
           )}
         </td>
 
-        <td className="px-3 py-2.5 text-right text-slate-600 dark:text-slate-100">
+        <td className="px-3 py-2.5 text-right text-slate-600 dark:text-slate-100 whitespace-nowrap">
            {new Intl.NumberFormat('zh-TW', {
               style: 'currency',
               currency: currency,
@@ -431,36 +431,41 @@ const HoldingsTable: React.FC<Props> = () => {
         </div>
       </div>
       <div className="overflow-x-auto touch-pan-x [-webkit-overflow-scrolling:touch]">
-        <table className="min-w-[72rem] w-max text-base text-left">
+        <table className="min-w-[72rem] w-full table-fixed text-base text-left">
+          <colgroup>
+            <col className="w-14" />
+            <col className="w-20" />
+            <col span={9} />
+          </colgroup>
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
               <th className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">{translations.holdings.market}</th>
               <th className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800">{translations.holdings.ticker}</th>
-              <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap">{translations.holdings.quantity}</th>
               <th className="px-3 py-2 text-right whitespace-nowrap">{translations.holdings.currentPrice}</th>
               <th
-                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 text-right whitespace-nowrap cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('weight')}
               >{translations.holdings.weight}<SortIcon col="weight" /></th>
-              <th className="px-3 py-2 text-right">{translations.holdings.cost}</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap">{translations.holdings.cost}</th>
               <th
-                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 text-right whitespace-nowrap cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('currentValue')}
               >{translations.holdings.marketValue}<SortIcon col="currentValue" /></th>
               <th
-                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 text-right whitespace-nowrap cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('unrealizedPL')}
               >{translations.holdings.profitLoss}<SortIcon col="unrealizedPL" /></th>
               <th
-                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 text-right whitespace-nowrap cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('annualizedReturn')}
               >{translations.holdings.annualizedROI}<SortIcon col="annualizedReturn" /></th>
               <th
-                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
+                className="px-3 py-2 text-right whitespace-nowrap cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('dailyChangePercent')}
               >{translations.holdings.dailyChange}<SortIcon col="dailyChangePercent" /></th>
-              <th className="px-3 py-2 text-right">{translations.holdings.avgPrice}</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap">{translations.holdings.avgPrice}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800">
@@ -510,17 +515,17 @@ const HoldingsTable: React.FC<Props> = () => {
                             <span className="text-xs font-normal opacity-75">({account.currency})</span>
                           </div>
                         </td>
-                        <td className="px-3 py-2 text-right">-</td>
-                        <td className="px-3 py-2 text-right">-</td>
-                        <td className="px-3 py-2 text-right">{accountTotalWeight.toFixed(1)}%</td>
-                        <td className="px-3 py-2 text-right">{formatCurrency(accountTotalCost, currency)}</td>
-                        <td className="px-3 py-2 text-right">{formatCurrency(accountTotalValue, currency)}</td>
-                        <td className={`px-3 py-2 text-right ${accountTotalPL >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">-</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">-</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{accountTotalWeight.toFixed(1)}%</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{formatCurrency(accountTotalCost, currency)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{formatCurrency(accountTotalValue, currency)}</td>
+                        <td className={`px-3 py-2 text-right whitespace-nowrap ${accountTotalPL >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
                           {formatCurrency(accountTotalPL, currency)}
                         </td>
-                        <td className="px-3 py-2 text-right">-</td>
-                        <td className="px-3 py-2 text-right">-</td>
-                        <td className="px-3 py-2 text-right">-</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">-</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">-</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">-</td>
                       </tr>
                       {/* 該帳戶的持倉明細 */}
                       {accountHoldings.map((h) => renderHoldingRow(h, true))}
