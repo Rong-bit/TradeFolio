@@ -22,6 +22,8 @@
 // - `regularMarketPrice` 為主要價格來源；若缺值則退回 previousClose / 預設值。
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { buildProxiedFetchUrls } from '../utils/yahooProxyUrl';
+
 // ── 型別 ─────────────────────────────────────────────────────────────────────
 
 export interface PriceData {
@@ -95,31 +97,7 @@ export function clearYahooFinanceQuoteCaches(opts?: { includeRates?: boolean }):
 // ── Proxy URL 建構 ────────────────────────────────────────────────────────────
 
 function proxyUrls(target: string): string[] {
-  const enc = encodeURIComponent(target);
-  const urls: string[] = [];
-  // GitHub Actions 若設成空白或僅空白字元，會變成 "" 仍為 truthy 失敗來源；trim 後空則視同未設定
-  const raw = import.meta.env.VITE_YAHOO_PROXY_URL as string | undefined;
-  const envProxy = raw && String(raw).trim() ? String(raw).trim().replace(/\/+$/, '') : '';
-
-  if (envProxy) {
-    urls.push(`${envProxy}?target=${enc}`);
-  } else if (
-    typeof window !== 'undefined' &&
-    (window.location.hostname.endsWith('vercel.app') ||
-      window.location.hostname === 'localhost')
-  ) {
-    urls.push(`/api/yahoo-proxy?target=${enc}`);
-  }
-  // 公開 CORS 代理（corsproxy/allorigins）在 production 常有配額/穩定性問題，
-  // 這裡改為僅依賴自有 Vercel proxy。
-  // 瀏覽器端對部分站點（例如 tw.stock.yahoo.com）直連幾乎必定被 CORS 擋下，
-  // 會造成 console 持續噴錯且無實際收益；這些站點改成只走 proxy 鏈。
-  const isBrowser = typeof window !== 'undefined';
-  const blockDirectInBrowser = /^https:\/\/(tw\.stock\.yahoo\.com|mis\.twse\.com\.tw|stockanalysis\.com)\//i.test(target);
-  if (!isBrowser || !blockDirectInBrowser) {
-    urls.push(target); // 可直連時才保留最後備援
-  }
-  return urls;
+  return buildProxiedFetchUrls(target);
 }
 
 // ── 底層 Fetch ────────────────────────────────────────────────────────────────
