@@ -2032,6 +2032,7 @@ export const calculateAccountPerformance = (
     // 已實現採券商常見口徑：僅統計 SELL，且以「賣出淨額 - 對應成本」計算。
     // TRANSFER_OUT 只移轉成本，不認列已實現。
     let realizedProfitTWD = 0;
+    let realizedSellCostTWD = 0;
     const positionMap = new Map<string, { quantity: number; totalCost: number }>();
     const splitCursors = new Map<string, { splits: StockSplitEvent[]; index: number }>();
     const accountTxs = transactions
@@ -2080,12 +2081,17 @@ export const calculateAccountPerformance = (
           const proceeds = tx.amount !== undefined ? tx.amount : (baseVal - (tx.fees || 0));
           const realizedNative = proceeds - costOfSold;
           realizedProfitTWD += transactionAmountNativeToTWD(realizedNative, tx, accounts, rates);
+          realizedSellCostTWD += transactionAmountNativeToTWD(costOfSold, tx, accounts, rates);
         }
       }
     });
     // B 口徑：總損益由未實現 + 已實現 + 股利/利息組成。
     const profitTWD = unrealizedProfitTWD + realizedProfitTWD + incomeTWD;
-    const roi = netInvestedTWD > 0 ? (profitTWD / netInvestedTWD) * 100 : 0;
+    // 累積報酬率分母：優先淨入金（入金−出金±轉帳）；若淨入金≤0（例如獲利後大量出金），改以累計投入成本，避免有損益卻顯示 0%。
+    const capitalBasisTWD = holdingsCostTWD + realizedSellCostTWD;
+    const roiDenominator =
+      netInvestedTWD > 0 ? netInvestedTWD : capitalBasisTWD > 0 ? capitalBasisTWD : 0;
+    const roi = roiDenominator > 0 ? (profitTWD / roiDenominator) * 100 : 0;
 
     // 計算原始幣種數值（用於切換顯示）
     // stockValueNative 已經是原始幣種（美金帳戶=美金，台幣帳戶=台幣，日幣帳戶=日幣）
