@@ -100,8 +100,20 @@ export function nativeValueInAccountCurrencyToTWD(
   return valueNative * currencyToTWDRate(accountCurrency, rates);
 }
 
+const MERGED_HOLDING_ACCOUNT_PREFIX = 'merged\x1e';
+
+/** 合併檢視列的 synthetic accountId 內含幣別（merged␞UK␞VWRA␞USD） */
+function currencyFromMergedHoldingAccountId(accountId: string): Currency | undefined {
+  if (!accountId.startsWith(MERGED_HOLDING_ACCOUNT_PREFIX)) return undefined;
+  const ccy = accountId.split('\x1e').pop();
+  if (!ccy) return undefined;
+  return Object.values(Currency).includes(ccy as Currency) ? (ccy as Currency) : undefined;
+}
+
 /** 依帳戶設定取得換匯幣別：有帳戶則用證券戶幣別，否則退回市場幣別 */
 export function valuationCurrencyForHolding(h: Holding, accounts: Account[]): Currency {
+  const mergedCcy = currencyFromMergedHoldingAccountId(h.accountId);
+  if (mergedCcy) return mergedCcy;
   const acc = accounts.find(a => a.id === h.accountId);
   return acc?.currency ?? marketToCurrency(h.market);
 }
@@ -132,6 +144,8 @@ export function parsePriceCurrencyCode(code?: string): Currency | undefined {
 
 /** 持倉／Yahoo 報價幣別 = 證券戶幣別；找不到帳戶時退回市場預設 */
 export function quoteCurrencyForHolding(h: Holding, accounts: Account[]): Currency {
+  const mergedCcy = currencyFromMergedHoldingAccountId(h.accountId);
+  if (mergedCcy) return mergedCcy;
   const acc = accounts.find(a => a.id === h.accountId);
   if (acc?.currency) return acc.currency;
   return marketToCurrency(h.market);
