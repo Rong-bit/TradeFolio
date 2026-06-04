@@ -1,12 +1,17 @@
 import { useCallback } from 'react';
-import { Holding, Market } from '../types';
+import { Account, Holding, Market } from '../types';
 import * as YahooFinance from '../services/yahooFinanceService';
-import { ExchangeRates } from '../utils/calculations';
+import {
+  ExchangeRates,
+  holdingPriceKey,
+  quoteCurrencyForHolding,
+} from '../utils/calculations';
 import type { AppText } from './useAppText';
 
 interface Params {
   baseHoldings: Holding[];
   holdings: Holding[];
+  accounts: Account[];
   updatePricesAndDetails: (
     prices: Record<string, number>,
     details: Record<string, { change: number; changePercent: number }>
@@ -16,9 +21,37 @@ interface Params {
   appText: AppText;
 }
 
+type MS = 'US' | 'TW' | 'UK' | 'JP' | 'CN' | 'SZ' | 'IN' | 'CA' | 'FR' | 'HK' | 'KR' | 'DE' | 'AU' | 'SA' | 'BR';
+
+const MM: Record<string, MS> = {
+  [Market.US]: 'US',
+  [Market.TW]: 'TW',
+  [Market.UK]: 'UK',
+  [Market.JP]: 'JP',
+  [Market.CN]: 'CN',
+  [Market.SZ]: 'SZ',
+  [Market.IN]: 'IN',
+  [Market.CA]: 'CA',
+  [Market.FR]: 'FR',
+  [Market.HK]: 'HK',
+  [Market.KR]: 'KR',
+  [Market.DE]: 'DE',
+  [Market.AU]: 'AU',
+  [Market.SA]: 'SA',
+  [Market.BR]: 'BR',
+};
+
+type PriceJob = {
+  q: string;
+  market: MS;
+  quoteCcy: string;
+  storeKey: string;
+};
+
 export function usePriceAutoUpdate({
   baseHoldings,
   holdings,
+  accounts,
   updatePricesAndDetails,
   updateRates,
   showAlert,
@@ -27,64 +60,51 @@ export function usePriceAutoUpdate({
   return useCallback(
     async (silent = false) => {
       const holdingsToUse = baseHoldings.length > 0 ? baseHoldings : holdings;
-      type MS = 'US' | 'TW' | 'UK' | 'JP' | 'CN' | 'SZ' | 'IN' | 'CA' | 'FR' | 'HK' | 'KR' | 'DE' | 'AU' | 'SA' | 'BR';
-      const MM: Record<string, MS> = {
-        [Market.US]: 'US',
-        [Market.TW]: 'TW',
-        [Market.UK]: 'UK',
-        [Market.JP]: 'JP',
-        [Market.CN]: 'CN',
-        [Market.SZ]: 'SZ',
-        [Market.IN]: 'IN',
-        [Market.CA]: 'CA',
-        [Market.FR]: 'FR',
-        [Market.HK]: 'HK',
-        [Market.KR]: 'KR',
-        [Market.DE]: 'DE',
-        [Market.AU]: 'AU',
-        [Market.SA]: 'SA',
-        [Market.BR]: 'BR',
-      };
-      const tMktMap = new Map<string, MS>();
-      const keyQMap = new Map<string, string>();
+      const jobs: PriceJob[] = [];
+      const seen = new Set<string>();
+
       holdingsToUse.forEach((h: Holding) => {
         let q = h.ticker;
         if (h.market === Market.TW && /^\d{4}$/.test(q)) q = `TPE:${q}`;
-        const hKey = `${h.market}-${h.ticker}`;
-        tMktMap.set(q, MM[h.market] ?? 'US');
-        keyQMap.set(hKey, q);
+        const quoteCcy = quoteCurrencyForHolding(h, accounts);
+        const storeKey = holdingPriceKey(h.market, h.ticker, quoteCcy);
+        const dedupeKey = `${q}|${h.market}|${quoteCcy}`;
+        if (seen.has(dedupeKey)) return;
+        seen.add(dedupeKey);
+        jobs.push({
+          q,
+          market: MM[h.market] ?? 'US',
+          quoteCcy,
+          storeKey,
+        });
       });
-      const qs = Array.from(tMktMap.keys());
-      const mkts = qs.map(t => tMktMap.get(t)!);
-      if (!qs.length) return;
+
+      if (!jobs.length) return;
+
       try {
-        type FetchPrices = (
-          tickers: string[],
-          markets?: Parameters<typeof YahooFinance.fetchCurrentPrices>[1],
-          options?: { skipCache?: boolean }
-        ) => ReturnType<typeof YahooFinance.fetchCurrentPrices>;
-        const fetchPrices = YahooFinance.fetchCurrentPrices as unknown as FetchPrices;
-        const result = await fetchPrices(qs, mkts, { skipCache: true });
+        const result = await YahooFinance.fetchCurrentPrices(
+          jobs.map(j => j.q),
+          jobs.map(j => j.market),
+          { skipCache: true, quoteCurrencies: jobs.map(j => j.quoteCcy) }
+        );
         const np: Record<string, number> = {};
         const nd: Record<string, { change: number; changePercent: number }> = {};
-        holdingsToUse.forEach((h: Holding) => {
-          const hKey = `${h.market}-${h.ticker}`;
-          const q = keyQMap.get(hKey) ?? h.ticker;
+
+        jobs.forEach(job => {
           const m =
-            result.prices[q] ??
-            result.prices[h.ticker] ??
-            result.prices[`TPE:${h.ticker}`] ??
+            result.prices[job.q] ??
             (() => {
               const f = Object.keys(result.prices).find(
-                k => k.toLowerCase() === h.ticker.toLowerCase() || k.endsWith(h.ticker)
+                k => k.toLowerCase() === job.q.toLowerCase() || k.endsWith(job.q)
               );
               return f ? result.prices[f] : undefined;
             })();
           if (m) {
-            np[hKey] = m.price;
-            nd[hKey] = { change: m.change ?? 0, changePercent: m.changePercent ?? 0 };
+            np[job.storeKey] = m.price;
+            nd[job.storeKey] = { change: m.change ?? 0, changePercent: m.changePercent ?? 0 };
           }
         });
+
         updatePricesAndDetails(np, nd);
         const ru: Partial<ExchangeRates> = {};
         if (result.exchangeRate > 0) ru.exchangeRateUsdToTwd = result.exchangeRate;
@@ -111,6 +131,6 @@ export function usePriceAutoUpdate({
         if (!silent) showAlert(appText.autoUpdateFailed, appText.genericErrorTitle, 'error');
       }
     },
-    [baseHoldings, holdings, updatePricesAndDetails, updateRates, showAlert, appText]
+    [baseHoldings, holdings, accounts, updatePricesAndDetails, updateRates, showAlert, appText]
   );
 }
