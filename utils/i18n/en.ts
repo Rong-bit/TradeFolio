@@ -126,6 +126,9 @@ export const en: Translations = {
     profitNT: 'Profit',
     profitFormulaTooltip:
       'Total P/L = Unrealized + Realized + Div/Interest. Realized P/L includes SELL only; transfers are excluded.',
+    accountReturnRateTooltip:
+      'Cumulative return = P/L ÷ denominator × 100%. Prefers net cash in; if ≤ 0, uses cumulative cost. Stock transfers with market value on transfer day realize on source and set cost on target. No holdings = closed.',
+    accountClosedBadge: 'Closed',
     unrealizedPL: 'Unrealized P/L',
     realizedPL: 'Realized P/L',
     dividendInterest: 'Div/Interest',
@@ -801,6 +804,10 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     typeTransferIn: 'Transfer In',
     typeTransferOut: 'Transfer Out',
     transferInSectionTitle: 'Transfer-in Holding',
+    transferBookPrice: 'Book cost per share',
+    transferBookPriceHint: 'For book transfer and fees; use market price below for performance.',
+    transferValuationPrice: 'Market price on transfer day',
+    transferValuationHint: 'Performance: closes source account return; target account cost basis.',
     targetAccount: 'Target Account',
     targetAccountPlaceholder: 'Select target account...',
     placeholderPrice: 'Price per Share',

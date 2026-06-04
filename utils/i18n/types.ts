@@ -152,6 +152,8 @@ export interface Translations {
     balanceColumnTooltip: string;
     profitNT: string;
     profitFormulaTooltip: string;
+    accountReturnRateTooltip: string;
+    accountClosedBadge: string;
     unrealizedPL: string;
     realizedPL: string;
     dividendInterest: string;
@@ -733,6 +735,10 @@ export interface Translations {
     typeTransferIn: string;
     typeTransferOut: string;
     transferInSectionTitle: string;
+    transferBookPrice: string;
+    transferBookPriceHint: string;
+    transferValuationPrice: string;
+    transferValuationHint: string;
     targetAccount: string;
     targetAccountPlaceholder: string;
     placeholderPrice: string;

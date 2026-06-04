@@ -63,6 +63,9 @@ zhCN.dashboard = {
   profitNT: '损益',
   profitFormulaTooltip:
     '总损益 = 未实现 + 已实现 + 股息/利息。已实现仅统计 SELL，转仓不计入已实现。',
+  accountReturnRateTooltip:
+    '累积报酬率 = 损益 ÷ 分母 × 100%。优先净入金；若≤0 则用累计投入成本。转仓若填转移日市值，汇出户认列已实现、汇入户成本以市值为准。无持股标示已结清。',
+  accountClosedBadge: '已结清',
   unrealizedPL: '未实现损益',
   realizedPL: '已实现损益',
   dividendInterest: '累计股息/利息',
