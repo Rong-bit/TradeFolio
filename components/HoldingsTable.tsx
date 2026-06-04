@@ -430,7 +430,7 @@ const HoldingsTable: React.FC<Props> = () => {
           />
         </div>
       </div>
-      <div className="overflow-x-auto touch-pan-x [-webkit-overflow-scrolling:touch]">
+      <div className="holdings-table-x-scroll overflow-x-auto overflow-y-visible overscroll-x-contain">
         <table className="min-w-[72rem] w-full table-fixed text-base text-left">
           <colgroup>
             <col className="w-14" />
