@@ -4,7 +4,6 @@ import RefreshCountdown from './RefreshCountdown';
 import { Holding, Market, Account, Currency, TransactionType, Transaction } from '../types';
 import {
   formatCurrency,
-  convertAccountCurrencyToMarketQuote,
   valuationCurrencyForHolding,
   quoteCurrencyForHolding,
   holdingPriceKey,
@@ -12,7 +11,6 @@ import {
 } from '../utils/calculations';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
-import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 
 interface Props {}
@@ -72,7 +70,6 @@ function computeMergedAnnualizedXirr(
 const HoldingsTable: React.FC<Props> = () => {
   const { holdings, accounts, transactions, updatePrice: onUpdatePrice,
     handleAutoUpdatePrices: onAutoUpdate, refreshIntervalMs } = usePortfolio();
-  const { rates } = useMarket();
   const { language } = useUI();
   const translations = t(language);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -220,22 +217,12 @@ const HoldingsTable: React.FC<Props> = () => {
     }
   };
 
-  function marketNativeCurrency(m: Market): string {
-    return m === Market.TW ? 'TWD' : m === Market.JP ? 'JPY' : m === Market.CN ? 'CNY' : m === Market.SZ ? 'CNY' : m === Market.IN ? 'INR' : m === Market.CA ? 'CAD' : m === Market.FR ? 'EUR' : m === Market.HK ? 'HKD' : m === Market.KR ? 'KRW' : m === Market.DE ? 'EUR' : m === Market.AU ? 'AUD' : m === Market.SA ? 'SAR' : m === Market.BR ? 'BRL' : m === Market.UK ? 'GBP' : 'USD';
-  }
-
   const MS_ROW = '\x1e';
 
   function renderHoldingRow(h: Holding, isDetailedMode: boolean = false) {
     const isProfit = h.unrealizedPL >= 0;
     const acc = accounts.find(a => a.id === h.accountId);
-    const mergedCurrency =
-      h.accountId.startsWith('merged') && h.accountId.includes(MS_ROW)
-        ? h.accountId.split(MS_ROW).slice(-1)[0]
-        : null;
-    const currency = isDetailedMode && acc
-      ? String(acc.currency)
-      : mergedCurrency ?? marketNativeCurrency(h.market);
+    const currency = String(quoteCurrencyForHolding(h, accounts));
     const plColor = isProfit ? 'text-success' : 'text-danger';
     const roiColor = h.annualizedReturn >= 0 ? 'text-blue-600' : 'text-orange-600';
     const dailyChangeColor = h.dailyChange !== undefined && h.dailyChange !== null
@@ -304,7 +291,7 @@ const HoldingsTable: React.FC<Props> = () => {
            <div
             className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-200/80 dark:group-hover:bg-slate-600"
            >
-             <span className="text-slate-500 dark:text-slate-200 text-xs">$</span>
+             <span className="text-slate-500 dark:text-slate-200 text-xs">{currency}</span>
              <input
               type="number"
               className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
@@ -312,17 +299,7 @@ const HoldingsTable: React.FC<Props> = () => {
               onChange={(e) => {
                 const raw = parseFloat(e.target.value) || 0;
                 const quoteCcy = quoteCurrencyForHolding(h, accounts);
-                const storeKey = holdingPriceKey(h.market, h.ticker, quoteCcy);
-                let quotePrice = raw;
-                const accountCcy = isDetailedMode && acc && !h.accountId.startsWith('merged')
-                  ? acc.currency
-                  : mergedCurrency
-                    ? (mergedCurrency as Currency)
-                    : quoteCcy;
-                if (accountCcy !== quoteCcy) {
-                  quotePrice = convertAccountCurrencyToMarketQuote(raw, quoteCcy, accountCcy, rates);
-                }
-                onUpdatePrice(storeKey, quotePrice);
+                onUpdatePrice(holdingPriceKey(h.market, h.ticker, quoteCcy), raw);
               }}
               step="0.01"
              />
