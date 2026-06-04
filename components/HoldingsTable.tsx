@@ -236,7 +236,7 @@ const HoldingsTable: React.FC<Props> = () => {
     const priceDisplay =
       editingPriceKey === uniqueKey
         ? editPriceText
-        : formatHoldingUnitPrice(h.currentPrice);
+        : formatCurrency(h.currentPrice, currency);
 
     return (
       <tr
@@ -280,41 +280,36 @@ const HoldingsTable: React.FC<Props> = () => {
           {h.ticker}
         </td>
 
-        <td className="px-3 py-2.5 text-right font-mono transition-colors text-slate-600 dark:text-slate-100">
+        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100">
           {(() => {
             const num = h.quantity;
             if (num % 1 === 0) {
-              return num.toLocaleString('en-US');
+              return num.toLocaleString('zh-TW');
             }
             const fixed = num.toFixed(5);
             return fixed.replace(/\.?0+$/, '');
           })()}
         </td>
 
-        <td className="px-2 py-2.5 text-right">
-           <div
-            className="inline-flex items-center justify-end gap-0 rounded-sm px-0.5 py-0 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-200/80 dark:group-hover:bg-slate-600"
-           >
-             <span className="text-slate-500 dark:text-slate-300 text-xs leading-none shrink-0 w-[1.75rem] text-right">{currency}</span>
-             <input
-              type="text"
-              inputMode="decimal"
-              size={7}
-              className="w-[8ch] min-w-0 max-w-[10ch] text-right text-sm bg-transparent border-none focus:ring-0 p-0 font-medium text-slate-800 dark:text-slate-100 tabular-nums"
-              value={priceDisplay}
-              onFocus={() => {
-                setEditingPriceKey(uniqueKey);
-                setEditPriceText(formatHoldingUnitPrice(h.currentPrice));
-              }}
-              onChange={(e) => setEditPriceText(e.target.value)}
-              onBlur={() => {
-                const raw = parseHoldingUnitPrice(editPriceText);
-                const quoteCcy = quoteCurrencyForHolding(h, accounts);
-                onUpdatePrice(holdingPriceKey(h.market, h.ticker, quoteCcy), raw);
-                setEditingPriceKey(null);
-              }}
-             />
-           </div>
+        <td className="px-3 py-2.5 text-right font-medium text-slate-600 dark:text-slate-100">
+          <input
+            type="text"
+            inputMode="decimal"
+            readOnly={editingPriceKey !== uniqueKey}
+            className="w-full min-w-[5.5rem] text-right bg-transparent border-none focus:ring-0 p-0 font-medium text-inherit tabular-nums cursor-text"
+            value={priceDisplay}
+            onFocus={() => {
+              setEditingPriceKey(uniqueKey);
+              setEditPriceText(formatHoldingUnitPrice(h.currentPrice));
+            }}
+            onChange={(e) => setEditPriceText(e.target.value)}
+            onBlur={() => {
+              const raw = parseHoldingUnitPrice(editPriceText);
+              const quoteCcy = quoteCurrencyForHolding(h, accounts);
+              onUpdatePrice(holdingPriceKey(h.market, h.ticker, quoteCcy), raw);
+              setEditingPriceKey(null);
+            }}
+          />
         </td>
 
         <td className="px-3 py-2.5">
@@ -443,7 +438,7 @@ const HoldingsTable: React.FC<Props> = () => {
               <th className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">{translations.holdings.market}</th>
               <th className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800">{translations.holdings.ticker}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
-              <th className="px-2 py-2 text-right whitespace-nowrap">{translations.holdings.currentPrice}</th>
+              <th className="px-3 py-2 text-right whitespace-nowrap">{translations.holdings.currentPrice}</th>
               <th
                 className="px-3 py-2 w-32 text-right cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('weight')}
