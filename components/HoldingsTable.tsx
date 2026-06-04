@@ -430,7 +430,7 @@ const HoldingsTable: React.FC<Props> = () => {
           />
         </div>
       </div>
-      <div className="holdings-table-x-scroll overflow-x-auto overflow-y-visible overscroll-x-contain">
+      <div className="holdings-table-x-scroll overflow-x-auto overscroll-x-contain">
         <table className="min-w-[72rem] w-full table-fixed text-base text-left">
           <colgroup>
             <col className="w-14" />
@@ -440,32 +440,32 @@ const HoldingsTable: React.FC<Props> = () => {
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
-              <th className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">{translations.holdings.market}</th>
-              <th className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800">{translations.holdings.ticker}</th>
-              <th className="px-3 py-2 text-right whitespace-nowrap">{translations.holdings.quantity}</th>
-              <th className="px-3 py-2 text-right whitespace-nowrap">{translations.holdings.currentPrice}</th>
+              <th className="holdings-th-sticky holdings-th-sticky-corner px-3 py-2 sticky top-16 left-0 z-30 bg-white dark:bg-slate-800">{translations.holdings.market}</th>
+              <th className="holdings-th-sticky holdings-th-sticky-corner px-3 py-2 sticky top-16 left-14 z-30 bg-white dark:bg-slate-800">{translations.holdings.ticker}</th>
+              <th className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800">{translations.holdings.quantity}</th>
+              <th className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800">{translations.holdings.currentPrice}</th>
               <th
-                className="px-3 py-2 text-right whitespace-nowrap cursor-pointer hover:text-indigo-600 select-none"
+                className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800 cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('weight')}
               >{translations.holdings.weight}<SortIcon col="weight" /></th>
-              <th className="px-3 py-2 text-right whitespace-nowrap">{translations.holdings.cost}</th>
+              <th className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800">{translations.holdings.cost}</th>
               <th
-                className="px-3 py-2 text-right whitespace-nowrap cursor-pointer hover:text-indigo-600 select-none"
+                className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800 cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('currentValue')}
               >{translations.holdings.marketValue}<SortIcon col="currentValue" /></th>
               <th
-                className="px-3 py-2 text-right whitespace-nowrap cursor-pointer hover:text-indigo-600 select-none"
+                className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800 cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('unrealizedPL')}
               >{translations.holdings.profitLoss}<SortIcon col="unrealizedPL" /></th>
               <th
-                className="px-3 py-2 text-right whitespace-nowrap cursor-pointer hover:text-indigo-600 select-none"
+                className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800 cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('annualizedReturn')}
               >{translations.holdings.annualizedROI}<SortIcon col="annualizedReturn" /></th>
               <th
-                className="px-3 py-2 text-right whitespace-nowrap cursor-pointer hover:text-indigo-600 select-none"
+                className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800 cursor-pointer hover:text-indigo-600 select-none"
                 onClick={() => handleSort('dailyChangePercent')}
               >{translations.holdings.dailyChange}<SortIcon col="dailyChangePercent" /></th>
-              <th className="px-3 py-2 text-right whitespace-nowrap">{translations.holdings.avgPrice}</th>
+              <th className="holdings-th-sticky px-3 py-2 sticky top-16 z-20 text-right whitespace-nowrap bg-white dark:bg-slate-800">{translations.holdings.avgPrice}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800">
