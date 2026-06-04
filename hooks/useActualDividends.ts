@@ -9,10 +9,16 @@ import {
   marketToYahooMarketForDividends,
 } from '../utils/dividendTaxHelpers';
 
-// v2：新增 MoneyDJ ETF 配息頁來源（精確至 6 位小數 + 真實發放日），需作廢舊 v1 快取避免顯示舊估值。
-const LS_KEY = 'tf-actual-dividends-v2';
+// v4：略過「近 90 天仍為 Yahoo 來源」的快取；並清除 v1–v3 舊快取。
+const LS_KEY = 'tf-actual-dividends-v4';
+const LEGACY_LS_KEYS = [
+  'tf-actual-dividends-v1',
+  'tf-actual-dividends-v2',
+  'tf-actual-dividends-v3',
+] as const;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const CONCURRENCY = 3;
+const MONEYDJ_REFRESH_LOOKBACK_DAYS = 90;
 
 interface CacheEntry {
   at: number;
@@ -27,6 +33,29 @@ function readCache(): Record<string, CacheEntry> {
     return o && typeof o === 'object' ? o : {};
   } catch {
     return {};
+  }
+}
+
+/** 美股等：近 90 天內若仍標記 Yahoo，代表 MoneyDJ 尚未成功合併，不應沿用快取 */
+export function recentActualDividendsNeedMoneyDjRefresh(
+  data: ActualDividendRecord[] | null | undefined,
+  market: Market
+): boolean {
+  if (market === Market.TW || !data?.length) return false;
+  const cutoffMs = Date.now() - MONEYDJ_REFRESH_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
+  for (const rec of data) {
+    const exMs = new Date(`${rec.exDate}T12:00:00`).getTime();
+    if (!Number.isFinite(exMs) || exMs < cutoffMs) continue;
+    if (rec.source === 'yahoo') return true;
+  }
+  return false;
+}
+
+function purgeLegacyActualDividendCaches(): void {
+  try {
+    for (const k of LEGACY_LS_KEYS) localStorage.removeItem(k);
+  } catch {
+    /* ignore */
   }
 }
 
@@ -74,6 +103,7 @@ export function useActualDividends(
   const [map, setMap] = useState<ActualDividendsMap>({});
 
   useEffect(() => {
+    purgeLegacyActualDividendCaches();
     const cached = readCache();
     const initial: ActualDividendsMap = {};
     const toFetch: typeof jobs = [];
@@ -81,8 +111,12 @@ export function useActualDividends(
     for (const j of jobs) {
       const hit = cached[j.key];
       const isFresh = !!hit && Date.now() - hit.at < CACHE_TTL_MS;
-      // 僅快取成功結果（含空陣列）；舊版曾把 fetch 失敗寫成 null 並快取 24h，導致手機整欄「—」
-      if (isFresh && Array.isArray(hit.data)) {
+      const yahooOnlyStale =
+        isFresh &&
+        Array.isArray(hit.data) &&
+        recentActualDividendsNeedMoneyDjRefresh(hit.data, j.market);
+      // 僅快取成功結果（含空陣列）；若近 90 天仍為 Yahoo 粗精度則強制重抓 MoneyDJ
+      if (isFresh && Array.isArray(hit.data) && !yahooOnlyStale) {
         initial[j.key] = hit.data;
       } else {
         initial[j.key] = 'loading';
