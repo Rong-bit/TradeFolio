@@ -1873,12 +1873,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           {formatCurrency(profit, displayCurrency)}
                         </td>
                         <td className={`px-3 py-2 text-right font-bold ${acc.roi >= 0 ? 'text-success' : 'text-danger'}`}>
-                          <span>{acc.roi.toFixed(2)}%</span>
-                          {acc.isClosed && (
-                            <span className="ml-1 text-[10px] font-normal text-slate-500 dark:text-slate-400">
-                              {translations.dashboard.accountClosedBadge}
-                            </span>
-                          )}
+                          {acc.roi.toFixed(2)}%
                         </td>
                       </tr>
                   );
