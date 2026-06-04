@@ -106,39 +106,107 @@ export function valuationCurrencyForHolding(h: Holding, accounts: Account[]): Cu
   return acc?.currency ?? marketToCurrency(h.market);
 }
 
+const PRICE_CURRENCY_CODE_MAP: Record<string, Currency> = {
+  USD: Currency.USD,
+  GBP: Currency.GBP,
+  EUR: Currency.EUR,
+  JPY: Currency.JPY,
+  HKD: Currency.HKD,
+  KRW: Currency.KRW,
+  CNY: Currency.CNY,
+  INR: Currency.INR,
+  CAD: Currency.CAD,
+  AUD: Currency.AUD,
+  SAR: Currency.SAR,
+  BRL: Currency.BRL,
+  TWD: Currency.TWD,
+};
+
+/** 交易／持倉上的報價幣別字串 → Currency */
+export function parsePriceCurrencyCode(code?: string): Currency | undefined {
+  if (!code) return undefined;
+  const cur = code.toUpperCase();
+  if (cur === 'GBX') return Currency.GBP;
+  return PRICE_CURRENCY_CODE_MAP[cur];
+}
+
+/**
+ * 持倉／Yahoo 下游使用的「報價幣別」：
+ * 1) priceCurrency（如 VWRA 設 USD）
+ * 2) 證券戶幣別與市場預設不同時用證券戶幣別（UK+USD 戶）
+ * 3) 否則市場預設（UK→GBP）
+ */
+export function quoteCurrencyForHolding(h: Holding, accounts: Account[]): Currency {
+  const fromField = parsePriceCurrencyCode(h.priceCurrency);
+  if (fromField) return fromField;
+  const acc = accounts.find(a => a.id === h.accountId);
+  const marketCcy = marketToCurrency(h.market);
+  if (acc?.currency && acc.currency !== marketCcy) return acc.currency;
+  return marketCcy;
+}
+
+export function quoteCurrencyForTransaction(tx: Transaction, accounts: Account[]): Currency {
+  const fromField = parsePriceCurrencyCode(tx.priceCurrency);
+  if (fromField) return fromField;
+  const acc = accounts.find(a => a.id === tx.accountId);
+  const marketCcy = marketToCurrency(tx.market);
+  if (acc?.currency && acc.currency !== marketCcy) return acc.currency;
+  return marketCcy;
+}
+
+/** currentPrices / priceDetails 的 key；非市場預設報價幣時加後綴（如 UK-VWRA-USD） */
+export function holdingPriceKey(market: Market, ticker: string, quoteCurrency: Currency): string {
+  const marketCcy = marketToCurrency(market);
+  if (quoteCurrency === marketCcy) return `${market}-${ticker}`;
+  return `${market}-${ticker}-${quoteCurrency}`;
+}
+
+export function resolveStoredHoldingPrice(
+  currentPrices: Record<string, number>,
+  market: Market,
+  ticker: string,
+  quoteCurrency: Currency
+): number | undefined {
+  const key = holdingPriceKey(market, ticker, quoteCurrency);
+  if (Object.prototype.hasOwnProperty.call(currentPrices, key)) return currentPrices[key];
+  if (quoteCurrency === marketToCurrency(market)) {
+    const legacy = `${market}-${ticker}`;
+    if (Object.prototype.hasOwnProperty.call(currentPrices, legacy)) return currentPrices[legacy];
+  }
+  return undefined;
+}
+
 /** 持倉市值依「證券戶幣別」換算為 TWD（currentValue 須已是證券戶幣別） */
 export function holdingValueToTWD(h: Holding, accounts: Account[], rates: ExchangeRates): number {
   return nativeValueInAccountCurrencyToTWD(h.currentValue, valuationCurrencyForHolding(h, accounts), rates);
 }
 
 /**
- * Yahoo/市場報價幣別下的數值 → 證券戶幣別（經 TWD 交叉換算；若缺匯率則維持原值）
+ * 報價幣別下的數值 → 證券戶幣別（經 TWD 交叉換算；若缺匯率則維持原值）
  */
 export function convertQuotedValueToAccountCurrency(
-  valueInMarketQuote: number,
-  market: Market,
+  valueInQuoteCurrency: number,
+  quoteCurrency: Currency,
   accountCurrency: Currency,
   rates: ExchangeRates
 ): number {
-  const mc = marketToCurrency(market);
-  if (mc === accountCurrency) return valueInMarketQuote;
-  const vTwd = valueInMarketQuote * currencyToTWDRate(mc, rates);
+  if (quoteCurrency === accountCurrency) return valueInQuoteCurrency;
+  const vTwd = valueInQuoteCurrency * currencyToTWDRate(quoteCurrency, rates);
   const rAcct = currencyToTWDRate(accountCurrency, rates);
-  return rAcct > 0 ? vTwd / rAcct : valueInMarketQuote;
+  return rAcct > 0 ? vTwd / rAcct : valueInQuoteCurrency;
 }
 
-/** 手動輸入證券戶幣別價格 → 存回 currentPrices 用的市場報價幣價格 */
+/** 手動輸入證券戶幣別價格 → 存回 currentPrices 用的報價幣別價格 */
 export function convertAccountCurrencyToMarketQuote(
   valueInAccount: number,
-  market: Market,
+  quoteCurrency: Currency,
   accountCurrency: Currency,
   rates: ExchangeRates
 ): number {
-  const mc = marketToCurrency(market);
-  if (mc === accountCurrency) return valueInAccount;
+  if (quoteCurrency === accountCurrency) return valueInAccount;
   const vTwd = valueInAccount * currencyToTWDRate(accountCurrency, rates);
-  const rM = currencyToTWDRate(mc, rates);
-  return rM > 0 ? vTwd / rM : valueInAccount;
+  const rQuote = currencyToTWDRate(quoteCurrency, rates);
+  return rQuote > 0 ? vTwd / rQuote : valueInAccount;
 }
 
 /** 交易入帳金額（已含於 tx.amount 或 price*qty）依該筆帳戶幣別換算為 TWD */
@@ -518,7 +586,6 @@ export const calculateHoldings = (
   rates?: ExchangeRates,
   stockSplits: StockSplitEvent[] = []
 ): Holding[] => {
-  const dbgOnceKey = new Set<string>();
   const map = new Map<string, Holding>();
   const flowsMap = new Map<string, { amount: number; date: number }[]>();
   const lotsMap = new Map<string, InvestCostLot[]>();
@@ -675,9 +742,13 @@ export const calculateHoldings = (
   return Array.from(map.values())
     .filter(h => h.quantity > 0.000001)
     .map(h => {
-      const priceKey = `${h.market}-${h.ticker}`;
-      const hasCurrentPrice = Object.prototype.hasOwnProperty.call(currentPrices, priceKey);
-      const currentPrice = hasCurrentPrice ? currentPrices[priceKey] : h.avgCost;
+      const quoteCurrency = accounts?.length
+        ? quoteCurrencyForHolding(h, accounts)
+        : marketToCurrency(h.market);
+      const priceKey = holdingPriceKey(h.market, h.ticker, quoteCurrency);
+      const storedPrice = resolveStoredHoldingPrice(currentPrices, h.market, h.ticker, quoteCurrency);
+      const hasCurrentPrice = storedPrice !== undefined;
+      const currentPrice = hasCurrentPrice ? storedPrice! : h.avgCost;
       
       // 策略更新：若是台股，市值(CurrentValue)四捨五入取整；美股則保留運算精確度
       let currentValue = currentPrice * h.quantity;
@@ -693,23 +764,10 @@ export const calculateHoldings = (
       const dailyChangePercent = details !== undefined ? (details.changePercent !== undefined ? details.changePercent : 0) : undefined;
 
       if (acc && rates) {
-        outPrice = convertQuotedValueToAccountCurrency(currentPrice, h.market, acc.currency, rates);
-        outValue = convertQuotedValueToAccountCurrency(currentValue, h.market, acc.currency, rates);
+        outPrice = convertQuotedValueToAccountCurrency(currentPrice, quoteCurrency, acc.currency, rates);
+        outValue = convertQuotedValueToAccountCurrency(currentValue, quoteCurrency, acc.currency, rates);
         if (dailyChange !== undefined) {
-          dailyChange = convertQuotedValueToAccountCurrency(dailyChange, h.market, acc.currency, rates);
-        }
-      }
-
-      if (h.market === Market.UK && (h.ticker.toUpperCase().includes('DTLA') || h.ticker.toUpperCase().includes('VOD'))) {
-        const dk = `${h.accountId}-${priceKey}`;
-        if (!dbgOnceKey.has(dk)) {
-          dbgOnceKey.add(dk);
-          console.log(
-            `[HOLDING_DEBUG] ${priceKey} from=${hasCurrentPrice ? 'currentPrices' : 'avgCost'} ` +
-            `market=${h.market} account=${acc?.currency ?? 'N/A'} ` +
-            `currentPrice(quote)=${currentPrice} outPrice(account)=${outPrice} ` +
-            `currentValue=${currentValue} outValue=${outValue}`
-          );
+          dailyChange = convertQuotedValueToAccountCurrency(dailyChange, quoteCurrency, acc.currency, rates);
         }
       }
 
