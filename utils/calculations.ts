@@ -2164,6 +2164,11 @@ export const calculateAccountPerformance = (
     const realizedProfitNativeOut = realizedProfitTWD / normalizedAccountRate;
     const incomeNative = incomeTWD / normalizedAccountRate;
 
+    const isClosed =
+      !isLiabilityAccount(acc) &&
+      accountHoldings.length === 0 &&
+      accountTxs.length > 0;
+
     return {
       id: acc.id,
       name: acc.name,
@@ -2173,6 +2178,7 @@ export const calculateAccountPerformance = (
       cashBalanceTWD: cashTWD,
       profitTWD,
       roi,
+      isClosed,
       totalAssetsNative,
       marketValueNative,
       cashBalanceNative,
