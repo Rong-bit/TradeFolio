@@ -6,6 +6,8 @@ import {
   formatCurrency,
   convertAccountCurrencyToMarketQuote,
   valuationCurrencyForHolding,
+  quoteCurrencyForHolding,
+  holdingPriceKey,
   calculateGenericXIRR,
 } from '../utils/calculations';
 import { t } from '../utils/i18n';
@@ -309,19 +311,18 @@ const HoldingsTable: React.FC<Props> = () => {
               value={displayCurrentPrice}
               onChange={(e) => {
                 const raw = parseFloat(e.target.value) || 0;
-                let marketPrice = raw;
-                const mCcy = marketNativeCurrency(h.market);
-                if (isDetailedMode && acc && !h.accountId.startsWith('merged')) {
-                  marketPrice = convertAccountCurrencyToMarketQuote(raw, h.market, acc.currency, rates);
-                } else if (mergedCurrency && mergedCurrency !== mCcy) {
-                  marketPrice = convertAccountCurrencyToMarketQuote(
-                    raw,
-                    h.market,
-                    mergedCurrency as Currency,
-                    rates
-                  );
+                const quoteCcy = quoteCurrencyForHolding(h, accounts);
+                const storeKey = holdingPriceKey(h.market, h.ticker, quoteCcy);
+                let quotePrice = raw;
+                const accountCcy = isDetailedMode && acc && !h.accountId.startsWith('merged')
+                  ? acc.currency
+                  : mergedCurrency
+                    ? (mergedCurrency as Currency)
+                    : quoteCcy;
+                if (accountCcy !== quoteCcy) {
+                  quotePrice = convertAccountCurrencyToMarketQuote(raw, quoteCcy, accountCcy, rates);
                 }
-                onUpdatePrice(`${h.market}-${h.ticker}`, marketPrice);
+                onUpdatePrice(storeKey, quotePrice);
               }}
               step="0.01"
              />
