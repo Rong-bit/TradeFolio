@@ -9,6 +9,10 @@
 //    並在 UI 標註為「估發放日」，避免使用者誤以為是官方發放日。
 // ─────────────────────────────────────────────────────────────────────────────
 import { Market } from '../types';
+import {
+  buildProxiedFetchUrls,
+  proxyFetchTimeoutMs,
+} from '../utils/yahooProxyUrl';
 import type { YahooMarket } from './yahooFinanceService';
 
 export interface ActualDividendRecord {
@@ -59,39 +63,9 @@ function tsToYmd(secondsOrMs: number): string | null {
   return d.toISOString().slice(0, 10);
 }
 
-// ── Proxy URL 建構（與 yahooFinanceService 相同邏輯，但保留 HTML 內容） ───────────
-function buildProxyUrls(target: string): string[] {
-  const enc = encodeURIComponent(target);
-  const urls: string[] = [];
-  const raw = (import.meta as any).env?.VITE_YAHOO_PROXY_URL as string | undefined;
-  const envProxy = raw && String(raw).trim() ? String(raw).trim().replace(/\/+$/, '') : '';
-
-  if (envProxy) {
-    urls.push(`${envProxy}?target=${enc}`);
-  } else if (
-    typeof window !== 'undefined' &&
-    (window.location.hostname.endsWith('vercel.app') ||
-      window.location.hostname === 'localhost')
-  ) {
-    urls.push(`/api/yahoo-proxy?target=${enc}`);
-  }
-
-  // 與 yahooFinanceService.proxyUrls 一致：Yahoo chart API 在瀏覽器可直連備援；
-  // MoneyDJ / TWSE 等仍僅走 proxy（CORS 會擋）。
-  const isBrowser = typeof window !== 'undefined';
-  const blockDirectInBrowser =
-    /^https:\/\/(www\.)?moneydj\.com\//i.test(target) ||
-    /^https:\/\/(tw\.stock\.yahoo\.com|mis\.twse\.com\.tw|stockanalysis\.com)\//i.test(target);
-  if (!isBrowser || !blockDirectInBrowser) {
-    urls.push(target);
-  }
-  return urls;
-}
-
-const FETCH_TIMEOUT_MS = 6000;
-
 async function fetchAsText(target: string): Promise<string | null> {
-  const candidates = buildProxyUrls(target);
+  const candidates = buildProxiedFetchUrls(target);
+  const FETCH_TIMEOUT_MS = proxyFetchTimeoutMs();
   for (const url of candidates) {
     try {
       const ctrl = new AbortController();
