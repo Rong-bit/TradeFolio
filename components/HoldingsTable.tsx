@@ -236,7 +236,7 @@ const HoldingsTable: React.FC<Props> = () => {
     const priceDisplay =
       editingPriceKey === uniqueKey
         ? editPriceText
-        : formatHoldingUnitPrice(h.currentPrice, h.market);
+        : formatHoldingUnitPrice(h.currentPrice);
 
     return (
       <tr
@@ -303,11 +303,11 @@ const HoldingsTable: React.FC<Props> = () => {
               value={priceDisplay}
               onFocus={() => {
                 setEditingPriceKey(uniqueKey);
-                setEditPriceText(formatHoldingUnitPrice(h.currentPrice, h.market));
+                setEditPriceText(formatHoldingUnitPrice(h.currentPrice));
               }}
               onChange={(e) => setEditPriceText(e.target.value)}
               onBlur={() => {
-                const raw = parseHoldingUnitPrice(editPriceText, h.market);
+                const raw = parseHoldingUnitPrice(editPriceText);
                 const quoteCcy = quoteCurrencyForHolding(h, accounts);
                 onUpdatePrice(holdingPriceKey(h.market, h.ticker, quoteCcy), raw);
                 setEditingPriceKey(null);
