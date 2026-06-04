@@ -68,9 +68,21 @@ export function buildProxiedFetchUrls(target: string): string[] {
   return urls;
 }
 
-/** MoneyDJ 等僅能走 proxy；手機網路較慢時略延長逾時 */
+/** 手機瀏覽器開 GitHub Pages 時網路較慢，略延長 MoneyDJ 逾時 */
+function isLikelyMobileClient(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (isCapacitorNative()) return true;
+  try {
+    if (window.matchMedia('(pointer: coarse)').matches) return true;
+  } catch {
+    /* ignore */
+  }
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+/** MoneyDJ 等僅能走 proxy；手機／Capacitor 網路較慢時略延長逾時 */
 export function proxyFetchTimeoutMs(): number {
-  return isCapacitorNative() ? 12_000 : 6_000;
+  return isLikelyMobileClient() ? 12_000 : 6_000;
 }
 
 /** 待確認實績配息備註：與 handleAddPendingActual 相同精度 */
