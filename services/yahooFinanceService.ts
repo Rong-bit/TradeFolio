@@ -355,11 +355,6 @@ function toYahoo(ticker: string, market?: YahooMarket): string {
   return t;
 }
 
-function shouldDebugSymbol(symbol: string): boolean {
-  const s = symbol.toUpperCase();
-  return s.includes('DTLA') || s.includes('VOD');
-}
-
 function normalizeYahooCurrency(cur: unknown): string | undefined {
   if (cur == null) return undefined;
   const s = String(cur).trim();
@@ -600,27 +595,6 @@ async function fetchSinglePrice(
 
   const { price, source } = pickLatestQuoteFromChart(meta, resp?.json);
   if (!price && interval === '1m') return fetchSinglePrice(symbol, '1d', skipCache);
-
-  if (shouldDebugSymbol(symbol)) {
-    const rawCurrency = meta.currency ?? '';
-    const currency = normalizeYahooCurrency(rawCurrency) ?? '';
-    const rawPrice = Number(price);
-    const normalizedPrice = currency === 'GBX' ? rawPrice / 100 : rawPrice;
-    console.log('[PRICE_DEBUG]', {
-      inputSymbol: symbol,
-      interval,
-      currency,
-      exchangeName: meta.exchangeName ?? meta.fullExchangeName ?? '',
-      rawPrice,
-      normalizedPrice,
-      quoteTime: meta.regularMarketTime
-        ? new Date(meta.regularMarketTime * 1000).toISOString()
-        : null,
-      previousClose: meta.previousClose ?? null,
-      source: 'yahoo-chart-meta',
-      quoteSource: source,
-    });
-  }
 
   const prev = positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
   let chg: number;
