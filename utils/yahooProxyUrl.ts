@@ -1,0 +1,79 @@
+/** 與 .env.local / GitHub Actions 建議值一致；Capacitor、GitHub Pages 等無 /api 時的預設代理 */
+export const DEFAULT_YAHOO_PROXY_BASE = 'https://trade-folio.vercel.app/api/yahoo-proxy';
+
+type CapacitorWindow = Window & {
+  Capacitor?: {
+    isNativePlatform?: () => boolean;
+    getPlatform?: () => string;
+  };
+};
+
+/** Capacitor Android/iOS WebView（hostname 常為 localhost，但無法用相對 /api/yahoo-proxy） */
+export function isCapacitorNative(): boolean {
+  if (typeof window === 'undefined') return false;
+  const cap = (window as CapacitorWindow).Capacitor;
+  if (!cap) return false;
+  if (typeof cap.isNativePlatform === 'function') return cap.isNativePlatform();
+  const p = cap.getPlatform?.();
+  return p === 'android' || p === 'ios';
+}
+
+/**
+ * 解析 Yahoo/MoneyDJ 代理 base URL。
+ * - 有 VITE_YAHOO_PROXY_URL → 使用
+ * - Capacitor 原生 → 固定 DEFAULT（與網頁建置有設 env 時行為一致）
+ * - vercel.app / 一般瀏覽器 localhost → null（呼叫端用相對 /api/yahoo-proxy）
+ * - GitHub Pages 等 → DEFAULT
+ */
+export function resolveYahooProxyBase(): string | null {
+  const raw = import.meta.env.VITE_YAHOO_PROXY_URL as string | undefined;
+  if (raw?.trim()) return raw.trim().replace(/\/+$/, '');
+
+  if (isCapacitorNative()) return DEFAULT_YAHOO_PROXY_BASE;
+
+  if (typeof window === 'undefined') return DEFAULT_YAHOO_PROXY_BASE;
+
+  const h = window.location.hostname;
+  if (h.endsWith('vercel.app') || h === 'localhost' || h === '127.0.0.1') {
+    return null;
+  }
+
+  return DEFAULT_YAHOO_PROXY_BASE;
+}
+
+function shouldBlockDirectFetch(target: string): boolean {
+  return (
+    /^https:\/\/(www\.)?moneydj\.com\//i.test(target) ||
+    /^https:\/\/(tw\.stock\.yahoo\.com|mis\.twse\.com\.tw|stockanalysis\.com)\//i.test(target)
+  );
+}
+
+/** 組出 fetch 候選 URL（先 proxy，必要時才直連 target） */
+export function buildProxiedFetchUrls(target: string): string[] {
+  const enc = encodeURIComponent(target);
+  const urls: string[] = [];
+  const base = resolveYahooProxyBase();
+
+  if (base) {
+    urls.push(`${base}?target=${enc}`);
+  } else if (typeof window !== 'undefined') {
+    urls.push(`/api/yahoo-proxy?target=${enc}`);
+  }
+
+  const isBrowser = typeof window !== 'undefined';
+  if (!isBrowser || !shouldBlockDirectFetch(target)) {
+    urls.push(target);
+  }
+
+  return urls;
+}
+
+/** MoneyDJ 等僅能走 proxy；手機網路較慢時略延長逾時 */
+export function proxyFetchTimeoutMs(): number {
+  return isCapacitorNative() ? 12_000 : 6_000;
+}
+
+/** 待確認實績配息備註：與 handleAddPendingActual 相同精度 */
+export function formatDividendPerShare(amountPerShare: number): string {
+  return amountPerShare.toLocaleString(undefined, { maximumFractionDigits: 6 });
+}
