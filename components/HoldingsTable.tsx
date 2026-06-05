@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
 import RefreshCountdown from './RefreshCountdown';
 import { Holding, Market, Account, Currency, TransactionType, Transaction } from '../types';
 import {
@@ -78,6 +78,38 @@ const HoldingsTable: React.FC<Props> = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('merged');
+  const cardRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollAnchorTopRef = useRef<number | null>(null);
+  const scrollLeftRef = useRef(0);
+
+  const handleDisplayModeChange = useCallback((mode: DisplayMode) => {
+    if (mode === displayMode) return;
+    if (cardRef.current) {
+      scrollAnchorTopRef.current = cardRef.current.getBoundingClientRect().top;
+    }
+    if (scrollContainerRef.current) {
+      scrollLeftRef.current = scrollContainerRef.current.scrollLeft;
+    }
+    setDisplayMode(mode);
+  }, [displayMode]);
+
+  // 切換模式後補償高度差，避免整頁跳動
+  useLayoutEffect(() => {
+    const anchorTop = scrollAnchorTopRef.current;
+    if (anchorTop === null || !cardRef.current) return;
+
+    const delta = cardRef.current.getBoundingClientRect().top - anchorTop;
+    if (Math.abs(delta) > 0.5) {
+      window.scrollBy(0, delta);
+    }
+    scrollAnchorTopRef.current = null;
+
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollLeft = scrollLeftRef.current;
+    }
+  }, [displayMode]);
+
   // ⑤ Sortable columns
   type SortKey = 'weight' | 'unrealizedPL' | 'unrealizedPLPercent' | 'annualizedReturn' | 'dailyChangePercent' | 'currentValue';
   const [sortKey, setSortKey] = useState<SortKey>('weight');
@@ -407,8 +439,70 @@ const HoldingsTable: React.FC<Props> = () => {
     );
   }
 
+  const tableBody = displayMode === 'merged' ? (
+    sortedMergedHoldings.length === 0 ? (
+      <tr>
+        <td colSpan={11} className="px-3 py-6 text-center text-slate-400">
+          {translations.holdings.noHoldings}
+        </td>
+      </tr>
+    ) : (
+      sortedMergedHoldings.map((h) => renderHoldingRow(h))
+    )
+  ) : (
+    groupedByAccount.length === 0 ? (
+      <tr>
+        <td colSpan={11} className="px-3 py-6 text-center text-slate-400">
+          {translations.holdings.noHoldings}
+        </td>
+      </tr>
+    ) : (
+      groupedByAccount.map((group) => {
+        const account = group.account;
+        const accountHoldings = group.holdings;
+
+        const accountTotalCost = accountHoldings.reduce((sum, h) => sum + h.totalCost, 0);
+        const accountTotalValue = accountHoldings.reduce((sum, h) => sum + h.currentValue, 0);
+        const accountTotalPL = accountHoldings.reduce((sum, h) => sum + h.unrealizedPL, 0);
+        const accountTotalWeight = accountHoldings.reduce((sum, h) => sum + h.weight, 0);
+        const currency = String(account.currency);
+
+        return (
+          <React.Fragment key={account.id}>
+            <tr className="bg-slate-700 text-white font-bold">
+              <td colSpan={2} className="px-3 py-2 sticky left-0 z-20 bg-slate-700">
+                <div className="flex items-center gap-2 min-w-0 max-w-[14rem]">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  <span className="truncate">{account.name}</span>
+                  <span className="text-xs font-normal opacity-75 shrink-0">({account.currency})</span>
+                </div>
+              </td>
+              <td className="px-3 py-2 text-right">-</td>
+              <td className="px-3 py-2 text-right">-</td>
+              <td className="px-3 py-2 text-right">{accountTotalWeight.toFixed(1)}%</td>
+              <td className="px-3 py-2 text-right">{formatCurrency(accountTotalCost, currency)}</td>
+              <td className="px-3 py-2 text-right">{formatCurrency(accountTotalValue, currency)}</td>
+              <td className={`px-3 py-2 text-right ${accountTotalPL >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                {formatCurrency(accountTotalPL, currency)}
+              </td>
+              <td className="px-3 py-2 text-right">-</td>
+              <td className="px-3 py-2 text-right">-</td>
+              <td className="px-3 py-2 text-right">-</td>
+            </tr>
+            {accountHoldings.map((h) => renderHoldingRow(h, true))}
+          </React.Fragment>
+        );
+      })
+    )
+  );
+
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden border border-slate-100 dark:border-slate-700">
+    <div
+      ref={cardRef}
+      className="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden border border-slate-100 dark:border-slate-700"
+    >
       <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2 bg-slate-50 dark:bg-slate-800">
         <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -420,7 +514,7 @@ const HoldingsTable: React.FC<Props> = () => {
           {/* 切換顯示模式按鈕 */}
           <div className="flex items-center gap-1 bg-white dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 p-1">
             <button
-              onClick={() => setDisplayMode('merged')}
+              onClick={() => handleDisplayModeChange('merged')}
               className={`px-3 py-1.5 rounded text-xs font-medium transition ${
                 displayMode === 'merged'
                   ? 'bg-indigo-600 text-white shadow-sm'
@@ -430,7 +524,7 @@ const HoldingsTable: React.FC<Props> = () => {
               {translations.holdings.mergedDisplay}
             </button>
             <button
-              onClick={() => setDisplayMode('detailed')}
+              onClick={() => handleDisplayModeChange('detailed')}
               className={`px-3 py-1.5 rounded text-xs font-medium transition ${
                 displayMode === 'detailed'
                   ? 'bg-indigo-600 text-white shadow-sm'
@@ -448,7 +542,11 @@ const HoldingsTable: React.FC<Props> = () => {
           />
         </div>
       </div>
-      <div className="overflow-x-auto">
+      <div
+        ref={scrollContainerRef}
+        className="overflow-x-auto"
+        style={{ scrollbarGutter: 'stable' }}
+      >
         <table className="min-w-full text-sm text-left">
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
@@ -481,72 +579,11 @@ const HoldingsTable: React.FC<Props> = () => {
               <th className="px-3 py-2 text-right">{translations.holdings.avgPrice}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800">
-            {displayMode === 'merged' ? (
-              // 合併顯示模式
-              sortedMergedHoldings.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="px-3 py-6 text-center text-slate-400">
-                    {translations.holdings.noHoldings}
-                  </td>
-                </tr>
-              ) : (
-                sortedMergedHoldings.map((h) => {
-                  return renderHoldingRow(h);
-                })
-              )
-            ) : (
-              // 明細顯示模式（依帳戶分組）
-              groupedByAccount.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="px-3 py-6 text-center text-slate-400">
-                    {translations.holdings.noHoldings}
-                  </td>
-                </tr>
-              ) : (
-                groupedByAccount.map((group) => {
-                  const account = group.account;
-                  const accountHoldings = group.holdings;
-                  
-                  // 計算帳戶小計
-                  const accountTotalCost = accountHoldings.reduce((sum, h) => sum + h.totalCost, 0);
-                  const accountTotalValue = accountHoldings.reduce((sum, h) => sum + h.currentValue, 0);
-                  const accountTotalPL = accountHoldings.reduce((sum, h) => sum + h.unrealizedPL, 0);
-                  const accountTotalWeight = accountHoldings.reduce((sum, h) => sum + h.weight, 0);
-                  const currency = String(account.currency);
-                  
-                  return (
-                    <React.Fragment key={account.id}>
-                      {/* 帳戶標題列 */}
-                      <tr className="bg-slate-700 text-white font-bold">
-                        <td colSpan={2} className="px-3 py-2 sticky left-0 z-20 bg-slate-700 min-w-[14rem]">
-                          <div className="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                            </svg>
-                            {account.name}
-                            <span className="text-xs font-normal opacity-75">({account.currency})</span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-right">-</td>
-                        <td className="px-3 py-2 text-right">-</td>
-                        <td className="px-3 py-2 text-right">{accountTotalWeight.toFixed(1)}%</td>
-                        <td className="px-3 py-2 text-right">{formatCurrency(accountTotalCost, currency)}</td>
-                        <td className="px-3 py-2 text-right">{formatCurrency(accountTotalValue, currency)}</td>
-                        <td className={`px-3 py-2 text-right ${accountTotalPL >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                          {formatCurrency(accountTotalPL, currency)}
-                        </td>
-                        <td className="px-3 py-2 text-right">-</td>
-                        <td className="px-3 py-2 text-right">-</td>
-                        <td className="px-3 py-2 text-right">-</td>
-                      </tr>
-                      {/* 該帳戶的持倉明細 */}
-                      {accountHoldings.map((h) => renderHoldingRow(h, true))}
-                    </React.Fragment>
-                  );
-                })
-              )
-            )}
+          <tbody
+            key={displayMode}
+            className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800 animate-fade-in"
+          >
+            {tableBody}
           </tbody>
         </table>
       </div>
