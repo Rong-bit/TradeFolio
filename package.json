@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "python generate-pwa-icons.py",
-    "generate:icons": "python generate-pwa-icons.py",
+    "prebuild": "node -e \"const fs=require('fs');fs.mkdirSync('public/assets',{recursive:true});fs.copyFileSync('public/icon-512.png','public/assets/icon-512.png');if(fs.existsSync('public/icon-192.png'))fs.copyFileSync('public/icon-192.png','public/assets/icon-192.png');\"",
     "build": "tsc --noEmit && vite build",
     "build:skip-check": "vite build",
     "preview": "vite preview",
