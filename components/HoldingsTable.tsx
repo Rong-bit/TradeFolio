@@ -19,9 +19,9 @@ interface Props {}
 
 type DisplayMode = 'merged' | 'detailed';
 
-const MARKET_COL = 'w-14 min-w-[3.5rem] max-w-[3.5rem]';
+const MARKET_COL = 'w-16 min-w-[4rem] max-w-[4rem]';
 const TICKER_COL = 'w-28 min-w-[7rem] max-w-[7rem]';
-const MARKET_TICKER_COL = 'w-[10.5rem] min-w-[10.5rem] max-w-[10.5rem]';
+const MARKET_TICKER_COL = 'w-[11rem] min-w-[11rem] max-w-[11rem]';
 
 function sanitizeAnnualized(v: number): number {
   if (!Number.isFinite(v)) return 0;
@@ -321,7 +321,7 @@ const HoldingsTable: React.FC<Props> = () => {
           </span>
         </td>
 
-        <td className={`px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100 truncate ${TICKER_COL}`}>
+        <td className={`px-3 py-2 sticky left-16 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100 truncate ${TICKER_COL}`}>
           {h.ticker}
         </td>
 
@@ -553,14 +553,14 @@ const HoldingsTable: React.FC<Props> = () => {
       >
         <table className="min-w-full table-fixed text-sm text-left">
           <colgroup>
-            <col style={{ width: '3.5rem' }} />
+            <col style={{ width: '4rem' }} />
             <col style={{ width: '7rem' }} />
           </colgroup>
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
               <th className={`px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800 ${MARKET_COL}`}>{translations.holdings.market}</th>
-              <th className={`px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 ${TICKER_COL}`}>{translations.holdings.ticker}</th>
+              <th className={`px-3 py-2 sticky left-16 z-10 bg-white dark:bg-slate-800 ${TICKER_COL}`}>{translations.holdings.ticker}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.currentPrice}</th>
               <th
