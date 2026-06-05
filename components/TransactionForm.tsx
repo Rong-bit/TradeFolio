@@ -430,12 +430,12 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         </div>
       )}
       {showConfirmDialog && pendingTransaction && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="bg-slate-900 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col my-auto">
+            <div className="bg-slate-900 p-4 shrink-0">
               <h3 className="text-white font-bold text-lg">{tf.confirmTitle}</h3>
             </div>
-            <div className="p-6 space-y-3">
+            <div className="p-6 space-y-3 overflow-y-auto flex-1 min-h-0">
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                 <p className="text-sm text-yellow-800 font-medium">{tf.confirmMessage}</p>
               </div>
@@ -518,14 +518,14 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         </div>
       )}
 
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
-          <div className="bg-slate-900 p-4 flex justify-between items-center">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col my-auto">
+          <div className="bg-slate-900 p-4 flex justify-between items-center shrink-0">
             <h2 className="text-white font-bold text-lg">{isEditing ? tf.editTransaction : tf.addTransaction}</h2>
             <button onClick={onClose} className="text-slate-400 hover:text-white">&times;</button>
           </div>
         
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700">{tf.date}</label>
