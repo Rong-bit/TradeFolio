@@ -19,6 +19,10 @@ interface Props {}
 
 type DisplayMode = 'merged' | 'detailed';
 
+const MARKET_COL = 'w-14 min-w-[3.5rem] max-w-[3.5rem]';
+const TICKER_COL = 'w-28 min-w-[7rem] max-w-[7rem]';
+const MARKET_TICKER_COL = 'w-[10.5rem] min-w-[10.5rem] max-w-[10.5rem]';
+
 function sanitizeAnnualized(v: number): number {
   if (!Number.isFinite(v)) return 0;
   if (Math.abs(v) > 500) return 0;
@@ -296,7 +300,7 @@ const HoldingsTable: React.FC<Props> = () => {
           e.currentTarget.style.backgroundColor = '';
         }}
       >
-        <td className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">
+        <td className={`px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800 ${MARKET_COL}`}>
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide border ${
             h.market === Market.US ? 'bg-blue-50 text-blue-600 border-blue-100' :
             h.market === Market.UK ? 'bg-purple-50 text-purple-600 border-purple-100' :
@@ -317,7 +321,7 @@ const HoldingsTable: React.FC<Props> = () => {
           </span>
         </td>
 
-        <td className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100">
+        <td className={`px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-100 truncate ${TICKER_COL}`}>
           {h.ticker}
         </td>
 
@@ -470,8 +474,8 @@ const HoldingsTable: React.FC<Props> = () => {
         return (
           <React.Fragment key={account.id}>
             <tr className="bg-slate-700 text-white font-bold">
-              <td colSpan={2} className="px-3 py-2 sticky left-0 z-20 bg-slate-700">
-                <div className="flex items-center gap-2 min-w-0 max-w-[14rem]">
+              <td colSpan={2} className={`px-3 py-2 sticky left-0 z-20 bg-slate-700 ${MARKET_TICKER_COL}`}>
+                <div className="flex items-center gap-2 min-w-0">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                   </svg>
@@ -547,12 +551,16 @@ const HoldingsTable: React.FC<Props> = () => {
         className="overflow-x-auto"
         style={{ scrollbarGutter: 'stable' }}
       >
-        <table className="min-w-full text-sm text-left">
+        <table className="min-w-full table-fixed text-sm text-left">
+          <colgroup>
+            <col style={{ width: '3.5rem' }} />
+            <col style={{ width: '7rem' }} />
+          </colgroup>
           {/* ⑤ Sortable headers */}
           <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
             <tr>
-              <th className="px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800">{translations.holdings.market}</th>
-              <th className="px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800">{translations.holdings.ticker}</th>
+              <th className={`px-3 py-2 sticky left-0 z-10 bg-white dark:bg-slate-800 ${MARKET_COL}`}>{translations.holdings.market}</th>
+              <th className={`px-3 py-2 sticky left-14 z-10 bg-white dark:bg-slate-800 ${TICKER_COL}`}>{translations.holdings.ticker}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.currentPrice}</th>
               <th
