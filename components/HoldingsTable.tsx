@@ -579,10 +579,7 @@ const HoldingsTable: React.FC<Props> = () => {
               <th className="px-3 py-2 text-right">{translations.holdings.avgPrice}</th>
             </tr>
           </thead>
-          <tbody
-            key={displayMode}
-            className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800 animate-fade-in"
-          >
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800">
             {tableBody}
           </tbody>
         </table>
