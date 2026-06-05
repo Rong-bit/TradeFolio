@@ -1,6 +1,6 @@
 /* 最小 Service Worker：讓 Chrome 判定為可安裝的 PWA（GitHub Pages 靜態站） */
 const CACHE = 'tradefolio-v1';
-const PRECACHE = ['./', './index.html', './manifest.json', './icon-512.png'];
+const PRECACHE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
