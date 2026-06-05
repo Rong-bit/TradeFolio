@@ -1,7 +1,7 @@
 {
   "packageId": "com.tradefolio.app",
   "host": "rong-bit.github.io",
-  "name": "TradeView 投資資產管家",
+  "name": "TradeView",
   "launcherName": "TradeView",
   "display": "standalone",
   "themeColor": "#000000",
