@@ -107,9 +107,17 @@ export function usePriceAutoUpdate({
                 : Number.isFinite(m.price) && Number.isFinite(m.change)
                   ? m.price - (m.change ?? 0)
                   : undefined;
+            const change =
+              prevClose !== undefined && prevClose > 0 && Number.isFinite(m.price)
+                ? m.price - prevClose
+                : (m.change ?? 0);
+            const changePercent =
+              prevClose !== undefined && prevClose > 0
+                ? (change / prevClose) * 100
+                : (m.changePercent ?? 0);
             nd[job.storeKey] = {
-              change: m.change ?? 0,
-              changePercent: m.changePercent ?? 0,
+              change,
+              changePercent,
               ...(prevClose !== undefined && prevClose > 0 ? { previousClose: prevClose } : {}),
             };
           }
