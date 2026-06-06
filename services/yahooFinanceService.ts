@@ -30,6 +30,8 @@ export interface PriceData {
   price: number;
   change: number;
   changePercent: number;
+  /** 昨收／參考價（供今日漲跌重算，避免現價更新後漲跌仍用舊值） */
+  previousClose?: number;
   /** Yahoo Finance 回傳的 quote 幣別（例如 USD / GBP / GBX） */
   currency?: string;
 }
@@ -404,6 +406,34 @@ function rateToTwd(currency: string, rateMap: Record<string, number>): number {
 //          a=五檔委賣（_分隔，首檔最佳）, b=五檔委買（_分隔，首檔最佳）。
 // 同時送 tse_ 與 otc_ 兩個前綴，可同時涵蓋上市與上櫃。
 
+/** 解析 TWSE 價格欄（"-" / 空字串視為無效） */
+function parseTwseQuoteField(s: unknown): number {
+  if (s == null) return 0;
+  const str = String(s).trim();
+  if (!str || str === '-' || str === '--') return 0;
+  const n = Number(str.replace(/,/g, ''));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/** 上市優先，且優先有最近成交價的 msgArray 列 */
+function pickTwseMsgItem(arr: unknown[]): Record<string, unknown> | null {
+  const candidates = arr.filter((item): item is Record<string, unknown> => {
+    if (!item || typeof item !== 'object') return false;
+    const z = parseTwseQuoteField(item.z);
+    const y = parseTwseQuoteField(item.y);
+    const o = parseTwseQuoteField(item.o);
+    return z > 0 || y > 0 || o > 0 || parseBestQuote(item.a) > 0 || parseBestQuote(item.b) > 0;
+  });
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => {
+    const aTse = a.ex === 'tse' ? 1 : 0;
+    const bTse = b.ex === 'tse' ? 1 : 0;
+    if (bTse !== aTse) return bTse - aTse;
+    return parseTwseQuoteField(b.z) - parseTwseQuoteField(a.z);
+  });
+  return candidates[0];
+}
+
 /** 解析 TWSE 用底線串接的五檔字串，取第一檔（最佳價） */
 function parseBestQuote(s: unknown): number {
   if (s == null) return 0;
@@ -450,36 +480,29 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   const arr = (resp?.json as any)?.msgArray;
   if (!Array.isArray(arr) || arr.length === 0) return null;
 
-  // 優先挑有實際價格資訊的一筆（上市/上櫃二擇一）
-  let picked: any = null;
-  for (const item of arr) {
-    const z = Number(item?.z), o = Number(item?.o), y = Number(item?.y);
-    const ask = parseBestQuote(item?.a), bid = parseBestQuote(item?.b);
-    if ((Number.isFinite(z) && z > 0) ||
-        (Number.isFinite(o) && o > 0) ||
-        (Number.isFinite(y) && y > 0) ||
-        ask > 0 || bid > 0) {
-      picked = item; break;
-    }
-  }
+  const picked = pickTwseMsgItem(arr);
   if (!picked) return null;
 
-  const z = Number(picked.z);
-  const o = Number(picked.o);
-  const y = Number(picked.y);
-  const bestAsk = parseBestQuote(picked.a); // 最低賣價
-  const bestBid = parseBestQuote(picked.b); // 最高買價
+  const z = parseTwseQuoteField(picked.z);
+  const o = parseTwseQuoteField(picked.o);
+  const refClose = parseTwseQuoteField(picked.pz) || parseTwseQuoteField(picked.y);
+  const bestAsk = parseBestQuote(picked.a);
+  const bestBid = parseBestQuote(picked.b);
   const session = getTwseSession(new Date());
 
-  // 開盤前：若 TWSE 仍提供最後成交 z，優先顯示 z；否則才退回昨收 y。
-  // 這可避免跨日凌晨（例如 00:xx）仍顯示成昨收，與實際最後成交不一致。
-  // 週末：回傳 null，交由上層改走 Yahoo TW HTML fallback，盡量顯示最後成交。
+  const twChangeFromRef = (last: number): { change: number; changePercent: number } => {
+    if (refClose <= 0 || last <= 0) return { change: 0, changePercent: 0 };
+    const change = last - refClose;
+    return { change, changePercent: (change / refClose) * 100 };
+  };
+
   if (session === 'preopen') {
-    if (Number.isFinite(z) && z > 0) {
-      return { price: z, change: Number.isFinite(y) && y > 0 ? z - y : 0, changePercent: Number.isFinite(y) && y > 0 ? ((z - y) / y) * 100 : 0, currency: 'TWD' };
+    if (z > 0) {
+      const { change, changePercent } = twChangeFromRef(z);
+      return { price: z, change, changePercent, previousClose: refClose, currency: 'TWD' };
     }
-    if (Number.isFinite(y) && y > 0) {
-      return { price: y, change: 0, changePercent: 0, currency: 'TWD' };
+    if (refClose > 0) {
+      return { price: refClose, change: 0, changePercent: 0, previousClose: refClose, currency: 'TWD' };
     }
     return null;
   }
@@ -487,17 +510,12 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
     return null;
   }
 
-  // 價格優先順序（貼近「真正現價」的程度）：
-  //  1. z：最新成交（盤中理想來源）
-  //  2. 買賣五檔首檔中價：z="-"（polling 窗內無新單）時的最佳近似值，
-  //     比退到開盤 o 精準得多，避免「現價突然跳回開盤」的抖動。
-  //  3. bestBid / bestAsk：只有單邊也能給出合理估計
-  //  4. o：盤前已開盤但尚無五檔時
-  //  5. y：完全沒資料時（保底不會 NaN）
-  // 收盤後：不用五檔，避免盤後簿價干擾。
+  // 漲跌一律以「最近成交 z」對參考價/昨收；勿用五檔中價減昨收（易與行情軟體符號相反）
   let price = 0;
-  if (Number.isFinite(z) && z > 0) {
+  let priceFromLastTrade = false;
+  if (z > 0) {
     price = z;
+    priceFromLastTrade = true;
   } else if (session === 'continuous') {
     if (bestAsk > 0 && bestBid > 0) {
       price = (bestAsk + bestBid) / 2;
@@ -505,26 +523,42 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
       price = bestBid;
     } else if (bestAsk > 0) {
       price = bestAsk;
-    } else if (Number.isFinite(o) && o > 0) {
+    } else if (o > 0) {
       price = o;
-    } else if (Number.isFinite(y) && y > 0) {
-      price = y;
+      priceFromLastTrade = true;
+    } else if (refClose > 0) {
+      price = refClose;
     }
   } else if (session === 'postclose') {
-    // postclose：若 TWSE 沒有提供最新成交 z，不要直接退回昨收 y，
-    // 讓上層改走 Yahoo TW HTML fallback（成交價）避免顯示成昨收。
-    if (Number.isFinite(z) && z > 0) {
+    if (z > 0) {
       price = z;
+      priceFromLastTrade = true;
     } else {
       return null;
     }
   }
   if (price <= 0) return null;
 
-  const prev = Number.isFinite(y) && y > 0 ? y : 0;
-  const change = prev > 0 ? price - prev : 0;
-  const changePercent = prev > 0 ? (change / prev) * 100 : 0;
-  return { price, change, changePercent, currency: 'TWD' };
+  const changeBase = priceFromLastTrade ? price : z > 0 ? z : o;
+  let { change, changePercent } = twChangeFromRef(changeBase);
+  if (!priceFromLastTrade && changeBase <= 0) {
+    const htmlQuote = await fetchYahooTwHtmlFallback(code);
+    if (htmlQuote) {
+      change = htmlQuote.change;
+      changePercent = htmlQuote.changePercent;
+    } else {
+      change = 0;
+      changePercent = 0;
+    }
+  }
+
+  return {
+    price,
+    change,
+    changePercent,
+    previousClose: refClose > 0 ? refClose : undefined,
+    currency: 'TWD',
+  };
 }
 
 /**
@@ -551,7 +585,13 @@ async function fetchYahooTwHtmlFallback(code: string): Promise<PriceData | null>
     change = Number.isFinite(prev) && prev > 0 ? price - prev : 0;
   }
   const changePercent = Number.isFinite(prev) && prev > 0 ? (change / prev) * 100 : 0;
-  return { price, change, changePercent, currency: 'TWD' };
+  return {
+    price,
+    change,
+    changePercent,
+    previousClose: Number.isFinite(prev) && prev > 0 ? prev : undefined,
+    currency: 'TWD',
+  };
 }
 
 // ── 即時股價 ─────────────────────────────────────────────────────────────────
@@ -635,6 +675,7 @@ async function fetchSinglePrice(
     price,
     change: isNaN(chg) ? 0 : chg,
     changePercent: isNaN(pct) ? 0 : pct,
+    previousClose: prev > 0 ? prev : undefined,
     currency: meta.currency ? normalizeYahooCurrency(meta.currency) : undefined,
   };
   // 盤前/盤後波動快，縮短快取以避免畫面長時間停在舊值。
@@ -768,17 +809,25 @@ export const fetchCurrentPrices = async (
     let fromCcy = (p.currency ?? '').toUpperCase();
     let normalizedPrice = p.price;
     let normalizedChange = p.change;
+    let normalizedPrev = p.previousClose;
 
     // 英股有時 quote 會是 GBX（pence），程式期望 market=UK 的 quote 是 GBP
     if (fromCcy === 'GBX') {
       fromCcy = 'GBP';
       normalizedPrice /= 100;
       normalizedChange /= 100;
+      if (normalizedPrev !== undefined) normalizedPrev /= 100;
     }
 
     const toCcy = expectedCcy.toUpperCase();
     if (!fromCcy || fromCcy === toCcy) {
-      prices[t] = { ...p, price: normalizedPrice, change: normalizedChange, currency: fromCcy || p.currency };
+      prices[t] = {
+        ...p,
+        price: normalizedPrice,
+        change: normalizedChange,
+        previousClose: normalizedPrev,
+        currency: fromCcy || p.currency,
+      };
       return;
     }
 
@@ -790,6 +839,7 @@ export const fetchCurrentPrices = async (
         ...p,
         price: normalizedPrice * factor,
         change: normalizedChange * factor,
+        previousClose: normalizedPrev !== undefined ? normalizedPrev * factor : undefined,
         currency: toCcy, // 存入「市場幣別」
       };
     } else {
