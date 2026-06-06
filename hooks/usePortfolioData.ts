@@ -80,6 +80,15 @@ export function usePortfolioData(userPrefix: string | undefined) {
       recurringDepositRules: parse('recurringDepositRules', []),
       stockSplits: parse('stockSplits', []),
     };
+
+    /** 台股漲跌邏輯更新後，清掉舊 priceDetails（含錯誤 previousClose），各裝置需重新「更新股價」 */
+    const PRICE_DETAILS_SCHEMA = '2';
+    const schemaKey = 'tf_price_details_schema';
+    if (localStorage.getItem(schemaKey) !== PRICE_DETAILS_SCHEMA) {
+      loaded.priceDetails = {};
+      localStorage.setItem(schemaKey, PRICE_DETAILS_SCHEMA);
+    }
+
     setData(applyRecurringToPortfolioState(loaded));
   }, []);
 
