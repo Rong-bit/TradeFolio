@@ -418,11 +418,12 @@ function parseTwseQuoteField(s: unknown): number {
 /** 上市優先，且優先有最近成交價的 msgArray 列 */
 function pickTwseMsgItem(arr: unknown[]): Record<string, unknown> | null {
   const candidates = arr.filter((item): item is Record<string, unknown> => {
-    if (!item || typeof item !== 'object') return false;
-    const z = parseTwseQuoteField(item.z);
-    const y = parseTwseQuoteField(item.y);
-    const o = parseTwseQuoteField(item.o);
-    return z > 0 || y > 0 || o > 0 || parseBestQuote(item.a) > 0 || parseBestQuote(item.b) > 0;
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
+    const row = item as Record<string, unknown>;
+    const z = parseTwseQuoteField(row.z);
+    const y = parseTwseQuoteField(row.y);
+    const o = parseTwseQuoteField(row.o);
+    return z > 0 || y > 0 || o > 0 || parseBestQuote(row.a) > 0 || parseBestQuote(row.b) > 0;
   });
   if (!candidates.length) return null;
   candidates.sort((a, b) => {
