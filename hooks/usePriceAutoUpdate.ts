@@ -81,12 +81,9 @@ export function usePriceAutoUpdate({
 
       if (!jobs.length) return;
 
-      try {
-        const result = await YahooFinance.fetchCurrentPrices(
-          jobs.map(j => j.q),
-          jobs.map(j => j.market),
-          { skipCache: true, quoteCurrencies: jobs.map(j => j.quoteCcy) }
-        );
+      const mapResultToState = (
+        result: Awaited<ReturnType<typeof YahooFinance.fetchCurrentPrices>>
+      ) => {
         const np: Record<string, number> = {};
         const nd: Record<string, { change: number; changePercent: number; previousClose?: number }> = {};
 
@@ -122,8 +119,10 @@ export function usePriceAutoUpdate({
             };
           }
         });
+        return { np, nd };
+      };
 
-        updatePricesAndDetails(np, nd);
+      const applyRates = (result: Awaited<ReturnType<typeof YahooFinance.fetchCurrentPrices>>) => {
         const ru: Partial<ExchangeRates> = {};
         if (result.exchangeRate > 0) ru.exchangeRateUsdToTwd = result.exchangeRate;
         if (result.jpyExchangeRate && result.jpyExchangeRate > 0) ru.jpyExchangeRate = result.jpyExchangeRate;
@@ -138,6 +137,31 @@ export function usePriceAutoUpdate({
         if (result.sarExchangeRate && result.sarExchangeRate > 0) ru.sarExchangeRate = result.sarExchangeRate;
         if (result.brlExchangeRate && result.brlExchangeRate > 0) ru.brlExchangeRate = result.brlExchangeRate;
         if (Object.keys(ru).length) updateRates(ru);
+      };
+
+      try {
+        let latestRates: Awaited<ReturnType<typeof YahooFinance.fetchCurrentPrices>> | null = null;
+
+        const result = await YahooFinance.fetchCurrentPrices(
+          jobs.map(j => j.q),
+          jobs.map(j => j.market),
+          {
+            skipCache: true,
+            quoteCurrencies: jobs.map(j => j.quoteCcy),
+            onProgress: partial => {
+              const { np, nd } = mapResultToState({
+                prices: partial,
+                exchangeRate: latestRates?.exchangeRate ?? 0,
+              });
+              if (Object.keys(np).length) updatePricesAndDetails(np, nd);
+            },
+          }
+        );
+        latestRates = result;
+
+        const { np, nd } = mapResultToState(result);
+        updatePricesAndDetails(np, nd);
+        applyRates(result);
         if (!silent) {
           showAlert(
             appText.updatePriceSuccess(Object.keys(np).length, result.exchangeRate),
