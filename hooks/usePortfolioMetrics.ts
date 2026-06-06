@@ -41,7 +41,7 @@ export interface PortfolioMetricsInput {
   accounts: Account[];
   cashFlows: CashFlow[];
   currentPrices: Record<string, number>;
-  priceDetails: Record<string, { change: number; changePercent: number }>;
+  priceDetails: Record<string, { change: number; changePercent: number; previousClose?: number }>;
   stockSplits: StockSplitEvent[];
   historicalData: HistoricalData;
   rates: ExchangeRates;
