@@ -583,7 +583,7 @@ const TX_CHRONO_ORDER: Partial<Record<TransactionType, number>> = {
 export const calculateHoldings = (
   transactions: Transaction[], 
   currentPrices: Record<string, number>,
-  priceDetails?: Record<string, { change: number, changePercent: number }>,
+  priceDetails?: Record<string, { change: number; changePercent: number; previousClose?: number }>,
   /** 若有帳戶與匯率，會把現價/市值/涨跌金額依證券戶幣別換算，與 totalCost（入帳幣）一致 */
   accounts?: Account[],
   rates?: ExchangeRates,
@@ -761,15 +761,30 @@ export const calculateHoldings = (
       const acc = accounts?.find(a => a.id === h.accountId);
       let outPrice = currentPrice;
       let outValue = currentValue;
-      const details = priceDetails?.[priceKey];
-      let dailyChange = details !== undefined ? (details.change !== undefined ? details.change : 0) : undefined;
-      const dailyChangePercent = details !== undefined ? (details.changePercent !== undefined ? details.changePercent : 0) : undefined;
-
       if (acc && rates) {
         outPrice = convertQuotedValueToAccountCurrency(currentPrice, quoteCurrency, acc.currency, rates);
         outValue = convertQuotedValueToAccountCurrency(currentValue, quoteCurrency, acc.currency, rates);
-        if (dailyChange !== undefined) {
-          dailyChange = convertQuotedValueToAccountCurrency(dailyChange, quoteCurrency, acc.currency, rates);
+      }
+
+      const details = priceDetails?.[priceKey];
+      let dailyChange: number | undefined;
+      let dailyChangePercent: number | undefined;
+
+      if (details !== undefined && hasCurrentPrice) {
+        const prevClose = details.previousClose;
+        if (prevClose !== undefined && Number.isFinite(prevClose) && prevClose > 0) {
+          let prevInAccount = prevClose;
+          if (acc && rates) {
+            prevInAccount = convertQuotedValueToAccountCurrency(prevClose, quoteCurrency, acc.currency, rates);
+          }
+          dailyChange = outPrice - prevInAccount;
+          dailyChangePercent = prevInAccount > 0 ? (dailyChange / prevInAccount) * 100 : 0;
+        } else if (details.change !== undefined) {
+          dailyChange = details.change;
+          dailyChangePercent = details.changePercent !== undefined ? details.changePercent : 0;
+          if (acc && rates && dailyChange !== undefined) {
+            dailyChange = convertQuotedValueToAccountCurrency(dailyChange, quoteCurrency, acc.currency, rates);
+          }
         }
       }
 
