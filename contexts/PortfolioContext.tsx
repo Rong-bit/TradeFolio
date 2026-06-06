@@ -11,7 +11,7 @@ export interface PortfolioContextValue {
   accounts: Account[];
   cashFlows: CashFlow[];
   currentPrices: Record<string, number>;
-  priceDetails: Record<string, { change: number; changePercent: number }>;
+  priceDetails: Record<string, { change: number; changePercent: number; previousClose?: number }>;
   historicalData: HistoricalData;
   rebalanceTargets: Record<string, number>;
   rebalanceEnabledItems: string[];
@@ -56,7 +56,7 @@ export interface PortfolioContextValue {
   updatePrice: (key: string, price: number) => void;
   updatePricesAndDetails: (
     prices: Record<string, number>,
-    details: Record<string, { change: number; changePercent: number }>
+    details: Record<string, { change: number; changePercent: number; previousClose?: number }>
   ) => void;
   saveHistoricalData: (data: HistoricalData) => void;
   updateRebalanceTargets: (targets: Record<string, number>) => void;
