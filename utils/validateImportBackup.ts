@@ -57,7 +57,7 @@ export interface ValidatedImportBackup {
   accounts: Account[];
   cashFlows: CashFlow[];
   currentPrices: Record<string, number>;
-  priceDetails: Record<string, { change: number; changePercent: number }>;
+  priceDetails: Record<string, { change: number; changePercent: number; previousClose?: number }>;
   rebalanceTargets: Record<string, number>;
   rebalanceEnabledItems: string[];
   historicalData: HistoricalData;
@@ -295,15 +295,16 @@ function parsePriceMap(raw: unknown, label: string): Record<string, number> {
   return out;
 }
 
-function parsePriceDetails(raw: unknown): Record<string, { change: number; changePercent: number }> {
+function parsePriceDetails(raw: unknown): Record<string, { change: number; changePercent: number; previousClose?: number }> {
   const o = requireObject(raw, 'priceDetails');
-  const out: Record<string, { change: number; changePercent: number }> = {};
+  const out: Record<string, { change: number; changePercent: number; previousClose?: number }> = {};
   let count = 0;
   for (const [key, value] of Object.entries(o)) {
     if (count >= MAX_PRICE_KEYS) break;
     if (!isPlainObject(value)) continue;
     const change = value.change;
     const changePercent = value.changePercent;
+    const previousClose = value.previousClose;
     if (
       typeof change !== 'number' ||
       typeof changePercent !== 'number' ||
@@ -313,7 +314,11 @@ function parsePriceDetails(raw: unknown): Record<string, { change: number; chang
       continue;
     }
     if (key.length <= MAX_TICKER_LEN) {
-      out[key] = { change, changePercent };
+      const entry: { change: number; changePercent: number; previousClose?: number } = { change, changePercent };
+      if (typeof previousClose === 'number' && Number.isFinite(previousClose) && previousClose > 0) {
+        entry.previousClose = previousClose;
+      }
+      out[key] = entry;
       count++;
     }
   }
