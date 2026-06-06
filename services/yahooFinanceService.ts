@@ -64,8 +64,9 @@ const CURRENCY_CFG: Record<string, { symbol: string; default: number }> = {
   BRL: { symbol: 'BRLTWD=X', default: 5.5   },
 };
 
-const CONCURRENCY = 3;
-const BATCH_DELAY = 300; // ms
+const CONCURRENCY = 8;
+const BATCH_DELAY = 50; // ms，僅用於批量失敗後的逐檔備援
+const QUOTE_BATCH_SIZE = 50; // Yahoo v7 quote 單次請求上限
 const TIMEOUT_MS  = 4000;
 const CACHE_TTL   = 5 * 60 * 1000; // 5 分鐘
 
@@ -481,18 +482,10 @@ function getTwseSession(now: Date): 'weekend' | 'preopen' | 'continuous' | 'post
   return 'postclose';
 }
 
-async function fetchTwseQuote(code: string): Promise<PriceData | null> {
-  const bust = `&_=${Date.now()}`;
-  const url =
-    `https://mis.twse.com.tw/stock/api/getStockInfo.jsp` +
-    `?ex_ch=tse_${code}.tw|otc_${code}.tw&json=1&delay=0${bust}`;
-  const resp = await tryFetch(url);
-  const arr = (resp?.json as any)?.msgArray;
-  if (!Array.isArray(arr) || arr.length === 0) return null;
-
-  const picked = pickTwseMsgItem(arr);
-  if (!picked) return null;
-
+async function twseRowToPriceData(
+  picked: Record<string, unknown>,
+  code: string,
+): Promise<PriceData | null> {
   const z = parseTwseQuoteField(picked['z']);
   const o = parseTwseQuoteField(picked['o']);
   /** 漲跌分母用昨收 y；勿用 pz（當日參考價，常接近現價，會把漲跌算成 0 或符號反） */
@@ -570,6 +563,144 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
     previousClose: yesterdayClose > 0 ? yesterdayClose : undefined,
     currency: 'TWD',
   };
+}
+
+/** 單次 TWSE 請求抓取多檔台股（比逐檔 fetch 快數倍） */
+async function fetchTwseQuotesBatch(
+  codes: string[],
+  skipCache = false,
+): Promise<Map<string, PriceData>> {
+  const out = new Map<string, PriceData>();
+  const unique = [...new Set(codes.filter(Boolean))];
+  if (!unique.length) return out;
+
+  const exCh = unique.flatMap(c => [`tse_${c}.tw`, `otc_${c}.tw`]).join('|');
+  const bust = skipCache ? `&_=${Date.now()}` : '';
+  const url =
+    `https://mis.twse.com.tw/stock/api/getStockInfo.jsp` +
+    `?ex_ch=${encodeURIComponent(exCh)}&json=1&delay=0${bust}`;
+  const resp = await tryFetch(url);
+  const arr = (resp?.json as any)?.msgArray;
+  if (!Array.isArray(arr) || arr.length === 0) return out;
+
+  const byCode = new Map<string, unknown[]>();
+  for (const raw of arr) {
+    const row = twseMsgRow(raw);
+    if (!row) continue;
+    const code = String(row['c'] ?? '').trim();
+    if (!code) continue;
+    const list = byCode.get(code) ?? [];
+    list.push(raw);
+    byCode.set(code, list);
+  }
+
+  await Promise.all(
+    unique.map(async code => {
+      const picked = pickTwseMsgItem(byCode.get(code) ?? []);
+      if (!picked) return;
+      const data = await twseRowToPriceData(picked, code);
+      if (!data || data.price <= 0) return;
+      out.set(code, data);
+      if (!skipCache) setCache(`price:${code}.TW`, data);
+    }),
+  );
+  return out;
+}
+
+async function fetchTwseQuote(code: string): Promise<PriceData | null> {
+  const batch = await fetchTwseQuotesBatch([code], true);
+  return batch.get(code) ?? null;
+}
+
+function parseV7QuoteItem(q: Record<string, unknown>): PriceData | null {
+  const regP = positiveQuoteNum(q.regularMarketPrice);
+  const preP = positiveQuoteNum(q.preMarketPrice);
+  const postP = positiveQuoteNum(q.postMarketPrice);
+
+  let price = 0;
+  let source: 'regular' | 'pre' | 'post' = 'regular';
+  if (regP > 0) {
+    price = regP;
+    source = 'regular';
+  } else if (preP > 0) {
+    price = preP;
+    source = 'pre';
+  } else if (postP > 0) {
+    price = postP;
+    source = 'post';
+  } else {
+    return null;
+  }
+
+  const prev =
+    positiveQuoteNum(q.regularMarketPreviousClose) ||
+    positiveQuoteNum(q.previousClose) ||
+    positiveQuoteNum(q.chartPreviousClose) ||
+    0;
+
+  let chg: number;
+  let pct: number;
+  if (source === 'pre') {
+    const chosen = pickPreferMetaChange(q.preMarketChange, q.preMarketChangePercent, price, prev);
+    chg = chosen.change;
+    pct = chosen.pct;
+  } else if (source === 'post') {
+    const chosen = pickPreferMetaChange(q.postMarketChange, q.postMarketChangePercent, price, prev);
+    chg = chosen.change;
+    pct = chosen.pct;
+  } else {
+    const chosen = pickPreferMetaChange(
+      q.regularMarketChange,
+      q.regularMarketChangePercent,
+      price,
+      prev,
+    );
+    chg = chosen.change;
+    pct = chosen.pct;
+  }
+
+  return {
+    price,
+    change: isNaN(chg) ? 0 : chg,
+    changePercent: isNaN(pct) ? 0 : pct,
+    previousClose: prev > 0 ? prev : undefined,
+    currency: q.currency ? normalizeYahooCurrency(q.currency) : undefined,
+  };
+}
+
+/** Yahoo v7 quote API：一次請求多檔非台股報價 */
+async function fetchYahooQuoteBatch(
+  symbols: string[],
+  skipCache = false,
+): Promise<Map<string, PriceData>> {
+  const out = new Map<string, PriceData>();
+  const unique = [...new Set(symbols.filter(Boolean))];
+  if (!unique.length) return out;
+
+  for (let i = 0; i < unique.length; i += QUOTE_BATCH_SIZE) {
+    const chunk = unique.slice(i, i + QUOTE_BATCH_SIZE);
+    const bust = skipCache ? `&_=${Date.now()}` : '';
+    const url =
+      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${chunk.map(s => encodeURIComponent(s)).join(',')}${bust}`;
+    const resp = await tryFetch(url);
+    const quotes = (resp?.json as any)?.quoteResponse?.result;
+    if (!Array.isArray(quotes)) continue;
+
+    for (const raw of quotes) {
+      if (!raw || typeof raw !== 'object') continue;
+      const q = raw as Record<string, unknown>;
+      const data = parseV7QuoteItem(q);
+      const sym = String(q.symbol ?? '').trim();
+      if (!data || !sym) continue;
+      out.set(sym.toUpperCase(), data);
+      if (!skipCache) setCache(`price:${sym}`, data);
+    }
+  }
+  return out;
+}
+
+function lookupQuoteMap(map: Map<string, PriceData>, symbol: string): PriceData | undefined {
+  return map.get(symbol.toUpperCase()) ?? map.get(symbol);
 }
 
 /**
@@ -766,7 +897,13 @@ async function fetchHistoricalRate(currency: string, year: number): Promise<numb
 export const fetchCurrentPrices = async (
   tickers: string[],
   markets?: YahooMarket[],
-  options?: { skipCache?: boolean; /** 與 tickers 對齊；覆蓋市場預設報價幣（如 UK+USD 的 VWRA） */ quoteCurrencies?: string[] },
+  options?: {
+    skipCache?: boolean;
+    /** 與 tickers 對齊；覆蓋市場預設報價幣（如 UK+USD 的 VWRA） */
+    quoteCurrencies?: string[];
+    /** 批量取得部分結果時先更新 UI（不必等全部完成） */
+    onProgress?: (partial: Record<string, PriceData>) => void;
+  },
 ): Promise<{
   prices: Record<string, PriceData>;
   exchangeRate: number;
@@ -789,13 +926,62 @@ export const fetchCurrentPrices = async (
   const currencies = neededCurrencies(markets ?? []);
 
   async function batchPrices(): Promise<(PriceData | null)[]> {
-    const out: (PriceData | null)[] = [];
-    for (let s = 0; s < symbols.length; s += CONCURRENCY) {
-      const batch = await Promise.all(
-        symbols.slice(s, s + CONCURRENCY).map(sym => fetchSinglePrice(sym, '1m', skipCache)),
+    const out: (PriceData | null)[] = new Array(symbols.length).fill(null);
+    const twCodes: string[] = [];
+    const twCodeByIndex = new Map<number, string>();
+    const nonTwSymbols: string[] = [];
+    const nonTwIndexBySymbol = new Map<string, number[]>();
+
+    symbols.forEach((sym, i) => {
+      const twMatch = /^(\d+)\.TW$/i.exec(sym);
+      if (twMatch) {
+        const code = twMatch[1];
+        twCodes.push(code);
+        twCodeByIndex.set(i, code);
+      } else {
+        nonTwSymbols.push(sym);
+        const list = nonTwIndexBySymbol.get(sym) ?? [];
+        list.push(i);
+        nonTwIndexBySymbol.set(sym, list);
+      }
+    });
+
+    const emitProgress = () => {
+      if (!options?.onProgress) return;
+      const partial: Record<string, PriceData> = {};
+      tickers.forEach((t, i) => {
+        const p = out[i];
+        if (p) partial[t] = p;
+      });
+      if (Object.keys(partial).length) options.onProgress(partial);
+    };
+
+    const [twMap, yahooMap] = await Promise.all([
+      fetchTwseQuotesBatch(twCodes, skipCache),
+      fetchYahooQuoteBatch(nonTwSymbols, skipCache),
+    ]);
+
+    twCodeByIndex.forEach((code, i) => {
+      const data = twMap.get(code);
+      if (data) out[i] = data;
+    });
+    nonTwIndexBySymbol.forEach((indices, sym) => {
+      const data = lookupQuoteMap(yahooMap, sym);
+      if (!data) return;
+      indices.forEach(i => { out[i] = data; });
+    });
+    emitProgress();
+
+    const missing: number[] = [];
+    out.forEach((p, i) => { if (!p) missing.push(i); });
+    for (let s = 0; s < missing.length; s += CONCURRENCY) {
+      const chunk = missing.slice(s, s + CONCURRENCY);
+      const fallback = await Promise.all(
+        chunk.map(i => fetchSinglePrice(symbols[i], '1m', skipCache)),
       );
-      out.push(...batch);
-      if (s + CONCURRENCY < symbols.length)
+      chunk.forEach((i, j) => { out[i] = fallback[j]; });
+      emitProgress();
+      if (s + CONCURRENCY < missing.length)
         await new Promise(r => setTimeout(r, BATCH_DELAY));
     }
     return out;
