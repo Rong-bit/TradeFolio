@@ -14,7 +14,7 @@ interface Params {
   accounts: Account[];
   updatePricesAndDetails: (
     prices: Record<string, number>,
-    details: Record<string, { change: number; changePercent: number }>
+    details: Record<string, { change: number; changePercent: number; previousClose?: number }>
   ) => void;
   updateRates: (updates: Partial<ExchangeRates>) => void;
   showAlert: (message: string, title?: string, type?: 'info' | 'success' | 'error') => void;
@@ -88,7 +88,7 @@ export function usePriceAutoUpdate({
           { skipCache: true, quoteCurrencies: jobs.map(j => j.quoteCcy) }
         );
         const np: Record<string, number> = {};
-        const nd: Record<string, { change: number; changePercent: number }> = {};
+        const nd: Record<string, { change: number; changePercent: number; previousClose?: number }> = {};
 
         jobs.forEach(job => {
           const m =
@@ -101,7 +101,17 @@ export function usePriceAutoUpdate({
             })();
           if (m) {
             np[job.storeKey] = m.price;
-            nd[job.storeKey] = { change: m.change ?? 0, changePercent: m.changePercent ?? 0 };
+            const prevClose =
+              m.previousClose !== undefined && Number.isFinite(m.previousClose) && m.previousClose > 0
+                ? m.previousClose
+                : Number.isFinite(m.price) && Number.isFinite(m.change)
+                  ? m.price - (m.change ?? 0)
+                  : undefined;
+            nd[job.storeKey] = {
+              change: m.change ?? 0,
+              changePercent: m.changePercent ?? 0,
+              ...(prevClose !== undefined && prevClose > 0 ? { previousClose: prevClose } : {}),
+            };
           }
         });
 
