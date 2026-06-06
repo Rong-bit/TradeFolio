@@ -415,22 +415,31 @@ function parseTwseQuoteField(s: unknown): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
+/** 將 TWSE msgArray 元素转为可索引列 */
+function twseMsgRow(item: unknown): Record<string, unknown> | null {
+  if (item === null || typeof item !== 'object' || Array.isArray(item)) return null;
+  return item as Record<string, unknown>;
+}
+
 /** 上市優先，且優先有最近成交價的 msgArray 列 */
 function pickTwseMsgItem(arr: unknown[]): Record<string, unknown> | null {
-  const candidates = arr.filter((item): item is Record<string, unknown> => {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
-    const row = item as Record<string, unknown>;
-    const z = parseTwseQuoteField(row.z);
-    const y = parseTwseQuoteField(row.y);
-    const o = parseTwseQuoteField(row.o);
-    return z > 0 || y > 0 || o > 0 || parseBestQuote(row.a) > 0 || parseBestQuote(row.b) > 0;
-  });
+  const candidates: Record<string, unknown>[] = [];
+  for (const raw of arr) {
+    const row = twseMsgRow(raw);
+    if (!row) continue;
+    const z = parseTwseQuoteField(row['z']);
+    const y = parseTwseQuoteField(row['y']);
+    const o = parseTwseQuoteField(row['o']);
+    if (z > 0 || y > 0 || o > 0 || parseBestQuote(row['a']) > 0 || parseBestQuote(row['b']) > 0) {
+      candidates.push(row);
+    }
+  }
   if (!candidates.length) return null;
   candidates.sort((a, b) => {
-    const aTse = a.ex === 'tse' ? 1 : 0;
-    const bTse = b.ex === 'tse' ? 1 : 0;
+    const aTse = a['ex'] === 'tse' ? 1 : 0;
+    const bTse = b['ex'] === 'tse' ? 1 : 0;
     if (bTse !== aTse) return bTse - aTse;
-    return parseTwseQuoteField(b.z) - parseTwseQuoteField(a.z);
+    return parseTwseQuoteField(b['z']) - parseTwseQuoteField(a['z']);
   });
   return candidates[0];
 }
@@ -484,26 +493,27 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   const picked = pickTwseMsgItem(arr);
   if (!picked) return null;
 
-  const z = parseTwseQuoteField(picked.z);
-  const o = parseTwseQuoteField(picked.o);
-  const refClose = parseTwseQuoteField(picked.pz) || parseTwseQuoteField(picked.y);
-  const bestAsk = parseBestQuote(picked.a);
-  const bestBid = parseBestQuote(picked.b);
+  const z = parseTwseQuoteField(picked['z']);
+  const o = parseTwseQuoteField(picked['o']);
+  /** 漲跌分母用昨收 y；勿用 pz（當日參考價，常接近現價，會把漲跌算成 0 或符號反） */
+  const yesterdayClose = parseTwseQuoteField(picked['y']);
+  const bestAsk = parseBestQuote(picked['a']);
+  const bestBid = parseBestQuote(picked['b']);
   const session = getTwseSession(new Date());
 
   const twChangeFromRef = (last: number): { change: number; changePercent: number } => {
-    if (refClose <= 0 || last <= 0) return { change: 0, changePercent: 0 };
-    const change = last - refClose;
-    return { change, changePercent: (change / refClose) * 100 };
+    if (yesterdayClose <= 0 || last <= 0) return { change: 0, changePercent: 0 };
+    const change = last - yesterdayClose;
+    return { change, changePercent: (change / yesterdayClose) * 100 };
   };
 
   if (session === 'preopen') {
     if (z > 0) {
       const { change, changePercent } = twChangeFromRef(z);
-      return { price: z, change, changePercent, previousClose: refClose, currency: 'TWD' };
+      return { price: z, change, changePercent, previousClose: yesterdayClose, currency: 'TWD' };
     }
-    if (refClose > 0) {
-      return { price: refClose, change: 0, changePercent: 0, previousClose: refClose, currency: 'TWD' };
+    if (yesterdayClose > 0) {
+      return { price: yesterdayClose, change: 0, changePercent: 0, previousClose: yesterdayClose, currency: 'TWD' };
     }
     return null;
   }
@@ -527,8 +537,8 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
     } else if (o > 0) {
       price = o;
       priceFromLastTrade = true;
-    } else if (refClose > 0) {
-      price = refClose;
+    } else if (yesterdayClose > 0) {
+      price = yesterdayClose;
     }
   } else if (session === 'postclose') {
     if (z > 0) {
@@ -557,7 +567,7 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
     price,
     change,
     changePercent,
-    previousClose: refClose > 0 ? refClose : undefined,
+    previousClose: yesterdayClose > 0 ? yesterdayClose : undefined,
     currency: 'TWD',
   };
 }
