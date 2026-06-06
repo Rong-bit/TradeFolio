@@ -9,7 +9,7 @@ export interface PortfolioDataState {
   accounts: Account[];
   cashFlows: CashFlow[];
   currentPrices: Record<string, number>;
-  priceDetails: Record<string, { change: number; changePercent: number }>;
+  priceDetails: Record<string, { change: number; changePercent: number; previousClose?: number }>;
   rebalanceTargets: Record<string, number>;
   rebalanceEnabledItems: string[];
   historicalData: HistoricalData;
@@ -241,7 +241,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
   const updatePricesAndDetails = useCallback(
     (
       newPrices: Record<string, number>,
-      newDetails: Record<string, { change: number; changePercent: number }>
+      newDetails: Record<string, { change: number; changePercent: number; previousClose?: number }>
     ) => {
       setData(prev => ({
         ...prev,
