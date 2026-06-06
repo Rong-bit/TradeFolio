@@ -1,6 +1,6 @@
-/* 最小 Service Worker：讓 Chrome 判定為可安裝的 PWA（GitHub Pages 靜態站） */
-const CACHE = 'tradefolio-v1';
-const PRECACHE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+/* PWA Service Worker：圖示可快取；HTML/JS 以網路為主，避免手機主畫面卡在舊版 */
+const CACHE = 'tradefolio-v2';
+const PRECACHE = ['./manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -9,11 +9,28 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+function isAppShellRequest(request) {
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return false;
+  if (request.mode === 'navigate') return true;
+  return /\.(js|html|css)$/i.test(url.pathname);
+}
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  if (!isAppShellRequest(event.request)) return;
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
