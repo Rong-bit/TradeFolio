@@ -44,16 +44,15 @@ function fundAccountMatchesBaseCurrency(
 
 const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafetySpreadChange }) => {
   const { accounts, cashFlows, addCashFlow, updateCashFlow: onUpdate,
-    addBatchCashFlows, removeCashFlow, clearCashFlows,
+    addBatchCashFlows, removeCashFlow, removeCashFlowsByIds,
     recurringDepositRules, addRecurringDepositRule, updateRecurringDepositRule, removeRecurringDepositRule,
   } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { exchangeRateUsdToTwd: currentExchangeRate, jpyExchangeRate: currentJpyExchangeRate, eurExchangeRate: currentEurExchangeRate, gbpExchangeRate: currentGbpExchangeRate, hkdExchangeRate: currentHkdExchangeRate, krwExchangeRate: currentKrwExchangeRate, cadExchangeRate: currentCadExchangeRate, inrExchangeRate: currentInrExchangeRate } = rates;
-  const { language } = useUI();
+  const { language, showAlert } = useUI();
   const onAdd = addCashFlow;
   const onBatchAdd = addBatchCashFlows;
   const onDelete = removeCashFlow;
-  const onClearAll = clearCashFlows;
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const translations = t(language);
   const ff = translations.fundForm;
@@ -550,7 +549,11 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <h3 className="text-base sm:text-lg font-bold text-slate-700">{t(language).funds.operations}</h3>
             <div className="flex flex-wrap gap-2">
-               <button onClick={() => setIsClearConfirmOpen(true)} className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-red-100 border border-red-200 whitespace-nowrap">
+               <button
+                 onClick={() => filteredFlows.length > 0 && setIsClearConfirmOpen(true)}
+                 disabled={filteredFlows.length === 0}
+                 className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-red-100 border border-red-200 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
+               >
                   {t(language).funds.clearAll}
                </button>
                <button onClick={() => setIsBatchOpen(true)} className="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-indigo-100 border border-indigo-200 whitespace-nowrap">
@@ -1395,14 +1398,22 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
       {isClearConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
            <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6 max-w-sm w-full mx-4">
-              <h3 className="text-base sm:text-lg font-bold text-red-600 mb-2">{translations.funds.confirmClearAll}</h3>
+              <h3 className="text-base sm:text-lg font-bold text-red-600 mb-2">
+                {translate('funds.confirmClearAll', language, { count: filteredFlows.length })}
+              </h3>
               <p className="text-sm sm:text-base text-slate-600 mb-6">{translations.funds.confirmClearAllMessage}</p>
               <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                  <button onClick={() => setIsClearConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50 text-sm sm:text-base">{translations.common.cancel}</button>
                  <button 
                    onClick={() => {
-                       onClearAll();
+                       const count = filteredFlows.length;
+                       removeCashFlowsByIds(filteredFlows.map(cf => cf.id));
                        setIsClearConfirmOpen(false);
+                       showAlert(
+                         translate('alerts.cashFlowCleared', language, { count }),
+                         translate('alerts.deleteSuccessTitle', language),
+                         'success'
+                       );
                    }} 
                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base"
                  >
