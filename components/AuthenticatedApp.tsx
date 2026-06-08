@@ -15,6 +15,7 @@ import { useAutoHistoricalSyncEffect } from '../hooks/useAutoHistoricalSyncEffec
 import { useAppPortfolioHandlers } from '../hooks/useAppPortfolioHandlers';
 import type { AuthSession } from '../hooks/useAuthSession';
 import { formatNumber, formatAmount } from '../utils/formatDisplay';
+import { countVisibleFilteredRecords } from '../utils/filteredRecordDelete';
 import { t, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from '../utils/i18n';
 import { PortfolioContext } from '../contexts/PortfolioContext';
 import type { View } from '../contexts/UIContext';
@@ -138,6 +139,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     removeTransaction,
     addBatchTransactions,
     clearTransactions,
+    removeTransactionsByIds,
     batchUpdateMarket,
     updateAccount,
     removeAccount,
@@ -146,6 +148,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     removeCashFlow,
     addBatchCashFlows,
     clearCashFlows,
+    removeCashFlowsByIds,
     addRecurringDepositRule,
     updateRecurringDepositRule,
     removeRecurringDepositRule,
@@ -265,38 +268,6 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     isChinese,
   });
 
-  const handlers = useAppPortfolioHandlers({
-    portfolio: {
-      transactions,
-      accounts,
-      cashFlows,
-      recurringDepositRules,
-      updateTransaction,
-      removeTransaction,
-      clearTransactions,
-      batchUpdateMarket,
-      updateAccount,
-      removeAccount,
-      updateCashFlow,
-      removeCashFlow,
-      clearCashFlows,
-      saveHistoricalData,
-      updateRecurringDepositRule,
-    },
-    ui: {
-      setIsFormOpen,
-      setIsDeleteConfirmOpen,
-      setIsTransactionDeleteConfirmOpen,
-      setIsCashFlowDeleteConfirmOpen,
-      setIsHistoricalModalOpen,
-      setIsBatchUpdateMarketOpen,
-      setIsImportOpen,
-    },
-    deleteState,
-    appText,
-    showAlert,
-  });
-
   const filteredRecords = useMemo(
     () =>
       combinedRecords.filter(r => {
@@ -314,6 +285,43 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
       }),
     [combinedRecords, filterAccount, filterTicker, filterDateFrom, filterDateTo, includeCashFlow]
   );
+
+  const filteredClearCount = countVisibleFilteredRecords(filteredRecords);
+
+  const handlers = useAppPortfolioHandlers({
+    portfolio: {
+      transactions,
+      accounts,
+      cashFlows,
+      recurringDepositRules,
+      updateTransaction,
+      removeTransaction,
+      clearTransactions,
+      removeTransactionsByIds,
+      batchUpdateMarket,
+      updateAccount,
+      removeAccount,
+      updateCashFlow,
+      removeCashFlow,
+      clearCashFlows,
+      removeCashFlowsByIds,
+      saveHistoricalData,
+      updateRecurringDepositRule,
+    },
+    ui: {
+      setIsFormOpen,
+      setIsDeleteConfirmOpen,
+      setIsTransactionDeleteConfirmOpen,
+      setIsCashFlowDeleteConfirmOpen,
+      setIsHistoricalModalOpen,
+      setIsBatchUpdateMarketOpen,
+      setIsImportOpen,
+    },
+    deleteState,
+    appText,
+    filteredRecords,
+    showAlert,
+  });
 
   const handleLogout = () => {
     sessionLogout();
@@ -348,6 +356,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     removeTransaction,
     addBatchTransactions,
     clearTransactions,
+    removeTransactionsByIds,
     batchUpdateMarket,
     addAccount: portfolio.addAccount,
     updateAccount: handlers.handleUpdateAccount,
@@ -356,7 +365,8 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     updateCashFlow: handlers.handleUpdateCashFlow,
     removeCashFlow: handlers.handleRemoveCashFlow,
     addBatchCashFlows,
-    clearCashFlows: handlers.handleClearAllCashFlows,
+    clearCashFlows,
+    removeCashFlowsByIds,
     addRecurringDepositRule,
     updateRecurringDepositRule,
     removeRecurringDepositRule,
@@ -592,6 +602,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                     onRemoveTransaction={handlers.handleRemoveTransaction}
                     onRemoveCashFlow={handlers.handleRemoveCashFlow}
                     onClearAllTransactions={handlers.handleClearAllTransactions}
+                    filteredClearCount={filteredClearCount}
                     onOpenBatchUpdateMarket={() => handlers.setIsBatchUpdateMarketOpen(true)}
                     onOpenImport={() => handlers.setIsImportOpen(true)}
                     filteredRecords={filteredRecords}
@@ -783,6 +794,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
               appText={appText}
               isDeleteConfirmOpen={isDeleteConfirmOpen}
               setIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
+              filteredClearCount={filteredClearCount}
               confirmDeleteAllTransactions={handlers.confirmDeleteAllTransactions}
               isTransactionDeleteConfirmOpen={isTransactionDeleteConfirmOpen}
               setIsTransactionDeleteConfirmOpen={setIsTransactionDeleteConfirmOpen}
