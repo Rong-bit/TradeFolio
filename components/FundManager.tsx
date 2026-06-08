@@ -1410,8 +1410,8 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                        removeCashFlowsByIds(filteredFlows.map(cf => cf.id));
                        setIsClearConfirmOpen(false);
                        showAlert(
-                         translate('alerts.cashFlowCleared', language, { count }),
-                         translate('alerts.deleteSuccessTitle', language),
+                         translate('appMessages.cashFlowCleared', language, { count }),
+                         translate('appMessages.deleteSuccessTitle', language),
                          'success'
                        );
                    }} 
