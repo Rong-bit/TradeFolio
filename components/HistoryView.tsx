@@ -14,6 +14,7 @@ interface Props {
   onRemoveTransaction: (id: string) => void;
   onRemoveCashFlow: (id: string) => void;
   onClearAllTransactions: () => void;
+  filteredClearCount: number;
   onOpenBatchUpdateMarket: () => void;
   onOpenImport: () => void;
   filteredRecords: any[];
@@ -38,6 +39,7 @@ const HistoryView: React.FC<Props> = ({
   onRemoveTransaction,
   onRemoveCashFlow,
   onClearAllTransactions,
+  filteredClearCount,
   onOpenBatchUpdateMarket,
   onOpenImport,
   filteredRecords,
@@ -103,7 +105,8 @@ const HistoryView: React.FC<Props> = ({
             </button>
             <button
               onClick={onClearAllTransactions}
-              className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-red-100 border border-red-200 whitespace-nowrap"
+              disabled={filteredClearCount === 0}
+              className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-red-100 border border-red-200 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
             >
               {tr.history.clearAll}
             </button>
