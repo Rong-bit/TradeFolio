@@ -6,8 +6,13 @@ import {
   Market,
   HistoricalData,
   RecurringDepositRule,
+  CombinedRecord,
 } from '../types';
 import type { AppText } from './useAppText';
+import {
+  countVisibleFilteredRecords,
+  getDeletableIdsFromFilteredRecords,
+} from '../utils/filteredRecordDelete';
 
 interface UiModals {
   setIsFormOpen: (v: boolean) => void;
@@ -39,12 +44,14 @@ interface PortfolioMutations {
   updateTransaction: (tx: Transaction) => void;
   removeTransaction: (id: string) => void;
   clearTransactions: () => void;
+  removeTransactionsByIds: (ids: string[]) => void;
   batchUpdateMarket: (updates: { id: string; market: Market }[]) => void;
   updateAccount: (acc: Account) => void;
   removeAccount: (id: string) => void;
   updateCashFlow: (cf: CashFlow) => void;
   removeCashFlow: (id: string) => void;
   clearCashFlows: () => void;
+  removeCashFlowsByIds: (ids: string[]) => void;
   saveHistoricalData: (data: HistoricalData) => void;
   updateRecurringDepositRule: (rule: RecurringDepositRule) => void;
 }
@@ -54,10 +61,11 @@ interface Params {
   ui: UiModals;
   deleteState: DeleteState;
   appText: AppText;
+  filteredRecords: CombinedRecord[];
   showAlert: (message: string, title?: string, type?: 'info' | 'success' | 'error') => void;
 }
 
-export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, showAlert }: Params) {
+export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, filteredRecords, showAlert }: Params) {
   const {
     transactions,
     accounts,
@@ -66,12 +74,14 @@ export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, s
     updateTransaction,
     removeTransaction,
     clearTransactions,
+    removeTransactionsByIds,
     batchUpdateMarket,
     updateAccount,
     removeAccount,
     updateCashFlow,
     removeCashFlow,
     clearCashFlows,
+    removeCashFlowsByIds,
     saveHistoricalData,
     updateRecurringDepositRule,
   } = portfolio;
@@ -138,15 +148,25 @@ export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, s
   ]);
 
   const handleClearAllTransactions = useCallback(() => {
+    if (countVisibleFilteredRecords(filteredRecords) === 0) return;
     setIsDeleteConfirmOpen(true);
-  }, [setIsDeleteConfirmOpen]);
+  }, [filteredRecords, setIsDeleteConfirmOpen]);
 
   const confirmDeleteAllTransactions = useCallback(() => {
-    const n = transactions.length;
-    clearTransactions();
+    const { transactionIds, cashFlowIds } = getDeletableIdsFromFilteredRecords(filteredRecords);
+    const count = countVisibleFilteredRecords(filteredRecords);
+    removeTransactionsByIds(transactionIds);
+    removeCashFlowsByIds(cashFlowIds);
     setIsDeleteConfirmOpen(false);
-    setTimeout(() => showAlert(appText.txCleared(n), appText.deleteSuccessTitle, 'success'), 100);
-  }, [transactions.length, clearTransactions, setIsDeleteConfirmOpen, appText, showAlert]);
+    setTimeout(() => showAlert(appText.txCleared(count), appText.deleteSuccessTitle, 'success'), 100);
+  }, [
+    filteredRecords,
+    removeTransactionsByIds,
+    removeCashFlowsByIds,
+    setIsDeleteConfirmOpen,
+    appText,
+    showAlert,
+  ]);
 
   const handleUpdateAccount = useCallback(
     (acc: Account) => {
@@ -203,9 +223,10 @@ export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, s
   }, [setIsCashFlowDeleteConfirmOpen, clearCashFlowDelete]);
 
   const handleClearAllCashFlows = useCallback(() => {
+    const count = cashFlows.length;
     clearCashFlows();
-    showAlert(appText.cashFlowCleared, appText.deleteSuccessTitle, 'success');
-  }, [clearCashFlows, appText, showAlert]);
+    showAlert(appText.cashFlowCleared(count), appText.deleteSuccessTitle, 'success');
+  }, [cashFlows.length, clearCashFlows, appText, showAlert]);
 
   const handleSaveHistoricalData = useCallback(
     (nd: HistoricalData) => {
