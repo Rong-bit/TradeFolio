@@ -33,6 +33,7 @@ export interface PortfolioContextValue {
   removeTransaction: (id: string) => void;
   addBatchTransactions: (txs: Transaction[]) => void;
   clearTransactions: () => void;
+  removeTransactionsByIds: (ids: string[]) => void;
   batchUpdateMarket: (updates: { id: string; market: Market }[]) => void;
 
   // 操作：accounts
@@ -46,6 +47,7 @@ export interface PortfolioContextValue {
   removeCashFlow: (id: string) => void;
   addBatchCashFlows: (cfs: CashFlow[]) => void;
   clearCashFlows: () => void;
+  removeCashFlowsByIds: (ids: string[]) => void;
   addRecurringDepositRule: (rule: RecurringDepositRule) => void;
   updateRecurringDepositRule: (rule: RecurringDepositRule) => void;
   removeRecurringDepositRule: (id: string) => void;
