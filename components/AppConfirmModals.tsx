@@ -8,6 +8,7 @@ interface Props {
   appText: AppText;
   isDeleteConfirmOpen: boolean;
   setIsDeleteConfirmOpen: (v: boolean) => void;
+  filteredClearCount: number;
   confirmDeleteAllTransactions: () => void;
   isTransactionDeleteConfirmOpen: boolean;
   setIsTransactionDeleteConfirmOpen: (v: boolean) => void;
@@ -26,6 +27,7 @@ const AppConfirmModals: React.FC<Props> = ({
   appText,
   isDeleteConfirmOpen,
   setIsDeleteConfirmOpen,
+  filteredClearCount,
   confirmDeleteAllTransactions,
   isTransactionDeleteConfirmOpen,
   setIsTransactionDeleteConfirmOpen,
@@ -114,8 +116,10 @@ const AppConfirmModals: React.FC<Props> = ({
       {isDeleteConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm">
-            <h3 className="text-lg font-bold text-red-600 mb-2">{appText.confirmClearTxTitle}</h3>
-            <p className="text-slate-600 mb-6">{appText.confirmClearTxMessage}</p>
+            <h3 className="text-lg font-bold text-red-600 mb-2">
+              {appText.confirmClearTxTitle(filteredClearCount)}
+            </h3>
+            <p className="text-slate-600 mb-6">{appText.confirmClearTxMessage(filteredClearCount)}</p>
             <div className="flex justify-end gap-3">
               <button
                 type="button"
