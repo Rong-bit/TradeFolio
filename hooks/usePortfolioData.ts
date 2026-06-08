@@ -153,6 +153,15 @@ export function usePortfolioData(userPrefix: string | undefined) {
     setData(prev => ({ ...prev, transactions: [] }));
   }, []);
 
+  const removeTransactionsByIds = useCallback((ids: string[]) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    setData(prev => ({
+      ...prev,
+      transactions: prev.transactions.filter(tx => !idSet.has(tx.id)),
+    }));
+  }, []);
+
   const batchUpdateMarket = useCallback((updates: { id: string; market: Market }[]) => {
     setData(prev => ({
       ...prev,
@@ -203,6 +212,15 @@ export function usePortfolioData(userPrefix: string | undefined) {
 
   const clearCashFlows = useCallback(() => {
     setData(prev => ({ ...prev, cashFlows: [] }));
+  }, []);
+
+  const removeCashFlowsByIds = useCallback((ids: string[]) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    setData(prev => ({
+      ...prev,
+      cashFlows: prev.cashFlows.filter(cf => !idSet.has(cf.id)),
+    }));
   }, []);
 
   // ── Recurring deposit rules ───────────────────────────────────
@@ -302,6 +320,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
     removeTransaction,
     addBatchTransactions,
     clearTransactions,
+    removeTransactionsByIds,
     batchUpdateMarket,
     // accounts
     addAccount,
@@ -313,6 +332,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
     removeCashFlow,
     addBatchCashFlows,
     clearCashFlows,
+    removeCashFlowsByIds,
     addRecurringDepositRule,
     updateRecurringDepositRule,
     removeRecurringDepositRule,
