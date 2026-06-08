@@ -33,11 +33,11 @@ export interface AppText {
   accountDeleted: (name?: string) => string;
   cashFlowUpdated: string;
   cashFlowDeleted: string;
-  cashFlowCleared: string;
+  cashFlowCleared: (count: number) => string;
   historicalSaved: string;
   loginPasswordPlaceholder: string;
-  confirmClearTxTitle: string;
-  confirmClearTxMessage: string;
+  confirmClearTxTitle: (count: number) => string;
+  confirmClearTxMessage: (count: number) => string;
   confirmClearAction: string;
   deleteTxTitle: string;
   deleteTxMessage: string;
@@ -138,7 +138,7 @@ export function useAppText(language: Language, currentUser: string): AppText {
       txCleared: (count: number) =>
         tx(
           'txCleared',
-          isChinese ? `✅ 成功清空 ${count} 筆交易紀錄！` : `✅ Cleared ${count} transactions successfully!`,
+          isChinese ? `✅ 成功清空篩選的 ${count} 筆紀錄！` : `✅ Cleared ${count} filtered records successfully!`,
           { count }
         ),
       accountUpdated: (name: string) =>
@@ -151,10 +151,12 @@ export function useAppText(language: Language, currentUser: string): AppText {
         ),
       cashFlowUpdated: tx('cashFlowUpdated', isChinese ? '資金記錄已更新' : 'Fund record updated'),
       cashFlowDeleted: tx('cashFlowDeleted', isChinese ? '現金流紀錄已刪除' : 'Cash flow record deleted'),
-      cashFlowCleared: tx(
-        'cashFlowCleared',
-        isChinese ? '✅ 成功清空所有資金紀錄！' : '✅ Cleared all fund records successfully!'
-      ),
+      cashFlowCleared: (count: number) =>
+        tx(
+          'cashFlowCleared',
+          isChinese ? `✅ 成功清空篩選的 ${count} 筆資金紀錄！` : `✅ Cleared ${count} filtered fund records successfully!`,
+          { count }
+        ),
       historicalSaved: tx(
         'historicalSaved',
         isChinese
@@ -162,14 +164,20 @@ export function useAppText(language: Language, currentUser: string): AppText {
           : 'Historical asset data updated. Reports are now corrected by real prices.'
       ),
       loginPasswordPlaceholder: tx('loginPasswordPlaceholder', isChinese ? '請輸入密碼' : 'Enter password'),
-      confirmClearTxTitle: tx(
-        'confirmClearTxTitle',
-        isChinese ? '確認清空所有交易？' : 'Confirm clearing all transactions?'
-      ),
-      confirmClearTxMessage: tx(
-        'confirmClearTxMessage',
-        isChinese ? '此操作無法復原，請確認您已備份資料。' : 'This action cannot be undone. Please make sure you have a backup.'
-      ),
+      confirmClearTxTitle: (count: number) =>
+        tx(
+          'confirmClearTxTitle',
+          isChinese ? `確認清空篩選的 ${count} 筆紀錄？` : `Confirm clearing ${count} filtered records?`,
+          { count }
+        ),
+      confirmClearTxMessage: (count: number) =>
+        tx(
+          'confirmClearTxMessage',
+          isChinese
+            ? '此操作將刪除目前篩選條件下的交易與資金紀錄，且無法復原。建議先備份資料。'
+            : 'This will delete transactions and fund records matching your current filters. This action cannot be undone. Please backup your data first.',
+          { count }
+        ),
       confirmClearAction: tx('confirmClearAction', isChinese ? '確認清空' : 'Confirm Clear'),
       deleteTxTitle: tx('deleteTxTitle', isChinese ? '刪除交易' : 'Delete Transaction'),
       deleteTxMessage: tx(
