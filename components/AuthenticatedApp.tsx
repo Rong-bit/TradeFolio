@@ -497,17 +497,6 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                         ))}
                       </select>
                     </div>
-                    <button
-                        type="button"
-                        onClick={handleContactAdmin}
-                        className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold rounded-full transition shadow-lg shadow-amber-500/20"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                        </svg>
-                        <span>{t(language).common.upgrade}</span>
-                      </button>
                     <div className="hidden sm:flex items-center gap-2">
                       <select
                         value={baseCurrency}
@@ -563,15 +552,8 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
 
             <main className={`flex-1 mx-auto w-full md:p-8 ${mainPadding}`}>
               <div className={`mb-6 ${view === 'dashboard' ? 'max-sm:px-3 max-sm:pr-2' : ''}`}>
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3">
                   <span className="break-words">{pageTitle}</span>
-                  <button
-                      type="button"
-                      onClick={handleContactAdmin}
-                      className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow"
-                    >
-                      {t(language).common.upgrade}
-                    </button>
                 </h2>
               </div>
               <div className="animate-fade-in">
@@ -723,20 +705,6 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                         </option>
                       ))}
                     </select>
-                    <button
-                        type="button"
-                        onClick={() => {
-                          handleContactAdmin();
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-amber-500 text-slate-900 font-bold hover:bg-amber-600 transition"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                        </svg>
-                        {t(language).common.upgrade}
-                      </button>
                     <button
                       type="button"
                       onClick={() => {
