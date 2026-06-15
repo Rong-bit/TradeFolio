@@ -214,7 +214,7 @@ export const ar: Translations = {
     usBadgeShort: '70%',
     nhiForecastTag: 'تقدير: هذا التوزيع قد يفعّل اقتطاع قسط NHI الإضافي',
     pendingActualTitle: 'توزيعات فعلية بانتظار التأكيد (MoneyDJ)',
-    pendingActualSubtitle: 'توزيعات حدث استحقاقها خلال 90 يوماً ولم تظهر بعد في السجلات؛ الضغط على "إضافة" ينشئ معاملة توزيع نقدي.',
+    pendingActualSubtitle: 'توزيعات حدث استحقاقها هذا العام ولم تظهر بعد في السجلات (تُعرض على الخريطة حسب شهر الاستحقاق). "إضافة" لإنشاء سجل، "إخفاء" لإخفاء الصف.',
     pendingActualEmpty: 'لا توجد حالياً توزيعات فعلية تحتاج للإضافة.',
     pendingActualLoading: 'جارٍ تحميل بيانات MoneyDJ الفعلية...',
     pendingActualAddBtn: 'إضافة إلى سجل المعاملات',

@@ -235,7 +235,7 @@ export const ja: Translations = {
   },
   dividendHeatmap: {
     title: '配当収入ヒートマップ',
-    subtitle: '各セルは月次配当金額、色が濃いほど多い',
+    subtitle: '各セルは当月入帳済み配当金額。色が濃いほど多い。未登録は下のリストを参照',
     totalDividend: '累計配当',
     noData: '現金配当記録なし',
     bestMonth: 'ベスト月',
@@ -245,7 +245,7 @@ export const ja: Translations = {
     yearTotal: '年計',
     monthTotal: '月計',
     recordedLabel: '入帳済',
-    pendingLabel: '要補登',
+    pendingLabel: '未登録',
   },
   dividendTax: {
     twTooltipTitle: '税務試算（参考）',
@@ -268,7 +268,7 @@ export const ja: Translations = {
     usBadgeShort: '約70%',
     nhiForecastTag: '単発配当で二代健保の可能性',
     pendingActualTitle: '未確認の実績配当（MoneyDJ）',
-    pendingActualSubtitle: '直近 90 日以内に権利落ちが発生し、取引履歴に未登録の配当。「追加」を押すと現金配当として登録します。',
+    pendingActualSubtitle: '今年除息済み、取引履歴に未登録の配当（除息日の月でヒートマップに表示）。「追加」で現金配当を作成、「取消」で非表示。',
     pendingActualEmpty: '補登録が必要な実績配当はありません。',
     pendingActualLoading: 'MoneyDJ 実績を取得中…',
     pendingActualAddBtn: '取引に追加',

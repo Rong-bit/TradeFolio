@@ -214,7 +214,7 @@ export const hi: Translations = {
     usBadgeShort: '70%',
     nhiForecastTag: 'अनुमान: यह एकल लाभांश NHI अतिरिक्त प्रीमियम ट्रिगर कर सकता है',
     pendingActualTitle: 'पुष्टि हेतु लंबित वास्तविक लाभांश (MoneyDJ)',
-    pendingActualSubtitle: 'पिछले 90 दिनों में ex-dividend हो चुका है लेकिन अभी लेनदेन रिकॉर्ड में नहीं है; "जोड़ें" दबाने पर नकद लाभांश लेनदेन बनेगा।',
+    pendingActualSubtitle: 'इस वर्ष ex-dividend हो चुके लेकिन लेनदेन में नहीं (ex-माह के अनुसार हीटमैप पर)। "जोड़ें" से रिकॉर्ड बनाएं, "रद्द" से छिपाएं।',
     pendingActualEmpty: 'फिलहाल जोड़ने के लिए कोई लंबित वास्तविक लाभांश नहीं।',
     pendingActualLoading: 'MoneyDJ वास्तविक डेटा लोड हो रहा है...',
     pendingActualAddBtn: 'लेनदेन रिकॉर्ड में जोड़ें',

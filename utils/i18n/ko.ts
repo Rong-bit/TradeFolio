@@ -268,7 +268,7 @@ export const ko: Translations = {
     usBadgeShort: '약 70%',
     nhiForecastTag: '예상 1회 배당으로 건강보험 추가부담금이 발생할 수 있음',
     pendingActualTitle: '확인 필요한 실배당 (MoneyDJ)',
-    pendingActualSubtitle: '최근 90일 이내 배당락이 발생했지만 거래 기록에 없는 배당. "추가"를 누르면 현금 배당 거래로 등록됩니다.',
+    pendingActualSubtitle: '올해 배당락이 지났지만 거래 기록에 없는 배당(배당락 월 기준 히트맵 표시). "추가"로 등록, "취소"로 숨김.',
     pendingActualEmpty: '등록이 필요한 실배당이 없습니다.',
     pendingActualLoading: 'MoneyDJ 실적 데이터 로드 중…',
     pendingActualAddBtn: '거래에 추가',

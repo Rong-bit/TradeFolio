@@ -238,7 +238,7 @@ export const de: Translations = {
     usBadgeShort: 'ca. 70 %',
     nhiForecastTag: 'Die geschaetzte Einzelausschuettung kann einen NHI-Zusatzbeitrag ausloesen',
     pendingActualTitle: 'Tatsächliche Dividenden (MoneyDJ)',
-    pendingActualSubtitle: 'Dividenden mit Ex-Tag in den letzten 90 Tagen, die noch nicht erfasst sind. Mit „Hinzufügen“ als Bardividende eintragen.',
+    pendingActualSubtitle: 'Ex-Tage dieses Jahres, die noch nicht in Ihren Transaktionen stehen (im Heatmap nach Ex-Monat). „Hinzufügen“ erstellt einen Eintrag, „Ausblenden“ blendet die Zeile dauerhaft aus.',
     pendingActualEmpty: 'Keine offenen tatsächlichen Dividenden.',
     pendingActualLoading: 'MoneyDJ-Daten werden geladen …',
     pendingActualAddBtn: 'Hinzufügen',

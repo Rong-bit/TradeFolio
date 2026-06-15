@@ -214,7 +214,7 @@ export const pt: Translations = {
     usBadgeShort: '70%',
     nhiForecastTag: 'Estimativa: este pagamento único pode acionar cobrança suplementar NHI',
     pendingActualTitle: 'Dividendos realizados pendentes (MoneyDJ)',
-    pendingActualSubtitle: 'Ex-dividendos ocorridos nos últimos 90 dias que ainda não aparecem no histórico; clicar em "Adicionar" cria um lançamento de dividendo em dinheiro.',
+    pendingActualSubtitle: 'Ex-dividendos deste ano ainda não no histórico (mostrados na heatmap pelo mês de ex-data). "Adicionar" cria registro; "Ocultar" remove o aviso.',
     pendingActualEmpty: 'Não há dividendos realizados pendentes para complementar.',
     pendingActualLoading: 'A carregar dados realizados do MoneyDJ...',
     pendingActualAddBtn: 'Adicionar ao histórico',

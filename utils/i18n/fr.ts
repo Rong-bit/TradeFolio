@@ -239,7 +239,7 @@ export const fr: Translations = {
     usBadgeShort: 'env. 70 %',
     nhiForecastTag: 'Le versement unique estime peut declencher le supplement NHI',
     pendingActualTitle: 'Dividendes reels a confirmer (MoneyDJ)',
-    pendingActualSubtitle: 'Dividendes deja ex-dividende sur les 90 derniers jours mais absents de vos transactions ; cliquez sur « Ajouter » pour creer une ligne de dividende en especes.',
+    pendingActualSubtitle: 'Ex-dividendes de cette annee absents de vos transactions (affichés sur la heatmap par mois d\'ex-date). « Ajouter » cree un enregistrement ; « Masquer » masque la ligne.',
     pendingActualEmpty: 'Aucun dividende reel a completer pour le moment.',
     pendingActualLoading: 'Chargement des donnees reales MoneyDJ...',
     pendingActualAddBtn: 'Ajouter aux transactions',
