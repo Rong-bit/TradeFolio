@@ -5,9 +5,10 @@ import { useUI } from '../contexts/UIContext';
 interface Props {
   onExport: () => void;
   onImport: (file: File) => void;
+  onContactAdmin?: () => void;
 }
 
-const HelpView: React.FC<Props> = ({ onExport, onImport }) => {
+const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin }) => {
   const { language, currentUser, isGuest } = useUI();
   const authorizedUsers: string[] = [];
   const translations = t(language);
@@ -140,8 +141,9 @@ const HelpView: React.FC<Props> = ({ onExport, onImport }) => {
              <p className="mb-4">
                  {translations.help.contactDesc}
              </p>
-             <a 
-               href="mailto:hjr640511@gmail.com"
+             <button
+               type="button"
+               onClick={() => onContactAdmin?.()}
                className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded shadow transition"
              >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -149,7 +151,7 @@ const HelpView: React.FC<Props> = ({ onExport, onImport }) => {
                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                 </svg>
                 {translations.help.contactEmail}
-             </a>
+             </button>
          </div>
       </div>
 
