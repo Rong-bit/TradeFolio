@@ -190,6 +190,8 @@ export const ar: Translations = {
     monthlyBreakdown: 'التفاصيل الشهرية',
     yearTotal: 'السنة',
     monthTotal: 'الشهر',
+    recordedLabel: 'مسجل',
+    pendingLabel: 'معلق',
   },
   dividendTax: {
     twTooltipTitle: 'تقدير ضريبي (مرجع)',
@@ -216,6 +218,9 @@ export const ar: Translations = {
     pendingActualEmpty: 'لا توجد حالياً توزيعات فعلية تحتاج للإضافة.',
     pendingActualLoading: 'جارٍ تحميل بيانات MoneyDJ الفعلية...',
     pendingActualAddBtn: 'إضافة إلى سجل المعاملات',
+    pendingActualDismissBtn: 'إخفاء',
+    pendingActualToggleHide: 'إخفاء القائمة',
+    pendingActualToggleShow: 'إظهار القائمة',
     pendingActualEstimatedDate: 'تاريخ دفع تقديري',
     pendingActualSourceMoneyDj: 'فعلي MoneyDJ',
     pendingActualSourceYahoo: 'تكملة Yahoo',

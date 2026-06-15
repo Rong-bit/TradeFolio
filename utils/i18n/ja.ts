@@ -244,6 +244,8 @@ export const ja: Translations = {
     monthlyBreakdown: '月次内訳',
     yearTotal: '年計',
     monthTotal: '月計',
+    recordedLabel: '入帳済',
+    pendingLabel: '要補登',
   },
   dividendTax: {
     twTooltipTitle: '税務試算（参考）',
@@ -270,6 +272,9 @@ export const ja: Translations = {
     pendingActualEmpty: '補登録が必要な実績配当はありません。',
     pendingActualLoading: 'MoneyDJ 実績を取得中…',
     pendingActualAddBtn: '取引に追加',
+    pendingActualDismissBtn: '取消',
+    pendingActualToggleHide: 'リストを隠す',
+    pendingActualToggleShow: 'リストを表示',
     pendingActualEstimatedDate: '推定支払日',
     pendingActualSourceMoneyDj: 'MoneyDJ実績',
     pendingActualSourceYahoo: 'Yahoo補完',

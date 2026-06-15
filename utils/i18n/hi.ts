@@ -190,6 +190,8 @@ export const hi: Translations = {
     monthlyBreakdown: 'मासिक विवरण',
     yearTotal: 'वर्ष',
     monthTotal: 'माह',
+    recordedLabel: 'दर्ज',
+    pendingLabel: 'लंबित',
   },
   dividendTax: {
     twTooltipTitle: 'कर अनुमान (संदर्भ)',
@@ -216,6 +218,9 @@ export const hi: Translations = {
     pendingActualEmpty: 'फिलहाल जोड़ने के लिए कोई लंबित वास्तविक लाभांश नहीं।',
     pendingActualLoading: 'MoneyDJ वास्तविक डेटा लोड हो रहा है...',
     pendingActualAddBtn: 'लेनदेन रिकॉर्ड में जोड़ें',
+    pendingActualDismissBtn: 'रद्द',
+    pendingActualToggleHide: 'सूची छिपाएँ',
+    pendingActualToggleShow: 'सूची दिखाएँ',
     pendingActualEstimatedDate: 'अनुमानित भुगतान तिथि',
     pendingActualSourceMoneyDj: 'MoneyDJ वास्तविक',
     pendingActualSourceYahoo: 'Yahoo पूरक',

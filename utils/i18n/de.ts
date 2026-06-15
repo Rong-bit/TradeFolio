@@ -214,6 +214,8 @@ export const de: Translations = {
     monthlyBreakdown: 'Monatsdetails',
     yearTotal: 'Jahr',
     monthTotal: 'Monat',
+    recordedLabel: 'Erfasst',
+    pendingLabel: 'Offen',
   },
   dividendTax: {
     twTooltipTitle: 'Steuerschaetzung (Referenz)',
@@ -240,6 +242,9 @@ export const de: Translations = {
     pendingActualEmpty: 'Keine offenen tatsächlichen Dividenden.',
     pendingActualLoading: 'MoneyDJ-Daten werden geladen …',
     pendingActualAddBtn: 'Hinzufügen',
+    pendingActualDismissBtn: 'Ausblenden',
+    pendingActualToggleHide: 'Liste ausblenden',
+    pendingActualToggleShow: 'Liste anzeigen',
     pendingActualEstimatedDate: 'Geschätztes Auszahlungsdatum',
     pendingActualSourceMoneyDj: 'MoneyDJ-Daten',
     pendingActualSourceYahoo: 'Yahoo-Ergaenzung',

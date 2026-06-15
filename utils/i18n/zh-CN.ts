@@ -177,7 +177,7 @@ zhCN.waterfall = {
 };
 zhCN.dividendHeatmap = {
   title: '股息收入热力图',
-  subtitle: '每格代表当月配息金额，颜色越深收入越高',
+  subtitle: '每格代表当月已入账配息金额，颜色越深收入越高；待补登项目请见下方清单',
   totalDividend: '累计配息',
   noData: '尚无现金股息记录',
   bestMonth: '最佳月份',
@@ -186,6 +186,8 @@ zhCN.dividendHeatmap = {
   monthlyBreakdown: '当月明细',
   yearTotal: '年计',
   monthTotal: '月计',
+  recordedLabel: '已入账',
+  pendingLabel: '待补登',
 };
 zhCN.dividendTax = {
   ...zhTW.dividendTax,
@@ -209,10 +211,13 @@ zhCN.dividendTax = {
   usBadgeShort: '70%',
   nhiForecastTag: '预估单次配息将触发二代健保扣费',
   pendingActualTitle: '待确认实绩配息（MoneyDJ）',
-  pendingActualSubtitle: '近 90 天内已除息、尚未在交易记录出现的配息；点击「新增」即建立一笔现金股息交易。',
+  pendingActualSubtitle: '今年已除息、尚未在交易记录出现的配息（依除息日月份显示于热力图）；点击「新增」即建立一笔现金股息交易，「取消」则不再提示该笔。',
   pendingActualEmpty: '目前没有需要补登的实绩配息。',
   pendingActualLoading: '加载 MoneyDJ 实绩数据…',
   pendingActualAddBtn: '新增至交易记录',
+  pendingActualDismissBtn: '取消',
+  pendingActualToggleHide: '隐藏清单',
+  pendingActualToggleShow: '显示清单',
   pendingActualEstimatedDate: '估发放日',
   pendingActualSourceMoneyDj: 'MoneyDJ 实绩',
   pendingActualSourceYahoo: 'Yahoo 备补',

@@ -278,6 +278,8 @@ export interface Translations {
     monthlyBreakdown: string;
     yearTotal: string;
     monthTotal: string;
+    recordedLabel: string;
+    pendingLabel: string;
   };
   /** 配息試算：台股二代健保、美股預扣、未來除息清單 */
   dividendTax: {
@@ -305,6 +307,9 @@ export interface Translations {
     pendingActualEmpty: string;
     pendingActualLoading: string;
     pendingActualAddBtn: string;
+    pendingActualDismissBtn: string;
+    pendingActualToggleHide: string;
+    pendingActualToggleShow: string;
     pendingActualEstimatedDate: string;
     pendingActualSourceMoneyDj: string;
     pendingActualSourceYahoo: string;

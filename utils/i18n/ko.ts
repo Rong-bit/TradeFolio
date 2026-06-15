@@ -244,6 +244,8 @@ export const ko: Translations = {
     monthlyBreakdown: '월별 내역',
     yearTotal: '연간 합계',
     monthTotal: '월간 합계',
+    recordedLabel: '등록됨',
+    pendingLabel: '보완 필요',
   },
   dividendTax: {
     twTooltipTitle: '세금 추정(참고)',
@@ -270,6 +272,9 @@ export const ko: Translations = {
     pendingActualEmpty: '등록이 필요한 실배당이 없습니다.',
     pendingActualLoading: 'MoneyDJ 실적 데이터 로드 중…',
     pendingActualAddBtn: '거래에 추가',
+    pendingActualDismissBtn: '취소',
+    pendingActualToggleHide: '목록 숨기기',
+    pendingActualToggleShow: '목록 표시',
     pendingActualEstimatedDate: '추정 지급일',
     pendingActualSourceMoneyDj: 'MoneyDJ 실적',
     pendingActualSourceYahoo: 'Yahoo 보완',

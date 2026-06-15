@@ -190,6 +190,8 @@ export const pt: Translations = {
     monthlyBreakdown: 'Detalhes Mensais',
     yearTotal: 'Ano',
     monthTotal: 'Mês',
+    recordedLabel: 'Registado',
+    pendingLabel: 'Pendente',
   },
   dividendTax: {
     twTooltipTitle: 'Simulação fiscal (referência)',
@@ -216,6 +218,9 @@ export const pt: Translations = {
     pendingActualEmpty: 'Não há dividendos realizados pendentes para complementar.',
     pendingActualLoading: 'A carregar dados realizados do MoneyDJ...',
     pendingActualAddBtn: 'Adicionar ao histórico',
+    pendingActualDismissBtn: 'Ocultar',
+    pendingActualToggleHide: 'Ocultar lista',
+    pendingActualToggleShow: 'Mostrar lista',
     pendingActualEstimatedDate: 'Data estimada de pagamento',
     pendingActualSourceMoneyDj: 'Realizado MoneyDJ',
     pendingActualSourceYahoo: 'Complemento Yahoo',

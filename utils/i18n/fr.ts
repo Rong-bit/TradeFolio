@@ -215,6 +215,8 @@ export const fr: Translations = {
     monthlyBreakdown: 'Détail Mensuel',
     yearTotal: 'Année',
     monthTotal: 'Mois',
+    recordedLabel: 'Enregistre',
+    pendingLabel: 'A saisir',
   },
   dividendTax: {
     twTooltipTitle: 'Estimation fiscale (indicative)',
@@ -241,6 +243,9 @@ export const fr: Translations = {
     pendingActualEmpty: 'Aucun dividende reel a completer pour le moment.',
     pendingActualLoading: 'Chargement des donnees reales MoneyDJ...',
     pendingActualAddBtn: 'Ajouter aux transactions',
+    pendingActualDismissBtn: 'Masquer',
+    pendingActualToggleHide: 'Masquer la liste',
+    pendingActualToggleShow: 'Afficher la liste',
     pendingActualEstimatedDate: 'Date de versement estimee',
     pendingActualSourceMoneyDj: 'Donnees MoneyDJ',
     pendingActualSourceYahoo: 'Complements Yahoo',
