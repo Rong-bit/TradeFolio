@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Language, translate } from '../utils/i18n';
-import { ADMIN_EMAIL } from '../config';
 
 export interface AppText {
   alertTitleInfo: string;
@@ -19,9 +18,6 @@ export interface AppText {
   guestLoginNotice: string;
   contactSubject: string;
   contactBody: string;
-  contactSentSuccess: string;
-  contactMailtoFallback: string;
-  contactStaticPagesHint: string;
   updatePriceSuccess: (count: number, rate: number) => string;
   autoUpdateFailed: string;
   downloadFailed: string;
@@ -89,33 +85,14 @@ export function useAppText(language: Language, currentUser: string): AppText {
       ),
       contactSubject: tx(
         'contactSubject',
-        isChinese ? 'TradeView 問題回報' : 'TradeView Bug / Issue Report'
+        isChinese ? 'TradeView Bug / 問題回報' : 'TradeView Bug Report / Feedback'
       ),
       contactBody: tx(
         'contactBody',
         isChinese
-          ? `Hi 管理員,\n\n我的帳號是: ${currentUser}\n\n【問題描述】\n請在此說明您遇到的 Bug 或問題：\n\n\n\n謝謝協助。`
-          : `Hi Admin,\n\nMy account: ${currentUser}\n\n[Issue Description]\nPlease describe the bug or issue you encountered:\n\n\n\nThank you.`,
+          ? `Hi 管理員,\n\n我的帳號是：${currentUser}\n\n我想回報以下問題或建議：\n\n（請在此描述 Bug、操作步驟或功能建議）\n\n謝謝。`
+          : `Hi Admin,\n\nMy account: ${currentUser}\n\nI would like to report the following issue or suggestion:\n\n(Please describe the bug, steps to reproduce, or feature request here)\n\nThank you.`,
         { user: currentUser }
-      ),
-      contactSentSuccess: tx(
-        'contactSentSuccess',
-        isChinese
-          ? '問題回報已送出！開發者將盡快查閱，謝謝您的回饋。'
-          : 'Your report has been submitted. The developer will review it soon. Thank you!'
-      ),
-      contactMailtoFallback: tx(
-        'contactMailtoFallback',
-        isChinese
-          ? '無法直接送出回報，已為您開啟 Gmail 撰寫郵件。請補充問題後按「傳送」。'
-          : 'Could not submit directly. Gmail compose has been opened — please add details and press Send.'
-      ),
-      contactStaticPagesHint: tx(
-        'contactStaticPagesHint',
-        isChinese
-          ? `已在新分頁開啟 Gmail 撰寫郵件，並複製回報內容到剪貼簿。\n\n請在 Gmail 分頁補充問題說明後按「傳送」。\n\n若未開啟新分頁，請手動前往 mail.google.com 或寄信至：${ADMIN_EMAIL}`
-          : `Gmail compose opened in a new tab and the report was copied to your clipboard.\n\nPlease add details in the Gmail tab and press Send.\n\nIf no tab opened, go to mail.google.com or email: ${ADMIN_EMAIL}`,
-        { email: ADMIN_EMAIL }
       ),
       updatePriceSuccess: (count: number, rate: number) =>
         rate > 0
