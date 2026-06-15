@@ -18,6 +18,8 @@ export interface AppText {
   guestLoginNotice: string;
   contactSubject: string;
   contactBody: string;
+  contactSentSuccess: string;
+  contactMailtoFallback: string;
   updatePriceSuccess: (count: number, rate: number) => string;
   autoUpdateFailed: string;
   downloadFailed: string;
@@ -80,19 +82,31 @@ export function useAppText(language: Language, currentUser: string): AppText {
       guestLoginNotice: tx(
         'guestLoginNotice',
         isChinese
-          ? '已為您登入「非會員模式」。\n\n您尚未註冊，若需開通會員模式，請按\'申請開通\'發送申請信通知管理員開通權限。'
-          : 'You are now logged in as a guest.\n\nIf you want full membership access, click "Upgrade" to send an application email to the administrator.'
+          ? '已為您登入「非會員模式」。\n\n部分進階功能可能受限。若遇到問題，可使用頂部「問題回報」按鈕通知開發者。'
+          : 'You are now logged in as guest mode.\n\nSome advanced features may be limited. If you encounter issues, use the "Report Issue" button to notify the developer.'
       ),
       contactSubject: tx(
         'contactSubject',
-        isChinese ? 'TradeView 購買/權限開通申請' : 'TradeView Purchase / Access Request'
+        isChinese ? 'TradeView 問題回報' : 'TradeView Bug / Issue Report'
       ),
       contactBody: tx(
         'contactBody',
         isChinese
-          ? `Hi 管理員,\n\n我的帳號是: ${currentUser}\n\n我目前是非會員身份，希望申請/購買完整權限。\n\n請協助處理，謝謝。`
-          : `Hi Admin,\n\nMy account is: ${currentUser}\n\nI am currently on guest access and would like to apply/purchase full permissions.\n\nPlease assist. Thank you.`,
+          ? `Hi 管理員,\n\n我的帳號是: ${currentUser}\n\n【問題描述】\n請在此說明您遇到的 Bug 或問題：\n\n\n\n謝謝協助。`
+          : `Hi Admin,\n\nMy account: ${currentUser}\n\n[Issue Description]\nPlease describe the bug or issue you encountered:\n\n\n\nThank you.`,
         { user: currentUser }
+      ),
+      contactSentSuccess: tx(
+        'contactSentSuccess',
+        isChinese
+          ? '問題回報已送出！開發者將盡快查閱，謝謝您的回饋。'
+          : 'Your report has been submitted. The developer will review it soon. Thank you!'
+      ),
+      contactMailtoFallback: tx(
+        'contactMailtoFallback',
+        isChinese
+          ? '無法直接送出回報，已為您開啟郵件程式。請填寫問題後按「傳送」，開發者才會收到。'
+          : 'Could not submit directly. Your email app has been opened — please describe the issue and press Send.'
       ),
       updatePriceSuccess: (count: number, rate: number) =>
         rate > 0
