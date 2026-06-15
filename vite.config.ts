@@ -40,6 +40,10 @@ export default defineConfig(({ mode }) => {
       'process.env.API_KEY': JSON.stringify(env.API_KEY || process.env.API_KEY),
       // GitHub Actions 未設 vars 時仍帶入預設 Vercel proxy（靜態站必備）
       'import.meta.env.VITE_YAHOO_PROXY_URL': JSON.stringify(yahooProxyUrl),
+      // 問題回報 API（選用）；GitHub Pages 預設留空，走 mailto + 剪貼簿
+      'import.meta.env.VITE_CONTACT_ADMIN_API_URL': JSON.stringify(
+        (env.VITE_CONTACT_ADMIN_API_URL || process.env.VITE_CONTACT_ADMIN_API_URL || '').trim(),
+      ),
       // 為了相容性保留 process.env (但避免覆蓋上面的 key)
       'process.env': process.env
     }
