@@ -129,9 +129,27 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 7. 註解說明
+-- 7. 建立 contact_requests 表（聯絡管理員申請）
+CREATE TABLE IF NOT EXISTS contact_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processed', 'rejected')),
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_contact_requests_user_email ON contact_requests(user_email);
+CREATE INDEX IF NOT EXISTS idx_contact_requests_status ON contact_requests(status);
+CREATE INDEX IF NOT EXISTS idx_contact_requests_created_at ON contact_requests(created_at DESC);
+
+ALTER TABLE contact_requests ENABLE ROW LEVEL SECURITY;
+-- 僅允許透過 service role key（後端 API）寫入；管理員於 Supabase Dashboard 查閱
+
+-- 8. 註解說明
 COMMENT ON TABLE purchases IS '儲存 Google Play 購買記錄';
 COMMENT ON TABLE authorized_users IS '儲存手動授權的會員記錄';
+COMMENT ON TABLE contact_requests IS '使用者 Bug／問題回報記錄';
 COMMENT ON VIEW active_members IS '合併的活躍會員列表視圖';
 COMMENT ON FUNCTION is_user_member IS '檢查指定 Email 是否為有效會員';
 
