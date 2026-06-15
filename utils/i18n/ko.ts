@@ -27,7 +27,7 @@ export const ko: Translations = {
     search: '검색',
     logoutConfirm: '로그아웃 하시겠습니까?',
     baseCurrency: '기준 통화',
-    upgrade: '업그레이드',
+    upgrade: '문제 신고',
     footerLocalDataPrivacy:
       '모든 거래 데이터는 기기에만 저장되어 개인정보를 보호합니다.',
   },
@@ -617,10 +617,10 @@ export const ko: Translations = {
     emailAccount: '이메일',
     status: '상태',
     systemAuthorized: '시스템 인가',
-    contact: '구매·문의',
-    contactTitle: '이용해 주셔서 감사합니다',
-    contactDesc: '비회원으로 영구 이용권을 원하시거나 기능 제안·버그 리포트는 개발자에게 문의하세요.',
-    contactEmail: '관리자 연락처(이메일)',
+    contact: '버그/문제 신고',
+    contactTitle: '문제가 있으신가요?',
+    contactDesc: '버그, 오류 또는 기능 제안이 있으면 개발자에게 신고해 주세요. 여가 시간에 유지보수하므로 답변이 늦을 수 있습니다.',
+    contactEmail: '문제 신고',
     documentation: '문서',
     copyAll: '복사',
     copied: '복사했습니다!',
@@ -1038,10 +1038,14 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     adminWelcome: '관리자님, 다시 오신 것을 환영합니다!',
     adminPasswordWrong: '관리자 비밀번호가 올바르지 않습니다',
     guestLoginNotice:
-      '게스트 모드로 로그인되었습니다.\n\n전체 기능 사용을 원하면 "업그레이드"를 눌러 관리자에게 신청 메일을 보내세요.',
-    contactSubject: 'TradeView 구매/권한 요청',
+      '게스트 모드로 로그인되었습니다.\n\n일부 기능이 제한될 수 있습니다. 문제가 있으면 상단의「문제 신고」버튼을 이용해 주세요.',
+    contactSubject: 'TradeView 버그/문제 신고',
     contactBody:
-      '안녕하세요 관리자님,\n\n제 계정은: {user}\n\n현재 게스트 권한이라 전체 권한 신청/구매를 원합니다.\n\n감사합니다.',
+      '안녕하세요 관리자님,\n\n제 계정은: {user}\n\n【문제 설명】\n발생한 버그나 문제를 기재해 주세요:\n\n\n\n감사합니다.',
+    contactSentSuccess:
+      '문제 신고가 전송되었습니다. 개발자가 확인 후 처리하겠습니다. 감사합니다!',
+    contactMailtoFallback:
+      '직접 전송할 수 없습니다. 메일 앱이 열렸습니다. 내용을 작성한 뒤 보내기를 눌러 주세요.',
     updatePriceSuccess: '주가 {count}건을 업데이트했습니다',
     updatePriceSuccessWithRate: '주가 {count}건을 업데이트하고 환율을 {rate}(으)로 동기화했습니다',
     autoUpdateFailed: '자동 업데이트에 실패했습니다',

@@ -4,7 +4,7 @@ import { zhTW } from './zh-TW';
 const zhCN: Translations = JSON.parse(JSON.stringify(zhTW));
 zhCN.baseCurrency = { TWD: '台币', USD: '美元', JPY: '日元', EUR: '欧元', GBP: '英镑', HKD: '港币', KRW: '韩元', CAD: '加元', INR: '印度卢比', CNY: '人民币', AUD: '澳元', SAR: '沙特里亚尔', BRL: '巴西雷亚尔' };
 zhCN.pages = { dashboard: '投资组合仪表板', history: '历史记录（交易 + 资金流动）', funds: '资金存取与管理', accounts: '证券账户管理', rebalance: '投资组合再平衡', simulator: '资产配置模拟', splits: '股票拆分管理', help: '系统管理与备份' };
-zhCN.common = { confirm: '确认', cancel: '取消', delete: '删除', edit: '编辑', save: '保存', close: '关闭', loading: '加载中...', search: '搜索', logoutConfirm: '确定要登出系统吗？', baseCurrency: '基准币', upgrade: '升级', footerLocalDataPrivacy: '本应用所有交易数据均存储在本地，保障您的隐私安全。' };
+zhCN.common = { confirm: '确认', cancel: '取消', delete: '删除', edit: '编辑', save: '保存', close: '关闭', loading: '加载中...', search: '搜索', logoutConfirm: '确定要登出系统吗？', baseCurrency: '基准币', upgrade: '问题回报', footerLocalDataPrivacy: '本应用所有交易数据均存储在本地，保障您的隐私安全。' };
 zhCN.nav = { dashboard: '仪表板', history: '交易记录', funds: '资金管理', accounts: '证券户', rebalance: '再平衡', simulator: '配置模拟', splits: '股票拆分', help: '系统管理', logout: '登出' };
 zhCN.login = { title: 'TradeView 登录', subtitle: '投资资产管家', email: '邮箱', password: '密码', login: '登录', privacy: '隐私声明', privacyDesc: '数据存储在个人设备，不涉及个人隐私，请定时备份。', riskDisclaimer: '风险声明', riskDisclaimerDesc: '投资有风险，过往绩效不代表未来表现。' };
 zhCN.dashboard = {
@@ -463,10 +463,10 @@ zhCN.help = {
   emailAccount: 'Email 账号',
   status: '状态',
   systemAuthorized: '系统授权',
-  contact: '购买授权与联系管理员',
-  contactTitle: '喜欢这个系统吗？',
-  contactDesc: '如果您是非会员并希望获得永久使用权限，或有任何功能建议与 Bug 回报，欢迎联系开发者。业余时间维护，回复较慢请见谅。',
-  contactEmail: '联系管理员',
+  contact: '问题回报',
+  contactTitle: '遇到问题？',
+  contactDesc: '若有任何功能异常、Bug 或功能建议，欢迎回报给开发者。业余时间维护，回复较慢请见谅。',
+  contactEmail: '问题回报',
   documentation: '使用说明',
   copyAll: '复制全文',
   copied: '已复制!',
@@ -740,9 +740,11 @@ zhCN.appMessages = {
   enterEmail: '请输入 Email 信箱',
   adminWelcome: '欢迎回来，管理员！',
   adminPasswordWrong: '管理员密码错误',
-  guestLoginNotice: '已为您登录「非会员模式」。\n\n您尚未注册，若需开通会员模式，请按「升级」发送申请信通知管理员开通权限。',
-  contactSubject: 'TradeView 购买/权限开通申请',
-  contactBody: 'Hi 管理员,\n\n我的账号是: {user}\n\n我目前是非会员身份，希望申请/购买完整权限。\n\n请协助处理，谢谢。',
+  guestLoginNotice: '已为您登录「非会员模式」。\n\n部分进阶功能可能受限。若遇到问题，可使用顶部「问题回报」按钮通知开发者。',
+  contactSubject: 'TradeView 问题回报',
+  contactBody: 'Hi 管理员,\n\n我的账号是: {user}\n\n【问题描述】\n请在此说明您遇到的 Bug 或问题：\n\n\n\n谢谢协助。',
+  contactSentSuccess: '问题回报已送出！开发者将尽快查阅，谢谢您的反馈。',
+  contactMailtoFallback: '无法直接送出回报，已为您开启邮件程序。请填写问题后按「发送」，开发者才会收到。',
   updatePriceSuccess: '成功更新 {count} 笔股价',
   updatePriceSuccessWithRate: '成功更新 {count} 笔股价，并同步更新汇率为 {rate}',
   autoUpdateFailed: '自动更新失败',

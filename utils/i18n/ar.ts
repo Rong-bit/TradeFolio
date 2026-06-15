@@ -4,7 +4,7 @@ import { en } from './en';
 export const ar: Translations = {
   ...en,
   baseCurrency: { ...en.baseCurrency, TWD: 'دولار تايواني', USD: 'دولار أمريكي', JPY: 'ين ياباني', EUR: 'يورو', GBP: 'جنيه إسترليني', HKD: 'دولار هونغ كونغ', KRW: 'وون كوري', CAD: 'دولار كندي', INR: 'روبية هندية', CNY: 'يوان صيني', AUD: 'دولار أسترالي', SAR: 'ريال سعودي', BRL: 'ريال برازيلي' },
-  common: { ...en.common, confirm: 'تأكيد', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', save: 'حفظ', close: 'إغلاق', loading: 'جاري التحميل...', search: 'بحث', logoutConfirm: 'تسجيل الخروج؟', baseCurrency: 'العملة الأساسية', upgrade: 'ترقية', footerLocalDataPrivacy: 'تُخزَّن جميع بيانات المعاملات محلياً على جهازك لحماية خصوصيتك.' },
+  common: { ...en.common, confirm: 'تأكيد', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', save: 'حفظ', close: 'إغلاق', loading: 'جاري التحميل...', search: 'بحث', logoutConfirm: 'تسجيل الخروج؟', baseCurrency: 'العملة الأساسية', upgrade: 'الإبلاغ عن مشكلة', footerLocalDataPrivacy: 'تُخزَّن جميع بيانات المعاملات محلياً على جهازك لحماية خصوصيتك.' },
   nav: { dashboard: 'لوحة التحكم', history: 'السجل', funds: 'الأموال', accounts: 'الحسابات', rebalance: 'إعادة التوازن', simulator: 'المحاكي', splits: 'تقسيم الأسهم', help: 'النظام', logout: 'تسجيل الخروج' },
   pages: { ...en.pages, dashboard: 'لوحة المحفظة', history: 'السجل (المعاملات والتدفق)', funds: 'إدارة الأموال', accounts: 'إدارة الحسابات', rebalance: 'إعادة التوازن', simulator: 'محاكي التخصيص', splits: 'إدارة تقسيم الأسهم', help: 'النظام والنسخ' },
   login: { title: 'تسجيل الدخول TradeView', subtitle: 'مدير الأصول الاستثمارية', email: 'البريد', password: 'كلمة المرور', login: 'دخول', privacy: 'الخصوصية', privacyDesc: 'البيانات مخزنة محلياً. لا جمع للبيانات الشخصية.', riskDisclaimer: 'إخلاء المسؤولية', riskDisclaimerDesc: 'الاستثمار ينطوي على مخاطر.' },
@@ -571,10 +571,10 @@ export const ar: Translations = {
     emailAccount: 'البريد',
     status: 'الحالة',
     systemAuthorized: 'مرخص من النظام',
-    contact: 'ترخيص الشراء واتصال المسؤول',
-    contactTitle: 'يعجبك النظام؟',
-    contactDesc: 'غير عضو وترغب بحق استخدام دائم أو لديك اقتراحات/أخطاء؟ تواصل مع المطور. قد يتأخر الرد.',
-    contactEmail: 'الاتصال بالمسؤول (بريد)',
+    contact: 'الإبلاغ عن خطأ / مشكلة',
+    contactTitle: 'هل تواجه مشكلة؟',
+    contactDesc: 'أخطاء أو اقتراحات ميزات؟ أبلغ المطور. الصيانة في وقت الفراغ — قد يتأخر الرد.',
+    contactEmail: 'الإبلاغ عن مشكلة',
     documentation: 'التوثيق',
     copyAll: 'نسخ الكل',
     copied: 'تم النسخ!',
@@ -994,10 +994,14 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     adminWelcome: 'مرحباً بعودتك أيها المسؤول!',
     adminPasswordWrong: 'كلمة مرور المسؤول غير صحيحة',
     guestLoginNotice:
-      'تم تسجيل دخولك بوضع الضيف.\n\nللحصول على الوصول الكامل، اضغط «ترقية» لإرسال طلب بريد إلكتروني إلى المسؤول.',
-    contactSubject: 'طلب شراء/صلاحية TradeView',
+      'تم تسجيل دخولك بوضع الضيف.\n\nقد تكون بعض الميزات محدودة. عند وجود مشكلة استخدم «الإبلاغ عن مشكلة» في الأعلى.',
+    contactSubject: 'TradeView تقرير خطأ / مشكلة',
     contactBody:
-      'مرحباً Admin،\n\nحسابي هو: {user}\n\nأنا حالياً في وضع الضيف وأرغب في طلب/شراء الصلاحيات الكاملة.\n\nشكراً لك.',
+      'مرحباً Admin،\n\nحسابي هو: {user}\n\n[وصف المشكلة]\nيرجى وصف الخطأ أو المشكلة:\n\n\n\nشكراً لك.',
+    contactSentSuccess:
+      'تم إرسال تقريرك. سيراجعه المطور قريباً. شكراً!',
+    contactMailtoFallback:
+      'تعذّر الإرسال مباشرة. تم فتح تطبيق البريد — صِف المشكلة واضغط إرسال.',
     updatePriceSuccess: 'تم تحديث {count} من الأسعار',
     updatePriceSuccessWithRate: 'تم تحديث {count} من الأسعار ومزامنة سعر الصرف إلى {rate}',
     autoUpdateFailed: 'فشل التحديث التلقائي',

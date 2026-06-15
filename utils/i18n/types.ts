@@ -986,6 +986,8 @@ export interface Translations {
     guestLoginNotice: string;
     contactSubject: string;
     contactBody: string;
+    contactSentSuccess: string;
+    contactMailtoFallback: string;
     updatePriceSuccess: string;
     updatePriceSuccessWithRate: string;
     autoUpdateFailed: string;

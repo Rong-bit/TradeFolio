@@ -4,7 +4,7 @@ import { en } from './en';
 export const pt: Translations = {
   ...en,
   baseCurrency: { ...en.baseCurrency, TWD: 'Dólar taiwanês', USD: 'Dólar americano', JPY: 'Iene japonês', EUR: 'Euro', GBP: 'Libra esterlina', HKD: 'Dólar de Hong Kong', KRW: 'Won coreano', CAD: 'Dólar canadense', INR: 'Rúpia indiana', CNY: 'Yuan chinês', AUD: 'Dólar australiano', SAR: 'Riyal saudita', BRL: 'Real brasileiro' },
-  common: { ...en.common, confirm: 'Confirmar', cancel: 'Cancelar', delete: 'Excluir', edit: 'Editar', save: 'Salvar', close: 'Fechar', loading: 'Carregando...', search: 'Buscar', logoutConfirm: 'Sair?', baseCurrency: 'Moeda base', upgrade: 'Atualizar', footerLocalDataPrivacy: 'Todos os dados de transações ficam armazenados localmente no seu dispositivo para proteger a sua privacidade.' },
+  common: { ...en.common, confirm: 'Confirmar', cancel: 'Cancelar', delete: 'Excluir', edit: 'Editar', save: 'Salvar', close: 'Fechar', loading: 'Carregando...', search: 'Buscar', logoutConfirm: 'Sair?', baseCurrency: 'Moeda base', upgrade: 'Reportar problema', footerLocalDataPrivacy: 'Todos os dados de transações ficam armazenados localmente no seu dispositivo para proteger a sua privacidade.' },
   nav: { dashboard: 'Painel', history: 'Histórico', funds: 'Fundos', accounts: 'Contas', rebalance: 'Rebalanceamento', simulator: 'Simulador', splits: 'Desdobramentos', help: 'Sistema', logout: 'Sair' },
   pages: { ...en.pages, dashboard: 'Painel da carteira', history: 'Histórico (transações e fluxo)', funds: 'Gestão de fundos', accounts: 'Gestão de contas', rebalance: 'Rebalanceamento', simulator: 'Simulador de alocação', splits: 'Gestão de desdobramentos', help: 'Sistema e backup' },
   login: { title: 'Login TradeView', subtitle: 'Gestor de Ativos de Investimento', email: 'E-mail', password: 'Senha', login: 'Entrar', privacy: 'Privacidade', privacyDesc: 'Dados armazenados localmente. Sem coleta de dados pessoais.', riskDisclaimer: 'Aviso', riskDisclaimerDesc: 'Investimentos envolvem riscos.' },
@@ -553,10 +553,10 @@ export const pt: Translations = {
     emailAccount: 'E-mail',
     status: 'Estado',
     systemAuthorized: 'Autorizado pelo sistema',
-    contact: 'Autorização de compra e contacto do administrador',
-    contactTitle: 'Gosta do sistema?',
-    contactDesc: 'Não membro e quer direitos permanentes, ou sugestões/erros? Contacte o desenvolvedor. Respostas podem demorar.',
-    contactEmail: 'Contactar administrador (e-mail)',
+    contact: 'Reportar bug / problema',
+    contactTitle: 'Tem algum problema?',
+    contactDesc: 'Bugs, erros ou sugestões de funcionalidades: reporte ao desenvolvedor. Manutenção em tempo livre — respostas podem demorar.',
+    contactEmail: 'Reportar problema',
     documentation: 'Documentação',
     copyAll: 'Copiar tudo',
     copied: 'Copiado!',
@@ -976,10 +976,14 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     adminWelcome: 'Bem-vindo de volta, administrador!',
     adminPasswordWrong: 'Palavra-passe de administrador incorreta',
     guestLoginNotice:
-      'Entrou no modo visitante.\n\nPara acesso completo, clique em "Upgrade" para enviar um pedido por e-mail ao administrador.',
-    contactSubject: 'Pedido de compra/acesso TradeView',
+      'Entrou no modo visitante.\n\nAlgumas funções podem estar limitadas. Se tiver problemas, use «Reportar problema» no topo.',
+    contactSubject: 'TradeView relatório de bug / problema',
     contactBody:
-      'Olá Admin,\n\nA minha conta é: {user}\n\nAtualmente estou em modo visitante e gostaria de solicitar/comprar permissões completas.\n\nObrigado.',
+      'Olá Admin,\n\nA minha conta é: {user}\n\n[Descrição do problema]\nDescreva o bug ou problema encontrado:\n\n\n\nObrigado.',
+    contactSentSuccess:
+      'O seu relatório foi enviado. O desenvolvedor irá analisá-lo em breve. Obrigado!',
+    contactMailtoFallback:
+      'Não foi possível enviar diretamente. A aplicação de e-mail foi aberta — descreva o problema e prima Enviar.',
     updatePriceSuccess: '{count} preços atualizados',
     updatePriceSuccessWithRate: '{count} preços atualizados e taxa de câmbio sincronizada para {rate}',
     autoUpdateFailed: 'Falha na atualização automática',

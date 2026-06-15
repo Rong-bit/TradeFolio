@@ -4,7 +4,7 @@ import { en } from './en';
 export const hi: Translations = {
   ...en,
   baseCurrency: { TWD: 'ताइवान डॉलर', USD: 'अमेरिकी डॉलर', JPY: 'जापानी येन', EUR: 'यूरो', GBP: 'ब्रिटिश पाउंड', HKD: 'हाँगकाँग डॉलर', KRW: 'कोरियाई वॉन', CAD: 'कैनेडियन डॉलर', INR: 'भारतीय रुपया', CNY: 'चीनी युआन', AUD: 'ऑस्ट्रेलियाई डॉलर', SAR: 'सऊदी रियाल', BRL: 'ब्राज़ीलियाई रियाल' },
-  common: { ...en.common, confirm: 'पुष्टि', cancel: 'रद्द', delete: 'हटाएं', edit: 'संपादित', save: 'सहेजें', close: 'बंद', loading: 'लोड हो रहा...', search: 'खोज', logoutConfirm: 'लॉग आउट करें?', baseCurrency: 'आधार मुद्रा', upgrade: 'अपग्रेड', footerLocalDataPrivacy: 'आपकी गोपनीयता के लिए सभी लेनदेन डेटा केवल आपके डिवाइस पर संग्रहीत होता है।' },
+  common: { ...en.common, confirm: 'पुष्टि', cancel: 'रद्द', delete: 'हटाएं', edit: 'संपादित', save: 'सहेजें', close: 'बंद', loading: 'लोड हो रहा...', search: 'खोज', logoutConfirm: 'लॉग आउट करें?', baseCurrency: 'आधार मुद्रा', upgrade: 'समस्या रिपोर्ट', footerLocalDataPrivacy: 'आपकी गोपनीयता के लिए सभी लेनदेन डेटा केवल आपके डिवाइस पर संग्रहीत होता है।' },
   nav: { dashboard: 'डैशबोर्ड', history: 'इतिहास', funds: 'निधि', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'सिम्युलेटर', splits: 'स्टॉक स्प्लिट', help: 'सहायता', logout: 'लॉग आउट' },
   pages: { ...en.pages, dashboard: 'पोर्टफोलियो', history: 'लेनदेन और नकदी प्रवाह', funds: 'निधि प्रबंधन', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'आवंटन सिम्युलेटर', splits: 'स्टॉक स्प्लिट प्रबंधन', help: 'सेटिंग और बैकअप' },
   login: { title: 'TradeView लॉगिन', subtitle: 'निवेश संपत्ति प्रबंधक', email: 'ईमेल', password: 'पासवर्ड', login: 'लॉग इन', privacy: 'गोपनीयता', privacyDesc: 'डेटा लोकल संग्रहीत। कोई निजी डेटा एकत्र नहीं।', riskDisclaimer: 'चेतावनी', riskDisclaimerDesc: 'निवेश में जोखिम है।' },
@@ -571,10 +571,10 @@ export const hi: Translations = {
     emailAccount: 'ईमेल',
     status: 'स्थिति',
     systemAuthorized: 'सिस्टम अधिकृत',
-    contact: 'खरीद अधिकार और व्यवस्थापक संपर्क',
-    contactTitle: 'सिस्टम पसंद है?',
-    contactDesc: 'गैर-सदस्य स्थायी उपयोग चाहते हैं या सुझाव/बग रिपोर्ट: डेवलपर से संपर्क करें। जवाब में देरी हो सकती है।',
-    contactEmail: 'व्यवस्थापक से संपर्क (ईमेल)',
+    contact: 'बग / समस्या रिपोर्ट',
+    contactTitle: 'कोई समस्या है?',
+    contactDesc: 'बग, त्रुटि या सुविधा सुझाव हो तो डेवलपर को रिपोर्ट करें। खाली समय में रखरखाव — जवाब में देरी हो सकती है।',
+    contactEmail: 'समस्या रिपोर्ट करें',
     documentation: 'दस्तावेज़ीकरण',
     copyAll: 'सब कॉपी करें',
     copied: 'कॉपी हो गया!',
@@ -994,10 +994,14 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     adminWelcome: 'वापसी पर स्वागत है, एडमिन!',
     adminPasswordWrong: 'एडमिन पासवर्ड गलत है',
     guestLoginNotice:
-      'आप अब गेस्ट मोड में लॉगिन हैं।\n\nपूर्ण सदस्यता के लिए “Upgrade” पर क्लिक करके एडमिन को ईमेल अनुरोध भेजें।',
-    contactSubject: 'TradeView खरीद/एक्सेस अनुरोध',
+      'आप अब गेस्ट मोड में लॉगिन हैं।\n\nकुछ सुविधाएँ सीमित हो सकती हैं। समस्या हो तो ऊपर «समस्या रिपोर्ट» का उपयोग करें।',
+    contactSubject: 'TradeView बग / समस्या रिपोर्ट',
     contactBody:
-      'नमस्ते एडमिन,\n\nमेरा खाता: {user}\n\nमैं वर्तमान में गेस्ट एक्सेस पर हूँ और पूर्ण अनुमति के लिए आवेदन/खरीद करना चाहता/चाहती हूँ।\n\nधन्यवाद।',
+      'नमस्ते एडमिन,\n\nमेरा खाता: {user}\n\n[समस्या विवरण]\nकृपया बग या समस्या का वर्णन करें:\n\n\n\nधन्यवाद।',
+    contactSentSuccess:
+      'आपकी रिपोर्ट भेज दी गई है। डेवलपर जल्द समीक्षा करेगा। धन्यवाद!',
+    contactMailtoFallback:
+      'सीधे भेजा नहीं जा सका। ईमेल ऐप खोला गया है — समस्या लिखकर भेजें दबाएँ।',
     updatePriceSuccess: '{count} कीमतें अपडेट हुईं',
     updatePriceSuccessWithRate: '{count} कीमतें अपडेट हुईं और विनिमय दर {rate} पर सिंक हुई',
     autoUpdateFailed: 'ऑटो अपडेट विफल',

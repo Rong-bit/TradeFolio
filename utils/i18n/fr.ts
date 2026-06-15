@@ -4,7 +4,7 @@ import { en } from './en';
 export const fr: Translations = {
   ...en,
   baseCurrency: { TWD: 'Dollar taïwanais', USD: 'Dollar américain', JPY: 'Yen japonais', EUR: 'Euro', GBP: 'Livre sterling', HKD: 'Dollar HK', KRW: 'Won coréen', CAD: 'Dollar canadien', INR: 'Roupie indienne', CNY: 'Yuan chinois', AUD: 'Dollar australien', SAR: 'Riyal saoudien', BRL: 'Réal brésilien' },
-  common: { ...en.common, confirm: 'Confirmer', cancel: 'Annuler', delete: 'Supprimer', edit: 'Modifier', save: 'Enregistrer', close: 'Fermer', loading: 'Chargement...', search: 'Rechercher', logoutConfirm: 'Déconnexion ?', baseCurrency: 'Devise de base', upgrade: 'Mettre à niveau', footerLocalDataPrivacy: 'Toutes les données de transaction sont stockées localement sur votre appareil pour protéger votre vie privée.' },
+  common: { ...en.common, confirm: 'Confirmer', cancel: 'Annuler', delete: 'Supprimer', edit: 'Modifier', save: 'Enregistrer', close: 'Fermer', loading: 'Chargement...', search: 'Rechercher', logoutConfirm: 'Déconnexion ?', baseCurrency: 'Devise de base', upgrade: 'Signaler un problème', footerLocalDataPrivacy: 'Toutes les données de transaction sont stockées localement sur votre appareil pour protéger votre vie privée.' },
   nav: { dashboard: 'Tableau de bord', history: 'Historique', funds: 'Fonds', accounts: 'Comptes', rebalance: 'Rééquilibrage', simulator: 'Simulateur', splits: 'Splits', help: 'Aide', logout: 'Déconnexion' },
   pages: { ...en.pages, dashboard: 'Portefeuille', history: 'Historique (transactions et flux)', funds: 'Gestion des fonds', accounts: 'Comptes', rebalance: 'Rééquilibrage', simulator: 'Simulateur d\'allocation', splits: 'Gestion des splits', help: 'Paramètres et sauvegarde' },
   stockSplit: {
@@ -554,10 +554,10 @@ export const fr: Translations = {
     emailAccount: 'E-mail',
     status: 'Statut',
     systemAuthorized: 'Autorisé par le système',
-    contact: 'Autorisation d\'achat et contact administrateur',
-    contactTitle: 'Vous aimez ce système ?',
-    contactDesc: 'Non-membre souhaitant des droits d\'usage permanents, ou suggestions/bugs : contactez le développeur. Réponses parfois lentes.',
-    contactEmail: 'Contacter l\'administrateur (e-mail)',
+    contact: 'Signaler un bug / problème',
+    contactTitle: 'Un problème ?',
+    contactDesc: 'Bugs, erreurs ou suggestions de fonctionnalités : signalez-les au développeur. Maintenance sur temps libre — réponses parfois lentes.',
+    contactEmail: 'Signaler un problème',
     documentation: 'Guide utilisateur',
     copyAll: 'Tout copier',
     copied: 'Copié !',
@@ -977,10 +977,14 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     adminWelcome: 'Bon retour, administrateur !',
     adminPasswordWrong: 'Mot de passe administrateur incorrect',
     guestLoginNotice:
-      'Vous êtes maintenant connecté en mode invité.\n\nPour un accès complet, cliquez sur « Mettre à niveau » pour envoyer une demande par e-mail à l’administrateur.',
-    contactSubject: 'Demande d’achat / d’accès TradeView',
+      'Vous êtes connecté en mode invité.\n\nCertaines fonctions peuvent être limitées. En cas de problème, utilisez « Signaler un problème » en haut.',
+    contactSubject: 'TradeView signalement bug / problème',
     contactBody:
-      'Bonjour Admin,\n\nMon compte est : {user}\n\nJe suis actuellement en accès invité et je souhaite demander/acheter les autorisations complètes.\n\nMerci.',
+      'Bonjour Admin,\n\nMon compte est : {user}\n\n[Description du problème]\nDécrivez le bug ou le problème rencontré :\n\n\n\nMerci.',
+    contactSentSuccess:
+      'Votre signalement a été envoyé. Le développeur l’examinera bientôt. Merci !',
+    contactMailtoFallback:
+      'Envoi direct impossible. Votre application e-mail a été ouverte — décrivez le problème et appuyez sur Envoyer.',
     updatePriceSuccess: '{count} cours mis à jour',
     updatePriceSuccessWithRate: '{count} cours mis à jour et taux de change synchronisé à {rate}',
     autoUpdateFailed: 'Échec de la mise à jour automatique',

@@ -3,7 +3,7 @@ import { en } from './en';
 
 export const de: Translations = {
   baseCurrency: { TWD: 'Taiwan-Dollar', USD: 'US-Dollar', JPY: 'Japanischer Yen', EUR: 'Euro', GBP: 'Britisches Pfund', HKD: 'Hongkong-Dollar', KRW: 'Suedkoreanischer Won', CAD: 'Kanadischer Dollar', INR: 'Indische Rupie', CNY: 'Chinesischer Yuan', AUD: 'Australischer Dollar', SAR: 'Saudi-Riyal', BRL: 'Brasilianischer Real' },
-  common: { confirm: 'Bestätigen', cancel: 'Abbrechen', delete: 'Löschen', edit: 'Bearbeiten', save: 'Speichern', close: 'Schließen', loading: 'Laden...', search: 'Suchen', logoutConfirm: 'Möchten Sie sich abmelden?', baseCurrency: 'Basiswährung', upgrade: 'Aktualisieren', footerLocalDataPrivacy: 'Alle Transaktionsdaten werden lokal auf Ihrem Gerät gespeichert – zum Schutz Ihrer Privatsphäre.' },
+  common: { confirm: 'Bestätigen', cancel: 'Abbrechen', delete: 'Löschen', edit: 'Bearbeiten', save: 'Speichern', close: 'Schließen', loading: 'Laden...', search: 'Suchen', logoutConfirm: 'Möchten Sie sich abmelden?', baseCurrency: 'Basiswährung', upgrade: 'Problem melden', footerLocalDataPrivacy: 'Alle Transaktionsdaten werden lokal auf Ihrem Gerät gespeichert – zum Schutz Ihrer Privatsphäre.' },
   nav: { dashboard: 'Uebersicht', history: 'Transaktionen', funds: 'Fonds', accounts: 'Konten', rebalance: 'Rebalancing', simulator: 'Simulation', splits: 'Aktiensplits', help: 'Hilfe', logout: 'Abmelden' },
   pages: { dashboard: 'Portfolio-Dashboard', history: 'Verlauf (Transaktionen + Cashflow)', funds: 'Fondsverwaltung', accounts: 'Kontoverwaltung', rebalance: 'Rebalancing', simulator: 'Asset-Allocation-Simulator', splits: 'Aktiensplit-Verwaltung', help: 'System & Backup' },
   stockSplit: {
@@ -526,10 +526,10 @@ holdings: {
     emailAccount: 'E-Mail',
     status: 'Systemstatus',
     systemAuthorized: 'System berechtigt',
-    contact: 'Kaufberechtigung & Kontakt',
-    contactTitle: 'Gefällt Ihnen das System?',
-    contactDesc: 'Als Nicht-Mitglied dauerhafte Nutzungsrechte oder Vorschläge/Meldungen? Bitte den Entwickler kontaktieren. Pflege in Freizeit, Antworten können verzögert sein.',
-    contactEmail: 'Administrator kontaktieren (E-Mail)',
+    contact: 'Fehler / Problem melden',
+    contactTitle: 'Problem aufgetreten?',
+    contactDesc: 'Bei Fehlern, Bugs oder Funktionsvorschlägen melden Sie sich beim Entwickler. Wartung in Freizeit – Antworten können verzögert sein.',
+    contactEmail: 'Problem melden',
     documentation: 'Dokumentation',
     copyAll: 'Alles kopieren',
     copied: 'Kopiert!',
@@ -948,10 +948,14 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     adminWelcome: 'Willkommen zurück, Admin!',
     adminPasswordWrong: 'Falsches Admin-Passwort',
     guestLoginNotice:
-      'Sie sind jetzt im Gastmodus angemeldet.\n\nFür vollständigen Zugriff klicken Sie auf „Upgrade“, um eine Anfrage-E-Mail an den Administrator zu senden.',
-    contactSubject: 'TradeView Kauf-/Zugriffsanfrage',
+      'Sie sind jetzt im Gastmodus angemeldet.\n\nEinige Funktionen können eingeschränkt sein. Bei Problemen nutzen Sie „Problem melden“ oben.',
+    contactSubject: 'TradeView Fehler-/Problemmeldung',
     contactBody:
-      'Hallo Admin,\n\nMein Konto ist: {user}\n\nIch nutze derzeit den Gastzugang und möchte vollständige Rechte beantragen/kaufen.\n\nVielen Dank.',
+      'Hallo Admin,\n\nMein Konto ist: {user}\n\n[Problembeschreibung]\nBitte beschreiben Sie den Fehler oder das Problem:\n\n\n\nVielen Dank.',
+    contactSentSuccess:
+      'Ihre Meldung wurde gesendet. Der Entwickler wird sie bald prüfen. Danke!',
+    contactMailtoFallback:
+      'Direktes Senden nicht möglich. Ihre E-Mail-App wurde geöffnet — bitte Problem beschreiben und „Senden“ drücken.',
     updatePriceSuccess: '{count} Kurse aktualisiert',
     updatePriceSuccessWithRate: '{count} Kurse aktualisiert und Wechselkurs auf {rate} synchronisiert',
     autoUpdateFailed: 'Automatische Aktualisierung fehlgeschlagen',

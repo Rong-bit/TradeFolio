@@ -27,7 +27,7 @@ export const ja: Translations = {
     search: '検索',
     logoutConfirm: 'ログアウトしますか？',
     baseCurrency: '基準通貨',
-    upgrade: 'アップグレード',
+    upgrade: '問題回報',
     footerLocalDataPrivacy:
       '取引データはすべて端末に保存され、プライバシーを保護します。',
   },
@@ -617,10 +617,10 @@ export const ja: Translations = {
     emailAccount: 'メール',
     status: '状態',
     systemAuthorized: 'システム認可',
-    contact: '購入・お問い合わせ',
-    contactTitle: 'ご利用ありがとう',
-    contactDesc: 'メンバー外で永久利用権をご希望の方、機能提案・不具合報告は開発者まで。',
-    contactEmail: '管理者連絡先(メール)',
+    contact: '不具合・問題の報告',
+    contactTitle: '問題が発生しましたか？',
+    contactDesc: '不具合、エラー、機能のご提案があれば開発者へご報告ください。余暇でメンテナンスしており、返信に時間がかかる場合があります。',
+    contactEmail: '問題を報告',
     documentation: 'ドキュメント',
     copyAll: 'コピー',
     copied: 'コピーしました！',
@@ -1038,10 +1038,14 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     adminWelcome: 'おかえりなさい、管理者さん！',
     adminPasswordWrong: '管理者パスワードが正しくありません',
     guestLoginNotice:
-      'ゲストモードでログインしました。\n\nフル機能を利用するには「アップグレード」を押して管理者へ申請メールを送信してください。',
-    contactSubject: 'TradeView 購入/権限申請',
+      'ゲストモードでログインしました。\n\n一部の機能が制限される場合があります。問題があれば画面上部の「問題を報告」からお知らせください。',
+    contactSubject: 'TradeView 不具合・問題報告',
     contactBody:
-      '管理者さま\n\nアカウント: {user}\n\n現在ゲスト権限のため、フル権限の申請/購入を希望します。\n\nよろしくお願いします。',
+      '管理者さま\n\nアカウント: {user}\n\n【問題の内容】\n発生した不具合や問題を記載してください：\n\n\n\nよろしくお願いします。',
+    contactSentSuccess:
+      '問題報告を送信しました。開発者が確認次第ご対応します。ありがとうございます。',
+    contactMailtoFallback:
+      '直接送信できませんでした。メールアプリを開きました。内容を記入して「送信」を押してください。',
     updatePriceSuccess: '{count} 件の株価を更新しました',
     updatePriceSuccessWithRate: '{count} 件の株価を更新し、為替レートを {rate} に同期しました',
     autoUpdateFailed: '自動更新に失敗しました',
