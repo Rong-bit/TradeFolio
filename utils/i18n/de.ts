@@ -531,10 +531,10 @@ holdings: {
     emailAccount: 'E-Mail',
     status: 'Systemstatus',
     systemAuthorized: 'System berechtigt',
-    contact: 'Fehler / Problem melden',
-    contactTitle: 'Problem aufgetreten?',
-    contactDesc: 'Bei Fehlern, Bugs oder Funktionsvorschlägen melden Sie sich beim Entwickler. Wartung in Freizeit – Antworten können verzögert sein.',
-    contactEmail: 'Problem melden',
+    contact: 'Kaufberechtigung & Kontakt',
+    contactTitle: 'Gefällt Ihnen das System?',
+    contactDesc: 'Als Nicht-Mitglied dauerhafte Nutzungsrechte oder Vorschläge/Meldungen? Bitte den Entwickler kontaktieren. Pflege in Freizeit, Antworten können verzögert sein.',
+    contactEmail: 'Administrator kontaktieren (E-Mail)',
     documentation: 'Dokumentation',
     copyAll: 'Alles kopieren',
     copied: 'Kopiert!',
@@ -954,15 +954,9 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     adminPasswordWrong: 'Falsches Admin-Passwort',
     guestLoginNotice:
       'Sie sind jetzt im Gastmodus angemeldet.\n\nEinige Funktionen können eingeschränkt sein. Bei Problemen nutzen Sie „Systemverwaltung“ → Problem melden.',
-    contactSubject: 'TradeView Fehler-/Problemmeldung',
+    contactSubject: 'TradeView Bug-Meldung / Feedback',
     contactBody:
-      'Hallo Admin,\n\nMein Konto ist: {user}\n\n[Problembeschreibung]\nBitte beschreiben Sie den Fehler oder das Problem:\n\n\n\nVielen Dank.',
-    contactSentSuccess:
-      'Ihre Meldung wurde gesendet. Der Entwickler wird sie bald prüfen. Danke!',
-    contactMailtoFallback:
-      'Direktes Senden nicht möglich. Ihre E-Mail-App wurde geöffnet — bitte Problem beschreiben und „Senden“ drücken.',
-    contactStaticPagesHint:
-      'E-Mail-App geöffnet und Bericht in die Zwischenablage kopiert.\n\nBitte Details ergänzen und „Senden“ drücken.\n\nFalls keine E-Mail-App öffnet: manuell an {email} senden.',
+      'Hallo Admin,\n\nMein Konto: {user}\n\nIch möchte folgendes Problem oder einen Vorschlag melden:\n\n(Bitte Bug, Schritte zur Reproduktion oder Feature-Wunsch beschreiben)\n\nVielen Dank.',
     updatePriceSuccess: '{count} Kurse aktualisiert',
     updatePriceSuccessWithRate: '{count} Kurse aktualisiert und Wechselkurs auf {rate} synchronisiert',
     autoUpdateFailed: 'Automatische Aktualisierung fehlgeschlagen',

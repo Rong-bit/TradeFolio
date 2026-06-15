@@ -558,10 +558,10 @@ export const pt: Translations = {
     emailAccount: 'E-mail',
     status: 'Estado',
     systemAuthorized: 'Autorizado pelo sistema',
-    contact: 'Reportar bug / problema',
-    contactTitle: 'Tem algum problema?',
-    contactDesc: 'Bugs, erros ou sugestões de funcionalidades: reporte ao desenvolvedor. Manutenção em tempo livre — respostas podem demorar.',
-    contactEmail: 'Reportar problema',
+    contact: 'Autorização de compra e contacto do administrador',
+    contactTitle: 'Gosta do sistema?',
+    contactDesc: 'Não membro e quer direitos permanentes, ou sugestões/erros? Contacte o desenvolvedor. Respostas podem demorar.',
+    contactEmail: 'Contactar administrador (e-mail)',
     documentation: 'Documentação',
     copyAll: 'Copiar tudo',
     copied: 'Copiado!',
@@ -982,15 +982,9 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     adminPasswordWrong: 'Palavra-passe de administrador incorreta',
     guestLoginNotice:
       'Entrou no modo visitante.\n\nAlgumas funções podem estar limitadas. Se tiver problemas, vá a « Gestão do sistema » para reportar.',
-    contactSubject: 'TradeView relatório de bug / problema',
+    contactSubject: 'TradeView Relatório de bug / Feedback',
     contactBody:
-      'Olá Admin,\n\nA minha conta é: {user}\n\n[Descrição do problema]\nDescreva o bug ou problema encontrado:\n\n\n\nObrigado.',
-    contactSentSuccess:
-      'O seu relatório foi enviado. O desenvolvedor irá analisá-lo em breve. Obrigado!',
-    contactMailtoFallback:
-      'Não foi possível enviar diretamente. A aplicação de e-mail foi aberta — descreva o problema e prima Enviar.',
-    contactStaticPagesHint:
-      'Aplicação de e-mail aberta e relatório copiado para a área de transferência.\n\nAdicione detalhes e prima Enviar.\n\nSe não abrir, envie manualmente para {email}.',
+      'Olá Admin,\n\nA minha conta: {user}\n\nGostaria de reportar o seguinte problema ou sugestão:\n\n(Descreva o bug, passos para reproduzir ou sugestão de funcionalidade)\n\nObrigado.',
     updatePriceSuccess: '{count} preços atualizados',
     updatePriceSuccessWithRate: '{count} preços atualizados e taxa de câmbio sincronizada para {rate}',
     autoUpdateFailed: 'Falha na atualização automática',

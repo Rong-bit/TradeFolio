@@ -991,9 +991,6 @@ export interface Translations {
     guestLoginNotice: string;
     contactSubject: string;
     contactBody: string;
-    contactSentSuccess: string;
-    contactMailtoFallback: string;
-    contactStaticPagesHint: string;
     updatePriceSuccess: string;
     updatePriceSuccessWithRate: string;
     autoUpdateFailed: string;

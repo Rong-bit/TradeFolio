@@ -559,10 +559,10 @@ export const fr: Translations = {
     emailAccount: 'E-mail',
     status: 'Statut',
     systemAuthorized: 'Autorisé par le système',
-    contact: 'Signaler un bug / problème',
-    contactTitle: 'Un problème ?',
-    contactDesc: 'Bugs, erreurs ou suggestions de fonctionnalités : signalez-les au développeur. Maintenance sur temps libre — réponses parfois lentes.',
-    contactEmail: 'Signaler un problème',
+    contact: 'Autorisation d\'achat et contact administrateur',
+    contactTitle: 'Vous aimez ce système ?',
+    contactDesc: 'Non-membre souhaitant des droits d\'usage permanents, ou suggestions/bugs : contactez le développeur. Réponses parfois lentes.',
+    contactEmail: 'Contacter l\'administrateur (e-mail)',
     documentation: 'Guide utilisateur',
     copyAll: 'Tout copier',
     copied: 'Copié !',
@@ -983,15 +983,9 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     adminPasswordWrong: 'Mot de passe administrateur incorrect',
     guestLoginNotice:
       'Vous êtes connecté en mode invité.\n\nCertaines fonctions peuvent être limitées. En cas de problème, allez dans « Gestion du système » pour signaler.',
-    contactSubject: 'TradeView signalement bug / problème',
+    contactSubject: 'TradeView Signalement de bug / Commentaires',
     contactBody:
-      'Bonjour Admin,\n\nMon compte est : {user}\n\n[Description du problème]\nDécrivez le bug ou le problème rencontré :\n\n\n\nMerci.',
-    contactSentSuccess:
-      'Votre signalement a été envoyé. Le développeur l’examinera bientôt. Merci !',
-    contactMailtoFallback:
-      'Envoi direct impossible. Votre application e-mail a été ouverte — décrivez le problème et appuyez sur Envoyer.',
-    contactStaticPagesHint:
-      'Application e-mail ouverte et rapport copié dans le presse-papiers.\n\nAjoutez les détails et appuyez sur Envoyer.\n\nSinon, envoyez manuellement à {email}.',
+      'Bonjour Admin,\n\nMon compte : {user}\n\nJe souhaite signaler le problème ou la suggestion suivante :\n\n(Veuillez décrire le bug, les étapes ou une suggestion de fonctionnalité)\n\nMerci.',
     updatePriceSuccess: '{count} cours mis à jour',
     updatePriceSuccessWithRate: '{count} cours mis à jour et taux de change synchronisé à {rate}',
     autoUpdateFailed: 'Échec de la mise à jour automatique',

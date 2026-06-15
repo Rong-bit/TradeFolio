@@ -622,10 +622,10 @@ export const ko: Translations = {
     emailAccount: '이메일',
     status: '상태',
     systemAuthorized: '시스템 인가',
-    contact: '버그/문제 신고',
-    contactTitle: '문제가 있으신가요?',
-    contactDesc: '버그, 오류 또는 기능 제안이 있으면 개발자에게 신고해 주세요. 여가 시간에 유지보수하므로 답변이 늦을 수 있습니다.',
-    contactEmail: '문제 신고',
+    contact: '구매·문의',
+    contactTitle: '이용해 주셔서 감사합니다',
+    contactDesc: '비회원으로 영구 이용권을 원하시거나 기능 제안·버그 리포트는 개발자에게 문의하세요.',
+    contactEmail: '관리자 연락처(이메일)',
     documentation: '문서',
     copyAll: '복사',
     copied: '복사했습니다!',
@@ -1044,15 +1044,9 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     adminPasswordWrong: '관리자 비밀번호가 올바르지 않습니다',
     guestLoginNotice:
       '게스트 모드로 로그인되었습니다.\n\n일부 기능이 제한될 수 있습니다. 문제가 있으면「시스템 관리」에서 신고해 주세요.',
-    contactSubject: 'TradeView 버그/문제 신고',
+    contactSubject: 'TradeView Bug / 문제 신고',
     contactBody:
-      '안녕하세요 관리자님,\n\n제 계정은: {user}\n\n【문제 설명】\n발생한 버그나 문제를 기재해 주세요:\n\n\n\n감사합니다.',
-    contactSentSuccess:
-      '문제 신고가 전송되었습니다. 개발자가 확인 후 처리하겠습니다. 감사합니다!',
-    contactMailtoFallback:
-      '직접 전송할 수 없습니다. 메일 앱이 열렸습니다. 내용을 작성한 뒤 보내기를 눌러 주세요.',
-    contactStaticPagesHint:
-      '메일 앱을 열고 신고 내용을 클립보드에 복사했습니다.\n\n내용을 추가한 뒤 보내기를 누르세요.\n\n열리지 않으면 {email}(으)로 직접 보내 주세요.',
+      '안녕하세요 관리자님,\n\n제 계정: {user}\n\n다음 문제 또는 제안을 신고합니다:\n\n(Bug, 재현 단계, 기능 제안을 적어 주세요)\n\n감사합니다.',
     updatePriceSuccess: '주가 {count}건을 업데이트했습니다',
     updatePriceSuccessWithRate: '주가 {count}건을 업데이트하고 환율을 {rate}(으)로 동기화했습니다',
     autoUpdateFailed: '자동 업데이트에 실패했습니다',

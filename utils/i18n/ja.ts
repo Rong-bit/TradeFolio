@@ -622,10 +622,10 @@ export const ja: Translations = {
     emailAccount: 'メール',
     status: '状態',
     systemAuthorized: 'システム認可',
-    contact: '不具合・問題の報告',
-    contactTitle: '問題が発生しましたか？',
-    contactDesc: '不具合、エラー、機能のご提案があれば開発者へご報告ください。余暇でメンテナンスしており、返信に時間がかかる場合があります。',
-    contactEmail: '問題を報告',
+    contact: '購入・お問い合わせ',
+    contactTitle: 'ご利用ありがとう',
+    contactDesc: 'メンバー外で永久利用権をご希望の方、機能提案・不具合報告は開発者まで。',
+    contactEmail: '管理者連絡先(メール)',
     documentation: 'ドキュメント',
     copyAll: 'コピー',
     copied: 'コピーしました！',
@@ -1044,15 +1044,9 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     adminPasswordWrong: '管理者パスワードが正しくありません',
     guestLoginNotice:
       'ゲストモードでログインしました。\n\n一部の機能が制限される場合があります。問題があれば「システム管理」から報告してください。',
-    contactSubject: 'TradeView 不具合・問題報告',
+    contactSubject: 'TradeView Bug / 問題報告',
     contactBody:
-      '管理者さま\n\nアカウント: {user}\n\n【問題の内容】\n発生した不具合や問題を記載してください：\n\n\n\nよろしくお願いします。',
-    contactSentSuccess:
-      '問題報告を送信しました。開発者が確認次第ご対応します。ありがとうございます。',
-    contactMailtoFallback:
-      '直接送信できませんでした。メールアプリを開きました。内容を記入して「送信」を押してください。',
-    contactStaticPagesHint:
-      'メールアプリを開き、報告内容をクリップボードにコピーしました。\n\n内容を追記して「送信」を押してください。\n\n開かない場合は手動で {email} へ送信してください。',
+      '管理者さま\n\nアカウント: {user}\n\n以下の問題またはご提案を報告します：\n\n（Bug、再現手順、機能提案をご記入ください）\n\nよろしくお願いします。',
     updatePriceSuccess: '{count} 件の株価を更新しました',
     updatePriceSuccessWithRate: '{count} 件の株価を更新し、為替レートを {rate} に同期しました',
     autoUpdateFailed: '自動更新に失敗しました',
