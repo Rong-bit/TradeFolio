@@ -977,7 +977,7 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     adminWelcome: 'Bon retour, administrateur !',
     adminPasswordWrong: 'Mot de passe administrateur incorrect',
     guestLoginNotice:
-      'Vous êtes connecté en mode invité.\n\nCertaines fonctions peuvent être limitées. En cas de problème, utilisez « Signaler un problème » en haut.',
+      'Vous êtes connecté en mode invité.\n\nCertaines fonctions peuvent être limitées. En cas de problème, allez dans « Gestion du système » pour signaler.',
     contactSubject: 'TradeView signalement bug / problème',
     contactBody:
       'Bonjour Admin,\n\nMon compte est : {user}\n\n[Description du problème]\nDécrivez le bug ou le problème rencontré :\n\n\n\nMerci.',

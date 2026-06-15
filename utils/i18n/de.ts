@@ -948,7 +948,7 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     adminWelcome: 'Willkommen zurück, Admin!',
     adminPasswordWrong: 'Falsches Admin-Passwort',
     guestLoginNotice:
-      'Sie sind jetzt im Gastmodus angemeldet.\n\nEinige Funktionen können eingeschränkt sein. Bei Problemen nutzen Sie „Problem melden“ oben.',
+      'Sie sind jetzt im Gastmodus angemeldet.\n\nEinige Funktionen können eingeschränkt sein. Bei Problemen nutzen Sie „Systemverwaltung“ → Problem melden.',
     contactSubject: 'TradeView Fehler-/Problemmeldung',
     contactBody:
       'Hallo Admin,\n\nMein Konto ist: {user}\n\n[Problembeschreibung]\nBitte beschreiben Sie den Fehler oder das Problem:\n\n\n\nVielen Dank.',

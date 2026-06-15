@@ -976,7 +976,7 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     adminWelcome: 'Bem-vindo de volta, administrador!',
     adminPasswordWrong: 'Palavra-passe de administrador incorreta',
     guestLoginNotice:
-      'Entrou no modo visitante.\n\nAlgumas funções podem estar limitadas. Se tiver problemas, use «Reportar problema» no topo.',
+      'Entrou no modo visitante.\n\nAlgumas funções podem estar limitadas. Se tiver problemas, vá a « Gestão do sistema » para reportar.',
     contactSubject: 'TradeView relatório de bug / problema',
     contactBody:
       'Olá Admin,\n\nA minha conta é: {user}\n\n[Descrição do problema]\nDescreva o bug ou problema encontrado:\n\n\n\nObrigado.',
