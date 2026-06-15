@@ -63,37 +63,26 @@ export async function submitContactAdminRequest(
 }
 
 /**
- * 開啟 Gmail 撰寫郵件。
- * mailto: 在 PWA 獨立模式、部分 Android WebView 常無法開啟 Gmail App，故優先使用 Gmail 網頁。
- * 須在使用者點擊的同步流程中呼叫（不可先 await 其他操作）。
+ * 開啟 Gmail 撰寫郵件（僅呼叫一次）。
+ * - 手機 / PWA：同一分頁跳轉（mailto 常失效）
+ * - 桌機：僅新分頁開啟，絕不改寫目前 TradeView 頁面
  */
 export function openGmailCompose(subject: string, body: string): 'new-tab' | 'same-tab' {
   const gmailUrl = buildGmailComposeUrl(subject, body);
-  const useSameTab = isStandalonePwa() || isMobileDevice();
 
-  if (useSameTab) {
+  if (isStandalonePwa() || isMobileDevice()) {
     window.location.assign(gmailUrl);
     return 'same-tab';
   }
 
-  const popup = window.open(gmailUrl, '_blank', 'noopener,noreferrer');
-  if (!popup) {
-    window.location.assign(gmailUrl);
-    return 'same-tab';
-  }
-  return 'new-tab';
-}
-
-/** mailto 備援（部分桌機預設郵件程式） */
-export function openMailtoClient(subject: string, body: string): void {
-  const mailto = `mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   const anchor = document.createElement('a');
-  anchor.href = mailto;
+  anchor.href = gmailUrl;
+  anchor.target = '_blank';
   anchor.rel = 'noopener noreferrer';
-  anchor.style.display = 'none';
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
+  return 'new-tab';
 }
 
 /** 跳轉 Gmail 前同步複製（clipboard API 為 async，來不及在 location.assign 前完成） */
@@ -124,19 +113,7 @@ export async function copyContactReportToClipboard(subject: string, body: string
   } catch {
     /* fallback below */
   }
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.left = '-9999px';
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
+  return copyContactReportSync(subject, body);
 }
 
 export { isContactApiConfigured };
