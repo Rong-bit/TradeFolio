@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from '../config';
 import { getLanguage, setLanguage as saveLanguage, Language } from '../utils/i18n';
+import { openMailTo } from '../utils/openMailTo';
 import { useAppText, AppText } from './useAppText';
-import { openGmailCompose, submitContactAdminRequest, copyContactReportToClipboard, copyContactReportSync } from '../services/contactAdminService';
-import { shouldUseStaticContactFlow } from '../utils/apiBaseUrl';
 import type { AlertDialogState } from '../types';
 
 export { ADMIN_EMAIL };
@@ -113,65 +112,8 @@ export function useAuthSession(): AuthSession {
   }, []);
 
   const handleContactAdmin = useCallback(() => {
-    const subject = appText.contactSubject;
-    const body = appText.contactBody;
-    const email = currentUser || loginEmail.trim();
-
-    if (!email) {
-      showAlert(appText.enterEmail, appText.loginErrorTitle, 'error');
-      return;
-    }
-
-    const staticFlow = shouldUseStaticContactFlow();
-    let gmailOpened = false;
-
-    const openGmailOnce = (): 'new-tab' | 'same-tab' | 'skipped' => {
-      if (gmailOpened) return 'skipped';
-      gmailOpened = true;
-      copyContactReportSync(subject, body);
-      return openGmailCompose(subject, body);
-    };
-
-    const finishWithHint = async () => {
-      await copyContactReportToClipboard(subject, body);
-      showAlert(
-        staticFlow ? appText.contactStaticPagesHint : appText.contactMailtoFallback,
-        appText.alertTitleInfo,
-        'info',
-      );
-    };
-
-    if (staticFlow) {
-      const mode = openGmailOnce();
-      if (mode === 'same-tab') return;
-      void finishWithHint();
-      return;
-    }
-
-    void (async () => {
-      const result = await submitContactAdminRequest(email, subject, body);
-      if (result.ok && (result.stored || result.emailed)) {
-        showAlert(appText.contactSentSuccess, appText.loginSuccessTitle, 'success');
-        return;
-      }
-      const mode = openGmailOnce();
-      if (mode === 'same-tab') return;
-      await finishWithHint();
-    })();
-  }, [
-    appText.contactSubject,
-    appText.contactBody,
-    appText.enterEmail,
-    appText.loginErrorTitle,
-    appText.contactSentSuccess,
-    appText.contactMailtoFallback,
-    appText.contactStaticPagesHint,
-    appText.loginSuccessTitle,
-    appText.alertTitleInfo,
-    currentUser,
-    loginEmail,
-    showAlert,
-  ]);
+    openMailTo(ADMIN_EMAIL, appText.contactSubject, appText.contactBody);
+  }, [appText.contactSubject, appText.contactBody]);
 
   const handleLanguageChange = useCallback((lang: Language) => {
     setLanguage(lang);
