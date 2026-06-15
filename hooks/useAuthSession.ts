@@ -123,30 +123,40 @@ export function useAuthSession(): AuthSession {
     }
 
     const staticFlow = shouldUseStaticContactFlow();
+    let gmailOpened = false;
 
-    // 必須在同步點擊流程中先開 Gmail，否則瀏覽器會阻擋彈窗
-    if (staticFlow) {
+    const openGmailOnce = (): 'new-tab' | 'same-tab' | 'skipped' => {
+      if (gmailOpened) return 'skipped';
+      gmailOpened = true;
       copyContactReportSync(subject, body);
-      const mode = openGmailCompose(subject, body);
-      if (mode === 'same-tab') return;
-    }
+      return openGmailCompose(subject, body);
+    };
 
-    void (async () => {
-      if (!staticFlow) {
-        const result = await submitContactAdminRequest(email, subject, body);
-        if (result.ok && (result.stored || result.emailed)) {
-          showAlert(appText.contactSentSuccess, appText.loginSuccessTitle, 'success');
-          return;
-        }
-        openGmailCompose(subject, body);
-      }
-
+    const finishWithHint = async () => {
       await copyContactReportToClipboard(subject, body);
       showAlert(
         staticFlow ? appText.contactStaticPagesHint : appText.contactMailtoFallback,
         appText.alertTitleInfo,
         'info',
       );
+    };
+
+    if (staticFlow) {
+      const mode = openGmailOnce();
+      if (mode === 'same-tab') return;
+      void finishWithHint();
+      return;
+    }
+
+    void (async () => {
+      const result = await submitContactAdminRequest(email, subject, body);
+      if (result.ok && (result.stored || result.emailed)) {
+        showAlert(appText.contactSentSuccess, appText.loginSuccessTitle, 'success');
+        return;
+      }
+      const mode = openGmailOnce();
+      if (mode === 'same-tab') return;
+      await finishWithHint();
     })();
   }, [
     appText.contactSubject,
