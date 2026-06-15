@@ -123,39 +123,3 @@ export function listAccountTickerQuantitiesAtExDate(
     .map(h => ({ accountId: h.accountId, quantity: h.quantity }))
     .sort((a, b) => b.quantity - a.quantity);
 }
-
-/**
- * 多帳戶持有同一 ticker 時，僅當「所有有持倉的帳戶」都在該月有 CASH_DIVIDEND 紀錄，
- * 才視為該月已完全實蹟化。用於推估月跳轉，避免甲帳戶記錄後乙帳戶的補登按鈕被誤隱藏。
- */
-export function buildRecordedMonthsFullyByTickerKey(
-  transactions: Transaction[],
-  year: number,
-  holdingsByTickerKey: Map<string, Array<{ accountId: string; quantity: number }>>
-): Map<string, Set<number>> {
-  const yearStr = String(year);
-  const result = new Map<string, Set<number>>();
-
-  for (const [mapKey, accountList] of holdingsByTickerKey) {
-    const activeAccounts = accountList.filter(a => a.quantity > 0);
-    if (activeAccounts.length === 0) continue;
-
-    const ticker = mapKey.split('|').pop()?.trim().toUpperCase() ?? '';
-    if (!ticker) continue;
-
-    const fullySet = new Set<number>();
-    for (let month = 0; month < 12; month++) {
-      const ymd = `${yearStr}-${String(month + 1).padStart(2, '0')}-15`;
-      const anyRecorded = activeAccounts.some(acct =>
-        findExistingCashDividendInSameMonth(transactions, ticker, ymd, acct.accountId)
-      );
-      if (!anyRecorded) continue;
-      const allRecorded = activeAccounts.every(acct =>
-        findExistingCashDividendInSameMonth(transactions, ticker, ymd, acct.accountId)
-      );
-      if (allRecorded) fullySet.add(month);
-    }
-    if (fullySet.size > 0) result.set(mapKey, fullySet);
-  }
-  return result;
-}
