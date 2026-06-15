@@ -497,8 +497,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                         ))}
                       </select>
                     </div>
-                    {isGuest && (
-                      <button
+                    <button
                         type="button"
                         onClick={handleContactAdmin}
                         className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold rounded-full transition shadow-lg shadow-amber-500/20"
@@ -509,7 +508,6 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                         </svg>
                         <span>{t(language).common.upgrade}</span>
                       </button>
-                    )}
                     <div className="hidden sm:flex items-center gap-2">
                       <select
                         value={baseCurrency}
@@ -567,15 +565,13 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
               <div className={`mb-6 ${view === 'dashboard' ? 'max-sm:px-3 max-sm:pr-2' : ''}`}>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
                   <span className="break-words">{pageTitle}</span>
-                  {isGuest && (
-                    <button
+                  <button
                       type="button"
                       onClick={handleContactAdmin}
                       className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow"
                     >
                       {t(language).common.upgrade}
                     </button>
-                  )}
                 </h2>
               </div>
               <div className="animate-fade-in">
@@ -631,7 +627,13 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                 )}
                 {view === 'rebalance' && !isGuest && <RebalanceView />}
                 {view === 'simulator' && <AssetAllocationSimulator />}
-                {view === 'help' && <HelpView onExport={handleExportData} onImport={handleImportData} />}
+                {view === 'help' && (
+                  <HelpView
+                    onExport={handleExportData}
+                    onImport={handleImportData}
+                    onContactAdmin={handleContactAdmin}
+                  />
+                )}
               </div>
             </main>
 
@@ -721,8 +723,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                         </option>
                       ))}
                     </select>
-                    {isGuest && (
-                      <button
+                    <button
                         type="button"
                         onClick={() => {
                           handleContactAdmin();
@@ -736,7 +737,6 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                         </svg>
                         {t(language).common.upgrade}
                       </button>
-                    )}
                     <button
                       type="button"
                       onClick={() => {
