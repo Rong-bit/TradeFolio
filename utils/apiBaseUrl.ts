@@ -1,32 +1,35 @@
 import { isCapacitorNative } from './yahooProxyUrl';
 
-/** 與 Vercel 部署一致；GitHub Pages、Capacitor 等無 /api 時使用 */
-export const DEFAULT_API_BASE = 'https://trade-folio.vercel.app';
-
-/**
- * 解析 API base URL。
- * - 有 VITE_API_BASE_URL → 使用
- * - Capacitor 原生 → DEFAULT
- * - vercel.app / localhost → null（使用相對路徑）
- * - GitHub Pages 等靜態站 → DEFAULT
- */
-export function resolveApiBase(): string | null {
-  const raw = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  if (raw?.trim()) return raw.trim().replace(/\/+$/, '');
-
-  if (isCapacitorNative()) return DEFAULT_API_BASE;
-
-  if (typeof window === 'undefined') return DEFAULT_API_BASE;
-
-  const h = window.location.hostname;
-  if (h.endsWith('vercel.app') || h === 'localhost' || h === '127.0.0.1') {
-    return null;
-  }
-
-  return DEFAULT_API_BASE;
+/** GitHub Pages、Capacitor 等靜態站無法使用相對 /api */
+export function isGitHubPagesHost(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.hostname.endsWith('github.io');
 }
 
-export function contactAdminApiUrl(): string {
-  const base = resolveApiBase();
-  return base ? `${base}/api/contact-admin` : '/api/contact-admin';
+/**
+ * 問題回報 API（選用）。
+ * GitHub Pages 預設不設定；僅在 GitHub Actions / .env 明確帶入 VITE_CONTACT_ADMIN_API_URL 時啟用。
+ * 範例：https://your-project.vercel.app/api/contact-admin
+ */
+export function getContactAdminApiUrl(): string | null {
+  const raw = import.meta.env.VITE_CONTACT_ADMIN_API_URL as string | undefined;
+  const url = raw?.trim();
+  return url || null;
+}
+
+export function isContactApiConfigured(): boolean {
+  return !!getContactAdminApiUrl();
+}
+
+/** 靜態站（GitHub Pages 等）且未設定外部 API 時，走 mailto + 剪貼簿 */
+export function shouldUseStaticContactFlow(): boolean {
+  if (isContactApiConfigured()) return false;
+  if (isCapacitorNative()) return false;
+  if (typeof window === 'undefined') return true;
+  const h = window.location.hostname;
+  if (h.endsWith('github.io')) return true;
+  if (h.endsWith('vercel.app') || h === 'localhost' || h === '127.0.0.1') {
+    return false;
+  }
+  return true;
 }
