@@ -42,6 +42,9 @@ jobs:
           # 可選：覆寫預設 https://trade-folio.vercel.app/api/yahoo-proxy
           # GitHub Pages 無 /api，未設 variable 時建置仍會內建上述預設（手機與電腦同一 bundle）
           VITE_YAHOO_PROXY_URL: ${{ vars.VITE_YAHOO_PROXY_URL }}
+          # 可選：問題回報外部 API（未設則 GitHub Pages 走 mailto + 剪貼簿）
+          # 範例：https://trade-folio.vercel.app/api/contact-admin
+          VITE_CONTACT_ADMIN_API_URL: ${{ vars.VITE_CONTACT_ADMIN_API_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
