@@ -8,7 +8,10 @@ import { transactionAmountNativeToTWD, valueInBaseCurrency } from '../utils/calc
 import { t, translate } from '../utils/i18n';
 import { useDividendSchedules } from '../hooks/useDividendSchedules';
 import { useActualDividends } from '../hooks/useActualDividends';
-import { findExistingCashDividendInSameMonth } from '../utils/dividendMatching';
+import {
+  buildRecordedMonthsFullyByTickerKey,
+  findExistingCashDividendInSameMonth,
+} from '../utils/dividendMatching';
 import { formatLocalYmd } from '../utils/recurringDeposits';
 import {
   dividendScheduleMapKey,
@@ -421,30 +424,18 @@ const DividendHeatmap: React.FC = () => {
   }, [mergedHoldingsForDiv, actualDividendsMap]);
 
   /**
-   * 每個 ticker 在「本年度」已存在 CASH_DIVIDEND 紀錄的月份集合（任何帳戶都算）。
-   * 用於上方預估表 — 已實蹟化的月份不再列為「下次推估月」候選，使 BNDW 5月已記後自動跳 6月、
-   * 0050 / 2330 完成本輪後也能跳到下一輪。多帳戶情境下，任一帳戶記錄即視為「已實蹟」。
+   * 同 ticker 多帳戶時，僅當「所有持倉帳戶」都已記錄該月配息，才視為該月完全實蹟化。
+   * 避免 AVDV 在嘉信記錄 6 月後，國泰複委託的「新增至交易紀錄」被誤隱藏。
    */
-  const recordedMonthsByTickerThisYear = useMemo(() => {
-    const m = new Map<string, Set<number>>();
-    const yearStr = String(new Date().getFullYear());
-    for (const tx of transactions) {
-      if (tx.type !== TransactionType.CASH_DIVIDEND) continue;
-      const date = (tx.date || '').slice(0, 10);
-      if (!date.startsWith(yearStr)) continue;
-      const month = parseInt(date.slice(5, 7), 10) - 1;
-      if (!Number.isInteger(month) || month < 0 || month > 11) continue;
-      const ticker = tx.ticker.trim().toUpperCase();
-      if (!ticker) continue;
-      let set = m.get(ticker);
-      if (!set) {
-        set = new Set();
-        m.set(ticker, set);
-      }
-      set.add(month);
-    }
-    return m;
-  }, [transactions]);
+  const recordedMonthsFullyByTickerKey = useMemo(
+    () =>
+      buildRecordedMonthsFullyByTickerKey(
+        transactions,
+        new Date().getFullYear(),
+        holdingAccountsByTicker
+      ),
+    [transactions, holdingAccountsByTicker]
+  );
 
   /**
    * 以 dividendScheduleMapKey（同 ticker × market）為 key 的 pending 索引；用於上方預估列表 inline 顯示按鈕。
@@ -677,7 +668,7 @@ const DividendHeatmap: React.FC = () => {
       if (estimatedBase <= 0) continue;
 
       const tickerUpper = row.ticker.toUpperCase();
-      const recordedThisYear = recordedMonthsByTickerThisYear.get(tickerUpper);
+      const recordedThisYear = recordedMonthsFullyByTickerKey.get(row.key);
 
       let targetYear: number | null = null;
       let targetMonth: number | null = null;
@@ -758,7 +749,7 @@ const DividendHeatmap: React.FC = () => {
     baseCurrency,
     inferredPayoutMonthByTicker,
     inferredPayoutMonthFromYahooByTicker,
-    recordedMonthsByTickerThisYear,
+    recordedMonthsFullyByTickerKey,
   ]);
   const displayYears = useMemo(() => {
     const s = new Set<number>(years);
@@ -1009,10 +1000,20 @@ const DividendHeatmap: React.FC = () => {
                       const paList = pendingActualByTickerKey.get(tickerKey) ?? [];
                       // 計算「推估月」(0–11)：優先用 Yahoo 已知的 nextExDate；否則 fallback 由歷史挑下一個月。
                       // 操作欄只有在 pending 除息月與此推估月一致時才顯示，避免季／年配把「上一輪」當成這輪的補登提醒。
-                      // 帶入「本年度已記錄月份」→ 5 月已實蹟的 BNDW 自動跳 6 月，季配同理跳到下一輪。
-                      const recordedThisYear = recordedMonthsByTickerThisYear.get(
-                        r.ticker.trim().toUpperCase()
-                      );
+                      // 帶入「本年度所有持倉帳戶皆已記錄」的月份，才跳下一輪推估月。
+                      const recordedThisYear = recordedMonthsFullyByTickerKey.get(tickerKey);
+                      const latestPendingYm = (() => {
+                        if (paList.length === 0) return null;
+                        let best: { year: number; month: number; exDate: string } | null = null;
+                        for (const p of paList) {
+                          const ym = exYmdYearMonth(p.exDate);
+                          if (!ym) continue;
+                          if (!best || p.exDate.localeCompare(best.exDate) > 0) {
+                            best = { year: ym.year, month: ym.month, exDate: p.exDate };
+                          }
+                        }
+                        return best;
+                      })();
                       const preferredInferredMonth = pickNextUpcomingMonth(
                         r.inferredMonthsCandidate ?? [],
                         currentMonthForDisplay,
@@ -1022,10 +1023,10 @@ const DividendHeatmap: React.FC = () => {
                       const displayInferredMonth = preferredInferredMonth ?? r.inferredMonth;
                       const displayMonthIndex = r.exDate
                         ? exYmdYearMonth(r.exDate)?.month ?? null
-                        : (displayInferredMonth ?? null);
+                        : (latestPendingYm?.month ?? displayInferredMonth ?? null);
                       const displayYear = r.exDate
                         ? exYmdYearMonth(r.exDate)?.year ?? new Date().getFullYear()
-                        : new Date().getFullYear();
+                        : (latestPendingYm?.year ?? new Date().getFullYear());
                       const confirmedExDateYmd = resolveConfirmedExDateYmd(
                         r,
                         paList,
@@ -1037,7 +1038,7 @@ const DividendHeatmap: React.FC = () => {
                         : null;
                       const visiblePaList =
                         !confirmedYm
-                          ? []
+                          ? paList
                           : paList.filter(p => {
                               const paYm = exYmdYearMonth(p.exDate);
                               return (
