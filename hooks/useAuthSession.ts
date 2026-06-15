@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from '../config';
 import { getLanguage, setLanguage as saveLanguage, Language } from '../utils/i18n';
 import { useAppText, AppText } from './useAppText';
-import { openMailtoClient, submitContactAdminRequest, copyContactReportToClipboard } from '../services/contactAdminService';
+import { openGmailCompose, submitContactAdminRequest, copyContactReportToClipboard, copyContactReportSync } from '../services/contactAdminService';
 import { shouldUseStaticContactFlow } from '../utils/apiBaseUrl';
 import type { AlertDialogState } from '../types';
 
@@ -112,7 +112,7 @@ export function useAuthSession(): AuthSession {
     localStorage.removeItem('tf_is_guest');
   }, []);
 
-  const handleContactAdmin = useCallback(async () => {
+  const handleContactAdmin = useCallback(() => {
     const subject = appText.contactSubject;
     const body = appText.contactBody;
     const email = currentUser || loginEmail.trim();
@@ -124,21 +124,30 @@ export function useAuthSession(): AuthSession {
 
     const staticFlow = shouldUseStaticContactFlow();
 
-    if (!staticFlow) {
-      const result = await submitContactAdminRequest(email, subject, body);
-      if (result.ok && (result.stored || result.emailed)) {
-        showAlert(appText.contactSentSuccess, appText.loginSuccessTitle, 'success');
-        return;
-      }
+    // 必須在同步點擊流程中先開 Gmail，否則瀏覽器會阻擋彈窗
+    if (staticFlow) {
+      copyContactReportSync(subject, body);
+      const mode = openGmailCompose(subject, body);
+      if (mode === 'same-tab') return;
     }
 
-    openMailtoClient(subject, body);
-    await copyContactReportToClipboard(subject, body);
-    showAlert(
-      staticFlow ? appText.contactStaticPagesHint : appText.contactMailtoFallback,
-      appText.alertTitleInfo,
-      'info',
-    );
+    void (async () => {
+      if (!staticFlow) {
+        const result = await submitContactAdminRequest(email, subject, body);
+        if (result.ok && (result.stored || result.emailed)) {
+          showAlert(appText.contactSentSuccess, appText.loginSuccessTitle, 'success');
+          return;
+        }
+        openGmailCompose(subject, body);
+      }
+
+      await copyContactReportToClipboard(subject, body);
+      showAlert(
+        staticFlow ? appText.contactStaticPagesHint : appText.contactMailtoFallback,
+        appText.alertTitleInfo,
+        'info',
+      );
+    })();
   }, [
     appText.contactSubject,
     appText.contactBody,
