@@ -84,8 +84,8 @@ export function useAppText(language: Language, currentUser: string): AppText {
       guestLoginNotice: tx(
         'guestLoginNotice',
         isChinese
-          ? '已為您登入「非會員模式」。\n\n部分進階功能可能受限。若遇到問題，可使用頂部「問題回報」按鈕通知開發者。'
-          : 'You are now logged in as guest mode.\n\nSome advanced features may be limited. If you encounter issues, use the "Report Issue" button to notify the developer.'
+          ? '已為您登入「非會員模式」。\n\n部分進階功能可能受限。若遇到問題，請至「系統管理」使用問題回報通知開發者。'
+          : 'You are now logged in as guest mode.\n\nSome advanced features may be limited. If you encounter issues, go to System Management to report a problem.'
       ),
       contactSubject: tx(
         'contactSubject',
@@ -113,8 +113,8 @@ export function useAppText(language: Language, currentUser: string): AppText {
       contactStaticPagesHint: tx(
         'contactStaticPagesHint',
         isChinese
-          ? `正在開啟 Gmail 撰寫郵件，並複製回報內容到剪貼簿。\n\n請補充問題說明後按「傳送」。\n\n若 Gmail 未開啟，請手動前往 mail.google.com 或寄信至：${ADMIN_EMAIL}`
-          : `Opening Gmail compose and copying the report to your clipboard.\n\nPlease add details and press Send.\n\nIf Gmail did not open, go to mail.google.com or email: ${ADMIN_EMAIL}`,
+          ? `已在新分頁開啟 Gmail 撰寫郵件，並複製回報內容到剪貼簿。\n\n請在 Gmail 分頁補充問題說明後按「傳送」。\n\n若未開啟新分頁，請手動前往 mail.google.com 或寄信至：${ADMIN_EMAIL}`
+          : `Gmail compose opened in a new tab and the report was copied to your clipboard.\n\nPlease add details in the Gmail tab and press Send.\n\nIf no tab opened, go to mail.google.com or email: ${ADMIN_EMAIL}`,
         { email: ADMIN_EMAIL }
       ),
       updatePriceSuccess: (count: number, rate: number) =>
