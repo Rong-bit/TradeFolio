@@ -988,6 +988,7 @@ export interface Translations {
     contactBody: string;
     contactSentSuccess: string;
     contactMailtoFallback: string;
+    contactStaticPagesHint: string;
     updatePriceSuccess: string;
     updatePriceSuccessWithRate: string;
     autoUpdateFailed: string;

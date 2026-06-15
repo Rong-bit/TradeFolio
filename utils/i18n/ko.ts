@@ -1046,6 +1046,8 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
       '문제 신고가 전송되었습니다. 개발자가 확인 후 처리하겠습니다. 감사합니다!',
     contactMailtoFallback:
       '직접 전송할 수 없습니다. 메일 앱이 열렸습니다. 내용을 작성한 뒤 보내기를 눌러 주세요.',
+    contactStaticPagesHint:
+      '메일 앱을 열고 신고 내용을 클립보드에 복사했습니다.\n\n내용을 추가한 뒤 보내기를 누르세요.\n\n열리지 않으면 {email}(으)로 직접 보내 주세요.',
     updatePriceSuccess: '주가 {count}건을 업데이트했습니다',
     updatePriceSuccessWithRate: '주가 {count}건을 업데이트하고 환율을 {rate}(으)로 동기화했습니다',
     autoUpdateFailed: '자동 업데이트에 실패했습니다',

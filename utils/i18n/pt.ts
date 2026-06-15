@@ -984,6 +984,8 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
       'O seu relatório foi enviado. O desenvolvedor irá analisá-lo em breve. Obrigado!',
     contactMailtoFallback:
       'Não foi possível enviar diretamente. A aplicação de e-mail foi aberta — descreva o problema e prima Enviar.',
+    contactStaticPagesHint:
+      'Aplicação de e-mail aberta e relatório copiado para a área de transferência.\n\nAdicione detalhes e prima Enviar.\n\nSe não abrir, envie manualmente para {email}.',
     updatePriceSuccess: '{count} preços atualizados',
     updatePriceSuccessWithRate: '{count} preços atualizados e taxa de câmbio sincronizada para {rate}',
     autoUpdateFailed: 'Falha na atualização automática',

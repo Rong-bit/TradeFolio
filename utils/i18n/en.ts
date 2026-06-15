@@ -1046,6 +1046,7 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     contactBody: 'Hi Admin,\n\nMy account: {user}\n\n[Issue Description]\nPlease describe the bug or issue you encountered:\n\n\n\nThank you.',
     contactSentSuccess: 'Your report has been submitted. The developer will review it soon. Thank you!',
     contactMailtoFallback: 'Could not submit directly. Your email app has been opened — please describe the issue and press Send.',
+    contactStaticPagesHint: 'Your email app has been opened and the report was copied to your clipboard.\n\nPlease add details and press Send.\n\nIf email did not open, send manually to: {email}',
     updatePriceSuccess: 'Updated {count} prices',
     updatePriceSuccessWithRate: 'Updated {count} prices and synced exchange rate to {rate}',
     autoUpdateFailed: 'Auto update failed',

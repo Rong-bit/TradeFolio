@@ -956,6 +956,8 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
       'Ihre Meldung wurde gesendet. Der Entwickler wird sie bald prüfen. Danke!',
     contactMailtoFallback:
       'Direktes Senden nicht möglich. Ihre E-Mail-App wurde geöffnet — bitte Problem beschreiben und „Senden“ drücken.',
+    contactStaticPagesHint:
+      'E-Mail-App geöffnet und Bericht in die Zwischenablage kopiert.\n\nBitte Details ergänzen und „Senden“ drücken.\n\nFalls keine E-Mail-App öffnet: manuell an {email} senden.',
     updatePriceSuccess: '{count} Kurse aktualisiert',
     updatePriceSuccessWithRate: '{count} Kurse aktualisiert und Wechselkurs auf {rate} synchronisiert',
     autoUpdateFailed: 'Automatische Aktualisierung fehlgeschlagen',

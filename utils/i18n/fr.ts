@@ -985,6 +985,8 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
       'Votre signalement a été envoyé. Le développeur l’examinera bientôt. Merci !',
     contactMailtoFallback:
       'Envoi direct impossible. Votre application e-mail a été ouverte — décrivez le problème et appuyez sur Envoyer.',
+    contactStaticPagesHint:
+      'Application e-mail ouverte et rapport copié dans le presse-papiers.\n\nAjoutez les détails et appuyez sur Envoyer.\n\nSinon, envoyez manuellement à {email}.',
     updatePriceSuccess: '{count} cours mis à jour',
     updatePriceSuccessWithRate: '{count} cours mis à jour et taux de change synchronisé à {rate}',
     autoUpdateFailed: 'Échec de la mise à jour automatique',

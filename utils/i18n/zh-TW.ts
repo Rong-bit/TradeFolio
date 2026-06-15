@@ -1039,6 +1039,7 @@ A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」
     contactBody: 'Hi 管理員,\n\n我的帳號是: {user}\n\n【問題描述】\n請在此說明您遇到的 Bug 或問題：\n\n\n\n謝謝協助。',
     contactSentSuccess: '問題回報已送出！開發者將盡快查閱，謝謝您的回饋。',
     contactMailtoFallback: '無法直接送出回報，已為您開啟郵件程式。請填寫問題後按「傳送」，開發者才會收到。',
+    contactStaticPagesHint: '已開啟郵件程式，並複製回報內容到剪貼簿。\n\n請補充問題說明後按「傳送」。\n\n若郵件程式未開啟，請手動寄信至：{email}',
     updatePriceSuccess: '成功更新 {count} 筆股價',
     updatePriceSuccessWithRate: '成功更新 {count} 筆股價，並同步更新匯率為 {rate}',
     autoUpdateFailed: '自動更新失敗',

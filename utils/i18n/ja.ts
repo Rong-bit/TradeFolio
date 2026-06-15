@@ -1046,6 +1046,8 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
       '問題報告を送信しました。開発者が確認次第ご対応します。ありがとうございます。',
     contactMailtoFallback:
       '直接送信できませんでした。メールアプリを開きました。内容を記入して「送信」を押してください。',
+    contactStaticPagesHint:
+      'メールアプリを開き、報告内容をクリップボードにコピーしました。\n\n内容を追記して「送信」を押してください。\n\n開かない場合は手動で {email} へ送信してください。',
     updatePriceSuccess: '{count} 件の株価を更新しました',
     updatePriceSuccessWithRate: '{count} 件の株価を更新し、為替レートを {rate} に同期しました',
     autoUpdateFailed: '自動更新に失敗しました',
