@@ -1,11 +1,12 @@
 import { ADMIN_EMAIL } from '../config';
-import { contactAdminApiUrl } from '../utils/apiBaseUrl';
+import { getContactAdminApiUrl, isContactApiConfigured } from '../utils/apiBaseUrl';
 
 export interface ContactAdminResult {
   ok: boolean;
   stored?: boolean;
   emailed?: boolean;
   error?: string;
+  skipped?: boolean;
 }
 
 export async function submitContactAdminRequest(
@@ -13,8 +14,13 @@ export async function submitContactAdminRequest(
   subject: string,
   message: string,
 ): Promise<ContactAdminResult> {
+  const apiUrl = getContactAdminApiUrl();
+  if (!apiUrl) {
+    return { ok: false, skipped: true };
+  }
+
   try {
-    const res = await fetch(contactAdminApiUrl(), {
+    const res = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, subject, message }),
@@ -29,8 +35,8 @@ export async function submitContactAdminRequest(
     }
     return { ok: true, stored: data.stored, emailed: data.emailed };
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : 'Network error';
-    return { ok: false, error: message };
+    const errMsg = e instanceof Error ? e.message : 'Network error';
+    return { ok: false, error: errMsg };
   }
 }
 
@@ -45,3 +51,30 @@ export function openMailtoClient(subject: string, body: string): void {
   anchor.click();
   document.body.removeChild(anchor);
 }
+
+export async function copyContactReportToClipboard(subject: string, body: string): Promise<boolean> {
+  const text = `To: ${ADMIN_EMAIL}\nSubject: ${subject}\n\n${body}`;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* fallback below */
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+export { isContactApiConfigured };
