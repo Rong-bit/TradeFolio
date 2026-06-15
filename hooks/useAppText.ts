@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Language, translate } from '../utils/i18n';
+import { ADMIN_EMAIL } from '../config';
 
 export interface AppText {
   alertTitleInfo: string;
@@ -20,6 +21,7 @@ export interface AppText {
   contactBody: string;
   contactSentSuccess: string;
   contactMailtoFallback: string;
+  contactStaticPagesHint: string;
   updatePriceSuccess: (count: number, rate: number) => string;
   autoUpdateFailed: string;
   downloadFailed: string;
@@ -107,6 +109,13 @@ export function useAppText(language: Language, currentUser: string): AppText {
         isChinese
           ? '無法直接送出回報，已為您開啟郵件程式。請填寫問題後按「傳送」，開發者才會收到。'
           : 'Could not submit directly. Your email app has been opened — please describe the issue and press Send.'
+      ),
+      contactStaticPagesHint: tx(
+        'contactStaticPagesHint',
+        isChinese
+          ? `已開啟郵件程式，並複製回報內容到剪貼簿。\n\n請補充問題說明後按「傳送」。\n\n若郵件程式未開啟，請手動寄信至：${ADMIN_EMAIL}`
+          : `Your email app has been opened and the report was copied to your clipboard.\n\nPlease add details and press Send.\n\nIf email did not open, send manually to: ${ADMIN_EMAIL}`,
+        { email: ADMIN_EMAIL }
       ),
       updatePriceSuccess: (count: number, rate: number) =>
         rate > 0
