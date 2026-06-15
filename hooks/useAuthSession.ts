@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from '../config';
 import { getLanguage, setLanguage as saveLanguage, Language } from '../utils/i18n';
 import { useAppText, AppText } from './useAppText';
+import { openMailtoClient, submitContactAdminRequest } from '../services/contactAdminService';
 import type { AlertDialogState } from '../types';
 
 export { ADMIN_EMAIL };
@@ -110,11 +111,38 @@ export function useAuthSession(): AuthSession {
     localStorage.removeItem('tf_is_guest');
   }, []);
 
-  const handleContactAdmin = useCallback(() => {
-    const subject = encodeURIComponent(appText.contactSubject);
-    const body = encodeURIComponent(appText.contactBody);
-    window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
-  }, [appText.contactSubject, appText.contactBody]);
+  const handleContactAdmin = useCallback(async () => {
+    const subject = appText.contactSubject;
+    const body = appText.contactBody;
+    const email = currentUser || loginEmail.trim();
+
+    if (!email) {
+      showAlert(appText.enterEmail, appText.loginErrorTitle, 'error');
+      return;
+    }
+
+    const result = await submitContactAdminRequest(email, subject, body);
+
+    if (result.ok && (result.stored || result.emailed)) {
+      showAlert(appText.contactSentSuccess, appText.loginSuccessTitle, 'success');
+      return;
+    }
+
+    openMailtoClient(subject, body);
+    showAlert(appText.contactMailtoFallback, appText.alertTitleInfo, 'info');
+  }, [
+    appText.contactSubject,
+    appText.contactBody,
+    appText.enterEmail,
+    appText.loginErrorTitle,
+    appText.contactSentSuccess,
+    appText.contactMailtoFallback,
+    appText.loginSuccessTitle,
+    appText.alertTitleInfo,
+    currentUser,
+    loginEmail,
+    showAlert,
+  ]);
 
   const handleLanguageChange = useCallback((lang: Language) => {
     setLanguage(lang);
