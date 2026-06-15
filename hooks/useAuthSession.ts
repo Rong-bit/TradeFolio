@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from '../config';
 import { getLanguage, setLanguage as saveLanguage, Language } from '../utils/i18n';
 import { useAppText, AppText } from './useAppText';
-import { openMailtoClient, submitContactAdminRequest } from '../services/contactAdminService';
+import { openMailtoClient, submitContactAdminRequest, copyContactReportToClipboard } from '../services/contactAdminService';
+import { shouldUseStaticContactFlow } from '../utils/apiBaseUrl';
 import type { AlertDialogState } from '../types';
 
 export { ADMIN_EMAIL };
@@ -121,15 +122,23 @@ export function useAuthSession(): AuthSession {
       return;
     }
 
-    const result = await submitContactAdminRequest(email, subject, body);
+    const staticFlow = shouldUseStaticContactFlow();
 
-    if (result.ok && (result.stored || result.emailed)) {
-      showAlert(appText.contactSentSuccess, appText.loginSuccessTitle, 'success');
-      return;
+    if (!staticFlow) {
+      const result = await submitContactAdminRequest(email, subject, body);
+      if (result.ok && (result.stored || result.emailed)) {
+        showAlert(appText.contactSentSuccess, appText.loginSuccessTitle, 'success');
+        return;
+      }
     }
 
     openMailtoClient(subject, body);
-    showAlert(appText.contactMailtoFallback, appText.alertTitleInfo, 'info');
+    await copyContactReportToClipboard(subject, body);
+    showAlert(
+      staticFlow ? appText.contactStaticPagesHint : appText.contactMailtoFallback,
+      appText.alertTitleInfo,
+      'info',
+    );
   }, [
     appText.contactSubject,
     appText.contactBody,
@@ -137,6 +146,7 @@ export function useAuthSession(): AuthSession {
     appText.loginErrorTitle,
     appText.contactSentSuccess,
     appText.contactMailtoFallback,
+    appText.contactStaticPagesHint,
     appText.loginSuccessTitle,
     appText.alertTitleInfo,
     currentUser,
