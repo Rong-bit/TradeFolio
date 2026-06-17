@@ -4,6 +4,7 @@ import { Market, Transaction, TransactionType, Holding, Account } from '../types
 import { v4 as uuidv4 } from 'uuid';
 import { t } from '../utils/i18n';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+import { parseCashDividendNoteBreakdown } from '../utils/cashDividendNoteParse';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 interface Props {
@@ -11,6 +12,29 @@ interface Props {
   onUpdate: (tx: Transaction) => void;
   onClose: () => void;
   editingTransaction: Transaction | null;
+}
+
+/** 現金股息：價格欄為股息總額、數量固定 1；舊資料若 quantity≠1 則併入 price */
+function cashDividendFormFromTransaction(tx: Transaction): {
+  price: string;
+  quantity: string;
+  fees: string;
+} {
+  const fees = tx.fees || 0;
+  if (tx.quantity === 1) {
+    return {
+      price: tx.price.toString(),
+      quantity: '1',
+      fees: tx.fees.toString(),
+    };
+  }
+  const grossPrice =
+    tx.amount != null && tx.amount > 0 ? tx.amount + fees : tx.price * tx.quantity;
+  return {
+    price: grossPrice.toString(),
+    quantity: '1',
+    fees: tx.fees.toString(),
+  };
 }
 
 const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTransaction }) => {
@@ -54,14 +78,18 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   // 當進入編輯模式時，載入現有交易資料
   useEffect(() => {
     if (editingTransaction) {
+      const cashDivFields =
+        editingTransaction.type === TransactionType.CASH_DIVIDEND
+          ? cashDividendFormFromTransaction(editingTransaction)
+          : null;
       setFormData({
         date: editingTransaction.date,
         ticker: editingTransaction.ticker,
         market: editingTransaction.market,
         type: editingTransaction.type,
-        price: editingTransaction.price.toString(),
-        quantity: editingTransaction.quantity.toString(),
-        fees: editingTransaction.fees.toString(),
+        price: cashDivFields?.price ?? editingTransaction.price.toString(),
+        quantity: cashDivFields?.quantity ?? editingTransaction.quantity.toString(),
+        fees: cashDivFields?.fees ?? editingTransaction.fees.toString(),
         accountId: editingTransaction.accountId,
         note: editingTransaction.note || '',
       });
@@ -380,12 +408,91 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     setFormData(newFormData);
   };
 
+  const formatDividendDetailAmount = (value: number, market: Market): string =>
+    market === Market.TW
+      ? Math.round(value).toLocaleString()
+      : value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+
+  const getCashDividendWithheld = (): number => {
+    if (!isEditing || !editingTransaction) return 0;
+    if (editingTransaction.withheldUsTaxNative != null && editingTransaction.withheldUsTaxNative > 0) {
+      return editingTransaction.withheldUsTaxNative;
+    }
+    if (editingTransaction.withheldNhiTwd != null && editingTransaction.withheldNhiTwd > 0) {
+      return editingTransaction.withheldNhiTwd;
+    }
+    return 0;
+  };
+
   const calculatePreviewAmount = (): number => {
     const price = parseFloat(formData.price) || 0;
     const quantity =
       formData.type === TransactionType.CASH_DIVIDEND ? 1 : parseFloat(formData.quantity) || 0;
     const fees = parseFloat(formData.fees) || 0;
+    if (formData.type === TransactionType.CASH_DIVIDEND) {
+      const withheld = getCashDividendWithheld();
+      const breakdown = parseCashDividendNoteBreakdown(formData.note);
+      if (breakdown) {
+        const gross = breakdown.perShare * breakdown.shares;
+        return gross - fees - withheld;
+      }
+      if (withheld > 0 && editingTransaction?.withheldUsTaxNative) {
+        return price - fees;
+      }
+      if (withheld > 0 && editingTransaction?.withheldNhiTwd) {
+        return price - fees - withheld;
+      }
+      return price - fees;
+    }
     return computeTransactionAmount(formData.type, formData.market, price, quantity, fees);
+  };
+
+  const showAmountPreview =
+    !!formData.price &&
+    (formData.type === TransactionType.CASH_DIVIDEND || !!formData.quantity);
+
+  const renderCalculationFormula = (): string => {
+    if (formData.type === TransactionType.CASH_DIVIDEND) {
+      const price = parseFloat(formData.price) || 0;
+      const fees = parseFloat(formData.fees) || 0;
+      const withheld = getCashDividendWithheld();
+      const deduction = fees > 0 ? fees : withheld;
+      const breakdown = parseCashDividendNoteBreakdown(formData.note);
+      const totalLabel = tf.placeholderQuantity;
+
+      let gross: number;
+      if (breakdown) {
+        gross = breakdown.perShare * breakdown.shares;
+        const perShareLabel = formatDividendDetailAmount(breakdown.perShare, formData.market);
+        const sharesLabel = formatDisplayQuantity(breakdown.shares);
+        const grossLabel = formatDividendDetailAmount(gross, formData.market);
+        let formula = `${tf.calculationMethod}${perShareLabel} × ${sharesLabel} ${tf.shares} = ${grossLabel}`;
+        if (deduction > 0) {
+          formula += ` − ${formatDividendDetailAmount(deduction, formData.market)} (${tf.deductionShort})`;
+        }
+        return formula;
+      }
+
+      if (withheld > 0 && editingTransaction?.withheldUsTaxNative) {
+        gross = price + withheld;
+      } else {
+        gross = price;
+      }
+      const grossLabel = formatDividendDetailAmount(gross, formData.market);
+      if (deduction > 0) {
+        return `${tf.calculationFormula}${totalLabel} ${grossLabel} − ${formatDividendDetailAmount(deduction, formData.market)} (${tf.deductionShort})`;
+      }
+      return `${tf.calculationFormula}${totalLabel} ${grossLabel}`;
+    }
+    const feeOp =
+      formData.type === TransactionType.BUY || formData.type === TransactionType.DIVIDEND
+        ? ' + '
+        : formData.type === TransactionType.SELL || formData.type === TransactionType.TRANSFER_OUT
+          ? ' - '
+          : '';
+    return `${tf.calculationFormula}${formData.price} × ${formData.quantity}${
+      formData.market === Market.TW ? tf.formulaNote : ''
+    }${feeOp}${formData.fees || 0} (${tf.feesShort})`;
   };
 
   // 取得帳戶名稱
@@ -601,7 +708,12 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               </select>
             </div>
              <div>
-              <label className="block text-sm font-medium text-slate-700">{tf.price} ({selectedAccountCurrency})</label>
+              <label className="block text-sm font-medium text-slate-700">
+                {formData.type === TransactionType.CASH_DIVIDEND
+                  ? tf.placeholderQuantity
+                  : tf.price}{' '}
+                ({selectedAccountCurrency})
+              </label>
               <input 
                 type="number" name="price" required step="any" min="0"
                 value={formData.price} onChange={handleChange}
@@ -674,7 +786,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
           </div>
 
           {/* 計算金額預覽 */}
-          {formData.price && formData.quantity && (
+          {showAmountPreview && (
             <div className="bg-slate-50 p-3 rounded-md border border-slate-200">
               <div className="text-xs text-slate-600 mb-1">{tf.previewTitle}</div>
               <div className="text-lg font-bold text-slate-800">
@@ -684,10 +796,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 </span>
               </div>
               <div className="text-xs text-slate-500 mt-1">
-                {tf.calculationFormula}{formData.price} × {formData.quantity} 
-                {formData.market === Market.TW ? tf.formulaNote : ''} 
-                {(formData.type === TransactionType.BUY || formData.type === TransactionType.DIVIDEND) ? ' + ' : (formData.type === TransactionType.SELL || formData.type === TransactionType.TRANSFER_OUT) ? ' - ' : ''}
-                {formData.fees || 0} ({tf.feesShort})
+                {renderCalculationFormula()}
               </div>
             </div>
           )}
