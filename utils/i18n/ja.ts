@@ -786,6 +786,7 @@ A: **推奨（一度で完了）**：「記録追加」→ 種別「転出」→
     calculationFormula: '計算式:',
     calculationMethod: '計算方法:',
     deductionShort: '控除',
+    cashDividendQuantityConfirm: '1件',
     marketTW: '台湾(TW)',
     marketUS: '米国(US)',
     marketUK: '英国(UK)',

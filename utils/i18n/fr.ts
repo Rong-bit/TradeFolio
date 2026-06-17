@@ -724,6 +724,7 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     calculationFormula: 'Formule :',
     calculationMethod: 'Calcul :',
     deductionShort: 'retenue',
+    cashDividendQuantityConfirm: '1 enregistrement',
     marketTW: 'Taïwan (TW)',
     marketUS: 'États-Unis (US)',
     marketUK: 'Royaume-Uni (UK)',

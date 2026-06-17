@@ -789,6 +789,7 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     calculationFormula: 'Calculation Formula:',
     calculationMethod: 'Calculation:',
     deductionShort: 'deduction',
+    cashDividendQuantityConfirm: '1 record',
     marketTW: 'Taiwan (TW)',
     marketUS: 'US (US)',
     marketUK: 'UK (UK)',

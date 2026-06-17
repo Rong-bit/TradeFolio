@@ -695,6 +695,7 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     calculationFormula: 'Formel:',
     calculationMethod: 'Berechnung:',
     deductionShort: 'Abzug',
+    cashDividendQuantityConfirm: '1 Buchung',
     marketTW: 'Taiwanische Aktien (TW)',
     marketUS: 'USA (US)',
     marketUK: 'Britische Aktien (UK)',

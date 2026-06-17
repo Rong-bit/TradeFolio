@@ -784,6 +784,7 @@ A: **建議（一次完成）**：「記一筆」→ 類別選「匯出持股」
     calculationFormula: '計算公式：',
     calculationMethod: '計算方式：',
     deductionShort: '扣款',
+    cashDividendQuantityConfirm: '1 筆',
     marketTW: '台股 (TW)',
     marketUS: '美股 (US)',
     marketUK: '英國股 (UK)',

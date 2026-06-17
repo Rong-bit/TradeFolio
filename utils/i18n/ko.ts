@@ -786,6 +786,7 @@ A: **권장(한 번에)**: 「기록 추가」→ 유형「전출」→ 계좌�
     calculationFormula: '계산식:',
     calculationMethod: '계산 방식:',
     deductionShort: '공제',
+    cashDividendQuantityConfirm: '1건',
     marketTW: '대만(TW)',
     marketUS: '미국(US)',
     marketUK: '영국(UK)',

@@ -723,6 +723,7 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     calculationFormula: 'Fórmula:',
     calculationMethod: 'Cálculo:',
     deductionShort: 'retenção',
+    cashDividendQuantityConfirm: '1 registro',
     marketTW: 'Taiwanês (TW)',
     marketUS: 'EUA (US)',
     marketUK: 'Reino Unido (UK)',

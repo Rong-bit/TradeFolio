@@ -741,6 +741,7 @@ TradeView أداة إدارة أصول لأسهم تايوان والولايا�
     calculationFormula: 'المعادلة:',
     calculationMethod: 'طريقة الحساب:',
     deductionShort: 'خصم',
+    cashDividendQuantityConfirm: '1 سجل',
     marketTW: 'تايوان (TW)',
     marketUS: 'الولايات المتحدة (US)',
     marketUK: 'بريطانيا (UK)',

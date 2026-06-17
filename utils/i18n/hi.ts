@@ -741,6 +741,7 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     calculationFormula: 'सूत्र:',
     calculationMethod: 'गणना:',
     deductionShort: 'कटौती',
+    cashDividendQuantityConfirm: '1 रिकॉर्ड',
     marketTW: 'ताइवान (TW)',
     marketUS: 'अमेरिका (US)',
     marketUK: 'ब्रिटेन (UK)',

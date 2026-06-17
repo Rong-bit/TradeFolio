@@ -720,6 +720,8 @@ export interface Translations {
     calculationFormula: string;
     calculationMethod: string;
     deductionShort: string;
+    /** 現金股息確認：數量固定為 1 筆交易，非持股股數 */
+    cashDividendQuantityConfirm: string;
     marketTW: string;
     marketUS: string;
     marketUK: string;
