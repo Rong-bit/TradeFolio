@@ -436,14 +436,14 @@ const DividendHeatmap: React.FC = () => {
         <button
           type="button"
           onClick={() => handleAddPendingActual(pa)}
-          className="rounded border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-800 hover:bg-sky-100"
+          className="rounded border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm font-semibold text-sky-800 hover:bg-sky-100"
         >
           {dtx.pendingActualAddBtn}
         </button>
         <button
           type="button"
           onClick={() => dismissPendingRow(pa.key)}
-          className="rounded border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-500 hover:bg-slate-50"
+          className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-500 hover:bg-slate-50"
           title={dtx.pendingActualDismissBtn}
         >
           {dtx.pendingActualDismissBtn}
