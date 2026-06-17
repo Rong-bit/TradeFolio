@@ -689,7 +689,7 @@ const DividendHeatmap: React.FC = () => {
                 <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-600">{tf.quantityLabel}</span>
                   <span className="font-medium">
-                    {confirmState.tx.quantity} {tf.shares}
+                    {tf.cashDividendQuantityConfirm}
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100">
