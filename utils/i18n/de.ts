@@ -693,6 +693,8 @@ A: **Empfohlen (ein Schritt)**: **Eintrag hinzufügen** → Typ **Transfer Out**
     confirmSave: 'Bestätigen & Speichern',
     previewTitle: 'Betrag:',
     calculationFormula: 'Formel:',
+    calculationMethod: 'Berechnung:',
+    deductionShort: 'Abzug',
     marketTW: 'Taiwanische Aktien (TW)',
     marketUS: 'USA (US)',
     marketUK: 'Britische Aktien (UK)',

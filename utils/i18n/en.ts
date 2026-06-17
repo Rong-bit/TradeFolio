@@ -787,6 +787,8 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
     confirmSave: 'Confirm & Save',
     previewTitle: 'Amount Preview:',
     calculationFormula: 'Calculation Formula:',
+    calculationMethod: 'Calculation:',
+    deductionShort: 'deduction',
     marketTW: 'Taiwan (TW)',
     marketUS: 'US (US)',
     marketUK: 'UK (UK)',

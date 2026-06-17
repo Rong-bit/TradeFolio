@@ -739,6 +739,8 @@ TradeView ताइवान और US स्टॉक के लिए एक �
     confirmSave: 'पुष्टि और सहेजें',
     previewTitle: 'राशि पूर्वावलोकन:',
     calculationFormula: 'सूत्र:',
+    calculationMethod: 'गणना:',
+    deductionShort: 'कटौती',
     marketTW: 'ताइवान (TW)',
     marketUS: 'अमेरिका (US)',
     marketUK: 'ब्रिटेन (UK)',

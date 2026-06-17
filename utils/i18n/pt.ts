@@ -721,6 +721,8 @@ R: **Recomendado (de uma vez)**: **Adicionar registro** → tipo **Saída** → 
     confirmSave: 'Confirmar e salvar',
     previewTitle: 'Pré-visualização do valor:',
     calculationFormula: 'Fórmula:',
+    calculationMethod: 'Cálculo:',
+    deductionShort: 'retenção',
     marketTW: 'Taiwanês (TW)',
     marketUS: 'EUA (US)',
     marketUK: 'Reino Unido (UK)',

@@ -804,6 +804,8 @@ zhCN.transactionForm = {
   totalAmount: '总金额：',
   confirmSave: '确认保存',
   previewTitle: '计算金额预览：',
+  calculationMethod: '计算方式：',
+  deductionShort: '扣款',
   typeBuy: '买入 (Buy)',
   typeSell: '卖出 (Sell)',
   typeTransferIn: '汇入持股 (Transfer In)',

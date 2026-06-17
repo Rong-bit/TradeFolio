@@ -718,6 +718,8 @@ export interface Translations {
     confirmSave: string;
     previewTitle: string;
     calculationFormula: string;
+    calculationMethod: string;
+    deductionShort: string;
     marketTW: string;
     marketUS: string;
     marketUK: string;

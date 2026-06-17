@@ -722,6 +722,8 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
     confirmSave: 'Confirmer et enregistrer',
     previewTitle: 'Aperçu du montant :',
     calculationFormula: 'Formule :',
+    calculationMethod: 'Calcul :',
+    deductionShort: 'retenue',
     marketTW: 'Taïwan (TW)',
     marketUS: 'États-Unis (US)',
     marketUK: 'Royaume-Uni (UK)',
