@@ -651,55 +651,55 @@ const DividendHeatmap: React.FC = () => {
 
       {confirmState && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="bg-slate-900 p-4">
               <h3 className="text-white font-bold text-lg">{tf.confirmTitle}</h3>
             </div>
             <div className="p-6 space-y-3">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-sm text-yellow-800 font-medium">{tf.confirmMessage}</p>
+              <div className="bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">{tf.confirmMessage}</p>
               </div>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.dateLabel}</span>
-                  <span className="font-medium tabular-nums">{confirmState.tx.date}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.dateLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">{confirmState.tx.date}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.accountLabel}</span>
-                  <span className="font-medium">{getAccountName(confirmState.tx.accountId)}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.accountLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{getAccountName(confirmState.tx.accountId)}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.marketLabel}</span>
-                  <span className="font-medium">{confirmState.tx.market}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.marketLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{confirmState.tx.market}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.tickerLabel}</span>
-                  <span className="font-medium font-mono">{confirmState.tx.ticker}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.tickerLabel}</span>
+                  <span className="font-medium font-mono text-slate-900 dark:text-slate-100">{confirmState.tx.ticker}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.typeLabel}</span>
-                  <span className="font-medium">{getTypeName(confirmState.tx.type)}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.typeLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{getTypeName(confirmState.tx.type)}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.priceLabel}</span>
-                  <span className="font-medium tabular-nums">
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.priceLabel}</span>
+                  <span className="font-medium tabular-nums text-slate-900 dark:text-slate-100">
                     {confirmState.tx.price.toFixed(2)} {getAccountCurrencyCode(confirmState.tx.accountId)}
                   </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.quantityLabel}</span>
-                  <span className="font-medium">
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.quantityLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
                     {tf.cashDividendQuantityConfirm}
                   </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.feesLabel}</span>
-                  <span className="font-medium tabular-nums">
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.feesLabel}</span>
+                  <span className="font-medium tabular-nums text-slate-900 dark:text-slate-100">
                     {confirmState.tx.fees.toFixed(2)} {getAccountCurrencyCode(confirmState.tx.accountId)}
                   </span>
                 </div>
                 {confirmState.tx.withheldUsTaxNative != null && confirmState.tx.withheldUsTaxNative > 0 && (
-                  <div className="flex justify-between py-1 border-b border-slate-100 text-rose-700">
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700 text-rose-700 dark:text-rose-400">
                     <span>{dtx.estNetAfterWithholding}</span>
                     <span className="font-medium tabular-nums">
                       −{confirmState.tx.withheldUsTaxNative.toFixed(2)}{' '}
@@ -708,7 +708,7 @@ const DividendHeatmap: React.FC = () => {
                   </div>
                 )}
                 {confirmState.tx.withheldNhiTwd != null && confirmState.tx.withheldNhiTwd > 0 && (
-                  <div className="flex justify-between py-1 border-b border-slate-100 text-rose-700">
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700 text-rose-700 dark:text-rose-400">
                     <span>{dtx.estNhiFee}</span>
                     <span className="font-medium tabular-nums">
                       −{confirmState.tx.withheldNhiTwd.toLocaleString()} TWD
@@ -716,15 +716,15 @@ const DividendHeatmap: React.FC = () => {
                   </div>
                 )}
                 {confirmState.tx.note && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{tf.noteLabel}</span>
-                    <span className="font-medium text-right max-w-[60%]">{confirmState.tx.note}</span>
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400">{tf.noteLabel}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100 text-right max-w-[60%]">{confirmState.tx.note}</span>
                   </div>
                 )}
-                <div className="border-t-2 border-slate-300 pt-2 mt-2">
-                  <div className="flex justify-between">
-                    <span className="text-slate-700 font-semibold">{tf.totalAmount}</span>
-                    <span className="font-bold text-lg text-slate-900 tabular-nums">
+                <div className="border-t-2 border-slate-300 dark:border-slate-600 pt-2 mt-2">
+                  <div className="flex justify-between items-baseline gap-3">
+                    <span className="text-slate-700 dark:text-slate-300 font-semibold shrink-0">{tf.totalAmount}</span>
+                    <span className="font-bold text-lg text-slate-900 dark:text-amber-400 tabular-nums text-right">
                       {confirmState.tx.amount?.toFixed(2) ?? '0.00'}{' '}
                       {getAccountCurrencyCode(confirmState.tx.accountId)}
                     </span>
@@ -735,7 +735,7 @@ const DividendHeatmap: React.FC = () => {
                 <button
                   type="button"
                   onClick={cancelConfirmPendingActual}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50"
+                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
                 >
                   {tf.backToEdit}
                 </button>
