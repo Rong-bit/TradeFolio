@@ -543,65 +543,65 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
               <h3 className="text-white font-bold text-lg">{tf.confirmTitle}</h3>
             </div>
             <div className="p-6 space-y-3 overflow-y-auto flex-1 min-h-0">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-sm text-yellow-800 font-medium">{tf.confirmMessage}</p>
+              <div className="bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">{tf.confirmMessage}</p>
               </div>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.dateLabel}</span>
-                  <span className="font-medium">{pendingTransaction.date}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.dateLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{pendingTransaction.date}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.accountLabel}</span>
-                  <span className="font-medium">{getAccountName(pendingTransaction.accountId)}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.accountLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{getAccountName(pendingTransaction.accountId)}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.marketLabel}</span>
-                  <span className="font-medium">{pendingTransaction.market}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.marketLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{pendingTransaction.market}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.tickerLabel}</span>
-                  <span className="font-medium">{pendingTransaction.ticker}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.tickerLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{pendingTransaction.ticker}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.typeLabel}</span>
-                  <span className="font-medium">{getTypeName(pendingTransaction.type)}</span>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.typeLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{getTypeName(pendingTransaction.type)}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.priceLabel}</span>
-                  <span className="font-medium">
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.priceLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">
                     {pendingTransaction.price.toFixed(2)} {getAccountCurrencyCode(pendingTransaction.accountId)}
                   </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.quantityLabel}</span>
-                  <span className="font-medium">
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.quantityLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
                     {pendingTransaction.type === TransactionType.CASH_DIVIDEND
                       ? tf.cashDividendQuantityConfirm
                       : `${pendingTransaction.quantity} ${tf.shares}`}
                   </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-600">{tf.feesLabel}</span>
-                  <span className="font-medium">
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.feesLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">
                     {pendingTransaction.fees.toFixed(2)} {getAccountCurrencyCode(pendingTransaction.accountId)}
                   </span>
                 </div>
                 {pendingTransaction.note && (
-                  <div className="flex justify-between py-1 border-b border-slate-100">
-                    <span className="text-slate-600">{tf.noteLabel}</span>
-                    <span className="font-medium text-right max-w-[60%]">{pendingTransaction.note}</span>
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400">{tf.noteLabel}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100 text-right max-w-[60%]">{pendingTransaction.note}</span>
                   </div>
                 )}
                 {pendingTransferInTransaction && (
-                  <div className="rounded-md border border-indigo-100 bg-indigo-50 p-2 text-xs text-indigo-900">
+                  <div className="rounded-md border border-indigo-100 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/40 p-2 text-xs text-indigo-900 dark:text-indigo-200">
                     {tf.transferInConfirmHint}：{getAccountName(pendingTransferInTransaction.accountId)} / {pendingTransferInTransaction.market} / {pendingTransferInTransaction.ticker} / {pendingTransferInTransaction.quantity} {tf.shares}
                   </div>
                 )}
-                <div className="border-t-2 border-slate-300 pt-2 mt-2">
-                  <div className="flex justify-between">
-                    <span className="text-slate-700 font-semibold">{tf.totalAmount}</span>
-                    <span className="font-bold text-lg text-slate-900">
+                <div className="border-t-2 border-slate-300 dark:border-slate-600 pt-2 mt-2">
+                  <div className="flex justify-between items-baseline gap-3">
+                    <span className="text-slate-700 dark:text-slate-300 font-semibold shrink-0">{tf.totalAmount}</span>
+                    <span className="font-bold text-lg text-slate-900 dark:text-amber-400 tabular-nums text-right">
                       {formatAmountForMarket(pendingTransaction.amount ?? 0, pendingTransaction.market)}{' '}
                       {getAccountCurrencyCode(pendingTransaction.accountId)}
                     </span>
@@ -612,7 +612,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 <button
                   type="button"
                   onClick={cancelConfirm}
-                  className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-md hover:bg-slate-50"
+                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
                 >
                   {tf.backToEdit}
                 </button>
