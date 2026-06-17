@@ -214,7 +214,7 @@ zhCN.dividendTax = {
   pendingActualSubtitle: '今年已除息、尚未在交易记录出现的配息（依除息日月份显示于热力图）；点击「新增」即建立一笔现金股息交易，「取消」则不再提示该笔。',
   pendingActualEmpty: '目前没有需要补登的实绩配息。',
   pendingActualLoading: '加载实绩数据…',
-  pendingActualAddBtn: '新增至交易记录',
+  pendingActualAddBtn: '新增',
   pendingActualDismissBtn: '取消',
   pendingActualToggleHide: '隐藏清单',
   pendingActualToggleShow: '显示清单',

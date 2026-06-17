@@ -272,7 +272,7 @@ export const en: Translations = {
     pendingActualSubtitle: 'Ex-dates this year not yet in your transactions (shown on the heatmap by ex-date month). Click "Add" to create a record, or "Dismiss" to hide a row permanently.',
     pendingActualEmpty: 'No pending actual dividends to record.',
     pendingActualLoading: 'Loading actual dividend data…',
-    pendingActualAddBtn: 'Add to records',
+    pendingActualAddBtn: 'Add',
     pendingActualDismissBtn: 'Dismiss',
     pendingActualToggleHide: 'Hide list',
     pendingActualToggleShow: 'Show list',

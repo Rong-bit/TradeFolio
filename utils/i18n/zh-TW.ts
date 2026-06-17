@@ -268,7 +268,7 @@ export const zhTW: Translations = {
     pendingActualSubtitle: '今年已除息、尚未在交易紀錄出現的配息（依除息日月份顯示於熱力圖）；按下「新增」即建立一筆現金股息交易，「取消」則不再提示該筆。',
     pendingActualEmpty: '目前沒有需要補登的實績配息。',
     pendingActualLoading: '載入實績資料…',
-    pendingActualAddBtn: '新增至交易紀錄',
+    pendingActualAddBtn: '新增',
     pendingActualDismissBtn: '取消',
     pendingActualToggleHide: '隱藏清單',
     pendingActualToggleShow: '顯示清單',
