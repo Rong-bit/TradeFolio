@@ -575,7 +575,11 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-600">{tf.quantityLabel}</span>
-                  <span className="font-medium">{pendingTransaction.quantity} {tf.shares}</span>
+                  <span className="font-medium">
+                    {pendingTransaction.type === TransactionType.CASH_DIVIDEND
+                      ? tf.cashDividendQuantityConfirm
+                      : `${pendingTransaction.quantity} ${tf.shares}`}
+                  </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-600">{tf.feesLabel}</span>
