@@ -307,6 +307,8 @@ export interface Translations {
     pendingActualEmpty: string;
     pendingActualLoading: string;
     pendingActualAddBtn: string;
+    /** 待補登配息表格欄標題（非按鈕文字） */
+    pendingActualAddCol: string;
     pendingActualDismissBtn: string;
     pendingActualToggleHide: string;
     pendingActualToggleShow: string;

@@ -215,6 +215,7 @@ zhCN.dividendTax = {
   pendingActualEmpty: '目前没有需要补登的实绩配息。',
   pendingActualLoading: '加载实绩数据…',
   pendingActualAddBtn: '新增',
+  pendingActualAddCol: '新增至交易记录',
   pendingActualDismissBtn: '取消',
   pendingActualToggleHide: '隐藏清单',
   pendingActualToggleShow: '显示清单',

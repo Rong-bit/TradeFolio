@@ -242,6 +242,7 @@ export const de: Translations = {
     pendingActualEmpty: 'Keine offenen tatsächlichen Dividenden.',
     pendingActualLoading: 'Daten werden geladen …',
     pendingActualAddBtn: 'Hinzufügen',
+    pendingActualAddCol: 'Zu Transaktionen hinzufügen',
     pendingActualDismissBtn: 'Ausblenden',
     pendingActualToggleHide: 'Liste ausblenden',
     pendingActualToggleShow: 'Liste anzeigen',

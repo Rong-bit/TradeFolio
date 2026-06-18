@@ -273,6 +273,7 @@ export const en: Translations = {
     pendingActualEmpty: 'No pending actual dividends to record.',
     pendingActualLoading: 'Loading actual dividend data…',
     pendingActualAddBtn: 'Add',
+    pendingActualAddCol: 'Add to transactions',
     pendingActualDismissBtn: 'Dismiss',
     pendingActualToggleHide: 'Hide list',
     pendingActualToggleShow: 'Show list',

@@ -269,6 +269,7 @@ export const zhTW: Translations = {
     pendingActualEmpty: '目前沒有需要補登的實績配息。',
     pendingActualLoading: '載入實績資料…',
     pendingActualAddBtn: '新增',
+    pendingActualAddCol: '新增至交易紀錄',
     pendingActualDismissBtn: '取消',
     pendingActualToggleHide: '隱藏清單',
     pendingActualToggleShow: '顯示清單',
