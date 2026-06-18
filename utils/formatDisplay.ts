@@ -10,14 +10,13 @@ export const formatNumber = (num: number): string => {
   });
 };
 
-/** 現金股利單價欄（實領總額）：固定小數二位，避免浮點誤差 */
+/** 現金股利單價欄（實領總額）：先四捨五入至分，整數不補 .00，與金額欄一致 */
 export const formatCashDividendPrice = (num: number): string => {
   if (!Number.isFinite(num)) return '-';
   const rounded = Math.round(num * 100) / 100;
-  return rounded.toLocaleString('zh-TW', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return rounded % 1 === 0
+    ? rounded.toLocaleString('zh-TW')
+    : rounded.toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 export const formatAmount = (num: number): string =>
