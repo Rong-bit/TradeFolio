@@ -1,4 +1,24 @@
-export const formatNumber = (num: number): string => num.toString();
+export const formatNumber = (num: number): string => {
+  if (!Number.isFinite(num)) return '-';
+  const normalized = Math.round(num * 1e8) / 1e8;
+  if (normalized % 1 === 0) {
+    return normalized.toLocaleString('zh-TW');
+  }
+  return normalized.toLocaleString('zh-TW', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 6,
+  });
+};
+
+/** 現金股利單價欄（實領總額）：固定小數二位，避免浮點誤差 */
+export const formatCashDividendPrice = (num: number): string => {
+  if (!Number.isFinite(num)) return '-';
+  const rounded = Math.round(num * 100) / 100;
+  return rounded.toLocaleString('zh-TW', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 export const formatAmount = (num: number): string =>
   num % 1 === 0
