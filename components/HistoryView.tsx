@@ -7,6 +7,7 @@ import { useUI } from '../contexts/UIContext';
 import { useFilters } from '../hooks/useFilters';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 import { noteContainsRecurringMarker, stripRecurringMarkersFromNote } from '../utils/recurringDeposits';
+import { formatCashDividendPrice } from '../utils/formatDisplay';
 
 interface Props {
   onAddTransaction: () => void;
@@ -341,7 +342,9 @@ const HistoryView: React.FC<Props> = ({
                   </td>
                   <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 dark:text-slate-300 text-xs">
                     {record.type === 'TRANSACTION'
-                      ? formatNumber(record.price)
+                      ? record.subType === TransactionType.CASH_DIVIDEND
+                        ? formatCashDividendPrice(record.price)
+                        : formatNumber(record.price)
                       : record.type === 'CASHFLOW' && record.exchangeRate
                         ? record.exchangeRate
                         : '-'}
