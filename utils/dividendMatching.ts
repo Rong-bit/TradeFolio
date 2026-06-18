@@ -83,11 +83,19 @@ export function tickerHasRecordedCashDividendInExMonth(
   ticker: string,
   exDateYmd: string,
   market: Market,
-  accountId?: string
+  accountId?: string,
+  /** 發放日；待確認實績入帳多用 payDate，台股常跨月，需一併比對 */
+  payDateYmd?: string
 ): boolean {
-  if (findExistingCashDividendInSameMonth(transactions, ticker, exDateYmd, accountId, market)) {
-    return true;
+  const datesToCheck = [exDateYmd];
+  if (payDateYmd && payDateYmd !== exDateYmd) datesToCheck.push(payDateYmd);
+
+  for (const dateYmd of datesToCheck) {
+    if (findExistingCashDividendInSameMonth(transactions, ticker, dateYmd, accountId, market)) {
+      return true;
+    }
   }
+
   // 熱力圖月份彙總無法區分帳戶；僅在未指定帳戶時作為後備判定。
   if (accountId) return false;
   if (!recordedTickersInMonth) return false;
