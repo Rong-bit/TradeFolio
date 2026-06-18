@@ -621,7 +621,7 @@ const DividendHeatmap: React.FC = () => {
                       <th className="px-2 py-1.5">{dtx.upcomingExDate}</th>
                       <th className="px-2 py-1.5">{dtx.pendingActualPayDate}</th>
                       <th className="px-2 py-1.5 text-right">{dtx.pendingActualEstAmount}</th>
-                      <th className="px-2 py-1.5">{dtx.pendingActualAddBtn}</th>
+                      <th className="px-2 py-1.5">{dtx.pendingActualAddCol}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
