@@ -131,7 +131,11 @@ const DividendHeatmap: React.FC = () => {
         totalRoundedTwd >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD
           ? twNhiSupplementFloorTwd(totalRoundedTwd)
           : undefined;
-      return { grossNative, netNative: grossNative, withheldNhiTwd };
+      const netNative =
+        withheldNhiTwd != null && withheldNhiTwd > 0
+          ? totalRoundedTwd - withheldNhiTwd
+          : totalRoundedTwd;
+      return { grossNative: totalRoundedTwd, netNative, withheldNhiTwd };
     }
     return { grossNative, netNative: grossNative };
   };
@@ -242,7 +246,8 @@ const DividendHeatmap: React.FC = () => {
               ticker,
               rec.exDate,
               market,
-              acct.accountId
+              acct.accountId,
+              rec.payDate
             )
           ) {
             continue;
