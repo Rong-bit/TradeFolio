@@ -345,9 +345,7 @@ const HistoryView: React.FC<Props> = ({
                       ? record.subType === TransactionType.CASH_DIVIDEND
                         ? formatCashDividendPrice(record.price)
                         : formatNumber(record.price)
-                      : record.type === 'CASHFLOW' && record.exchangeRate
-                        ? record.exchangeRate
-                        : '-'}
+                      : '-'}
                   </td>
                   <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-600 dark:text-slate-300 text-xs">
                     {record.type === 'TRANSACTION' ? formatNumber(record.quantity) : '-'}
