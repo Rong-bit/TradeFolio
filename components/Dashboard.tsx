@@ -612,11 +612,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Net Cost Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-purple-500 relative group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider flex justify-between items-center">
+          <h4 className="text-slate-500 text-sm font-semibold uppercase tracking-wider flex justify-between items-center">
             {translations.dashboard.netCost}
             <button
               onClick={() => setShowCostDetailModal(true)}
-              className="relative z-10 text-indigo-600 hover:text-indigo-800 text-[10px] bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100"
+              className="relative z-10 text-indigo-600 hover:text-indigo-800 text-xs bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100"
               title={translations.dashboard.viewCalculationDetails}
             >🔍 {translations.dashboard.detail}</button>
           </h4>
@@ -624,7 +624,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             {formatCurrency(toBase(summary.netInvestedTWD), baseCurrency)}
           </p>
           {summary.hasDebtFunding && (summary.leverageNetTWD ?? 0) > 0 && (
-            <p className="text-[10px] text-amber-700 mt-1 leading-snug">
+            <p className="text-xs sm:text-sm text-amber-700 mt-1 leading-snug">
               {translate('dashboard.leverageNetInvestedNote', language, {
                 amount: formatCurrency(toBase(summary.leverageNetTWD ?? 0), baseCurrency),
               })}
@@ -650,7 +650,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Total Assets / Net Worth Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-green-500 relative overflow-hidden group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">
+          <h4 className="text-slate-500 text-sm font-semibold uppercase tracking-wider">
             {hasDebtOnBooks ? translations.dashboard.netWorth : translations.dashboard.totalAssets}
           </h4>
           <div className="flex items-center gap-2 mt-2">
@@ -658,9 +658,9 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               {formatCurrency(toBase(assetsCardHeadlineTwd), baseCurrency)}
             </p>
           </div>
-          <p className="text-[10px] text-slate-400 mt-0.5">{translations.dashboard.includeCash}: {formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</p>
+          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">{translations.dashboard.includeCash}: {formatCurrency(toBase(summary.cashBalanceTWD), baseCurrency)}</p>
           {hasDebtOnBooks && (
-            <p className="text-[10px] text-red-600 mt-0.5">
+            <p className="text-xs sm:text-sm text-red-600 mt-0.5">
               {translations.dashboard.totalDebt}: {formatCurrency(toBase(summary.totalDebtBalanceTWD ?? 0), baseCurrency)}
             </p>
           )}
@@ -683,7 +683,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Total P/L Card */}
         <div className={`bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 ${summary.totalPLTWD >= 0 ? 'border-emerald-500' : 'border-rose-500'} group hover:shadow-md transition-shadow`}>
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
+          <h4 className="text-slate-500 text-sm font-semibold uppercase tracking-wider">{translations.dashboard.totalPL}</h4>
           <div className="flex items-center gap-2 mt-2">
             <span className={`text-lg leading-none ${summary.totalPLTWD >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
               {summary.totalPLTWD >= 0 ? '↑' : '↓'}
@@ -716,7 +716,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
         {/* Annualized Return Card */}
         <div className="bg-white p-4 sm:p-5 rounded-xl shadow border-l-4 border-blue-500 group hover:shadow-md transition-shadow">
-          <h4 className="text-slate-500 text-xs font-bold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
+          <h4 className="text-slate-500 text-sm font-semibold uppercase tracking-wider">{translations.dashboard.annualizedReturn}</h4>
           <div className="flex items-center gap-2 mt-2">
             <span className={`text-lg leading-none ${summary.annualizedReturn >= 0 ? 'text-blue-500' : 'text-orange-500'}`}>
               {summary.annualizedReturn >= 0 ? '↑' : '↓'}
@@ -726,11 +726,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             </p>
           </div>
           {summary.hasDebtFunding && (
-            <p className="text-[10px] text-amber-700 mt-1">{translations.dashboard.leverageXirrWarning}</p>
+            <p className="text-xs sm:text-sm text-amber-700 mt-1">{translations.dashboard.leverageXirrWarning}</p>
           )}
           {/* ① Progress bar showing return vs 8% target */}
           <div className="mt-2">
-            <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
+            <div className="flex justify-between text-xs sm:text-sm text-slate-400 mb-0.5">
               <span>0%</span>
               <span className="text-slate-500">{translations.dashboard.annualizedReturnTarget8}</span>
               <span>20%+</span>
@@ -747,14 +747,14 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               />
             </div>
           </div>
-          <p className="text-[10px] text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(toBase(summary.netInvestedTWD * 1.08), baseCurrency)}</p>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">{translations.dashboard.estimatedGrowth8}: {formatCurrency(toBase(summary.netInvestedTWD * 1.08), baseCurrency)}</p>
         </div>
 
       </div>
 
       {liabilityInsights.length > 0 && (
         <div className="mb-4">
-          <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-3">
+          <h3 className="text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-200 mb-3">
             {translations.dashboard.debtAccountsTitle}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -780,7 +780,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   </p>
                   {insight.creditLimit != null && insight.creditLimit > 0 && util != null && (
                     <div className="mt-3">
-                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                         {translate('dashboard.creditUsedOfLimit', language, {
                           used: formatCurrency(insight.balance, insight.currency),
                           limit: formatCurrency(insight.creditLimit, insight.currency),
@@ -797,18 +797,18 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   )}
                   {insight.estimatedMonthlyInterest != null && (
                     <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-600">
-                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                         {translations.dashboard.estimatedMonthlyInterest}
                       </p>
                       <p className="text-lg font-bold text-slate-800 dark:text-slate-100 mt-0.5 tabular-nums">
                         {formatCurrency(insight.estimatedMonthlyInterest, insight.currency)}
                         {insight.annualInterestRate != null && (
-                          <span className="text-xs font-normal text-slate-500 ml-1">
+                          <span className="text-xs sm:text-sm font-normal text-slate-500 ml-1">
                             @ {insight.annualInterestRate}%
                           </span>
                         )}
                       </p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
+                      <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
                         {translations.dashboard.estimatedMonthlyInterestNote}
                       </p>
                     </div>
@@ -879,14 +879,14 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             {baseCurrency === 'TWD' && (
             <div className="col-span-2 md:col-span-4 mt-3 pt-5 border-t-2 border-slate-400 dark:border-slate-400">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                <p className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300">
                   海外所得稅務進度（{overseasTaxProgress.reportYear}）
                 </p>
                 <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 font-medium w-fit">
                   {overseasTaxProgress.statusText}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">{overseasTaxProgress.hintText}</p>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">{overseasTaxProgress.hintText}</p>
               <div className="mt-3">
                 <div className="relative w-full h-3 rounded-full bg-slate-100 overflow-hidden">
                   <div
@@ -896,7 +896,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   <div className="absolute inset-y-0 border-l border-slate-400/70" style={{ left: `${(1_000_000 / 6_700_000) * 100}%` }} />
                   <div className="absolute inset-y-0 border-l border-slate-500" style={{ left: '100%' }} />
                 </div>
-                <div className="relative mt-1 h-4 text-[10px] text-slate-500">
+                <div className="relative mt-1 h-4 text-xs sm:text-sm text-slate-500">
                   <span className="absolute left-0 top-0">0</span>
                   <span
                     className="absolute top-0 -translate-x-1/2"
@@ -909,31 +909,31 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                 <div className="rounded-lg bg-slate-50 p-3">
-                  <p className="text-slate-500 text-xs">海外已實現損益（非台灣市場）</p>
+                  <p className="text-slate-500 text-xs sm:text-sm">海外已實現損益（非台灣市場）</p>
                   <p className="font-bold text-slate-800 tabular-nums">
                     {formatCurrency(toBase(overseasTaxProgress.overseasRealizedPLTwd), baseCurrency)}
                   </p>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3">
-                  <p className="text-slate-500 text-xs">海外累積股利（非台灣市場）</p>
+                  <p className="text-slate-500 text-xs sm:text-sm">海外累積股利（非台灣市場）</p>
                   <p className="font-bold text-slate-800 tabular-nums">
                     {formatCurrency(toBase(overseasTaxProgress.overseasDividendTwd), baseCurrency)}
                   </p>
                 </div>
                 <div className="rounded-lg bg-blue-50 p-3">
-                  <p className="text-slate-600 text-xs">海外所得合計（損益 + 股利）</p>
+                  <p className="text-slate-600 text-xs sm:text-sm">海外所得合計（損益 + 股利）</p>
                   <p className="font-bold text-blue-700 tabular-nums">
                     {formatCurrency(toBase(overseasTaxProgress.overseasIncomeTwd), baseCurrency)}
                   </p>
                 </div>
                 <div className="rounded-lg bg-rose-50 p-3">
-                  <p className="text-slate-600 text-xs">最低稅負試算（參考）</p>
+                  <p className="text-slate-600 text-xs sm:text-sm">最低稅負試算（參考）</p>
                   <p className="font-bold text-rose-700 tabular-nums">
                     {formatCurrency(toBase(overseasTaxProgress.estimatedAmtTaxTwd), baseCurrency)}
                   </p>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500 mt-3">
+              <p className="text-xs sm:text-sm text-slate-500 mt-3">
                 公式：{`(基本所得額 - 670 萬) × 20%`}，目前以「海外所得」作為基本所得額試算（未含保險給付等其他項目）。
               </p>
             </div>
@@ -948,11 +948,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           <div className="max-sm:px-3 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between mb-3">
             <div className="min-w-0 flex-1">
               {mainChartTab === 'cumulative' ? (
-                <h3 className="font-bold text-blue-600 text-xl">{translations.dashboard.assetVsCostTrend}</h3>
+                <h3 className="font-bold text-blue-600 text-lg sm:text-xl">{translations.dashboard.assetVsCostTrend}</h3>
               ) : (
                 <>
-                  <h3 className="font-bold text-slate-800 text-xl">{translations.waterfall.title}</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">{translations.waterfall.subtitle}</p>
+                  <h3 className="font-bold text-slate-800 text-lg sm:text-xl">{translations.waterfall.title}</h3>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{translations.waterfall.subtitle}</p>
                 </>
               )}
             </div>
@@ -984,7 +984,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               <button
                 type="button"
                 onClick={onUpdateHistorical}
-                className="text-xs px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded border border-indigo-200 flex items-center justify-center gap-1 transition self-end sm:self-center"
+                className="text-sm px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded border border-indigo-200 flex items-center justify-center gap-1 transition self-end sm:self-center"
                 title={translations.dashboard.aiCorrectHistoryTitle}
               >
                 <span>🤖</span> {translations.dashboard.aiCorrectHistory}
@@ -995,7 +995,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           <div className="w-full">
             {mainChartTab === 'cumulative' ? (
               <>
-                <div className="max-sm:px-3 mb-3 flex flex-wrap gap-3 text-xs">
+                <div className="max-sm:px-3 mb-3 flex flex-wrap gap-3 text-xs sm:text-sm">
                   {[
                     { key: 'cost', label: translations.dashboard.chartLabels.investmentCost, color: '#8b5cf6' },
                     { key: 'profit', label: translations.dashboard.chartLabels.barName, color: '#10b981' },
@@ -1039,7 +1039,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           fontSize={cumulativeXAxisFontSize}
-                          className="text-xs"
+                          className="text-xs sm:text-sm"
                           padding={isTrendChartCompact ? { left: 0, right: 0 } : { left: 10, right: 10 }}
                           angle={-45}
                           textAnchor="end"
@@ -1052,7 +1052,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           tick={{ fill: isDarkMode ? '#cbd5e1' : '#64748b', fontSize: 9 }}
                           axisLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
                           tickLine={{ stroke: isDarkMode ? '#64748b' : '#94a3b8' }}
-                          className="text-xs"
+                          className="text-xs sm:text-sm"
                           width={cumulativeLeftAxisWidth}
                           tickFormatter={(val: number) => {
                             if (Math.abs(val) >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
@@ -1271,12 +1271,12 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   )}
                 </div>
                 {hasAttributionMismatch && (
-                  <div className="max-sm:mx-3 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
+                  <div className="max-sm:mx-3 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs sm:text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
                     資料對帳提醒：部分年度「資產變化」與「淨流入 + 收益 + 市場損益」存在微小差異，請檢查匯率或歷史估值來源。
                   </div>
                 )}
                 {hasInterpolatedQuarterData && (
-                  <div className="max-sm:mx-3 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <div className="max-sm:mx-3 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs sm:text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200 flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span>{translations.dashboard.chartLegendLinearInterpolation}</span>
                     {onUpdateHistorical && (
                       <button
@@ -1316,7 +1316,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       {/* 個股／ETF 外圈 + 股債內圈 */}
       {!isGuest && (
         <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-          <h3 className="font-bold text-slate-800 text-xl mb-1">{translations.dashboard.allocation}</h3>
+          <h3 className="font-bold text-slate-800 text-lg sm:text-xl mb-1">{translations.dashboard.allocation}</h3>
           <div className="mb-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             <span className="mr-4">
               {translations.dashboard.totalAssets}: <span className="font-semibold tabular-nums">{formatCurrency(toBase(totalAssetsWithCashTwd), baseCurrency)}</span>
@@ -1445,7 +1445,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
             </div>
             <div className="flex-1 w-full space-y-3">
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.legendMarketOuter} ({translations.dashboard.includeCash})</p>
+                <p className="text-xs sm:text-sm font-semibold text-slate-500 mb-1">{translations.dashboard.legendMarketOuter} ({translations.dashboard.includeCash})</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {allocationIncludingCash.outer.map((item, index) => (
                     <div
@@ -1460,14 +1460,14 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                       }}
                     >
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-sm sm:text-xs font-semibold flex-1 font-mono text-slate-900 dark:text-slate-100">{item.name}</span>
-                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
+                      <span className="text-sm font-semibold flex-1 font-mono text-slate-900 dark:text-slate-100">{item.name}</span>
+                      <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-slate-500 mb-1">{translations.dashboard.legendStockBondInner} ({translations.dashboard.includeCash})</p>
+                <p className="text-xs sm:text-sm font-semibold text-slate-500 mb-1">{translations.dashboard.legendStockBondInner} ({translations.dashboard.includeCash})</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {allocationIncludingCash.inner.map((item, index) => (
                     <div
@@ -1482,8 +1482,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                       }}
                     >
                       <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-sm sm:text-xs font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.name}</span>
-                      <span className="text-sm sm:text-xs font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
+                      <span className="text-sm font-semibold flex-1 text-slate-900 dark:text-slate-100">{item.name}</span>
+                      <span className="text-sm font-bold tabular-nums text-slate-800 dark:text-slate-300">{item.ratio.toFixed(1)}%</span>
                     </div>
                   ))}
                 </div>
@@ -1491,10 +1491,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
               {/* 股/債覆寫小表單：用來編輯 localStorage: assetClassOverrides */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                <p className="text-xs font-semibold text-slate-700 mb-2">{translations.dashboard.assetClassOverrideTitle}</p>
+                <p className="text-xs sm:text-sm font-semibold text-slate-700 mb-2">{translations.dashboard.assetClassOverrideTitle}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
                   <div className="sm:col-span-2">
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                    <label className="block text-xs font-medium text-slate-600 mb-1">
                       {translations.dashboard.tickerSymbolLabel}
                     </label>
                     <input
@@ -1511,7 +1511,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     </datalist>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                    <label className="block text-xs font-medium text-slate-600 mb-1">
                       {translations.dashboard.assetClassSelectLabel}
                     </label>
                     <select
@@ -1542,7 +1542,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
                 {overrideChips.length > 0 && (
                   <div className="mt-3">
-                    <p className="text-[11px] text-slate-500 mb-1">{translations.dashboard.currentOverridesHeading}</p>
+                    <p className="text-xs sm:text-sm text-slate-500 mb-1">{translations.dashboard.currentOverridesHeading}</p>
                     <div className="flex flex-wrap gap-2">
                       {overrideChips.map(([tickerKey, assetClass]) => {
                         const label =
@@ -1558,10 +1558,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                             title={translations.dashboard.removeOverrideTitle}
                           >
                             <span className="text-xs font-mono text-slate-700">{tickerKey}</span>
-                            <span className={`text-[11px] font-semibold ${assetClass === AssetClass.BOND ? 'text-blue-700' : 'text-emerald-700'}`}>
+                            <span className={`text-xs font-semibold ${assetClass === AssetClass.BOND ? 'text-blue-700' : 'text-emerald-700'}`}>
                               {label}
                             </span>
-                            <span className="text-[11px] text-slate-400">×</span>
+                            <span className="text-xs sm:text-sm text-slate-400">×</span>
                           </button>
                         );
                       })}
@@ -1583,7 +1583,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       {SHOW_ANNUAL_PERFORMANCE_TABLE && !isGuest && annualPerformance.length > 0 && (
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-slate-800 text-xl">{translations.dashboard.annualPerformance}</h3>
+              <h3 className="font-bold text-slate-800 text-lg sm:text-xl">{translations.dashboard.annualPerformance}</h3>
               <div className="flex items-center gap-2">
                 <span className="text-sm text-slate-600 shrink-0">{translations.dashboard.displayCurrency}:</span>
                 <div className={SEGMENT_PILL_CLASS}>
@@ -1613,7 +1613,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm text-left">
+              <table className="min-w-full text-sm sm:text-base text-left">
                 <thead style={{ backgroundColor: '#f8fafc', color: '#64748b' }} className="uppercase font-medium">
                   <tr>
                     <th className="px-6 py-3">{translations.dashboard.year}</th>
@@ -1677,7 +1677,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       {/* Account List Card — 版面與「資產配置明細」(HoldingsTable) 一致 */}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow overflow-hidden border border-slate-100 dark:border-slate-700">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center flex-wrap gap-2 bg-slate-50 dark:bg-slate-800">
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg flex items-center gap-2">
+          <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg sm:text-xl flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
@@ -1712,8 +1712,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-sm sm:text-base text-left">
-            <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-xs uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
+          <table className="min-w-full text-sm text-left">
+            <thead className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 text-base uppercase font-bold tracking-wider border-b border-slate-100 dark:border-slate-700">
               <tr>
                 <th className="px-3 py-2 sticky left-0 z-10 min-w-[10rem] bg-white dark:bg-slate-800">
                   {translations.dashboard.accountName}
@@ -1724,7 +1724,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   <span className="inline-flex items-center justify-end gap-1">
                     {translations.dashboard.balanceNT}
                     <span
-                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-[10px] text-slate-500 dark:text-slate-400 cursor-help"
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-xs text-slate-500 dark:text-slate-400 cursor-help"
                       title={translations.dashboard.balanceColumnTooltip}
                     >
                       i
@@ -1738,7 +1738,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   <span className="inline-flex items-center justify-end gap-1">
                     {translations.dashboard.profitNT}
                     <span
-                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-[10px] text-slate-500 dark:text-slate-400 cursor-help"
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-xs text-slate-500 dark:text-slate-400 cursor-help"
                       title={translations.dashboard.profitFormulaTooltip}
                     >
                       i
@@ -1749,7 +1749,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   <span className="inline-flex items-center justify-end gap-1">
                     {translations.dashboard.totalReturnRate}
                     <span
-                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-[10px] text-slate-500 dark:text-slate-400 cursor-help"
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 dark:border-slate-500 text-xs text-slate-500 dark:text-slate-400 cursor-help"
                       title={translate('dashboard.accountReturnRateTooltip', language)}
                     >
                       i
@@ -1814,7 +1814,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         style={{ transition: "background-color 0.15s" }}
                       >
                         <td
-                          className="px-3 py-2 font-semibold text-sm sm:text-base sticky left-0 z-10 min-w-[10rem] bg-white dark:bg-slate-800"
+                          className="px-3 py-2 font-semibold text-sm sticky left-0 z-10 min-w-[10rem] bg-white dark:bg-slate-800"
                           style={{
                             transition: "background-color 0.15s",
                             backgroundColor:
@@ -1841,26 +1841,26 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                               ({acc.currency})
                             </span>
                             {acc.isClosed ? (
-                              <span className="ml-1.5 inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-200">
+                              <span className="ml-1.5 inline-flex rounded px-1.5 py-0.5 text-xs font-semibold bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-200">
                                 {translate('dashboard.accountClosedBadge', language)}
                               </span>
                             ) : null}
                           </div>
                         </td>
                         <td
-                          className="px-3 py-2 text-right font-bold tabular-nums text-sm sm:text-base"
+                          className="px-3 py-2 text-right font-bold tabular-nums text-sm"
                           style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
                         >
                           {formatCurrency(totalAssets, displayCurrency)}
                         </td>
                         <td
-                          className="px-3 py-2 text-right tabular-nums text-sm sm:text-base"
+                          className="px-3 py-2 text-right tabular-nums text-sm"
                           style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
                         >
                           {formatCurrency(marketValue, displayCurrency)}
                         </td>
                         <td
-                          className="px-3 py-2 text-right tabular-nums text-sm sm:text-base"
+                          className="px-3 py-2 text-right tabular-nums text-sm"
                           style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
                         >
                           {formatCurrency(cashBalance, displayCurrency)}
@@ -1944,12 +1944,12 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     <tr key={item.id} onMouseEnter={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#334155":"#f8fafc")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")} style={{ transition: "background-color 0.15s" }}>
                       <td className="px-3 py-2 whitespace-nowrap">{item.date}</td>
                       <td className="px-3 py-2">
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${badgeClass}`}>
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${badgeClass}`}>
                           {categoryLabel}
                         </span>
                       </td>
                       <td className="px-3 py-2">
-                        {item.accountName} <span className="text-xs text-slate-400">({item.currency})</span>
+                        {item.accountName} <span className="text-xs sm:text-sm text-slate-400">({item.currency})</span>
                       </td>
                       <td className="px-3 py-2 text-right font-mono">
                         {item.currency === Currency.USD ? '$' : 'NT$'}{item.amount.toLocaleString()}
@@ -1957,7 +1957,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                       <td className="px-3 py-2 text-right">
                         <div className="flex flex-col items-end">
                           <span>{item.rate.toFixed(2)}</span>
-                          <span className="text-[10px] text-slate-400">{item.rateSource}</span>
+                          <span className="text-xs sm:text-sm text-slate-400">{item.rateSource}</span>
                         </div>
                       </td>
                       <td className={`px-3 py-2 text-right font-bold font-mono ${delta >= 0 ? 'text-slate-800' : 'text-red-500'}`}>
