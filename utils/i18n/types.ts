@@ -238,8 +238,11 @@ export interface Translations {
     subtitle: string;
     /** 各市場加總：以 TWD 合計 (市值−成本)/成本，非年化 */
     cumulativeReturn: string;
+    cumulativeReturnShort: string;
     weight: string;
+    weightShort: string;
     value: string;
+    valueShort: string;
     noData: string;
     ratio: string;
   };
