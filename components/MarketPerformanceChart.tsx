@@ -82,6 +82,11 @@ const MarketPerformanceChart: React.FC = () => {
     weight: tr.marketChart.weight,
     value: `${tr.marketChart.value} (${baseCurrency})`,
   };
+  const metricButtonLabels: Record<Metric, string> = {
+    cumulativeReturn: tr.marketChart.cumulativeReturnShort,
+    weight: tr.marketChart.weightShort,
+    value: tr.marketChart.valueShort,
+  };
 
   if (isGuest) return null;
 
@@ -98,9 +103,9 @@ const MarketPerformanceChart: React.FC = () => {
       <div className="flex justify-between items-center mb-5">
         <div>
           <h3 className="font-bold text-slate-800 text-xl">{tr.marketChart.title}</h3>
-          <p className="text-xs text-slate-400 mt-0.5">{tr.marketChart.subtitle}</p>
+          <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">{tr.marketChart.subtitle}</p>
         </div>
-        <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs font-medium">
+        <div className="flex rounded-lg border border-slate-200 overflow-hidden text-sm font-medium">
           {(['cumulativeReturn', 'weight', 'value'] as Metric[]).map(m => (
             <button
               key={m}
@@ -108,7 +113,7 @@ const MarketPerformanceChart: React.FC = () => {
               onClick={() => setMetric(m)}
               className={`px-3 py-1.5 transition ${metric === m ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
             >
-              {metricLabels[m].split(' ')[0]}
+              {metricButtonLabels[m]}
             </button>
           ))}
         </div>
@@ -155,7 +160,7 @@ const MarketPerformanceChart: React.FC = () => {
                   className="rounded-sm border border-slate-200 object-cover shrink-0"
                 />
               ) : (
-                <span className="inline-flex w-5 h-4 items-center justify-center rounded-sm border border-slate-200 text-[10px] text-slate-500 bg-white shrink-0">
+                <span className="inline-flex w-5 h-4 items-center justify-center rounded-sm border border-slate-200 text-xs text-slate-500 bg-white shrink-0">
                   {d.market}
                 </span>
               )}
@@ -164,13 +169,13 @@ const MarketPerformanceChart: React.FC = () => {
                 {metric === 'cumulativeReturn' && (
                   <>
                     <div className={`text-sm font-bold tabular-nums ${retColor}`}>{retStr}</div>
-                    <div className="text-[10px] text-slate-400">{weightStr}</div>
+                    <div className="text-xs text-slate-400">{weightStr}</div>
                   </>
                 )}
                 {metric === 'weight' && (
                   <>
                     <div className="text-sm font-bold tabular-nums text-slate-800">{weightStr}</div>
-                    <div className={`text-[10px] tabular-nums ${retColor}`}>
+                    <div className={`text-xs tabular-nums ${retColor}`}>
                       {tr.marketChart.cumulativeReturn} {retStr}
                     </div>
                   </>
@@ -178,7 +183,7 @@ const MarketPerformanceChart: React.FC = () => {
                 {metric === 'value' && (
                   <>
                     <div className="text-sm font-bold tabular-nums text-slate-800">{formatCurrency(d.value, baseCurrency)}</div>
-                    <div className="text-[10px] text-slate-400 flex flex-wrap gap-x-1 items-baseline">
+                    <div className="text-xs text-slate-400 flex flex-wrap gap-x-1 items-baseline">
                       <span>{weightStr}</span>
                       <span className="text-slate-300">·</span>
                       <span className={retColor}>{retStr}</span>
