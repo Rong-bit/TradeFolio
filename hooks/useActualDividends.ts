@@ -17,6 +17,7 @@ const LEGACY_LS_KEYS = [
   'tf-actual-dividends-v3',
 ] as const;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const EMPTY_CACHE_TTL_MS = 10 * 60 * 1000;
 const CONCURRENCY = 3;
 const MONEYDJ_REFRESH_LOOKBACK_DAYS = 90;
 
@@ -110,12 +111,15 @@ export function useActualDividends(
 
     for (const j of jobs) {
       const hit = cached[j.key];
-      const isFresh = !!hit && Date.now() - hit.at < CACHE_TTL_MS;
+      const isEmptyResult = Array.isArray(hit?.data) && hit.data.length === 0;
+      const ttl = isEmptyResult ? EMPTY_CACHE_TTL_MS : CACHE_TTL_MS;
+      const isFresh = !!hit && Date.now() - hit.at < ttl;
       const yahooOnlyStale =
         isFresh &&
         Array.isArray(hit.data) &&
         recentActualDividendsNeedMoneyDjRefresh(hit.data, j.market);
-      // 僅快取成功結果（含空陣列）；若近 90 天仍為 Yahoo 粗精度則強制重抓 MoneyDJ
+      // 僅快取成功結果；空結果只短暫沿用，避免某台裝置暫時抓失敗後整天看不到待確認配息。
+      // 若近 90 天仍為 Yahoo 粗精度則強制重抓 MoneyDJ。
       if (isFresh && Array.isArray(hit.data) && !yahooOnlyStale) {
         initial[j.key] = hit.data;
       } else {
