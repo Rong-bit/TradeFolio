@@ -296,7 +296,7 @@ interface YahooDividendEvent {
 async function fetchYahooDividendEvents(
   ticker: string,
   yahooMarket: YahooMarket
-): Promise<{ events: YahooDividendEvent[]; currency?: string }> {
+): Promise<{ events: YahooDividendEvent[]; currency?: string; fetched: boolean }> {
   // 與 yahooFinanceService.toYahoo 相同的 symbol 策略，避免重複 import 而做最小複製
   const MARKET_SUFFIX: Record<YahooMarket, string> = {
     US: '',
@@ -326,6 +326,7 @@ async function fetchYahooDividendEvents(
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${enc}?events=div&interval=1d&range=5y`;
   const json = await fetchJson<any>(url);
   const result = (json as any)?.chart?.result?.[0];
+  if (!result) return { events: [], fetched: false };
   const divs = result?.events?.dividends;
   const currency = result?.meta?.currency;
   const events: YahooDividendEvent[] = [];
@@ -340,7 +341,7 @@ async function fetchYahooDividendEvents(
     }
   }
   events.sort((a, b) => b.ts - a.ts);
-  return { events, currency };
+  return { events, currency, fetched: true };
 }
 
 // ── 對外 API：合併 MoneyDJ + Yahoo 形成最終 ActualDividendRecord 列表 ─────────
@@ -374,6 +375,10 @@ export async function fetchActualDividendHistory(
       ? fetchMoneyDjTwAmounts(ticker).catch(() => null)
       : Promise.resolve(null as MoneyDjAmountByPeriod | null),
   ]);
+
+  if (!yahoo.fetched && (!mdjEtfRows || mdjEtfRows.length === 0)) {
+    throw new Error(`Yahoo dividend events unavailable for ${ticker}`);
+  }
 
   const offset = payDateOffsetDays(market);
   const today = new Date().toISOString().slice(0, 10);
