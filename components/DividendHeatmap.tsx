@@ -405,39 +405,48 @@ const DividendHeatmap: React.FC = () => {
     );
 
     return (
-      <div key={pa.key} className="flex flex-wrap items-center gap-1.5 text-[11px]">
+      <div key={pa.key} className="flex flex-wrap items-center justify-center gap-2 text-sm">
         {showTicker && (
           <span className="font-mono font-semibold text-slate-700">{pa.ticker}</span>
         )}
-        <span
-          className="rounded px-1.5 py-0.5 bg-sky-50 border border-sky-200 text-sky-800 font-semibold tabular-nums"
-          title={tipLines.join('\n')}
-        >
-          {fmtAmt(calc.netNative)} {cur}
-        </span>
-        <select
-          value={paSelectedAccount}
-          onChange={e =>
-            setPendingAccountByKey(prev => ({ ...prev, [pa.key]: e.target.value }))
-          }
-          className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-sky-400"
-        >
-          {pa.accountOptions.map(opt => {
-            const acc = accounts.find(a => a.id === opt.accountId);
-            return (
-              <option key={opt.accountId} value={opt.accountId}>
-                {acc ? acc.name : opt.accountId}
-              </option>
-            );
-          })}
-          {accounts
-            .filter(a => !paOptionAccountIds.has(a.id))
-            .map(a => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-        </select>
+        {showTicker && (
+          <span
+            className="rounded px-1.5 py-0.5 bg-sky-50 border border-sky-200 text-sky-800 font-semibold tabular-nums"
+            title={tipLines.join('\n')}
+          >
+            {fmtAmt(calc.netNative)} {cur}
+          </span>
+        )}
+        {showTicker && (
+          <select
+            value={paSelectedAccount}
+            onChange={e =>
+              setPendingAccountByKey(prev => ({ ...prev, [pa.key]: e.target.value }))
+            }
+            className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-sky-400"
+          >
+            {pa.accountOptions.map(opt => {
+              const acc = accounts.find(a => a.id === opt.accountId);
+              return (
+                <option key={opt.accountId} value={opt.accountId}>
+                  {acc ? acc.name : opt.accountId}
+                </option>
+              );
+            })}
+            {accounts
+              .filter(a => !paOptionAccountIds.has(a.id))
+              .map(a => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+          </select>
+        )}
+        {!showTicker && (
+          <span className="text-sm font-medium text-slate-500">
+            {getAccountName(paSelectedAccount)}
+          </span>
+        )}
         <button
           type="button"
           onClick={() => handleAddPendingActual(pa)}
@@ -448,7 +457,7 @@ const DividendHeatmap: React.FC = () => {
         <button
           type="button"
           onClick={() => dismissPendingRow(pa.key)}
-          className="rounded border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-500 hover:bg-slate-50"
+          className="rounded border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-100"
           title={dtx.pendingActualDismissBtn}
         >
           {dtx.pendingActualDismissBtn}
@@ -588,8 +597,8 @@ const DividendHeatmap: React.FC = () => {
       </div>
 
       <div className="mt-6 border-t border-slate-100 pt-4">
-        <div className="mb-1 flex items-center justify-between gap-2">
-          <h4 className="text-sm font-bold text-slate-700">{dtx.pendingActualTitle}</h4>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h4 className="text-base font-bold text-slate-700">{dtx.pendingActualTitle}</h4>
           <button
             type="button"
             onClick={() => {
@@ -599,29 +608,29 @@ const DividendHeatmap: React.FC = () => {
                 return next;
               });
             }}
-            className="shrink-0 rounded border border-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+            className="shrink-0 rounded border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-50"
           >
             {pendingListVisible ? dtx.pendingActualToggleHide : dtx.pendingActualToggleShow}
           </button>
         </div>
         {pendingListVisible ? (
           <>
-            <p className="text-xs text-slate-400 mb-2">{dtx.pendingActualSubtitle}</p>
+            <p className="text-sm text-slate-500 mb-3 leading-relaxed">{dtx.pendingActualSubtitle}</p>
             {pendingActualLoading ? (
-              <p className="text-xs text-slate-400 py-2">{dtx.pendingActualLoading}</p>
+              <p className="text-sm text-slate-400 py-2">{dtx.pendingActualLoading}</p>
             ) : visiblePendingRows.length === 0 ? (
-              <p className="text-xs text-slate-400 py-2">{dtx.pendingActualEmpty}</p>
+              <p className="text-sm text-slate-400 py-2">{dtx.pendingActualEmpty}</p>
             ) : (
               <div className="overflow-x-auto rounded-lg border border-slate-100">
-                <table className="min-w-full text-xs text-left">
+                <table className="min-w-full text-sm text-left">
                   <thead className="bg-slate-50 text-slate-500 font-semibold">
                     <tr>
-                      <th className="px-2 py-1.5">{tr.holdings.ticker}</th>
-                      <th className="px-2 py-1.5">Mkt</th>
-                      <th className="px-2 py-1.5">{dtx.upcomingExDate}</th>
-                      <th className="px-2 py-1.5">{dtx.pendingActualPayDate}</th>
-                      <th className="px-2 py-1.5 text-right">{dtx.pendingActualEstAmount}</th>
-                      <th className="px-2 py-1.5">{dtx.pendingActualAddCol}</th>
+                      <th className="px-3 py-2">{tr.holdings.ticker}</th>
+                      <th className="px-3 py-2">Mkt</th>
+                      <th className="px-3 py-2">{dtx.upcomingExDate}</th>
+                      <th className="px-3 py-2">{dtx.pendingActualPayDate}</th>
+                      <th className="px-3 py-2 text-right">{dtx.pendingActualEstAmount}</th>
+                      <th className="px-3 py-2 text-center">{tr.labels.action}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -630,19 +639,19 @@ const DividendHeatmap: React.FC = () => {
                       const cur = pa.currency ?? getAccountCurrencyCode(pa.accountId);
                       return (
                         <tr key={pa.key} className="text-slate-600">
-                          <td className="px-2 py-1.5 font-mono font-medium">{pa.ticker}</td>
-                          <td className="px-2 py-1.5">{pa.market}</td>
-                          <td className="px-2 py-1.5 tabular-nums">{pa.exDate}</td>
-                          <td className="px-2 py-1.5 tabular-nums">
+                          <td className="px-3 py-2 font-mono font-medium">{pa.ticker}</td>
+                          <td className="px-3 py-2">{pa.market}</td>
+                          <td className="px-3 py-2 tabular-nums">{pa.exDate}</td>
+                          <td className="px-3 py-2 tabular-nums">
                             {pa.payDate ?? '—'}
                             {pa.payDateEstimated ? (
-                              <span className="ml-1 text-[10px] text-slate-400">({dtx.pendingActualEstimatedDate})</span>
+                              <span className="ml-1 text-xs text-slate-400">({dtx.pendingActualEstimatedDate})</span>
                             ) : null}
                           </td>
-                          <td className="px-2 py-1.5 text-right tabular-nums">
+                          <td className="px-3 py-2 text-right tabular-nums">
                             {calc.netNative.toLocaleString(undefined, { maximumFractionDigits: 2 })} {cur}
                           </td>
-                          <td className="px-2 py-1.5">{renderPendingAddRow(pa, { showTicker: false })}</td>
+                          <td className="px-3 py-2 text-center">{renderPendingAddRow(pa, { showTicker: false })}</td>
                         </tr>
                       );
                     })}
