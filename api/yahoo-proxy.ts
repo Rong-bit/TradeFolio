@@ -14,6 +14,8 @@ const ALLOWED_PREFIXES = [
   // MoneyDJ：個股/ETF 配息實績（除息日、發放日、每股股利）；HTML 解析後做為 Yahoo 預估的「實績補登」資料
   'https://concords.moneydj.com/',
   'https://www.moneydj.com/',
+  // 富邦 DJ 鏡像：台股個股重大行事曆（除息日、息值、現金股利發放日）
+  'https://fubon-ebrokerdj.fbs.com.tw/',
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
