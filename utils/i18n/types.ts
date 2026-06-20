@@ -307,6 +307,8 @@ export interface Translations {
     nhiForecastTag: string;
     pendingActualTitle: string;
     pendingActualSubtitle: string;
+    /** 待補登清單：股息再投入勿用「新增」 */
+    pendingActualDripHint: string;
     pendingActualEmpty: string;
     pendingActualLoading: string;
     pendingActualAddBtn: string;

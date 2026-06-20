@@ -218,6 +218,7 @@ export const pt: Translations = {
     nhiForecastTag: 'Estimativa: este pagamento único pode acionar cobrança suplementar NHI',
     pendingActualTitle: 'Dividendos realizados pendentes',
     pendingActualSubtitle: 'Ex-dividendos deste ano ainda não no histórico (mostrados na heatmap pelo mês de ex-data). "Adicionar" cria registro; "Ocultar" remove o aviso.',
+    pendingActualDripHint: 'Para reinvestimento de dividendos (DRIP), use "Adicionar transação" no histórico — não clique em "Adicionar" aqui.',
     pendingActualEmpty: 'Não há dividendos realizados pendentes para complementar.',
     pendingActualLoading: 'A carregar dados realizados...',
     pendingActualAddBtn: 'Adicionar',

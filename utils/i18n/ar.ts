@@ -218,6 +218,7 @@ export const ar: Translations = {
     nhiForecastTag: 'تقدير: هذا التوزيع قد يفعّل اقتطاع قسط NHI الإضافي',
     pendingActualTitle: 'توزيعات فعلية بانتظار التأكيد',
     pendingActualSubtitle: 'توزيعات حدث استحقاقها هذا العام ولم تظهر بعد في السجلات (تُعرض على الخريطة حسب شهر الاستحقاق). "إضافة" لإنشاء سجل، "إخفاء" لإخفاء الصف.',
+    pendingActualDripHint: 'لإعادة استثمار التوزيعات (DRIP)، استخدم «إضافة معاملة» من سجل المعاملات — لا تضغط «إضافة» هنا.',
     pendingActualEmpty: 'لا توجد حالياً توزيعات فعلية تحتاج للإضافة.',
     pendingActualLoading: 'جارٍ تحميل البيانات الفعلية...',
     pendingActualAddBtn: 'إضافة',
