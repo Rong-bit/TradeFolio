@@ -1,3 +1,4 @@
+
 // Vercel Serverless Function - Yahoo Finance 代理
 // 用途：在伺服器端呼叫 Yahoo Finance / 相關目標，解決瀏覽器 CORS 問題
 
