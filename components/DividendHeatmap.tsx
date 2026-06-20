@@ -59,7 +59,7 @@ type PendingActualRow = {
   payDateEstimated?: boolean;
   amountPerShare: number;
   currency?: string;
-  source: 'moneydj' | 'yahoo';
+  source: 'moneydj' | 'dj' | 'stockanalysis' | 'yahoo';
   estTotalNative: number;
   accountId: string;
   accountOptions: Array<{ accountId: string; quantity: number }>;
@@ -400,8 +400,14 @@ const DividendHeatmap: React.FC = () => {
       );
       tipLines.push(`= ${fmtAmt(calc.netNative)} ${cur}`);
     }
+    const sourceLabel =
+      pa.source === 'stockanalysis'
+        ? 'StockAnalysis'
+        : pa.source === 'yahoo'
+          ? dtx.pendingActualSourceYahoo
+          : dtx.pendingActualSourceMoneyDj;
     tipLines.push(
-      `${pa.source === 'moneydj' ? dtx.pendingActualSourceMoneyDj : dtx.pendingActualSourceYahoo}｜${dtx.upcomingExDate} ${pa.exDate}${pa.payDate ? ` → ${pa.payDate}` : ''}`
+      `${sourceLabel}｜${dtx.upcomingExDate} ${pa.exDate}${pa.payDate ? ` → ${pa.payDate}` : ''}`
     );
 
     return (
@@ -633,12 +639,12 @@ const DividendHeatmap: React.FC = () => {
                       <th className="px-3 py-2 text-center">{tr.labels.action}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody>
                     {visiblePendingRows.map(pa => {
                       const calc = getCashDividendCalc(pa);
                       const cur = pa.currency ?? getAccountCurrencyCode(pa.accountId);
                       return (
-                        <tr key={pa.key} className="text-slate-600">
+                        <tr key={pa.key} className="border-b border-slate-100 text-slate-600 last:border-b-0 dark:border-slate-700">
                           <td className="px-3 py-2 font-mono font-medium">{pa.ticker}</td>
                           <td className="px-3 py-2">{pa.market}</td>
                           <td className="px-3 py-2 tabular-nums">{pa.exDate}</td>
@@ -664,7 +670,7 @@ const DividendHeatmap: React.FC = () => {
       </div>
 
       {confirmState && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60]">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="bg-slate-900 p-4">
               <h3 className="text-white font-bold text-lg">{tf.confirmTitle}</h3>
