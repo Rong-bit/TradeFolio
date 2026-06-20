@@ -45,7 +45,7 @@ function shouldBlockDirectFetch(target: string): boolean {
   return (
     /^https:\/\/query1\.finance\.yahoo\.com\//i.test(target) ||
     /^https:\/\/(www\.)?moneydj\.com\//i.test(target) ||
-    /^https:\/\/(tw\.stock\.yahoo\.com|mis\.twse\.com\.tw|stockanalysis\.com)\//i.test(target)
+    /^https:\/\/(tw\.stock\.yahoo\.com|mis\.twse\.com\.tw|stockanalysis\.com|fubon-ebrokerdj\.fbs\.com\.tw)\//i.test(target)
   );
 }
 
