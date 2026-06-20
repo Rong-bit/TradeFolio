@@ -644,97 +644,123 @@ export const en: Translations = {
     documentationContent: `# TradeView User Manual
 
 > **Privacy & Security Statement**:
-> This system adopts an offline-first architecture. **All transaction data is stored on your personal computer or mobile browser** and is not uploaded to any server. **The system does not involve collecting personal information**. Please use with confidence.
+> This system adopts an offline-first architecture. **All transaction data is stored locally on your device** (iOS/Android app or desktop browser) and is not uploaded to any server. **The system does not involve collecting personal information**. Please use with confidence.
 
 ## 1. System Introduction
-TradeView is an asset management tool that supports Taiwan and US stocks, helping investors track asset changes, calculate returns, and manage fund flows.
+TradeView is an asset management tool that supports global stock markets, helping investors track asset changes, calculate returns, and manage fund flows.
 
 ## 2. Quick Start
-1. **Create Account**: Go to "Account Management" to add your bank or brokerage account.
-2. **Import Funds**: Go to "Fund Management", select "Import Funds" to record salary or deposits into the system.
-3. **Add Transaction**: Click "Add Transaction" in the top right corner to input stock buy/sell records.
-4. **View Reports**: Return to "Dashboard" to view asset line charts and performance.
+Follow this order for first-time setup (matches the hamburger menu workflow "Accounts → Funds → Transactions → Dashboard"):
+1. **Create Account**: Go to "Accounts" to add your bank or brokerage account.
+2. **Import Funds**: Go to "Funds", tap "+ Add Record", select type **Deposit** to record salary or deposits into the system.
+3. **Add Transaction**: In "Transactions", tap "+ Add Record" in the top right corner to input stock buy/sell records.
+4. **View Reports**: Return to "Dashboard" for performance summary cards; **members** also get cumulative P/L charts, asset allocation, market performance, and dividend heatmap.
 
 ## 3. Feature Details
+The sections below follow the hamburger menu order (**guest** and **member** visibility differs slightly; see FAQ).
 
-### Fund Management
-* **Import**: External fund inflow (e.g., salary).
-* **Export**: Fund outflow (e.g., living expenses withdrawal).
-* **Transfer**: Fund movement between different accounts (e.g., bank to brokerage account).
-* **Interest**: Record deposit or brokerage account interest.
-* **Loan interest**: Loan interest expense; recorded on a **brokerage** account it reduces cash (liability accounts are not shown in the dropdown).
+### Dashboard
+"Dashboard" is the default home page, showing performance summary cards and holdings. **Members** also get cumulative P/L charts, asset allocation pie chart, market performance, and dividend heatmap. If you have liability account debt, **Credit & debt** cards appear (see Credit Q&A below).
 
-### Credit / liability accounts (Q&A)
+**Dividend heatmap (members)**: For pending items that are **Dividend Reinvestment (DRIP)**, go to "Transactions" and tap "+ Add Record"—do **not** use **Add to records** on the heatmap (that button is for cash dividends only).
+
+### Transactions
+Record buys, sells, dividends, and stock transfers. Tap "+ Add Record" in the top right to add entries; use "Batch Update Market" to adjust market settings for multiple transactions at once.
+
+**Transaction types**
+* **Buy/Sell**: General buy/sell transactions.
+* **Dividend Reinvestment (DRIP)**: Stock dividend or reinvestment; share count increases.
+* **Cash Dividend**: Cash credited; account balance increases.
+* **Transfer Out**: Stock transferred out from this brokerage account.
+* **Transfer In**: Stock transferred into this brokerage account.
+
+**Stock transfer (Brokerage A → Brokerage B)**
+**Recommended (one step)**: "+ Add Record" → type **Transfer Out** → account = source (A) → date, market, ticker, quantity → choose **Target Account** (B) → tap **Confirm & Save**. The app saves **both** Transfer Out and Transfer In records at once; the auto-created Transfer In has **fees = 0**—enter any transfer fees on the **Transfer Out** row. Price defaults to average cost for that account and ticker—use cost basis, not market price.
+
+### Funds
+Tap "+ Add Record" to log cash flows. Categories include:
+* **Deposit**: External fund inflow (e.g., salary).
+* **Withdraw**: Fund outflow (e.g., living expenses withdrawal).
+* **Transfer**: Fund movement between accounts (e.g., bank to brokerage account).
+* **Interest**: Deposit or brokerage account interest.
+* **Loan interest**: Loan interest expense; when recorded on a brokerage account, cash is reduced.
+
+### Accounts
+Add or edit bank or brokerage accounts. **Account type** can be **Brokerage (investment)** or **Liability (debt)**; see Credit Q&A below for liability accounts.
+
+### Stock Splits
+The "Stock Splits" page lets you log split events. Transactions keep logged share counts and prices; splits adjust holdings and P/L from the effective date. Do not log post-split trades at split-adjusted counts twice.
+
+### Rebalance (members)
+"Rebalance" lets you set target weights for each symbol: stocks with the same name are merged automatically; check the **Enable** column to choose which items participate in rebalancing. Target weights are saved automatically, or tap "Reset to Current Weights" to reset quickly.
+
+### Simulator
+"Simulator" compares expected returns of different asset allocations. Enter assumed annualized return rates and allocation ratios to run scenarios; "🔍 Auto Query" fetches CAGR (different from **Annualized Return (XIRR)** on "Dashboard"). ⚠️ Past performance does not guarantee future results. This simulation is for reference only.
+
+### Credit / Liability Accounts (Q&A)
 
 Q: What does the liability account balance mean?
 A: It is **principal owed** (how much you owe the bank), not spendable cash. Zero balance = paid off.
 
 Q: How do I create a liability account?
-A: **Account Management** → Add account → type **Liability (debt)** → name, currency, annual rate, optional credit limit. Leave initial balance at **0**.
+A: "Accounts" → **Account type** **Liability (debt)** → fill in **Account name**, **Currency**, **Annual rate (%)**, and **Credit limit** (optional) → tap "Add". Leave initial balance at **0**.
 
 Q: How do I record a bank draw to my brokerage?
-A: Funds → **Transfer** → **liability → brokerage** → disbursement amount. **One entry only**; do not also record **Deposit** on the liability account (avoids double-counting debt).
+A: "Funds" → **Transfer** → **liability → brokerage** → disbursement amount. **One entry only**; do not also record **Deposit** on the liability account (avoids double-counting debt).
 
 Q: How do I record principal repayment?
-A: Funds → **Transfer** → **brokerage → liability** → amount = **principal only**. Liability balance tracks principal only and should reach zero when paid off.
+A: "Funds" → **Transfer** → **brokerage → liability** → amount = **principal only**. Liability balance tracks principal only and should reach zero when paid off.
 
 Q: Where do I record loan interest?
-A: **Brokerage account**. Funds → Loan interest → choose a brokerage account (dropdown lists brokerage accounts only). If the bank debits principal+interest together, use **two entries**: ① Transfer (brokerage→liability) for **principal**; ② Loan interest on the **brokerage** for interest.
+A: **Brokerage account**. "Funds" → **Loan interest** → choose a brokerage account (dropdown lists brokerage accounts only). If the bank debits principal+interest together, use **two entries**: ① Transfer (brokerage→liability) for **principal**; ② Loan interest on the **brokerage** for interest.
 
 Q: When is the loan considered paid off?
 A: When the liability **balance reaches zero** (overpayment is also treated as paid off). Total repayments including interest often exceed the original draw—this is normal.
 
 Q: Should I delete the account after payoff?
-A: No. Keep the account and history. At zero balance the dashboard hides the debt section.
+A: No. Keep the account and history. At zero balance the "Dashboard" hides the debt section.
 
 Q: How does the dashboard look when there is debt?
 A: **Liability "Balance / Debt" column > 0** (principal owed): shows Credit & debt cards; main card shows **net worth** (total assets − total debt). **Column = 0**: debt section hidden; main card shows **total assets**.
 
-### Transaction Types
-* **Buy/Sell**: General buy/sell transactions.
-* **Dividend Reinvestment (DRIP)**: Increases share count (stock dividend / reinvestment).
-* **Cash Dividend**: Cash credited; account balance increases.
-* **Transfer Out**: Stock transfer out from a brokerage account (e.g., transferring to another brokerage account).
-* **Transfer In**: Stock transfer into a brokerage account (e.g., transferring from another brokerage account).
-
 ## 4. Frequently Asked Questions (FAQ)
+
 Q: How is the annualized return rate calculated?
-A: Dashboard “Annualized Return (XIRR)” is a money-weighted annualized return from dated deposits/withdrawals and current total assets—not the same as price-only CAGR. The asset allocation simulator’s auto-fetched rate uses CAGR.
+A: "Dashboard" **Annualized Return (XIRR)** is a money-weighted annualized return from dated deposits/withdrawals and current total assets—not the same as price-only CAGR. "Simulator" auto-query uses CAGR.
 
 Q: How to set the exchange rate?
 A: You can set the global USD/TWD exchange rate in the top right corner, or specify the current exchange rate when transferring funds.
 
-Q: Data storage and privacy?
-A: As mentioned above, **data is completely stored on your personal device (computer or mobile)** and does not involve personal information issues. To avoid data loss due to device damage or browser cache clearing, **it is strongly recommended to regularly use the "Backup Data" function below** to save JSON files yourself.
-
-Q: Cannot download backup file?
-A: If you open the link in LINE, the system may block pop-up windows, preventing normal downloads. It is recommended to use a browser (such as Chrome or Safari) for operations.
-
-Q: Why can't stock prices be updated?
-A: Check if the stock market is set correctly. If incorrect, select "Batch Update Market" in "Transaction History" to change the market.
+Q: What is the difference between guest and member?
+A: **Guests** can sign in and use "Dashboard", "Transactions", "Funds", "Accounts", "Stock Splits", "Simulator", and other basics; the Dashboard shows summary cards and holdings. **Members** also unlock the "Rebalance" menu plus cumulative P/L charts, allocation charts, market performance, dividend heatmap, and AI historical asset correction. Subscribe from "System".
 
 Q: What are the benefits of membership?
-A: The interface will include rebalancing, charts, and annual performance tables, allowing users to better understand their investment results.
+A: Members unlock rebalancing, advanced dashboard and allocation charts, market performance, dividend heatmap, and historical data analysis to better understand their investment results.
 
-Q: Why are there checkmarks in the member's annual performance table?
-A: The parts with checkmarks show the performance at the end of that year. The parts without checkmarks are performance estimates calculated by reverse-engineering based on your return rate, which are only estimated effects.
+Q: Data storage and privacy?
+A: As mentioned above, **data is stored entirely on your local device** and does not involve personal information issues. To avoid data loss from app uninstall, device failure, or accidental deletion, **regularly tap "Download Backup (.json)" below** to save JSON files yourself.
+
+Q: Cannot download backup file?
+A: **iOS/Android app**: Tap "Download Backup (.json)" and use the system share sheet to save to Files, iCloud, or another cloud service. **Web version**: If opened inside LINE, pop-ups may be blocked—use Safari or Chrome instead.
+
+Q: Why can't stock prices be updated?
+A: Check if the stock market is set correctly. If incorrect, select "Batch Update Market" in "Transactions" to change the market.
 
 Q: Why are stock prices and exchange rates different from the current prices obtained by clicking "AI Update Prices & Exchange Rates"?
 A: Stock prices and exchange rates are scraped from web current values, so the current values may lag by three to five minutes. Therefore, do not use them as references for buying and selling. It is recommended to use securities companies as the main reference for buying and selling. This software is only suitable for statistical asset functions, such as emergency funds, travel funds, retirement funds, fixed deposits, stocks and bonds, etc. It does not have securities trading functions. Additionally, investments have profits and losses. Remember to reserve emergency funds. Thank you for using.
 
-Q: How are “used / limit / utilization %” calculated?
-A: Shown only when the liability account **“Balance / Debt” column > 0**. **Used** = that column (principal owed from fund records). **Limit** = credit limit (same currency). **Utilization** = used ÷ limit × 100% (capped at 100%). No progress bar if limit is not set.
+Q: How are "used / limit / utilization %" calculated?
+A: Shown only when the liability account **"Balance / Debt" column > 0**. **Used** = that column (principal owed from fund records). **Limit** = credit limit (same currency). **Utilization** = used ÷ limit × 100% (capped at 100%). No progress bar if limit is not set.
 
-Q: How is “estimated next-month interest” calculated?
-A: **Monthly estimate** = current balance × annual rate(%) ÷ 100 ÷ 12. Example: 2,000,000 owed at 2.2% → about **3,667** per month. Simple-interest estimate for a full month; banks may accrue daily or vary with repayments; @ shows the account annual rate.
+Q: How is "Est. next-month interest" calculated?
+A: **Est. next-month interest** = current balance × annual rate(%) ÷ 100 ÷ 12. Example: 2,000,000 owed at 2.2% → about **3,667** per month. Simple-interest estimate for a full month; banks may accrue daily or vary with repayments; @ shows the account annual rate.
 
 Q: How does debt relate to net invested, XIRR, and net worth?
 A: **Debt draws/repayments** (liability↔brokerage transfers) count in **net invested** and **XIRR** (leverage); **loan interest** does not. **Total assets** = holdings + brokerage cash; **total debt** = sum of liability balances (converted); **net worth** = total assets − total debt. After balance reaches zero, debt cards and alerts hide, but historical draws/repayments remain in the net-invested breakdown. Interpret XIRR carefully if you used leverage.
 
-Q: How to record stock transfers (from Brokerage A to Brokerage B)?
-A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → account = source (A) → date, market, ticker, quantity → choose **Target brokerage account** (B) → confirm. The app saves **both** a TRANSFER_OUT and a paired TRANSFER_IN for you—no need to add the second leg manually. The auto-created Transfer In has **fees = 0**; enter any transfer **fees on the Transfer Out** row. Price defaults to average cost—use cost basis, not market price.
-
-**Note**: Holdings move from A to B; each account's cash balance updates according to fees.
+Q: What is the Dashboard "overseas income tax progress" section?
+A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section shows an overseas income estimate (realized P/L and dividends from non-Taiwan markets), with reference thresholds at NT
+    M (filing) and NT$6.7M (basic deduction) for minimum tax. **For tax planning reference only**—excludes other income such as insurance payouts; not tax advice.
 
 ## 5. Important Disclaimers
 
@@ -754,6 +780,7 @@ A: **Recommended (one step)**: **Add Record** → type **Transfer Out** → acco
 - Stock prices, exchange rates, and other data provided by this application may differ from actual market prices due to network delays.
 - Users should not use data from this application as the sole reference for actual trading.
 - It is recommended to use real-time quotes provided by securities companies or financial institutions.`,
+
     androidPublish: 'Android Store Publishing Guide',
     androidPublishTitle: 'How to publish this tool on Google Play?',
     androidPublishDesc: 'You can convert the web app to an Android App using TWA:\n1. Register for a Google Developer account ($25).\n2. Use Bubblewrap CLI to wrap your website URL.\n3. Upload the AAB file to Play Console and submit for review.',

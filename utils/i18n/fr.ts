@@ -578,25 +578,59 @@ export const fr: Translations = {
     confirmOverride: 'Confirmer l\'écrasement',
     documentationContent: `# Manuel TradeView
 
-> **Confidentialité** : architecture hors ligne. **Toutes les données sont stockées sur votre appareil**, pas sur des serveurs. **Aucune collecte de données personnelles.**
+> **Confidentialité** :
+> Architecture hors ligne. **Toutes les données sont stockées localement sur votre appareil** (app iOS/Android ou navigateur), pas sur des serveurs. **Aucune collecte de données personnelles.**
 
 ## 1. Présentation
-TradeView est un outil de gestion d'actifs pour actions Taiwan et US qui aide les investisseurs à suivre les changements d'actifs, calculer les rendements et gérer les flux de fonds.
+TradeView est un outil de gestion d'actifs pour les marchés boursiers internationaux qui aide les investisseurs à suivre les changements d'actifs, calculer les rendements et gérer les flux de fonds.
 
 ## 2. Démarrage rapide
-1. **Créer un compte** : Allez dans « Gestion des comptes » pour ajouter votre compte bancaire ou de courtage.
-2. **Importer des fonds** : Allez dans « Gestion des fonds », sélectionnez « Importer des fonds » pour enregistrer votre salaire ou vos dépôts dans le système.
-3. **Ajouter une transaction** : Cliquez sur « Ajouter une transaction » en haut à droite pour saisir les achats/ventes d'actions.
-4. **Voir les rapports** : Retournez au « Tableau de bord » pour voir les graphiques d'actifs et les performances.
+Suivez cet ordre pour la première configuration (identique au parcours du menu hamburger « Comptes → Fonds → Historique → Tableau de bord ») :
+1. **Créer un compte** : Allez dans « Comptes » pour ajouter votre compte bancaire ou de courtage.
+2. **Importer des fonds** : Allez dans « Fonds », appuyez sur « + Ajouter un enregistrement », sélectionnez le type « Dépôt » pour enregistrer votre salaire ou vos dépôts dans le système.
+3. **Ajouter une transaction** : Dans « Historique », appuyez sur « + Ajouter un enregistrement » en haut à droite pour saisir les achats/ventes d'actions.
+4. **Voir les rapports** : Retournez au « Tableau de bord » pour le résumé ; les **membres** ont aussi graphiques P/L cumulé, allocation, performance marché et carte thermique des dividendes.
 
 ## 3. Fonctions détaillées
+Les sections ci-dessous suivent l'ordre du menu hamburger (**invité** et **membre** : visibilité légèrement différente ; voir FAQ).
 
-### Gestion des fonds (Fund Management)
-* **Importer (Import)** : Entrée de fonds externes (par exemple, salaire).
-* **Exporter (Export)** : Sortie de fonds (par exemple, retrait de frais de subsistance).
-* **Virement (Transfer)** : Mouvement de fonds entre différents comptes (par exemple, banque vers compte de courtage).
-* **Intérêts** : Enregistrement des intérêts sur dépôts ou comptes de courtage.
-* **Intérêts d'emprunt** : Charge d'intérêts ; enregistrés sur un **compte de courtage**, ils réduisent la trésorerie (les comptes passif n'apparaissent pas dans la liste).
+### Tableau de bord
+« Tableau de bord » est la page d'accueil par défaut avec cartes résumé et positions. **Membres** : graphiques P/L cumulé, allocation, performance marché et carte thermique des dividendes. En cas de dette sur compte passif, cartes **Crédit & passif** (voir Q&R crédit ci-dessous).
+
+**Carte thermique des dividendes (membres)** : pour un **Réinvestissement des dividendes (DRIP)** en attente, allez dans « Historique » et « + Ajouter un enregistrement »—ne pas utiliser **Ajouter aux transactions** sur la carte (réservé aux dividendes en espèces).
+
+### Historique
+Enregistrez achats, ventes, dividendes et transferts d'actions. « + Ajouter un enregistrement » en haut à droite ; « Mise à jour groupée des marchés » pour ajuster plusieurs transactions.
+
+**Types de transactions**
+* **Buy/Sell** : Achat/vente général.
+* **Réinvestissement des dividendes (DRIP)** : augmente le nombre d'actions (dividende en actions ou réinvestissement).
+* **Dividende en espèces** : crédit en espèces ; le solde augmente.
+* **Transfert sortant** : transfert d'actions hors d'un compte de courtage.
+* **Transfert entrant** : transfert d'actions dans un compte de courtage.
+
+**Transfert d'actions (Courtier A → Courtier B)**
+**Recommandé (en une fois)** : « + Ajouter un enregistrement » → type **Transfert sortant** → compte source (A) → date, marché, symbole, quantité → choisir le **compte cible** (B) → **Confirmer et enregistrer**. L'application crée **sortant et entrant ensemble** ; l'entrée auto a **frais = 0**—saisissez les frais sur la **sortie**. Prix par défaut = coût moyen (pas le cours du marché).
+
+### Fonds
+« + Ajouter un enregistrement » pour les flux. Catégories :
+* **Dépôt** : entrée externe (ex. salaire).
+* **Retrait** : sortie (ex. frais de subsistance).
+* **Virement** : mouvement entre comptes (ex. banque vers courtage).
+* **Intérêts** : intérêts sur dépôts ou comptes de courtage.
+* **Intérêts d'emprunt** : charge d'intérêts ; sur **compte de courtage**, réduit la trésorerie.
+
+### Comptes
+Ajoutez ou modifiez comptes bancaires ou de courtage. **Type de compte** : **Courtage (investissement)** ou **Passif (dette)** ; voir Q&R crédit ci-dessous.
+
+### Splits
+La page « Splits » enregistre les événements de split. Les transactions conservent quantités et prix saisis ; les splits ajustent positions et P/L à partir de la date d'effet. Ne pas enregistrer deux fois des trades post-split avec quantités déjà ajustées.
+
+### Rééquilibrage (membres)
+« Rééquilibrage » définit les poids cibles : mêmes symboles fusionnés ; cochez **Activer** pour choisir les participants. Poids sauvegardés automatiquement, ou « Réinitialiser aux poids actuels ».
+
+### Simulateur
+« Simulateur » compare les rendements attendus de différentes allocations. Saisissez rendements annualisés et poids ; « 🔍 Auto Query » récupère le CAGR (différent du **Rendement annualisé (XIRR)** du « Tableau de bord »). ⚠️ Performances passées ≠ résultats futurs. Référence uniquement.
 
 ### Crédit / passif (Q&R)
 
@@ -604,71 +638,63 @@ Q : Que signifie le solde d'un compte passif ?
 R : **Capital dû** (ce que vous devez à la banque), pas de la trésorerie disponible. Solde zéro = soldé.
 
 Q : Comment créer un compte passif ?
-R : **Gestion des comptes** → Ajouter → type **Passif (dette)** → nom, devise, taux annuel, plafond optionnel. Solde initial **0**.
+R : « Comptes » → **Type de compte** **Passif (dette)** → **Nom**, **Devise**, **Taux annuel (%)**, **Plafond de crédit** (optionnel) → **Ajouter**. Solde initial **0**.
 
 Q : Comment enregistrer un décaissement bancaire vers le courtage ?
-R : Fonds → **Virement** → **passif → courtage** → montant du décaissement. **Une seule écriture** ; pas de **Import** supplémentaire sur le passif (évite la double comptabilisation).
+R : « Fonds » → **Virement** → **passif → courtage** → montant. **Une seule écriture** ; pas de **Dépôt** supplémentaire sur le passif.
 
 Q : Comment enregistrer le remboursement du capital ?
-R : Fonds → **Virement** → **courtage → passif** → montant = **capital uniquement**. Le solde passif ne suit que le capital et doit être zéro une fois remboursé.
+R : « Fonds » → **Virement** → **courtage → passif** → montant = **capital uniquement**. Le solde passif ne suit que le capital.
 
 Q : Où enregistrer les intérêts d'emprunt ?
-R : **Compte de courtage**. Fonds → Intérêts d'emprunt → choisir un compte de courtage (liste courtage uniquement). Si la banque débite capital+intérêts ensemble, **deux écritures** : ① Virement (courtage→passif) pour le **capital** ; ② Intérêts d'emprunt sur le **courtage** pour les intérêts.
+R : **Compte de courtage**. « Fonds » → **Intérêts d'emprunt** → courtage (liste courtage uniquement). Débit « capital+intérêts » : **deux écritures** : ① Virement (courtage→passif) **capital** ; ② Intérêts d'emprunt sur **courtage**.
 
 Q : Quand le prêt est-il considéré comme soldé ?
-R : Lorsque le **solde atteint zéro** (un trop-perçu compte aussi comme soldé). Le total remboursé incluant les intérêts dépasse souvent le montant initial—c'est normal.
+R : Lorsque le **solde atteint zéro** (trop-perçu = soldé). Total remboursé incluant intérêts > montant initial—normal.
 
 Q : Supprimer le compte après remboursement ?
-R : Non. Conservez compte et historique. À solde zéro, la section dette disparaît du tableau de bord.
+R : Non. Conservez compte et historique. Solde zéro : section dette masquée sur le tableau de bord.
 
 Q : Affichage du tableau de bord avec dette ?
-R : **Colonne « Solde / Dette » > 0** (capital dû) : cartes Crédit & passif, carte principale **patrimoine net** (actif total − dette totale). **Colonne = 0** : section dette masquée, carte principale **actif total**.
-
-### Types de transactions
-* **Buy/Sell** : Achat/vente général.
-* **Réinvestissement des dividendes (DRIP)** : augmente le nombre d'actions (dividende en actions ou réinvestissement).
-* **Dividende en espèces** : crédit en espèces ; le solde augmente.
-* **Transfer Out (Sortie)** : Transfert d'actions hors d'un compte de courtage (par exemple, transfert vers un autre compte de courtage).
-* **Transfer In (Entrée)** : Transfert d'actions dans un compte de courtage (par exemple, transfert depuis un autre compte de courtage).
+R : **Colonne « Solde / Dette » > 0** : cartes Crédit & passif, **patrimoine net** (actif total − dette). **Colonne = 0** : section masquée, **actif total**.
 
 ## 4. Questions fréquemment posées (FAQ)
+
 Q : Comment le taux de rendement annualisé est-il calculé ?
-R : Le rendement annualisé du tableau de bord est une TRI/XIRR pondérée par les flux (entrées/sorties et actif total)—ce n’est pas un CAGR basé uniquement sur les cours. Le simulateur d’allocation utilise un CAGR pour la requête automatique.
+R : **Rendement annualisé (XIRR)** du « Tableau de bord » : rendement pondéré par les flux (entrées/sorties et actif total)—≠ CAGR prix seul. « Simulateur » : CAGR en requête auto.
 
 Q : Comment définir le taux de change ?
-R : Vous pouvez définir le taux de change global USD/TWD en haut à droite, ou spécifier le taux de change actuel lors du virement.
+R : Taux USD/TWD global en haut à droite, ou taux actuel lors d'un virement.
 
-Q : Stockage des données et confidentialité ?
-R : Comme mentionné précédemment, **les données sont entièrement stockées sur votre appareil personnel (ordinateur ou téléphone mobile)** et ne posent aucun problème de confidentialité. Pour éviter la perte de données due à des dommages à l'appareil ou à l'effacement du cache du navigateur, **il est fortement recommandé d'utiliser régulièrement la fonction « Sauvegarder les données » ci-dessous** pour sauvegarder vous-même les fichiers JSON.
-
-Q : Impossible de télécharger le fichier de sauvegarde ?
-R : Si vous ouvrez le lien dans LINE, le système peut bloquer les fenêtres pop-up et empêcher les téléchargements normaux. Il est recommandé d'utiliser un navigateur (comme Chrome ou Safari) pour les opérations.
-
-Q : Pourquoi les prix des actions ne peuvent-ils pas être mis à jour ?
-R : Vérifiez si le paramètre de marché pour cette action est correct. Si incorrect, sélectionnez « Mise à jour du marché en lot » dans « Historique des transactions » pour changer le marché.
+Q : Différence entre invité et membre ?
+R : **Invités** : « Tableau de bord », « Historique », « Fonds », « Comptes », « Splits », « Simulateur » et bases ; cartes résumé et positions. **Membres** : « Rééquilibrage », graphiques P/L cumulé, allocation, performance marché, carte dividendes, correction historique IA. Abonnement via « Aide ».
 
 Q : Quels sont les avantages de l'adhésion ?
-R : L'interface comprendra le rééquilibrage, les graphiques et les tableaux de performance annuels, permettant aux utilisateurs de mieux comprendre leurs résultats d'investissement.
+R : Rééquilibrage, graphiques avancés du tableau de bord et d'allocation, performance de marché, carte thermique des dividendes et analyse historique pour mieux comprendre vos résultats.
 
-Q : Pourquoi y a-t-il des coches dans le tableau de performance annuel des membres ?
-R : Les parties avec coches montrent la performance à la fin de cette année. Les parties sans coches sont des estimations de performance calculées par rétro-ingénierie basées sur votre taux de rendement, ce ne sont que des effets estimés.
+Q : Stockage des données et confidentialité ?
+R : **Données entièrement locales.** **Utilisez régulièrement « Télécharger la sauvegarde (.json) »** ci-dessous pour sauvegarder des JSON.
 
-Q : Pourquoi les prix des actions et les taux de change diffèrent-ils des prix actuels obtenus en cliquant sur « IA met à jour les prix et les taux de change » ?
-R : Comme les prix des actions et les taux de change sont récupérés à partir des valeurs actuelles des pages Web, les valeurs actuelles peuvent être retardées de trois à cinq minutes. Ne les utilisez donc pas comme valeurs de référence pour l'achat et la vente. Il est recommandé de se référer principalement aux sociétés de valeurs mobilières pour l'achat et la vente. Ce logiciel convient uniquement aux fonctions statistiques d'actifs telles que les réserves d'urgence, les fonds de voyage, les fonds de retraite, les dépôts à terme, les actions et obligations, etc. Il n'a pas de fonctions de trading de valeurs mobilières. De plus, les investissements ont des gains et des pertes. N'oubliez pas de prévoir des réserves d'urgence. Merci de votre utilisation.
+Q : Impossible de télécharger le fichier de sauvegarde ?
+R : **App iOS/Android** : partage vers Fichiers, iCloud, etc. **Web** dans LINE : pop-ups bloqués—Safari ou Chrome.
+
+Q : Pourquoi les prix des actions ne peuvent-ils pas être mis à jour ?
+R : Vérifiez le marché. Sinon « Mise à jour groupée des marchés » dans « Historique ».
+
+Q : Pourquoi les prix et taux diffèrent-ils de « IA Mettre à Jour les Prix et Taux de Change » ?
+R : Valeurs web retardées de 3–5 minutes. Ne pas utiliser pour acheter/vendre ; référez-vous aux sociétés de valeurs. Logiciel statistique d'actifs uniquement (réserves, voyage, retraite, dépôts, actions/obligations), sans trading. Investissez prudemment et gardez des réserves d'urgence. Merci.
 
 Q : Comment sont calculés « emprunté / plafond / utilisation % » ?
-R : Affiché seulement si **colonne « Solde / Dette » > 0** pour ce compte passif. **Emprunté** = cette valeur (capital dû cumulé). **Plafond** = plafond de crédit (même devise). **Utilisation** = emprunté ÷ plafond × 100 % (plafonné à 100 %). Pas de barre sans plafond.
+R : Si **colonne « Solde / Dette » > 0**. **Emprunté** = capital dû. **Plafond** = limite de crédit. **Utilisation** = emprunté ÷ plafond × 100 % (max. 100 %).
 
-Q : Comment est calculé « intérêts estimés le mois prochain » ?
-R : **Estimation** = solde actuel × taux annuel(%) ÷ 100 ÷ 12. Ex. : 2 000 000 dus à 2,2 % → env. **3 667** / mois. Estimation à intérêt simple ; la banque peut différer. @ = taux annuel du compte.
+Q : Comment est calculé « Intérêts estimés mois prochain » ?
+R : Solde × taux annuel(%) ÷ 100 ÷ 12. Ex. 2 000 000 @ 2,2 % → ~**3 667**/mois. Estimation simple.
 
 Q : Lien entre crédit, investissement net, XIRR et patrimoine net ?
-R : **Tirages/remboursements** (passif↔courtage) comptent dans **investissement net** et **XIRR** (effet de levier) ; **intérêts d'emprunt** non. **Actif total** = positions + trésorerie courtage ; **dette totale** = somme des soldes passif (convertis) ; **patrimoine net** = actif total − dette totale. À solde zéro, cartes et alertes masquées, historique conservé dans le détail d'investissement net. Interpréter le XIRR avec prudence si effet de levier.
+R : **Tirages/remboursements** (passif↔courtage) dans **investissement net** et **XIRR** ; **intérêts d'emprunt** non. **Patrimoine net** = actif total − dette totale. Interpréter XIRR avec prudence si effet de levier.
 
-Q : Comment enregistrer les transferts d'actions (du courtier A au courtier B) ?
-R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sortie** → compte source (A) → date, marché, symbole, quantité → choisir le **compte cible** (B) → valider. L'application crée **TRANSFER_OUT et TRANSFER_IN ensemble**—pas besoin d'ajouter la 2e ligne à la main. L'entrée auto a **frais = 0** ; saisissez les **frais sur la sortie**. Prix par défaut = coût moyen (pas le cours du marché).
-
-**Après transfert** : positions déplacées de A vers B ; soldes espèces mis à jour selon les frais.
+Q : Qu'est-ce que « progression fiscale revenus étrangers » ?
+R : **Devise de base TWD** : **Statistiques détaillées** estime revenus étrangers avec seuils 1 M / 6,7 M TWD. **Référence fiscale uniquement** ; pas un conseil fiscal.
 
 ## 5. Avertissements importants
 
@@ -688,6 +714,7 @@ R : **Recommandé (en une fois)** : **Ajouter un enregistrement** → type **Sor
 - Les données telles que les prix des actions et les taux de change fournis par cette application peuvent différer des prix du marché réel en raison de retards réseau.
 - Les utilisateurs ne doivent pas utiliser les données de cette application comme seule base de référence pour les transactions réelles.
 - Il est recommandé de se référer aux cotations en temps réel fournies par les sociétés de valeurs mobilières ou les institutions financières.`,
+
     androidPublish: 'Publication sur le Play Store',
     androidPublishTitle: 'Comment publier sur Google Play ?',
     androidPublishDesc: 'Emballer l\'app web en app Android avec TWA :\n1. Compte Google Developer (25 $).\n2. Bubblewrap CLI avec l’URL du site.\n3. Téléverser le AAB dans Play Console et soumettre.',
