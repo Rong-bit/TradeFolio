@@ -621,7 +621,10 @@ const DividendHeatmap: React.FC = () => {
         </div>
         {pendingListVisible ? (
           <>
-            <p className="text-sm text-slate-500 mb-3 leading-relaxed">{dtx.pendingActualSubtitle}</p>
+            <p className="text-sm text-slate-500 mb-2 leading-relaxed">{dtx.pendingActualSubtitle}</p>
+            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 leading-relaxed">
+              {dtx.pendingActualDripHint}
+            </p>
             {pendingActualLoading ? (
               <p className="text-sm text-slate-400 py-2">{dtx.pendingActualLoading}</p>
             ) : visiblePendingRows.length === 0 ? (
