@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Market, StockSplitEvent } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 import { t } from '../utils/i18n';
-import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 import {
@@ -251,7 +251,7 @@ const StockSplitManager: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 rounded border hover:bg-slate-50"
+                className={MODAL_CANCEL_BUTTON}
               >
                 {translations.common.cancel}
               </button>
