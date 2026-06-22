@@ -27,13 +27,29 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: 'esnext',
-      // 確保構建時正確處理模組
       rollupOptions: {
         output: {
-          // 確保模組格式正確
-          format: 'es'
-        }
-      }
+          format: 'es',
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (
+                id.includes('recharts') ||
+                id.includes('d3-') ||
+                id.includes('victory-vendor')
+              ) {
+                return 'vendor-recharts';
+              }
+              if (id.includes('react-dom') || id.includes('/react/')) {
+                return 'vendor-react';
+              }
+              return;
+            }
+            if (id.includes('/utils/i18n/')) {
+              return 'i18n';
+            }
+          },
+        },
+      },
     },
     define: {
       // 這裡將編譯時的 process.env.API_KEY 替換為實際的環境變數值
