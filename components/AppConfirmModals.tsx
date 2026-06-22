@@ -2,6 +2,7 @@ import React from 'react';
 import { Account, CashFlow, CashFlowType, Currency, Transaction } from '../types';
 import { Language, t } from '../utils/i18n';
 import type { AppText } from '../hooks/useAppText';
+import { MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
 
 interface Props {
   language: Language;
@@ -94,7 +95,7 @@ const AppConfirmModals: React.FC<Props> = ({
             <button
               type="button"
               onClick={cancelRemoveCashFlow}
-              className="px-4 py-2 rounded border hover:bg-slate-50"
+              className={MODAL_CANCEL_BUTTON}
             >
               {t(language).common.cancel}
             </button>
@@ -124,7 +125,7 @@ const AppConfirmModals: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setIsDeleteConfirmOpen(false)}
-                className="px-4 py-2 rounded border hover:bg-slate-50"
+                className={MODAL_CANCEL_BUTTON}
               >
                 {t(language).common.cancel}
               </button>
@@ -148,7 +149,7 @@ const AppConfirmModals: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setIsTransactionDeleteConfirmOpen(false)}
-                className="px-4 py-2 rounded border hover:bg-slate-50"
+                className={MODAL_CANCEL_BUTTON}
               >
                 {t(language).common.cancel}
               </button>
