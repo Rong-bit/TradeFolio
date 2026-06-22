@@ -5,7 +5,7 @@ import { isLiabilityAccount } from '../utils/debtAccountHelpers';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from '../utils/calculations';
 import { t, translate } from '../utils/i18n';
-import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 
@@ -486,7 +486,7 @@ const AccountManager: React.FC<Props> = () => {
                     setCreditLimit('');
                     setLinkedBrokerageAccountId('');
                   }}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded transition"
+                  className={MODAL_CANCEL_BUTTON}
                 >
                   {translations.accounts.cancel}
                 </button>
@@ -516,7 +516,7 @@ const AccountManager: React.FC<Props> = () => {
             <div className="flex justify-end gap-3">
               <button 
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded transition"
+                className={MODAL_CANCEL_BUTTON}
               >
                 {translations.common.cancel}
               </button>
