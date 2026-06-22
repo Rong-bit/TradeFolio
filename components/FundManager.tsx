@@ -21,7 +21,7 @@ import { t, translate } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
 import {
   currentYearMonth,
   stripRecurringMarkersFromNote,
@@ -1403,7 +1403,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
               </h3>
               <p className="text-sm sm:text-base text-slate-600 mb-6">{translations.funds.confirmClearAllMessage}</p>
               <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                 <button onClick={() => setIsClearConfirmOpen(false)} className="px-4 py-2 rounded border hover:bg-slate-50 text-sm sm:text-base">{translations.common.cancel}</button>
+                 <button type="button" onClick={() => setIsClearConfirmOpen(false)} className={`${MODAL_CANCEL_BUTTON} text-sm sm:text-base`}>{translations.common.cancel}</button>
                  <button 
                    onClick={() => {
                        const count = filteredFlows.length;
