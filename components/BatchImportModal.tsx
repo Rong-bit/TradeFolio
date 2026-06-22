@@ -4,6 +4,7 @@ import { Account, Market, Transaction, TransactionType } from '../types';
 import { t, translate } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
+import { MODAL_CANCEL_BUTTON_LG } from '../utils/formFieldClasses';
 
 interface Props {
   onImport: (transactions: Transaction[]) => void;
@@ -1027,7 +1028,7 @@ const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
               <div className="mb-2 flex items-center gap-2">
                 <button
                   onClick={toggleSelectAll}
-                  className="text-xs px-3 py-1 bg-slate-200 hover:bg-slate-300 rounded text-slate-700 transition"
+                  className="text-xs px-3 py-1 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-medium rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                 >
                   {selectedIds.size === previewData.length ? tr.deselectAll : tr.selectAll}
                 </button>
@@ -1123,7 +1124,7 @@ const BatchImportModal: React.FC<Props> = ({ onImport, onClose }) => {
         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
           <button 
             onClick={onClose}
-            className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-white transition"
+            className={MODAL_CANCEL_BUTTON_LG}
           >
             {tr.cancel}
           </button>
