@@ -8,9 +8,13 @@ import {
   dividendScheduleMapKey,
   marketToYahooMarketForDividends,
 } from '../utils/dividendTaxHelpers';
+import {
+  ACTUAL_DIVIDENDS_INVALIDATE_EVENT,
+  ACTUAL_DIVIDENDS_LS_KEY,
+} from '../utils/actualDividendCache';
 
 // v7：TW/US 採高精度來源，其他市場改用 Yahoo；清除舊版快取。
-const LS_KEY = 'tf-actual-dividends-v7';
+const LS_KEY = ACTUAL_DIVIDENDS_LS_KEY;
 const LEGACY_LS_KEYS = [
   'tf-actual-dividends-v1',
   'tf-actual-dividends-v2',
@@ -90,6 +94,13 @@ export function useActualDividends(
   const depKey = useMemo(() => jobs.map(j => j.key).sort().join('|'), [jobs]);
 
   const [map, setMap] = useState<ActualDividendsMap>({});
+  const [invalidateSeq, setInvalidateSeq] = useState(0);
+
+  useEffect(() => {
+    const onInvalidate = () => setInvalidateSeq(n => n + 1);
+    window.addEventListener(ACTUAL_DIVIDENDS_INVALIDATE_EVENT, onInvalidate);
+    return () => window.removeEventListener(ACTUAL_DIVIDENDS_INVALIDATE_EVENT, onInvalidate);
+  }, []);
 
   useEffect(() => {
     purgeLegacyActualDividendCaches();
@@ -139,7 +150,7 @@ export function useActualDividends(
     return () => {
       cancelled = true;
     };
-  }, [depKey]);
+  }, [depKey, invalidateSeq]);
 
   return map;
 }

@@ -3,6 +3,7 @@ import { usePortfolioLocalStorage } from './usePortfolioLocalStorage';
 import { Transaction, Account, CashFlow, HistoricalData, Market, RecurringDepositRule, StockSplitEvent } from '../types';
 import { applyRecurringDeposits } from '../utils/recurringDeposits';
 import { holdingPriceKey, quoteCurrencyForTransaction } from '../utils/calculations';
+import { invalidateActualDividendCacheForTx } from '../utils/actualDividendCache';
 
 export interface PortfolioDataState {
   transactions: Transaction[];
@@ -100,6 +101,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
   // ── Transactions ──────────────────────────────────────────────
 
   const addTransaction = useCallback((tx: Transaction) => {
+    invalidateActualDividendCacheForTx(tx);
     setData(prev => {
       const newPrices = { ...prev.currentPrices };
       const key = holdingPriceKey(
@@ -117,20 +119,30 @@ export function usePortfolioData(userPrefix: string | undefined) {
   }, []);
 
   const updateTransaction = useCallback((tx: Transaction) => {
-    setData(prev => ({
-      ...prev,
-      transactions: prev.transactions.map(t => t.id === tx.id ? tx : t),
-    }));
+    setData(prev => {
+      const old = prev.transactions.find(t => t.id === tx.id);
+      if (old) invalidateActualDividendCacheForTx(old);
+      invalidateActualDividendCacheForTx(tx);
+      return {
+        ...prev,
+        transactions: prev.transactions.map(t => (t.id === tx.id ? tx : t)),
+      };
+    });
   }, []);
 
   const removeTransaction = useCallback((id: string) => {
-    setData(prev => ({
-      ...prev,
-      transactions: prev.transactions.filter(t => t.id !== id),
-    }));
+    setData(prev => {
+      const removed = prev.transactions.find(t => t.id === id);
+      if (removed) invalidateActualDividendCacheForTx(removed);
+      return {
+        ...prev,
+        transactions: prev.transactions.filter(t => t.id !== id),
+      };
+    });
   }, []);
 
   const addBatchTransactions = useCallback((txs: Transaction[]) => {
+    txs.forEach(invalidateActualDividendCacheForTx);
     setData(prev => {
       const newPrices = { ...prev.currentPrices };
       txs.forEach(tx => {
@@ -156,10 +168,15 @@ export function usePortfolioData(userPrefix: string | undefined) {
   const removeTransactionsByIds = useCallback((ids: string[]) => {
     if (ids.length === 0) return;
     const idSet = new Set(ids);
-    setData(prev => ({
-      ...prev,
-      transactions: prev.transactions.filter(tx => !idSet.has(tx.id)),
-    }));
+    setData(prev => {
+      prev.transactions
+        .filter(tx => idSet.has(tx.id))
+        .forEach(invalidateActualDividendCacheForTx);
+      return {
+        ...prev,
+        transactions: prev.transactions.filter(tx => !idSet.has(tx.id)),
+      };
+    });
   }, []);
 
   const batchUpdateMarket = useCallback((updates: { id: string; market: Market }[]) => {
