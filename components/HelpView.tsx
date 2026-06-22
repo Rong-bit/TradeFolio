@@ -4,6 +4,7 @@ import { useUI } from '../contexts/UIContext';
 import { ADMIN_EMAIL } from '../config';
 import { openMailTo } from '../utils/openMailTo';
 import DocumentationContent from './DocumentationContent';
+import { MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
 
 interface Props {
   onExport: () => void;
@@ -212,7 +213,7 @@ const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin, onDelet
                       {translate('help.confirmDeleteAppAccountMessage', language, { user: currentUser ?? '' })}
                   </p>
                   <div className="flex justify-center gap-4">
-                      <button onClick={() => setShowDeleteConfirm(false)} className="bg-slate-200 text-slate-800 px-4 py-2 rounded hover:bg-slate-300">
+                      <button type="button" onClick={() => setShowDeleteConfirm(false)} className={MODAL_CANCEL_BUTTON}>
                           {translations.common.cancel}
                       </button>
                       <button
@@ -241,7 +242,7 @@ const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin, onDelet
                       {translations.help.confirmImportWarning}
                   </p>
                   <div className="flex justify-center gap-4">
-                      <button onClick={cancelImport} className="bg-slate-200 text-slate-800 px-4 py-2 rounded hover:bg-slate-300">
+                      <button type="button" onClick={cancelImport} className={MODAL_CANCEL_BUTTON}>
                           {translations.common.cancel}
                       </button>
                       <button onClick={confirmImport} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 shadow">
