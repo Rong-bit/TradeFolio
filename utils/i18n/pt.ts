@@ -569,7 +569,7 @@ export const pt: Translations = {
     contactEmail: 'Contactar administrador (e-mail)',
     deleteAppAccount: 'Excluir conta e dados',
     deleteAppAccountDesc: 'Remove permanentemente o estado de login e todos os dados locais neste dispositivo. Irreversível. Para cancelar assinatura: Ajustes → Assinaturas.',
-    confirmDeleteAppAccount: 'Confirmar exclusão da conta',
+    confirmDeleteAppAccount: 'Excluir conta e dados',
     confirmDeleteAppAccountMessage: 'Todos os dados locais de «{user}» serão excluídos permanentemente. Continuar?',
     documentation: 'Documentação',
     copyAll: 'Copiar tudo',

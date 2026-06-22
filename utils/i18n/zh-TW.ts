@@ -630,7 +630,7 @@ export const zhTW: Translations = {
     contactEmail: '聯絡管理員',
     deleteAppAccount: '刪除帳號與資料',
     deleteAppAccountDesc: '永久清除本機登入狀態與所有相關資料（交易、帳戶等）。此操作僅影響此裝置且無法復原。訂閱取消請至裝置「設定 → 訂閱項目」。',
-    confirmDeleteAppAccount: '確認刪除帳號與資料',
+    confirmDeleteAppAccount: '刪除帳號與資料',
     confirmDeleteAppAccountMessage: '將永久清除帳號「{user}」在本機的所有資料，且無法復原。確定要刪除嗎？',
     documentation: '使用說明',
     copyAll: '複製全文',

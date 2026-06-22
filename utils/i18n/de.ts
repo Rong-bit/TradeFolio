@@ -542,7 +542,7 @@ holdings: {
     contactEmail: 'Administrator kontaktieren (E-Mail)',
     deleteAppAccount: 'Konto und Daten löschen',
     deleteAppAccountDesc: 'Löscht dauerhaft Anmeldestatus und alle lokalen Daten auf diesem Gerät. Nicht rückgängig zu machen. Abo kündigen: Einstellungen → Abonnements.',
-    confirmDeleteAppAccount: 'Konto und Daten löschen bestätigen',
+    confirmDeleteAppAccount: 'Konto und Daten löschen',
     confirmDeleteAppAccountMessage: 'Alle lokalen Daten für „{user}“ werden dauerhaft gelöscht. Fortfahren?',
     documentation: 'Dokumentation',
     copyAll: 'Alles kopieren',

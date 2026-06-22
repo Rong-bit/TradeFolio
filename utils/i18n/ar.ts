@@ -587,7 +587,7 @@ export const ar: Translations = {
     contactEmail: 'الاتصال بالمسؤول (بريد)',
     deleteAppAccount: 'حذف الحساب والبيانات',
     deleteAppAccountDesc: 'يمسح حالة تسجيل الدخول وجميع البيانات المحلية على هذا الجهاز نهائياً. لا يمكن التراجع. لإلغاء الاشتراك: الإعدادات → الاشتراكات.',
-    confirmDeleteAppAccount: 'تأكيد حذف الحساب',
+    confirmDeleteAppAccount: 'حذف الحساب والبيانات',
     confirmDeleteAppAccountMessage: 'سيتم حذف جميع البيانات المحلية لـ «{user}» نهائياً. المتابعة؟',
     documentation: 'التوثيق',
     copyAll: 'نسخ الكل',

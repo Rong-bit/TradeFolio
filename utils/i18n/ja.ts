@@ -633,7 +633,7 @@ export const ja: Translations = {
     contactEmail: '管理者連絡先(メール)',
     deleteAppAccount: 'アカウントとデータを削除',
     deleteAppAccountDesc: 'この端末のログイン状態とすべてのローカルデータを完全に削除します。元に戻せません。サブスクリプションの解約は端末の「設定 → サブスクリプション」から行ってください。',
-    confirmDeleteAppAccount: 'アカウントとデータの削除を確認',
+    confirmDeleteAppAccount: 'アカウントとデータを削除',
     confirmDeleteAppAccountMessage: '「{user}」のローカルデータをすべて完全に削除します。元に戻せません。続行しますか？',
     documentation: 'ドキュメント',
     copyAll: 'コピー',

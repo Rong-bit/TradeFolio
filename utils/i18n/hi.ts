@@ -587,7 +587,7 @@ export const hi: Translations = {
     contactEmail: 'व्यवस्थापक से संपर्क (ईमेल)',
     deleteAppAccount: 'खाता और डेटा हटाएं',
     deleteAppAccountDesc: 'इस डिवाइस पर लॉगिन स्थिति और सभी स्थानीय डेटा स्थायी रूप से हटाएं। पूर्ववत नहीं। सदस्यता रद्द: सेटिंग्स → सदस्यताएँ।',
-    confirmDeleteAppAccount: 'खाता हटाने की पुष्टि',
+    confirmDeleteAppAccount: 'खाता और डेटा हटाएं',
     confirmDeleteAppAccountMessage: '「{user}」का सभी स्थानीय डेटा स्थायी रूप से हटा दिया जाएगा। जारी रखें?',
     documentation: 'दस्तावेज़ीकरण',
     copyAll: 'सब कॉपी करें',

@@ -633,7 +633,7 @@ export const ko: Translations = {
     contactEmail: '관리자 연락처(이메일)',
     deleteAppAccount: '계정 및 데이터 삭제',
     deleteAppAccountDesc: '이 기기의 로그인 상태와 모든 로컬 데이터를 영구 삭제합니다. 되돌릴 수 없습니다. 구독 취소는 기기의 설정 → 구독에서 하세요.',
-    confirmDeleteAppAccount: '계정 및 데이터 삭제 확인',
+    confirmDeleteAppAccount: '계정 및 데이터 삭제',
     confirmDeleteAppAccountMessage: '「{user}」의 로컬 데이터를 모두 영구 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?',
     documentation: '문서',
     copyAll: '복사',

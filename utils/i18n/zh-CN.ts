@@ -479,7 +479,7 @@ zhCN.help = {
   contactEmail: '联系管理员',
   deleteAppAccount: '删除账号与数据',
   deleteAppAccountDesc: '永久清除本机登录状态与所有相关数据（交易、账户等）。此操作仅影响此设备且无法复原。订阅取消请至设备「设置 → 订阅项目」。',
-  confirmDeleteAppAccount: '确认删除账号与数据',
+  confirmDeleteAppAccount: '删除账号与数据',
   confirmDeleteAppAccountMessage: '将永久清除账号「{user}」在本机的所有数据，且无法复原。确定要删除吗？',
   documentation: '使用说明',
   copyAll: '复制全文',

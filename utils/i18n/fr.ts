@@ -570,7 +570,7 @@ export const fr: Translations = {
     contactEmail: 'Contacter l\'administrateur (e-mail)',
     deleteAppAccount: 'Supprimer le compte et les données',
     deleteAppAccountDesc: 'Efface définitivement l\'état de connexion et toutes les données locales sur cet appareil. Irréversible. Pour annuler l\'abonnement : Réglages → Abonnements.',
-    confirmDeleteAppAccount: 'Confirmer la suppression du compte',
+    confirmDeleteAppAccount: 'Supprimer le compte et les données',
     confirmDeleteAppAccountMessage: 'Toutes les données locales de « {user} » seront définitivement supprimées. Continuer ?',
     documentation: 'Guide utilisateur',
     copyAll: 'Tout copier',
