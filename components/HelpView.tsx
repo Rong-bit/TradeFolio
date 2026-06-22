@@ -152,19 +152,6 @@ const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin }) => {
         </button>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow border-l-4 border-violet-500">
-        <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-          </svg>
-          {translations.help.androidPublish}
-        </h3>
-        <div className="text-sm text-slate-700 leading-relaxed bg-violet-50 dark:bg-violet-900/20 p-4 rounded border border-violet-100 dark:border-violet-700/40">
-          <p className="mb-2 font-bold">{translations.help.androidPublishTitle}</p>
-          <p className="whitespace-pre-line">{translations.help.androidPublishDesc}</p>
-        </div>
-      </div>
-
       {/* Help Content */}
       <div className="bg-white p-6 rounded-lg shadow border-l-4 border-slate-500">
           <div className="flex justify-between items-center mb-4">
