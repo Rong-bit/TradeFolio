@@ -567,6 +567,10 @@ export const pt: Translations = {
     contactTitle: 'Gosta do sistema?',
     contactDesc: 'Não membro e quer direitos permanentes, ou sugestões/erros? Contacte o desenvolvedor. Respostas podem demorar.',
     contactEmail: 'Contactar administrador (e-mail)',
+    deleteAppAccount: 'Excluir conta e dados',
+    deleteAppAccountDesc: 'Remove permanentemente o estado de login e todos os dados locais neste dispositivo. Irreversível. Para cancelar assinatura: Ajustes → Assinaturas.',
+    confirmDeleteAppAccount: 'Confirmar exclusão da conta',
+    confirmDeleteAppAccountMessage: 'Todos os dados locais de «{user}» serão excluídos permanentemente. Continuar?',
     documentation: 'Documentação',
     copyAll: 'Copiar tudo',
     copied: 'Copiado!',
@@ -714,9 +718,6 @@ R: **Moeda base TWD** : **Estatísticas detalhadas** estima rendimentos no estra
 - Os utilizadores não devem usar os dados desta aplicação como única base de referência para transações reais.
 - É recomendado referir-se a cotações em tempo real fornecidas por empresas de valores mobiliários ou instituições financeiras.`,
 
-    androidPublish: 'Publicação na loja Android',
-    androidPublishTitle: 'Como publicar no Google Play?',
-    androidPublishDesc: 'Empacotar a app web como app Android com TWA:\n1. Conta Google Developer (25 USD).\n2. Bubblewrap CLI com o URL do site.\n3. Enviar ficheiro AAB para a Play Console e submeter.',
   },
   transactionForm: {
     ...en.transactionForm,

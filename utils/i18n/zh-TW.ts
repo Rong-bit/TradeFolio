@@ -628,6 +628,10 @@ export const zhTW: Translations = {
     contactTitle: '問題回報與建議',
     contactDesc: '若有功能建議或 Bug 回報，歡迎來信。公餘時間維護，回覆較慢請見諒。',
     contactEmail: '聯絡管理員',
+    deleteAppAccount: '刪除帳號與資料',
+    deleteAppAccountDesc: '永久清除本機登入狀態與所有相關資料（交易、帳戶等）。此操作僅影響此裝置且無法復原。訂閱取消請至裝置「設定 → 訂閱項目」。',
+    confirmDeleteAppAccount: '確認刪除帳號與資料',
+    confirmDeleteAppAccountMessage: '將永久清除帳號「{user}」在本機的所有資料，且無法復原。確定要刪除嗎？',
     documentation: '使用說明',
     copyAll: '複製全文',
     copied: '已複製!',
@@ -774,9 +778,6 @@ A: 當**基準幣為台幣 (TWD)** 時，「儀表板」的 **詳細統計** 區
 - 本應用程式提供的股價、匯率等資料可能因網路延遲而與實際市場價格有所差異。
 - 使用者不應將本應用程式的資料作為實際買賣的唯一參考依據。
 - 建議以證券公司或金融機構提供的即時報價為準。`,
-    androidPublish: '上架安卓商店指南',
-    androidPublishTitle: '如何將此工具上架到 Google Play？',
-    androidPublishDesc: '您可以透過 TWA 技術將網頁轉為 Android App：\n1. 註冊 Google 開發者帳號 ($25)。\n2. 使用 Bubblewrap CLI 工具封裝您的網站網址。\n3. 在 Play Console 上傳 AAB 檔並提交審核。',
   },
   transactionForm: {
     addTransaction: '新增交易',

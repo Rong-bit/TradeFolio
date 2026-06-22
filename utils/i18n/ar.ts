@@ -585,6 +585,10 @@ export const ar: Translations = {
     contactTitle: 'يعجبك النظام؟',
     contactDesc: 'غير عضو وترغب بحق استخدام دائم أو لديك اقتراحات/أخطاء؟ تواصل مع المطور. قد يتأخر الرد.',
     contactEmail: 'الاتصال بالمسؤول (بريد)',
+    deleteAppAccount: 'حذف الحساب والبيانات',
+    deleteAppAccountDesc: 'يمسح حالة تسجيل الدخول وجميع البيانات المحلية على هذا الجهاز نهائياً. لا يمكن التراجع. لإلغاء الاشتراك: الإعدادات → الاشتراكات.',
+    confirmDeleteAppAccount: 'تأكيد حذف الحساب',
+    confirmDeleteAppAccountMessage: 'سيتم حذف جميع البيانات المحلية لـ «{user}» نهائياً. المتابعة؟',
     documentation: 'التوثيق',
     copyAll: 'نسخ الكل',
     copied: 'تم النسخ!',
@@ -732,9 +736,6 @@ TradeView أداة إدارة أصول لأسواق الأسهم العالمي�
 - لا ينبغي للمستخدمين استخدام بيانات هذا التطبيق كأساس مرجعي وحيد للمعاملات الفعلية.
 - يُنصح بالرجوع إلى الأسعار في الوقت الفعلي المقدمة من شركات الأوراق المالية أو المؤسسات المالية.`,
 
-    androidPublish: 'نشر متجر Android',
-    androidPublishTitle: 'كيف تنشر على Google Play؟',
-    androidPublishDesc: 'لف تطبيق الويب كتطبيق أندرويد بـ TWA:\n1. حساب مطور Google (25$).\n2. Bubblewrap CLI مع رابط الموقع.\n3. ارفع AAB إلى Play Console وقدم للمراجعة.',
   },
   transactionForm: {
     ...en.transactionForm,

@@ -540,6 +540,10 @@ holdings: {
     contactTitle: 'Gefällt Ihnen das System?',
     contactDesc: 'Als Nicht-Mitglied dauerhafte Nutzungsrechte oder Vorschläge/Meldungen? Bitte den Entwickler kontaktieren. Pflege in Freizeit, Antworten können verzögert sein.',
     contactEmail: 'Administrator kontaktieren (E-Mail)',
+    deleteAppAccount: 'Konto und Daten löschen',
+    deleteAppAccountDesc: 'Löscht dauerhaft Anmeldestatus und alle lokalen Daten auf diesem Gerät. Nicht rückgängig zu machen. Abo kündigen: Einstellungen → Abonnements.',
+    confirmDeleteAppAccount: 'Konto und Daten löschen bestätigen',
+    confirmDeleteAppAccountMessage: 'Alle lokalen Daten für „{user}“ werden dauerhaft gelöscht. Fortfahren?',
     documentation: 'Dokumentation',
     copyAll: 'Alles kopieren',
     copied: 'Kopiert!',
@@ -687,9 +691,6 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistik** eine Schätzung au
 - Benutzer sollten die Daten dieser Anwendung nicht als einzige Referenzbasis für tatsächliche Transaktionen verwenden.
 - Es wird empfohlen, sich an Echtzeitkurse zu halten, die von Wertpapierfirmen oder Finanzinstituten bereitgestellt werden.`,
 
-    androidPublish: 'Android-Store-Veröffentlichung',
-    androidPublishTitle: 'Wie bei Google Play veröffentlichen?',
-    androidPublishDesc: 'Mit TWA die Web-App als Android-App packen:\n1. Google-Developer-Konto (25 USD).\n2. Bubblewrap CLI mit Ihrer Website-URL.\n3. AAB in Play Console hochladen und einreichen.',
   },
   transactionForm: {
     ...en.transactionForm,

@@ -633,6 +633,10 @@ export const en: Translations = {
     contactTitle: 'Feedback & Support',
     contactDesc: 'For feature suggestions or bug reports, please email us. Maintained in spare time; responses may be slower.',
     contactEmail: 'Contact Administrator (Email)',
+    deleteAppAccount: 'Delete Account & Data',
+    deleteAppAccountDesc: 'Permanently clears login state and all local data (transactions, accounts, etc.) on this device. This cannot be undone. To cancel a subscription, go to Settings → Subscriptions on your device.',
+    confirmDeleteAppAccount: 'Confirm Delete Account & Data',
+    confirmDeleteAppAccountMessage: 'This will permanently delete all local data for "{user}". This cannot be undone. Continue?',
     documentation: 'Documentation',
     copyAll: 'Copy All',
     copied: 'Copied!',
@@ -781,9 +785,6 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
 - Users should not use data from this application as the sole reference for actual trading.
 - It is recommended to use real-time quotes provided by securities companies or financial institutions.`,
 
-    androidPublish: 'Android Store Publishing Guide',
-    androidPublishTitle: 'How to publish this tool on Google Play?',
-    androidPublishDesc: 'You can convert the web app to an Android App using TWA:\n1. Register for a Google Developer account ($25).\n2. Use Bubblewrap CLI to wrap your website URL.\n3. Upload the AAB file to Play Console and submit for review.',
   },
   transactionForm: {
     addTransaction: 'Add Transaction',

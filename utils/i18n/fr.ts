@@ -568,6 +568,10 @@ export const fr: Translations = {
     contactTitle: 'Vous aimez ce système ?',
     contactDesc: 'Non-membre souhaitant des droits d\'usage permanents, ou suggestions/bugs : contactez le développeur. Réponses parfois lentes.',
     contactEmail: 'Contacter l\'administrateur (e-mail)',
+    deleteAppAccount: 'Supprimer le compte et les données',
+    deleteAppAccountDesc: 'Efface définitivement l\'état de connexion et toutes les données locales sur cet appareil. Irréversible. Pour annuler l\'abonnement : Réglages → Abonnements.',
+    confirmDeleteAppAccount: 'Confirmer la suppression du compte',
+    confirmDeleteAppAccountMessage: 'Toutes les données locales de « {user} » seront définitivement supprimées. Continuer ?',
     documentation: 'Guide utilisateur',
     copyAll: 'Tout copier',
     copied: 'Copié !',
@@ -715,9 +719,6 @@ R : **Devise de base TWD** : **Statistiques détaillées** estime revenus étran
 - Les utilisateurs ne doivent pas utiliser les données de cette application comme seule base de référence pour les transactions réelles.
 - Il est recommandé de se référer aux cotations en temps réel fournies par les sociétés de valeurs mobilières ou les institutions financières.`,
 
-    androidPublish: 'Publication sur le Play Store',
-    androidPublishTitle: 'Comment publier sur Google Play ?',
-    androidPublishDesc: 'Emballer l\'app web en app Android avec TWA :\n1. Compte Google Developer (25 $).\n2. Bubblewrap CLI avec l’URL du site.\n3. Téléverser le AAB dans Play Console et soumettre.',
   },
   transactionForm: {
     ...en.transactionForm,

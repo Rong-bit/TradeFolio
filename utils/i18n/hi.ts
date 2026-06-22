@@ -585,6 +585,10 @@ export const hi: Translations = {
     contactTitle: 'सिस्टम पसंद है?',
     contactDesc: 'गैर-सदस्य स्थायी उपयोग चाहते हैं या सुझाव/बग रिपोर्ट: डेवलपर से संपर्क करें। जवाब में देरी हो सकती है।',
     contactEmail: 'व्यवस्थापक से संपर्क (ईमेल)',
+    deleteAppAccount: 'खाता और डेटा हटाएं',
+    deleteAppAccountDesc: 'इस डिवाइस पर लॉगिन स्थिति और सभी स्थानीय डेटा स्थायी रूप से हटाएं। पूर्ववत नहीं। सदस्यता रद्द: सेटिंग्स → सदस्यताएँ।',
+    confirmDeleteAppAccount: 'खाता हटाने की पुष्टि',
+    confirmDeleteAppAccountMessage: '「{user}」का सभी स्थानीय डेटा स्थायी रूप से हटा दिया जाएगा। जारी रखें?',
     documentation: 'दस्तावेज़ीकरण',
     copyAll: 'सब कॉपी करें',
     copied: 'कॉपी हो गया!',
@@ -732,9 +736,6 @@ TradeView विभिन्न देशों के शेयर बाजा
 - उपयोगकर्ताओं को इस एप्लिकेशन के डेटा को वास्तविक खरीद/बिक्री के एकमात्र संदर्भ आधार के रूप में उपयोग नहीं करना चाहिए।
 - प्रतिभूति कंपनियों या वित्तीय संस्थानों द्वारा प्रदान किए गए वास्तविक समय उद्धरणों को मानक के रूप में सुझाव दिया जाता है。`,
 
-    androidPublish: 'Android स्टोर प्रकाशन',
-    androidPublishTitle: 'Google Play पर कैसे प्रकाशित करें?',
-    androidPublishDesc: 'TWA से वेब ऐप को Android ऐप में लपेटें:\n1. Google डेवलपर खाता ($25)।\n2. Bubblewrap CLI से साइट URL लपेटें।\n3. Play Console में AAB अपलोड करें और सबमिट करें।',
   },
   transactionForm: {
     ...en.transactionForm,

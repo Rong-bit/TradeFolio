@@ -477,6 +477,10 @@ zhCN.help = {
   contactTitle: '问题回报与建议',
   contactDesc: '若有功能建议或 Bug 回报，欢迎来信。业余时间维护，回复较慢请见谅。',
   contactEmail: '联系管理员',
+  deleteAppAccount: '删除账号与数据',
+  deleteAppAccountDesc: '永久清除本机登录状态与所有相关数据（交易、账户等）。此操作仅影响此设备且无法复原。订阅取消请至设备「设置 → 订阅项目」。',
+  confirmDeleteAppAccount: '确认删除账号与数据',
+  confirmDeleteAppAccountMessage: '将永久清除账号「{user}」在本机的所有数据，且无法复原。确定要删除吗？',
   documentation: '使用说明',
   copyAll: '复制全文',
   copied: '已复制!',
@@ -624,9 +628,6 @@ A: 当**基准币为台币 (TWD)** 时，「仪表板」的 **详细统计** 区
 - 使用者不应将本应用程序的数据作为实际买卖的唯一参考依据。
 - 建议以证券公司或金融机构提供的即时报价为准。`,
 
-    androidPublish: '上架安卓商店指南',
-  androidPublishTitle: '如何将此工具上架到 Google Play？',
-  androidPublishDesc: '您可透过 TWA 技术将网页转为 Android App：\n1. 注册 Google 开发者账号（$25）。\n2. 使用 Bubblewrap CLI 工具封装您的网站网址。\n3. 在 Play Console 上传 AAB 档并提交审核。',
 };
 zhCN.batchImportModal = {
   title: '批次汇入交易 (Batch Import)',

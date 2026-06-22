@@ -631,6 +631,10 @@ export const ja: Translations = {
     contactTitle: 'ご利用ありがとう',
     contactDesc: 'メンバー外で永久利用権をご希望の方、機能提案・不具合報告は開発者まで。',
     contactEmail: '管理者連絡先(メール)',
+    deleteAppAccount: 'アカウントとデータを削除',
+    deleteAppAccountDesc: 'この端末のログイン状態とすべてのローカルデータを完全に削除します。元に戻せません。サブスクリプションの解約は端末の「設定 → サブスクリプション」から行ってください。',
+    confirmDeleteAppAccount: 'アカウントとデータの削除を確認',
+    confirmDeleteAppAccountMessage: '「{user}」のローカルデータをすべて完全に削除します。元に戻せません。続行しますか？',
     documentation: 'ドキュメント',
     copyAll: 'コピー',
     copied: 'コピーしました！',
@@ -777,9 +781,6 @@ A: **基準通貨が台湾ドル (TWD)** のとき、「ダッシュボード」
 - ユーザーは本アプリケーションのデータを実際の売買の唯一の参考基準として使用すべきではありません。
 - 証券会社または金融機関が提供するリアルタイム見積もりを基準とすることをお勧めします。`,
 
-    androidPublish: 'Android公開ガイド',
-    androidPublishTitle: 'Google Playへの公開方法',
-    androidPublishDesc: 'TWAでWebアプリをラップしてAndroid化できます。\n1. Googleデベロッパーアカウント登録（25ドル）。\n2. Bubblewrap CLIでサイトURLをラップ。\n3. Play ConsoleでAABをアップロードし審査に提出。',
   },
   transactionForm: {
     addTransaction: '取引追加',

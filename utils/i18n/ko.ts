@@ -631,6 +631,10 @@ export const ko: Translations = {
     contactTitle: '이용해 주셔서 감사합니다',
     contactDesc: '비회원으로 영구 이용권을 원하시거나 기능 제안·버그 리포트는 개발자에게 문의하세요.',
     contactEmail: '관리자 연락처(이메일)',
+    deleteAppAccount: '계정 및 데이터 삭제',
+    deleteAppAccountDesc: '이 기기의 로그인 상태와 모든 로컬 데이터를 영구 삭제합니다. 되돌릴 수 없습니다. 구독 취소는 기기의 설정 → 구독에서 하세요.',
+    confirmDeleteAppAccount: '계정 및 데이터 삭제 확인',
+    confirmDeleteAppAccountMessage: '「{user}」의 로컬 데이터를 모두 영구 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?',
     documentation: '문서',
     copyAll: '복사',
     copied: '복사했습니다!',
@@ -777,9 +781,6 @@ A: **기준 통화가 대만 달러(TWD)** 일 때 「대시보드」의 **상�
 - 사용자는 본 애플리케이션의 데이터를 실제 매매의 유일한 참고 기준으로 사용해서는 안 됩니다.
 - 증권사 또는 금융 기관이 제공하는 실시간 시세를 기준으로 하는 것을 권장합니다.`,
 
-    androidPublish: 'Android 배포 가이드',
-    androidPublishTitle: 'Google Play 배포 방법',
-    androidPublishDesc: 'TWA로 웹앱을 래핑해 Android 앱으로 만들 수 있습니다.\n1. Google 개발자 계정 등록(25달러).\n2. Bubblewrap CLI로 사이트 URL 래핑.\n3. Play Console에 AAB 업로드 후 심사 제출.',
   },
   transactionForm: {
     addTransaction: '거래 추가',

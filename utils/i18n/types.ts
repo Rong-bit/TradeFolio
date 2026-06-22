@@ -686,9 +686,10 @@ export interface Translations {
     confirmImportWarning: string;
     confirmOverride: string;
     documentationContent: string;
-    androidPublish: string;
-    androidPublishTitle: string;
-    androidPublishDesc: string;
+    deleteAppAccount: string;
+    deleteAppAccountDesc: string;
+    confirmDeleteAppAccount: string;
+    confirmDeleteAppAccountMessage: string;
   };
   // 交易表單
   transactionForm: {
