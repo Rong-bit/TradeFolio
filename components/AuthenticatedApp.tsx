@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import { BaseCurrency, BASE_CURRENCIES } from '../types';
 import { useLocalStorageDebouncedSimple } from '../hooks/useLocalStorageDebounced';
 import { useFilters } from '../hooks/useFilters';
@@ -24,20 +24,21 @@ import { MarketContext } from '../contexts/MarketContext';
 import { UIContext } from '../contexts/UIContext';
 import DebtAlertsBanner from './DebtAlertsBanner';
 import TransactionForm from './TransactionForm';
-import Dashboard from './Dashboard';
-import AccountManager from './AccountManager';
-import FundManager from './FundManager';
-import RebalanceView from './RebalanceView';
-import HelpView from './HelpView';
-import HistoryView from './HistoryView';
-import BatchImportModal from './BatchImportModal';
-import HistoricalDataModal from './HistoricalDataModal';
-import BatchUpdateMarketModal from './BatchUpdateMarketModal';
-import AssetAllocationSimulator from './AssetAllocationSimulator';
-import StockSplitManager from './StockSplitManager';
 import DarkModeToggle from './DarkModeToggle';
 import AlertDialog from './AlertDialog';
 import AppConfirmModals from './AppConfirmModals';
+
+const Dashboard = lazy(() => import('./Dashboard'));
+const HistoryView = lazy(() => import('./HistoryView'));
+const AccountManager = lazy(() => import('./AccountManager'));
+const StockSplitManager = lazy(() => import('./StockSplitManager'));
+const FundManager = lazy(() => import('./FundManager'));
+const RebalanceView = lazy(() => import('./RebalanceView'));
+const AssetAllocationSimulator = lazy(() => import('./AssetAllocationSimulator'));
+const HelpView = lazy(() => import('./HelpView'));
+const BatchImportModal = lazy(() => import('./BatchImportModal'));
+const HistoricalDataModal = lazy(() => import('./HistoricalDataModal'));
+const BatchUpdateMarketModal = lazy(() => import('./BatchUpdateMarketModal'));
 
 const REFRESH_INTERVAL_MS = 3 * 60 * 1000;
 
@@ -566,6 +567,13 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                 </h2>
               </div>
               <div className="animate-fade-in">
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center py-16 text-slate-500 text-sm" aria-busy="true">
+                      {t(language).common.loading}
+                    </div>
+                  }
+                >
                 {(view === 'dashboard' || view === 'funds') && (
                   <DebtAlertsBanner
                     paymentAlerts={debtPaymentAlerts}
@@ -626,6 +634,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                     onDeleteAccount={handleDeleteAppAccount}
                   />
                 )}
+                </Suspense>
               </div>
             </main>
 
@@ -752,19 +761,25 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
               />
             )}
             {isImportOpen && (
-              <BatchImportModal onImport={addBatchTransactions} onClose={() => setIsImportOpen(false)} />
+              <Suspense fallback={null}>
+                <BatchImportModal onImport={addBatchTransactions} onClose={() => setIsImportOpen(false)} />
+              </Suspense>
             )}
             {isHistoricalModalOpen && (
-              <HistoricalDataModal
-                onSave={handlers.handleSaveHistoricalData}
-                onClose={() => setIsHistoricalModalOpen(false)}
-              />
+              <Suspense fallback={null}>
+                <HistoricalDataModal
+                  onSave={handlers.handleSaveHistoricalData}
+                  onClose={() => setIsHistoricalModalOpen(false)}
+                />
+              </Suspense>
             )}
             {isBatchUpdateMarketOpen && (
-              <BatchUpdateMarketModal
-                onUpdate={handlers.handleBatchUpdateMarket}
-                onClose={() => setIsBatchUpdateMarketOpen(false)}
-              />
+              <Suspense fallback={null}>
+                <BatchUpdateMarketModal
+                  onUpdate={handlers.handleBatchUpdateMarket}
+                  onClose={() => setIsBatchUpdateMarketOpen(false)}
+                />
+              </Suspense>
             )}
 
             <AppConfirmModals
