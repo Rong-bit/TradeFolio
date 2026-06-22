@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Account, CashFlow, CashFlowType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
-import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON_LG } from '../utils/formFieldClasses';
 import { useUI } from '../contexts/UIContext';
 import { formatCurrency, valueInBaseCurrency } from '../utils/calculations';
 import { languageToLocale, translate } from '../utils/i18n';
@@ -420,7 +420,7 @@ const BatchCashFlowModal: React.FC<Props> = ({ onImport, onClose }) => {
         </div>
 
         <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
-          <button onClick={onClose} className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-white transition">{text.cancel}</button>
+          <button type="button" onClick={onClose} className={MODAL_CANCEL_BUTTON_LG}>{text.cancel}</button>
           {step === 1 ? (
             <button onClick={handleParse} disabled={!inputText.trim()} className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition shadow-lg">{text.parseData}</button>
           ) : (
