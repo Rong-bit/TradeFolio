@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { fetchAnnualizedReturn } from '../services/yahooFinanceService';
 import { t, translate } from '../utils/i18n';
-import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -1084,7 +1084,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowClearConfirm(false)}
-                className="px-4 py-2 rounded border hover:bg-slate-50 active:bg-slate-100 active:scale-95 active:shadow-inner transition-all duration-150"
+                className={MODAL_CANCEL_BUTTON}
               >
                 {translations.simulator.cancel}
               </button>
