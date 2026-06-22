@@ -16,6 +16,7 @@ import { useAppPortfolioHandlers } from '../hooks/useAppPortfolioHandlers';
 import type { AuthSession } from '../hooks/useAuthSession';
 import { formatNumber, formatAmount } from '../utils/formatDisplay';
 import { countVisibleFilteredRecords } from '../utils/filteredRecordDelete';
+import { clearUserLocalStorage } from '../utils/deleteAppAccount';
 import { t, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from '../utils/i18n';
 import { PortfolioContext } from '../contexts/PortfolioContext';
 import type { View } from '../contexts/UIContext';
@@ -329,6 +330,14 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     resetRates();
   };
 
+  const handleDeleteAppAccount = () => {
+    if (!currentUser) return;
+    clearUserLocalStorage(currentUser);
+    sessionLogout();
+    resetData();
+    resetRates();
+  };
+
   const availableViews = isGuest
     ? (['dashboard', 'history', 'funds', 'accounts', 'splits', 'simulator', 'help'] as View[])
     : (['dashboard', 'history', 'funds', 'accounts', 'splits', 'rebalance', 'simulator', 'help'] as View[]);
@@ -614,6 +623,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                     onExport={handleExportData}
                     onImport={handleImportData}
                     onContactAdmin={handleContactAdmin}
+                    onDeleteAccount={handleDeleteAppAccount}
                   />
                 )}
               </div>
