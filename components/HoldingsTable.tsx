@@ -4,15 +4,12 @@ import RefreshCountdown from './RefreshCountdown';
 import { Holding, Market, Account, Currency, TransactionType, Transaction } from '../types';
 import {
   formatCurrency,
-  convertAccountCurrencyToMarketQuote,
   valuationCurrencyForHolding,
-  quoteCurrencyForHolding,
-  holdingPriceKey,
   calculateGenericXIRR,
 } from '../utils/calculations';
+import { formatHoldingPrice } from '../utils/formatDisplay';
 import { t } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
-import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 
 interface Props {}
@@ -74,9 +71,8 @@ function computeMergedAnnualizedXirr(
 }
 
 const HoldingsTable: React.FC<Props> = () => {
-  const { holdings, accounts, transactions, updatePrice: onUpdatePrice,
+  const { holdings, accounts, transactions,
     handleAutoUpdatePrices: onAutoUpdate, refreshIntervalMs } = usePortfolio();
-  const { rates } = useMarket();
   const { language } = useUI();
   const translations = t(language);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -336,34 +332,8 @@ const HoldingsTable: React.FC<Props> = () => {
           })()}
         </td>
 
-        <td className="px-3 py-2 text-right">
-           <div
-            className="flex items-center justify-end gap-0.5 rounded px-1 transition-colors bg-slate-100/70 dark:bg-slate-700/40 group-hover:bg-slate-200/80 dark:group-hover:bg-slate-600"
-           >
-             <span className="text-slate-500 dark:text-slate-200 text-xs">$</span>
-             <input
-              type="number"
-              className="w-20 text-right bg-transparent border-none focus:ring-0 p-0 font-semibold text-slate-800 dark:text-slate-100 tabular-nums"
-              value={displayCurrentPrice}
-              onChange={(e) => {
-                const raw = parseFloat(e.target.value) || 0;
-                const quoteCcy = quoteCurrencyForHolding(h, accounts);
-                let marketPrice = raw;
-                if (isDetailedMode && acc && !h.accountId.startsWith('merged')) {
-                  marketPrice = convertAccountCurrencyToMarketQuote(raw, quoteCcy, acc.currency, rates);
-                } else if (mergedCurrency && mergedCurrency !== quoteCcy) {
-                  marketPrice = convertAccountCurrencyToMarketQuote(
-                    raw,
-                    quoteCcy,
-                    mergedCurrency as Currency,
-                    rates
-                  );
-                }
-                onUpdatePrice(holdingPriceKey(h.market, h.ticker, quoteCcy), marketPrice);
-              }}
-              step="0.01"
-             />
-           </div>
+        <td className="px-3 py-2 text-right font-mono tabular-nums text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100">
+          {formatHoldingPrice(displayCurrentPrice, currency)}
         </td>
 
         <td className="px-3 py-2">
