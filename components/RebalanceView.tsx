@@ -434,7 +434,7 @@ const RebalanceView: React.FC<Props> = () => {
                       <div className="flex justify-end items-center">
                         <input 
                           type="number" 
-                          className={`w-24 text-right border-2 rounded px-2 py-1 focus:ring-2 focus:ring-accent focus:border-accent font-bold ${
+                          className={`w-24 text-base text-right border-2 rounded px-2 py-1 focus:ring-2 focus:ring-accent focus:border-accent font-bold ${
                             isEnabled 
                               ? 'border-indigo-100 text-slate-700 bg-white' 
                               : 'border-slate-200 text-slate-400 bg-slate-50'
@@ -487,7 +487,7 @@ const RebalanceView: React.FC<Props> = () => {
                   <div className="flex justify-end items-center">
                     <input 
                       type="number" 
-                      className={`w-24 text-right border-2 rounded px-2 py-1 focus:ring-2 focus:ring-accent focus:border-accent font-bold ${
+                      className={`w-24 text-base text-right border-2 rounded px-2 py-1 focus:ring-2 focus:ring-accent focus:border-accent font-bold ${
                         isCashEnabled 
                           ? (cashTargetPct < 0 ? 'border-red-300 text-red-600 bg-red-50' : 'border-indigo-100 text-slate-700 bg-white') 
                           : 'border-slate-200 text-slate-400 bg-slate-50'
