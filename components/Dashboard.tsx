@@ -36,7 +36,7 @@ const SEGMENT_BTN_CLASS =
 function Dashboard({ onUpdateHistorical }: DashboardProps) {
   const { summary, holdings, chartData, annualPerformance,
     accountPerformance, cashFlows, transactions, accounts: portfolioAccounts, computedAccounts,
-    updatePrice: onUpdatePrice, handleAutoUpdatePrices: onAutoUpdate,
+    handleAutoUpdatePrices: onAutoUpdate,
     refreshIntervalMs, historicalData, stockSplits } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { language, isGuest } = useUI();
