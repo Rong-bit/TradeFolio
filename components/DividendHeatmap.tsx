@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Market, Transaction, TransactionType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
@@ -18,12 +18,6 @@ import {
   readDismissedPendingDividendKeys,
   readPendingDividendListVisible,
 } from '../utils/pendingDividendDismissals';
-import {
-  diagnosePendingActualDividends,
-  isPendingDividendDebugEnabled,
-  logPendingDividendDiagnosis,
-  printPendingDividendDebugHelp,
-} from '../utils/pendingDividendDebug';
 import {
   dividendScheduleMapKey,
   marketToYahooMarketForDividends,
@@ -291,91 +285,6 @@ const DividendHeatmap: React.FC = () => {
     () => pendingActualRows.filter(row => !dismissedPendingKeys.has(row.key)),
     [pendingActualRows, dismissedPendingKeys]
   );
-
-  const debugInputRef = useRef({
-    transactions,
-    accounts,
-    holdings,
-    cashFlows,
-    actualDividendsMap,
-    dismissedPendingKeys,
-  });
-  debugInputRef.current = {
-    transactions,
-    accounts,
-    holdings,
-    cashFlows,
-    actualDividendsMap,
-    dismissedPendingKeys,
-  };
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    window.tfPendingDividendDebug = {
-      diagnose: (tickerFilter?: string) => {
-        const input = debugInputRef.current;
-        const report = diagnosePendingActualDividends({
-          transactions: input.transactions,
-          accounts: input.accounts,
-          holdings: input.holdings,
-          cashFlows: input.cashFlows,
-          actualDividendsMap: input.actualDividendsMap,
-          dismissedKeys: input.dismissedPendingKeys,
-          tickerFilter,
-        });
-        return logPendingDividendDiagnosis(report, tickerFilter);
-      },
-      enableAutoLog: () => {
-        try {
-          localStorage.setItem('tf-debug-pending-dividends-v1', '1');
-        } catch {
-          /* ignore */
-        }
-        console.info('[待確認配息] 已開啟自動診斷，熱力圖每次更新會輸出報告');
-      },
-      disableAutoLog: () => {
-        try {
-          localStorage.removeItem('tf-debug-pending-dividends-v1');
-        } catch {
-          /* ignore */
-        }
-        console.info('[待確認配息] 已關閉自動診斷');
-      },
-      clearDismissed: () => {
-        persistDismissedPendingDividendKeys(new Set());
-        setDismissedPendingKeys(new Set());
-        console.info('[待確認配息] 已清除所有「取消」紀錄，請再執行 diagnose()');
-      },
-      help: printPendingDividendDebugHelp,
-    };
-
-    return () => {
-      delete window.tfPendingDividendDebug;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isPendingDividendDebugEnabled()) return;
-    const input = debugInputRef.current;
-    const loading = Object.values(input.actualDividendsMap).some(v => v === 'loading');
-    if (loading) return;
-    const report = diagnosePendingActualDividends({
-      transactions: input.transactions,
-      accounts: input.accounts,
-      holdings: input.holdings,
-      cashFlows: input.cashFlows,
-      actualDividendsMap: input.actualDividendsMap,
-      dismissedKeys: input.dismissedPendingKeys,
-    });
-    logPendingDividendDiagnosis(report);
-  }, [
-    pendingActualRows,
-    visiblePendingRows,
-    actualDividendsMap,
-    dismissedPendingKeys,
-    transactions,
-  ]);
 
   const dismissPendingRow = (rowKey: string) => {
     setDismissedPendingKeys(prev => {
