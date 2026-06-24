@@ -26,7 +26,10 @@ export function isCapacitorNative(): boolean {
  * - GitHub Pages 等 → DEFAULT
  */
 export function resolveYahooProxyBase(): string | null {
-  const raw = import.meta.env.VITE_YAHOO_PROXY_URL as string | undefined;
+  const raw =
+    typeof import.meta !== 'undefined' && import.meta.env
+      ? (import.meta.env.VITE_YAHOO_PROXY_URL as string | undefined)
+      : undefined;
   if (raw?.trim()) return raw.trim().replace(/\/+$/, '');
 
   if (isCapacitorNative()) return DEFAULT_YAHOO_PROXY_BASE;
@@ -81,9 +84,9 @@ function isLikelyMobileClient(): boolean {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 }
 
-/** MoneyDJ 等僅能走 proxy；手機／Capacitor 網路較慢時略延長逾時 */
+/** MoneyDJ／StockAnalysis 等僅能走 proxy；略延長逾時以避免代理回應較慢時抓不到配息實績 */
 export function proxyFetchTimeoutMs(): number {
-  return isLikelyMobileClient() ? 12_000 : 6_000;
+  return isLikelyMobileClient() ? 15_000 : 12_000;
 }
 
 /** 待確認實績配息備註：與 handleAddPendingActual 相同精度 */
