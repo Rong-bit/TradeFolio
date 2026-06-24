@@ -71,7 +71,9 @@ function isMoneyDjTarget(target: string): boolean {
 
 async function fetchAsTextOnce(target: string): Promise<string | null> {
   const candidates = buildProxiedFetchUrls(target);
-  const FETCH_TIMEOUT_MS = proxyFetchTimeoutMs();
+  const FETCH_TIMEOUT_MS = isMoneyDjTarget(target)
+    ? Math.max(proxyFetchTimeoutMs(), 15_000)
+    : proxyFetchTimeoutMs();
   for (const url of candidates) {
     try {
       const ctrl = new AbortController();
@@ -346,10 +348,15 @@ function parseStockAnalysisDividendHtml(html: string): ActualDividendRecord[] {
 async function fetchStockAnalysisUsStockDividends(ticker: string): Promise<ActualDividendRecord[]> {
   const sanitized = String(ticker).replace(/\s/g, '').toLowerCase();
   if (!/^[a-z0-9.-]{1,12}$/.test(sanitized)) return [];
-  const url = `https://stockanalysis.com/stocks/${encodeURIComponent(sanitized)}/dividend/`;
-  const html = await fetchAsText(url);
-  if (!html) return [];
-  return parseStockAnalysisDividendHtml(html);
+  // 美股 ETF（如 VT）在 /etf/ 路徑；個股在 /stocks/。兩者皆試，避免 ETF 404 後無資料。
+  for (const segment of ['stocks', 'etf'] as const) {
+    const url = `https://stockanalysis.com/${segment}/${encodeURIComponent(sanitized)}/dividend/`;
+    const html = await fetchAsText(url);
+    if (!html) continue;
+    const rows = parseStockAnalysisDividendHtml(html);
+    if (rows.length > 0) return rows;
+  }
+  return [];
 }
 
 // ── 其他市場：Yahoo Finance events=div（覆蓋優先；發放日為市場慣例推估） ──────
@@ -419,7 +426,8 @@ async function fetchYahooDividendEvents(
  * 精度優先來源：
  *  - ETF（台股自動補 .tw）：MoneyDJ ETF 配息頁。
  *  - 台股個股：DJ 鏡像重大行事曆。
- *  - 美股個股：StockAnalysis dividend page。
+ *  - 美股個股：StockAnalysis dividend page（個股 /stocks/、ETF /etf/）。
+ *  - 美股／台股 ETF 若上述來源皆無資料：Yahoo Finance events=div（發放日推估）。
  *  - 其他市場個股與 ETF：Yahoo Finance events=div。
  */
 export async function fetchActualDividendHistory(
@@ -430,21 +438,28 @@ export async function fetchActualDividendHistory(
   const today = new Date().toISOString().slice(0, 10);
   const byExDate = new Map<string, ActualDividendRecord>();
 
+  const mergeRecords = (records: ActualDividendRecord[]) => {
+    for (const rec of records) {
+      if (rec.exDate > today) continue;
+      if (isCompleteRecord(rec)) byExDate.set(rec.exDate, rec);
+    }
+  };
+
   if (market === Market.TW || market === Market.US) {
     const mdjEtfRows = await fetchMoneyDjEtfHistory(ticker, market).catch(() => null);
     if (mdjEtfRows?.length) {
-      for (const row of mdjEtfRows) {
-        if (row.exDate > today) continue;
-        const rec: ActualDividendRecord = {
+      mergeRecords(
+        mdjEtfRows.map(row => ({
           exDate: row.exDate,
           payDate: row.payDate,
           amountPerShare: row.amountPerShare,
           currency: row.currency,
-          source: 'moneydj',
-        };
-        if (isCompleteRecord(rec)) byExDate.set(row.exDate, rec);
+          source: 'moneydj' as const,
+        }))
+      );
+      if (byExDate.size > 0) {
+        return Array.from(byExDate.values()).sort((a, b) => b.exDate.localeCompare(a.exDate));
       }
-      return Array.from(byExDate.values()).sort((a, b) => b.exDate.localeCompare(a.exDate));
     }
   }
 
@@ -455,9 +470,10 @@ export async function fetchActualDividendHistory(
         ? await fetchStockAnalysisUsStockDividends(ticker).catch(() => [])
         : await fetchYahooDividendEvents(ticker, market, yahooMarket).catch(() => []);
 
-  for (const rec of records) {
-    if (rec.exDate > today) continue;
-    if (isCompleteRecord(rec)) byExDate.set(rec.exDate, rec);
+  mergeRecords(records);
+
+  if (byExDate.size === 0 && (market === Market.US || market === Market.TW)) {
+    mergeRecords(await fetchYahooDividendEvents(ticker, market, yahooMarket).catch(() => []));
   }
 
   return Array.from(byExDate.values()).sort((a, b) => b.exDate.localeCompare(a.exDate));
