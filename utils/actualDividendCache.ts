@@ -2,7 +2,7 @@ import { Market, TransactionType } from '../types';
 import { dividendScheduleMapKey, marketToYahooMarketForDividends } from './dividendTaxHelpers';
 
 /** 與 useActualDividends 一致 */
-export const ACTUAL_DIVIDENDS_LS_KEY = 'tf-actual-dividends-v7';
+export const ACTUAL_DIVIDENDS_LS_KEY = 'tf-actual-dividends-v9';
 
 export const ACTUAL_DIVIDENDS_INVALIDATE_EVENT = 'tf-actual-dividends-invalidate';
 
