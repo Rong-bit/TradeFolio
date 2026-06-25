@@ -288,8 +288,6 @@ export const ko: Translations = {
     pendingActualEstAmount: '세후 실수령(예상)',
     pendingActualAccount: '입금 계좌',
     pendingActualNoteTemplate: '자동 가져오기: 주당 {perShare}, 보유 {qty}주',
-    pendingActualConfirmEditHint: '아래 항목(날짜, 계좌, 실수령액, 원천징수, 메모 등)을 수정한 뒤 저장할 수 있습니다.',
-    pendingActualConfirmInvalidAmount: '실수령액은 0보다 큰 값을 입력하세요.',
   },
   funds: {
     title: '자금 관리',

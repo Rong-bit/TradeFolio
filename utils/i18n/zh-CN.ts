@@ -231,8 +231,6 @@ zhCN.dividendTax = {
   pendingActualEstAmount: '试算实领（税后）',
   pendingActualAccount: '入账账户',
   pendingActualNoteTemplate: '自动导入：每股 {perShare}，持股 {qty}',
-  pendingActualConfirmEditHint: '可直接修改下列字段（日期、账户、实领金额、预扣税、备注等），确认无误后再保存。',
-  pendingActualConfirmInvalidAmount: '请输入大于 0 的实领金额。',
 };
 zhCN.funds = {
   ...zhTW.funds,

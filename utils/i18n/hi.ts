@@ -234,8 +234,6 @@ export const hi: Translations = {
     pendingActualEstAmount: 'अनुमानित शुद्ध (कर बाद)',
     pendingActualAccount: 'जमा खाता',
     pendingActualNoteTemplate: 'ऑटो-आयात: प्रति शेयर {perShare}, होल्डिंग {qty}',
-    pendingActualConfirmEditHint: 'सहेजने से पहले नीचे के फ़ील्ड (तारीख, खाता, शुद्ध राशि, कर कटौती, नोट आदि) संपादित कर सकते हैं।',
-    pendingActualConfirmInvalidAmount: 'कृपया 0 से अधिक शुद्ध राशि दर्ज करें।',
   },
   funds: {
     ...en.funds,

@@ -234,8 +234,6 @@ export const ar: Translations = {
     pendingActualEstAmount: 'صافي تقديري (بعد الضريبة)',
     pendingActualAccount: 'حساب الإيداع',
     pendingActualNoteTemplate: 'استيراد تلقائي: لكل سهم {perShare}، الكمية {qty}',
-    pendingActualConfirmEditHint: 'يمكنك تعديل الحقول أدناه (التاريخ، الحساب، صافي المبلغ، الاقتطاع، الملاحظة، إلخ) قبل الحفظ.',
-    pendingActualConfirmInvalidAmount: 'يرجى إدخال صافي مبلغ أكبر من 0.',
   },
   funds: { 
     ...en.funds,

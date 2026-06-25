@@ -285,8 +285,6 @@ export const zhTW: Translations = {
     pendingActualEstAmount: '試算實領（稅後）',
     pendingActualAccount: '入帳帳戶',
     pendingActualNoteTemplate: '自動匯入：每股 {perShare}，持股 {qty}',
-    pendingActualConfirmEditHint: '可直接修改下列欄位（日期、帳戶、實領金額、預扣稅、備註等），確認無誤後再儲存。',
-    pendingActualConfirmInvalidAmount: '請輸入大於 0 的實領金額。',
   },
   funds: {
     title: '資金管理',

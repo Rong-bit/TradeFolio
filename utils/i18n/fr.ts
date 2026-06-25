@@ -259,8 +259,6 @@ export const fr: Translations = {
     pendingActualEstAmount: 'Net estime (apres impots)',
     pendingActualAccount: 'Compte credite',
     pendingActualNoteTemplate: 'Import auto : {perShare} par action, {qty} actions',
-    pendingActualConfirmEditHint: 'Vous pouvez modifier les champs ci-dessous (date, compte, montant net, retenue, note, etc.) avant d’enregistrer.',
-    pendingActualConfirmInvalidAmount: 'Veuillez saisir un montant net supérieur à 0.',
   },
   funds: { 
     ...en.funds, 
