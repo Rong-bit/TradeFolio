@@ -97,8 +97,8 @@ function usDividendGrossNative(shares: number, perShare: number): number {
   const perShareScaled = decimalStringToScaledInt(perShare.toFixed(PER_SHARE_SCALE));
   const product = share.digits * perShareScaled.digits;
   const totalScale = share.scale + perShareScaled.scale;
-  const grossCentsBig = product * 100n / 10n ** BigInt(totalScale);
-  return Number(grossCentsBig) / 100;
+  const grossCents = product * 100n / 10n ** BigInt(totalScale);
+  return Number(grossCents) / 100;
 }
 
 /** 美股：試算毛額、預扣稅、實領（稅前捨至美分、稅金四捨五入至美分） */
@@ -128,9 +128,9 @@ export function usCashDividendCentBreakdown(
   const grossNative = usDividendGrossNative(shares, perShare);
   const taxNative =
     explicitTaxNative != null && explicitTaxNative > 0
-      ? roundToCents(explicitTaxNative)
+      ? Math.round(explicitTaxNative * 100) / 100
       : roundToCents(grossNative * US_DIVIDEND_WITHHOLDING_RATE);
-  const netNative = roundToCents(grossNative - taxNative);
+  const netNative = Math.round((grossNative - taxNative) * 100) / 100;
 
   const grossCents = Math.round(grossNative * 100);
   const taxCents = Math.round(taxNative * 100);
