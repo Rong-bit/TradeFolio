@@ -73,11 +73,11 @@ export function isHighDividendTwEtfTicker(ticker: string): boolean {
   return t === '0050' || t === '0056' || t === '00878';
 }
 
-/** 美股複委託常見試算：稅前無條件捨至美分、30% 預扣稅四捨五入至美分（對照國泰等券商實績） */
-export const US_DIVIDEND_GROSS_DECIMALS = 2;
+/** 美股複委託常見試算：稅前無條件捨至小數第 3 位、30% 預扣稅進位至美分（對照國泰等券商實績） */
+export const US_DIVIDEND_GROSS_DECIMALS = 3;
 
-function roundToCents(value: number): number {
-  return Math.round(value * 100) / 100;
+function ceilToCents(value: number): number {
+  return Math.ceil(value * 100 - 1e-9) / 100;
 }
 
 function decimalStringToScaledInt(value: string): { digits: bigint; scale: number } {
@@ -89,7 +89,7 @@ function decimalStringToScaledInt(value: string): { digits: bigint; scale: numbe
   return { digits, scale: fraction.length };
 }
 
-/** 稅前毛額：股數 × 每股，無條件捨至美分（股數 6 位、每股 4 位小數，BigInt 避免浮點誤差） */
+/** 稅前毛額：股數 × 每股，捨至小數第 3 位（股數 6 位、每股 4 位小數，BigInt 避免浮點誤差） */
 function usDividendGrossNative(shares: number, perShare: number): number {
   const SHARE_SCALE = 6;
   const PER_SHARE_SCALE = 4;
@@ -97,11 +97,11 @@ function usDividendGrossNative(shares: number, perShare: number): number {
   const perShareScaled = decimalStringToScaledInt(perShare.toFixed(PER_SHARE_SCALE));
   const product = share.digits * perShareScaled.digits;
   const totalScale = share.scale + perShareScaled.scale;
-  const grossCents = product * 100n / 10n ** BigInt(totalScale);
-  return Number(grossCents) / 100;
+  const grossMilli = product * 1000n / 10n ** BigInt(totalScale);
+  return Number(grossMilli) / 1000;
 }
 
-/** 美股：試算毛額、預扣稅、實領（稅前捨至美分、稅金四捨五入至美分） */
+/** 美股：試算毛額、預扣稅、實領（稅前 3 位捨去、稅金進位至美分） */
 export function usCashDividendCentBreakdown(
   shares: number,
   perShare: number,
@@ -129,7 +129,7 @@ export function usCashDividendCentBreakdown(
   const taxNative =
     explicitTaxNative != null && explicitTaxNative > 0
       ? Math.round(explicitTaxNative * 100) / 100
-      : roundToCents(grossNative * US_DIVIDEND_WITHHOLDING_RATE);
+      : ceilToCents(grossNative * US_DIVIDEND_WITHHOLDING_RATE);
   const netNative = Math.round((grossNative - taxNative) * 100) / 100;
 
   const grossCents = Math.round(grossNative * 100);
