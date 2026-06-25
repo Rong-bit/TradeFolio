@@ -73,19 +73,48 @@ export function isHighDividendTwEtfTicker(ticker: string): boolean {
   return t === '0050' || t === '0056' || t === '00878';
 }
 
+/** 美股：以美分四捨五入試算毛額、預扣稅、實領（與券商常見做法一致） */
+export function usCashDividendCentBreakdown(
+  shares: number,
+  perShare: number,
+  explicitTaxNative?: number
+): {
+  grossCents: number;
+  taxCents: number;
+  netCents: number;
+  grossNative: number;
+  taxNative: number;
+  netNative: number;
+} {
+  if (shares <= 0 || perShare <= 0) {
+    return {
+      grossCents: 0,
+      taxCents: 0,
+      netCents: 0,
+      grossNative: 0,
+      taxNative: 0,
+      netNative: 0,
+    };
+  }
+
+  const grossCents = Math.round(shares * perShare * 100);
+  const taxCents =
+    explicitTaxNative != null && explicitTaxNative > 0
+      ? Math.round(explicitTaxNative * 100)
+      : Math.round(grossCents * US_DIVIDEND_WITHHOLDING_RATE);
+  const netCents = Math.max(0, grossCents - taxCents);
+
+  return {
+    grossCents,
+    taxCents,
+    netCents,
+    grossNative: grossCents / 100,
+    taxNative: taxCents / 100,
+    netNative: netCents / 100,
+  };
+}
+
 /** 美股：試算稅後配息（原幣） */
 export function usEstimatedNetDividendNative(shares: number, lastAmountPerShareUsd: number): number {
-  if (shares <= 0 || lastAmountPerShareUsd <= 0) return 0;
-
-  // 1. 先計算總額（以美分為單位，避免浮點數誤差）
-  const grossCents = Math.round(shares * lastAmountPerShareUsd * 100);
-
-  // 2. 計算稅金（30%），同樣四捨五入到美分（US_DIVIDEND_WITHHOLDING_RATE 應為 0.3）
-  const taxCents = Math.round(grossCents * US_DIVIDEND_WITHHOLDING_RATE);
-
-  // 3. 實領金額 = 總額 - 稅金
-  const netCents = grossCents - taxCents;
-
-  // 4. 轉回美元
-  return netCents / 100;
+  return usCashDividendCentBreakdown(shares, lastAmountPerShareUsd).netNative;
 }
