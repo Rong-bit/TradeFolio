@@ -185,10 +185,13 @@ function isCompleteRecord(rec: Pick<ActualDividendRecord, 'exDate' | 'payDate' |
   return !!rec.exDate && !!rec.payDate && Number.isFinite(rec.amountPerShare) && rec.amountPerShare > 0;
 }
 
-/** 去除浮點誤差，保留最多 6 位小數（與 UI formatDividendPerShare 一致） */
+/** 去除浮點誤差：Yahoo 常見 6.000036 類雜訊會收斂至 4 位內合理值，再保留最多 6 位小數 */
 export function normalizeAmountPerShare(amount: number): number {
   if (!Number.isFinite(amount)) return amount;
-  return Math.round(amount * 1e6) / 1e6;
+  const at6 = Math.round(amount * 1e6) / 1e6;
+  const at4 = Math.round(at6 * 1e4) / 1e4;
+  if (Math.abs(at6 - at4) < 1e-4) return at4;
+  return at6;
 }
 
 function etfAmountPerShareFromCells(cells: string[], market: Market): string {
