@@ -28,6 +28,7 @@ import {
   formatUsDividendNativeAmount,
   usCashDividendCentBreakdown,
 } from '../utils/dividendTaxHelpers';
+import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 
 function colorForAmount(amount: number, maxAmount: number): string {
   if (amount === 0) return '#f1f5f9';
@@ -80,7 +81,12 @@ const DividendHeatmap: React.FC = () => {
   const [pendingListVisible, setPendingListVisible] = useState(
     () => readPendingDividendListVisible()
   );
-  const [confirmState, setConfirmState] = useState<{ tx: Transaction; rowKey: string } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    tx: Transaction;
+    rowKey: string;
+    editPrice: string;
+    editAmount: string;
+  } | null>(null);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const dtx = tr.dividendTax;
@@ -337,12 +343,22 @@ const DividendHeatmap: React.FC = () => {
         ? { withheldUsTaxNative: calc.withheldUsTaxNative }
         : {}),
     };
-    setConfirmState({ tx, rowKey: row.key });
+    const amountStr = calc.netNative.toFixed(2);
+    setConfirmState({ tx, rowKey: row.key, editPrice: amountStr, editAmount: amountStr });
   };
 
   const confirmAndSavePendingActual = () => {
     if (!confirmState) return;
-    addTransaction(confirmState.tx);
+    const price = parseFloat(confirmState.editPrice);
+    const amount = parseFloat(confirmState.editAmount);
+    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(amount) || amount <= 0) return;
+    addTransaction({
+      ...confirmState.tx,
+      price,
+      amount,
+      fees: 0,
+      quantity: 1,
+    });
     const rowKey = confirmState.rowKey;
     setPendingAccountByKey(prev => {
       const next = { ...prev };
@@ -710,22 +726,30 @@ const DividendHeatmap: React.FC = () => {
                   <span className="text-slate-600 dark:text-slate-400">{tf.typeLabel}</span>
                   <span className="font-medium text-slate-900 dark:text-slate-100">{getTypeName(confirmState.tx.type)}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
-                  <span className="text-slate-600 dark:text-slate-400">{tf.priceLabel}</span>
-                  <span className="font-medium tabular-nums text-slate-900 dark:text-slate-100">
-                    {confirmState.tx.price.toFixed(2)} {getAccountCurrencyCode(confirmState.tx.accountId)}
-                  </span>
+                <div className="flex justify-between items-center gap-3 py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400 shrink-0">{tf.placeholderQuantity}</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={confirmState.editPrice}
+                      onChange={e =>
+                        setConfirmState(prev =>
+                          prev ? { ...prev, editPrice: e.target.value } : prev
+                        )
+                      }
+                      className={`w-28 text-right tabular-nums border border-slate-300 rounded-md p-1.5 text-sm ${FORM_FIELD_THEME}`}
+                    />
+                    <span className="text-slate-500 dark:text-slate-400 text-xs shrink-0">
+                      {getAccountCurrencyCode(confirmState.tx.accountId)}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
                   <span className="text-slate-600 dark:text-slate-400">{tf.quantityLabel}</span>
                   <span className="font-medium text-slate-900 dark:text-slate-100">
                     {tf.cashDividendQuantityConfirm}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
-                  <span className="text-slate-600 dark:text-slate-400">{tf.feesLabel}</span>
-                  <span className="font-medium tabular-nums text-slate-900 dark:text-slate-100">
-                    {confirmState.tx.fees.toFixed(2)} {getAccountCurrencyCode(confirmState.tx.accountId)}
                   </span>
                 </div>
                 {confirmState.tx.withheldUsTaxNative != null && confirmState.tx.withheldUsTaxNative > 0 && (
@@ -752,12 +776,25 @@ const DividendHeatmap: React.FC = () => {
                   </div>
                 )}
                 <div className="border-t-2 border-slate-300 dark:border-slate-600 pt-2 mt-2">
-                  <div className="flex justify-between items-baseline gap-3">
+                  <div className="flex justify-between items-center gap-3">
                     <span className="text-slate-700 dark:text-slate-300 font-semibold shrink-0">{tf.totalAmount}</span>
-                    <span className="font-bold text-lg text-slate-900 dark:text-amber-400 tabular-nums text-right">
-                      {confirmState.tx.amount?.toFixed(2) ?? '0.00'}{' '}
-                      {getAccountCurrencyCode(confirmState.tx.accountId)}
-                    </span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        value={confirmState.editAmount}
+                        onChange={e =>
+                          setConfirmState(prev =>
+                            prev ? { ...prev, editAmount: e.target.value } : prev
+                          )
+                        }
+                        className={`w-28 text-right tabular-nums font-bold text-lg border border-slate-300 rounded-md p-1.5 ${FORM_FIELD_THEME}`}
+                      />
+                      <span className="text-slate-500 dark:text-slate-400 text-xs shrink-0">
+                        {getAccountCurrencyCode(confirmState.tx.accountId)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
