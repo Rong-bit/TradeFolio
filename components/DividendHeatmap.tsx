@@ -26,6 +26,7 @@ import {
   TW_NHI_SUPPLEMENT_THRESHOLD_TWD,
   US_DIVIDEND_WITHHOLDING_RATE,
 } from '../utils/dividendTaxHelpers';
+import { formatDividendPerShare } from '../utils/yahooProxyUrl';
 
 function colorForAmount(amount: number, maxAmount: number): string {
   if (amount === 0) return '#f1f5f9';
@@ -315,7 +316,7 @@ const DividendHeatmap: React.FC = () => {
     const calc = getCashDividendCalc(row);
     if (calc.netNative <= 0) return;
     const note = translate('dividendTax.pendingActualNoteTemplate', language, {
-      perShare: row.amountPerShare.toLocaleString(undefined, { maximumFractionDigits: 6 }),
+      perShare: formatDividendPerShare(row.amountPerShare),
       qty: row.quantity.toLocaleString(),
     });
     const tx: Transaction = {
@@ -392,7 +393,7 @@ const DividendHeatmap: React.FC = () => {
     const tipLines: string[] = [];
     tipLines.push(`${accountLabel}：${pa.quantity} 股`);
     tipLines.push(
-      `${dtx.pendingActualPerShare}: ${pa.amountPerShare} × ${pa.quantity} = ${fmtAmt(calc.grossNative)} ${cur}`
+      `${dtx.pendingActualPerShare}: ${formatDividendPerShare(pa.amountPerShare)} × ${pa.quantity} = ${fmtAmt(calc.grossNative)} ${cur}`
     );
     if (calc.withheldUsTaxNative != null && calc.withheldUsTaxNative > 0) {
       tipLines.push(
@@ -638,6 +639,7 @@ const DividendHeatmap: React.FC = () => {
                       <th className="px-3 py-2">Mkt</th>
                       <th className="px-3 py-2">{dtx.upcomingExDate}</th>
                       <th className="px-3 py-2">{dtx.pendingActualPayDate}</th>
+                      <th className="px-3 py-2 text-right">{dtx.pendingActualPerShare}</th>
                       <th className="px-3 py-2 text-right">{dtx.pendingActualEstAmount}</th>
                       <th className="px-3 py-2 text-center">{tr.labels.action}</th>
                     </tr>
@@ -656,6 +658,9 @@ const DividendHeatmap: React.FC = () => {
                             {pa.payDateEstimated ? (
                               <span className="ml-1 text-xs text-slate-400">({dtx.pendingActualEstimatedDate})</span>
                             ) : null}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {formatDividendPerShare(pa.amountPerShare)} {cur}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">
                             {calc.netNative.toLocaleString(undefined, { maximumFractionDigits: 2 })} {cur}
