@@ -151,6 +151,32 @@ export function usEstimatedNetDividendNative(shares: number, lastAmountPerShareU
   return usCashDividendCentBreakdown(shares, lastAmountPerShareUsd).netNative;
 }
 
+/** 美股：已知稅前毛額時試算預扣稅與稅後實領（稅金四捨五入至美分） */
+export function usWithholdingFromGrossNative(grossNative: number): {
+  taxNative: number;
+  netNative: number;
+} {
+  if (!Number.isFinite(grossNative) || grossNative <= 0) {
+    return { taxNative: 0, netNative: 0 };
+  }
+  const taxNative = roundToCents(grossNative * US_DIVIDEND_WITHHOLDING_RATE);
+  const netNative = Math.round((grossNative - taxNative) * 100) / 100;
+  return { taxNative, netNative };
+}
+
+/** 台股：已知稅前現金股利（元）時試算二代健保與稅後實領 */
+export function twNetFromGrossTwd(grossTwd: number): {
+  withheldNhiTwd?: number;
+  netNative: number;
+} {
+  const gross = Math.round(grossTwd);
+  if (gross <= 0) return { netNative: 0 };
+  const withheldNhiTwd =
+    gross >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD ? twNhiSupplementFloorTwd(gross) : undefined;
+  const netNative = gross - (withheldNhiTwd ?? 0);
+  return { withheldNhiTwd, netNative };
+}
+
 /** 美股配息金額顯示（固定 2 位小數，避免 toLocaleString 銀行家捨入） */
 export function formatUsDividendNativeAmount(value: number): string {
   if (!Number.isFinite(value)) return '-';
