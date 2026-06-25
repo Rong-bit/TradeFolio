@@ -73,11 +73,11 @@ export function isHighDividendTwEtfTicker(ticker: string): boolean {
   return t === '0050' || t === '0056' || t === '00878';
 }
 
-/** 美股複委託常見試算：稅前無條件捨至小數第 3 位、30% 預扣稅進位至美分（對照國泰等券商實績） */
+/** 美股複委託常見試算：稅前無條件捨至小數第 3 位、30% 預扣稅四捨五入至美分 */
 export const US_DIVIDEND_GROSS_DECIMALS = 3;
 
-function ceilToCents(value: number): number {
-  return Math.ceil(value * 100 - 1e-9) / 100;
+function roundToCents(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 function decimalStringToScaledInt(value: string): { digits: bigint; scale: number } {
@@ -101,7 +101,7 @@ function usDividendGrossNative(shares: number, perShare: number): number {
   return Number(grossMilli) / 1000;
 }
 
-/** 美股：試算毛額、預扣稅、實領（稅前 3 位捨去、稅金進位至美分） */
+/** 美股：試算毛額、預扣稅、實領（稅前 3 位捨去、稅金四捨五入至美分） */
 export function usCashDividendCentBreakdown(
   shares: number,
   perShare: number,
@@ -129,7 +129,7 @@ export function usCashDividendCentBreakdown(
   const taxNative =
     explicitTaxNative != null && explicitTaxNative > 0
       ? Math.round(explicitTaxNative * 100) / 100
-      : ceilToCents(grossNative * US_DIVIDEND_WITHHOLDING_RATE);
+      : roundToCents(grossNative * US_DIVIDEND_WITHHOLDING_RATE);
   const netNative = Math.round((grossNative - taxNative) * 100) / 100;
 
   const grossCents = Math.round(grossNative * 100);
