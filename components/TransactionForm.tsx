@@ -5,6 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { t } from '../utils/i18n';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 import { parseCashDividendNoteBreakdown } from '../utils/cashDividendNoteParse';
+import {
+  twEstimatedSingleDividendTwd,
+  usCashDividendCentBreakdown,
+} from '../utils/dividendTaxHelpers';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 interface Props {
@@ -424,6 +428,36 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     return 0;
   };
 
+  const getCashDividendBreakdownCalc = () => {
+    const breakdown = parseCashDividendNoteBreakdown(formData.note);
+    if (!breakdown) return null;
+
+    const withheld = getCashDividendWithheld();
+    if (formData.market === Market.US) {
+      return usCashDividendCentBreakdown(
+        breakdown.shares,
+        breakdown.perShare,
+        editingTransaction?.withheldUsTaxNative ?? (withheld > 0 ? withheld : undefined)
+      );
+    }
+    if (formData.market === Market.TW) {
+      const grossNative = twEstimatedSingleDividendTwd(breakdown.shares, breakdown.perShare);
+      const taxNative = withheld > 0 ? withheld : 0;
+      return {
+        grossNative,
+        taxNative,
+        netNative: grossNative - taxNative,
+      };
+    }
+    const grossNative = breakdown.perShare * breakdown.shares;
+    const taxNative = withheld > 0 ? withheld : 0;
+    return {
+      grossNative,
+      taxNative,
+      netNative: grossNative - taxNative,
+    };
+  };
+
   const calculatePreviewAmount = (): number => {
     const price = parseFloat(formData.price) || 0;
     const quantity =
@@ -431,10 +465,9 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     const fees = parseFloat(formData.fees) || 0;
     if (formData.type === TransactionType.CASH_DIVIDEND) {
       const withheld = getCashDividendWithheld();
-      const breakdown = parseCashDividendNoteBreakdown(formData.note);
-      if (breakdown) {
-        const gross = breakdown.perShare * breakdown.shares;
-        return gross - fees - withheld;
+      const breakdownCalc = getCashDividendBreakdownCalc();
+      if (breakdownCalc) {
+        return breakdownCalc.netNative - fees;
       }
       if (withheld > 0 && editingTransaction?.withheldUsTaxNative) {
         return price - fees;
@@ -462,13 +495,18 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
 
       let gross: number;
       if (breakdown) {
-        gross = breakdown.perShare * breakdown.shares;
+        const breakdownCalc = getCashDividendBreakdownCalc();
+        gross = breakdownCalc?.grossNative ?? breakdown.perShare * breakdown.shares;
         const perShareLabel = formatDividendDetailAmount(breakdown.perShare, formData.market);
         const sharesLabel = formatDisplayQuantity(breakdown.shares);
         const grossLabel = formatDividendDetailAmount(gross, formData.market);
         let formula = `${tf.calculationMethod}${perShareLabel} × ${sharesLabel} ${tf.shares} = ${grossLabel}`;
-        if (deduction > 0) {
-          formula += ` − ${formatDividendDetailAmount(deduction, formData.market)} (${tf.deductionShort})`;
+        const breakdownDeduction =
+          breakdownCalc && breakdownCalc.taxNative > 0
+            ? breakdownCalc.taxNative
+            : deduction;
+        if (breakdownDeduction > 0) {
+          formula += ` − ${formatDividendDetailAmount(breakdownDeduction, formData.market)} (${tf.deductionShort})`;
         }
         return formula;
       }
