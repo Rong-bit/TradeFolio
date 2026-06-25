@@ -151,6 +151,43 @@ export function usEstimatedNetDividendNative(shares: number, lastAmountPerShareU
   return usCashDividendCentBreakdown(shares, lastAmountPerShareUsd).netNative;
 }
 
+/**
+ * 美股：備註每股×股數試算；若 userNet 與公式淨額不同（手動調整實領），
+ * 以 userNet 為準，稅前採 2 位小數並反推預扣稅。
+ */
+export function usCashDividendFromNoteWithNetOverride(
+  shares: number,
+  perShare: number,
+  userNetNative?: number
+): {
+  grossNative: number;
+  taxNative: number;
+  netNative: number;
+  isManualNet: boolean;
+} {
+  const formula = usCashDividendCentBreakdown(shares, perShare);
+  const grossRounded = Math.round(formula.grossNative * 100) / 100;
+  const userNet =
+    userNetNative != null && Number.isFinite(userNetNative) && userNetNative > 0
+      ? Math.round(userNetNative * 100) / 100
+      : undefined;
+  if (userNet != null && Math.abs(userNet - formula.netNative) >= 0.005) {
+    const taxNative = Math.round((grossRounded - userNet) * 100) / 100;
+    return {
+      grossNative: grossRounded,
+      taxNative: Math.max(0, taxNative),
+      netNative: userNet,
+      isManualNet: true,
+    };
+  }
+  return {
+    grossNative: formula.grossNative,
+    taxNative: formula.taxNative,
+    netNative: formula.netNative,
+    isManualNet: false,
+  };
+}
+
 /** 美股：已知稅前毛額時試算預扣稅與稅後實領（稅金四捨五入至美分） */
 export function usWithholdingFromGrossNative(grossNative: number): {
   taxNative: number;
