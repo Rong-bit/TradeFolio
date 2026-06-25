@@ -8,6 +8,8 @@ import { parseCashDividendNoteBreakdown } from '../utils/cashDividendNoteParse';
 import {
   twEstimatedSingleDividendTwd,
   usCashDividendCentBreakdown,
+  usCashDividendFromNoteWithNetOverride,
+  formatUsDividendNativeAmount,
 } from '../utils/dividendTaxHelpers';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
@@ -26,8 +28,12 @@ function cashDividendFormFromTransaction(tx: Transaction): {
 } {
   const fees = tx.fees || 0;
   if (tx.quantity === 1) {
+    const priceStr =
+      tx.market === Market.US
+        ? formatUsDividendNativeAmount(tx.price)
+        : tx.price.toString();
     return {
-      price: tx.price.toString(),
+      price: priceStr,
       quantity: '1',
       fees: tx.fees.toString(),
     };
@@ -128,8 +134,9 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     }
   }, [formData.type, editingTransaction]);
 
-  // 美股現金股息：備註含每股×股數時，金額欄同步為國泰試算淨額
+  // 美股現金股息：備註含每股×股數時，新增交易才自動同步試算淨額（編輯時保留手動實領）
   useEffect(() => {
+    if (editingTransaction) return;
     if (formData.type !== TransactionType.CASH_DIVIDEND || formData.market !== Market.US) return;
     const breakdown = parseCashDividendNoteBreakdown(formData.note);
     if (!breakdown) return;
@@ -138,7 +145,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     if (formData.price !== nextPrice) {
       setFormData(prev => ({ ...prev, price: nextPrice }));
     }
-  }, [formData.type, formData.market, formData.note]);
+  }, [editingTransaction, formData.type, formData.market, formData.note]);
 
   // 當選擇轉入/轉出且關鍵欄位變更時，重新填入平均成本（查無則清空）
   useEffect(() => {
@@ -182,9 +189,13 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
 
     if (formData.type === TransactionType.CASH_DIVIDEND && noteBreakdown) {
       if (formData.market === Market.US) {
-        const calc = usCashDividendCentBreakdown(noteBreakdown.shares, noteBreakdown.perShare);
+        const calc = usCashDividendFromNoteWithNetOverride(
+          noteBreakdown.shares,
+          noteBreakdown.perShare,
+          parseFloat(formData.price)
+        );
         price = calc.netNative;
-        withheldUsTaxNative = calc.taxNative;
+        if (calc.taxNative > 0) withheldUsTaxNative = calc.taxNative;
       } else if (formData.market === Market.TW) {
         const grossNative = twEstimatedSingleDividendTwd(noteBreakdown.shares, noteBreakdown.perShare);
         if (isEditing && editingTransaction?.withheldNhiTwd != null && editingTransaction.withheldNhiTwd > 0) {
@@ -473,8 +484,12 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
 
     const withheld = getCashDividendWithheld();
     if (formData.market === Market.US) {
-      // 備註有每股×股數時一律依國泰規則重算，不沿用舊 withheld（避免仍顯示 619.42）
-      return usCashDividendCentBreakdown(breakdown.shares, breakdown.perShare);
+      const userNet = parseFloat(formData.price);
+      return usCashDividendFromNoteWithNetOverride(
+        breakdown.shares,
+        breakdown.perShare,
+        Number.isFinite(userNet) ? userNet : undefined
+      );
     }
     if (formData.market === Market.TW) {
       const grossNative = twEstimatedSingleDividendTwd(breakdown.shares, breakdown.perShare);
