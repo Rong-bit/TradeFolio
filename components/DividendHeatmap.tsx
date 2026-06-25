@@ -5,7 +5,6 @@ import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 import { transactionAmountNativeToTWD, valueInBaseCurrency } from '../utils/calculations';
-import { formatShareQuantityForNote } from '../utils/formatDisplay';
 import { t, translate } from '../utils/i18n';
 import { useActualDividends } from '../hooks/useActualDividends';
 import {
@@ -29,20 +28,6 @@ import {
   formatUsDividendNativeAmount,
   usCashDividendCentBreakdown,
 } from '../utils/dividendTaxHelpers';
-import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
-
-type PendingConfirmState = {
-  tx: Transaction;
-  rowKey: string;
-  accountOptionIds: string[];
-};
-
-function recalcCashDividendTx(tx: Transaction): Transaction {
-  const price = Number.isFinite(tx.price) ? tx.price : 0;
-  const fees = tx.fees || 0;
-  const quantity = tx.quantity || 1;
-  return { ...tx, price, amount: price * quantity - fees };
-}
 
 function colorForAmount(amount: number, maxAmount: number): string {
   if (amount === 0) return '#f1f5f9';
@@ -95,7 +80,7 @@ const DividendHeatmap: React.FC = () => {
   const [pendingListVisible, setPendingListVisible] = useState(
     () => readPendingDividendListVisible()
   );
-  const [confirmState, setConfirmState] = useState<PendingConfirmState | null>(null);
+  const [confirmState, setConfirmState] = useState<{ tx: Transaction; rowKey: string } | null>(null);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const dtx = tr.dividendTax;
@@ -331,7 +316,7 @@ const DividendHeatmap: React.FC = () => {
     if (calc.netNative <= 0) return;
     const note = translate('dividendTax.pendingActualNoteTemplate', language, {
       perShare: row.amountPerShare.toLocaleString(undefined, { maximumFractionDigits: 6 }),
-      qty: formatShareQuantityForNote(row.quantity),
+      qty: row.quantity.toLocaleString(),
     });
     const tx: Transaction = {
       id: uuidv4(),
@@ -352,44 +337,12 @@ const DividendHeatmap: React.FC = () => {
         ? { withheldUsTaxNative: calc.withheldUsTaxNative }
         : {}),
     };
-    setConfirmState({
-      tx,
-      rowKey: row.key,
-      accountOptionIds: row.accountOptions.map(o => o.accountId),
-    });
-  };
-
-  const patchConfirmTx = (patch: Partial<Transaction>) => {
-    setConfirmState(prev => {
-      if (!prev) return null;
-      let tx = recalcCashDividendTx({ ...prev.tx, ...patch });
-      if ('withheldUsTaxNative' in patch) {
-        const v = patch.withheldUsTaxNative;
-        if (v == null || v <= 0 || !Number.isFinite(v)) {
-          const { withheldUsTaxNative: _removed, ...rest } = tx;
-          tx = rest as Transaction;
-        }
-      }
-      if ('withheldNhiTwd' in patch) {
-        const v = patch.withheldNhiTwd;
-        if (v == null || v <= 0 || !Number.isFinite(v)) {
-          const { withheldNhiTwd: _removed, ...rest } = tx;
-          tx = rest as Transaction;
-        }
-      }
-      return { ...prev, tx };
-    });
+    setConfirmState({ tx, rowKey: row.key });
   };
 
   const confirmAndSavePendingActual = () => {
     if (!confirmState) return;
-    const { tx } = confirmState;
-    if (!tx.date?.trim() || !tx.accountId) return;
-    if (!Number.isFinite(tx.price) || tx.price <= 0) {
-      window.alert(dtx.pendingActualConfirmInvalidAmount);
-      return;
-    }
-    addTransaction(tx);
+    addTransaction(confirmState.tx);
     const rowKey = confirmState.rowKey;
     setPendingAccountByKey(prev => {
       const next = { ...prev };
@@ -437,7 +390,7 @@ const DividendHeatmap: React.FC = () => {
     const accountLabel =
       accounts.find(a => a.id === pa.accountId)?.name ?? pa.accountId;
     const tipLines: string[] = [];
-    tipLines.push(`${accountLabel}：${formatShareQuantityForNote(pa.quantity)} 股`);
+    tipLines.push(`${accountLabel}：${pa.quantity} 股`);
     tipLines.push(
       `${dtx.pendingActualPerShare}: ${pa.amountPerShare} × ${pa.quantity} = ${fmtAmt(calc.grossNative, pa.market)} ${cur}`
     );
@@ -726,229 +679,108 @@ const DividendHeatmap: React.FC = () => {
         ) : null}
       </div>
 
-      {confirmState && (() => {
-        const { tx, accountOptionIds } = confirmState;
-        const cur = getAccountCurrencyCode(tx.accountId);
-        const optionIdSet = new Set(accountOptionIds);
-        const accountSelectIds = [
-          ...accountOptionIds,
-          ...accounts.filter(a => !optionIdSet.has(a.id)).map(a => a.id),
-        ];
-        const confirmInputClass = `w-full border border-slate-300 rounded-md px-2 py-1.5 text-sm tabular-nums ${FORM_FIELD_THEME}`;
-        const confirmFieldRow = 'flex flex-col gap-1 py-1.5 border-b border-slate-100 dark:border-slate-700 sm:flex-row sm:justify-between sm:items-center';
-        const confirmLabelClass = 'text-slate-600 dark:text-slate-400 shrink-0';
-        const confirmFieldWrap = 'w-full sm:max-w-[58%]';
-        const fmtTotal =
-          tx.market === Market.US
-            ? formatUsDividendNativeAmount(tx.amount ?? 0)
-            : (tx.amount ?? 0).toFixed(2);
-
-        return (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60] overflow-y-auto">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col my-auto">
-              <div className="bg-slate-900 p-4 shrink-0">
-                <h3 className="text-white font-bold text-lg">{tf.confirmTitle}</h3>
+      {confirmState && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60]">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-slate-900 p-4">
+              <h3 className="text-white font-bold text-lg">{tf.confirmTitle}</h3>
+            </div>
+            <div className="p-6 space-y-3">
+              <div className="bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">{tf.confirmMessage}</p>
               </div>
-              <div className="p-6 space-y-3 overflow-y-auto flex-1 min-h-0">
-                <div className="bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                  <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">{tf.confirmMessage}</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.dateLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">{confirmState.tx.date}</span>
                 </div>
-                <div className="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 rounded-lg p-3">
-                  <p className="text-sm text-sky-900 dark:text-sky-200">{dtx.pendingActualConfirmEditHint}</p>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.accountLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{getAccountName(confirmState.tx.accountId)}</span>
                 </div>
-                <div className="space-y-0 text-sm">
-                  <div className={confirmFieldRow}>
-                    <label className={confirmLabelClass} htmlFor="pending-confirm-date">{tf.dateLabel}</label>
-                    <div className={confirmFieldWrap}>
-                      <input
-                        id="pending-confirm-date"
-                        type="date"
-                        value={tx.date}
-                        onChange={e => patchConfirmTx({ date: e.target.value })}
-                        className={confirmInputClass}
-                      />
-                    </div>
-                  </div>
-                  <div className={confirmFieldRow}>
-                    <label className={confirmLabelClass} htmlFor="pending-confirm-account">{tf.accountLabel}</label>
-                    <div className={confirmFieldWrap}>
-                      <select
-                        id="pending-confirm-account"
-                        value={tx.accountId}
-                        onChange={e => patchConfirmTx({ accountId: e.target.value })}
-                        className={confirmInputClass}
-                      >
-                        {accountSelectIds.map(id => {
-                          const acc = accounts.find(a => a.id === id);
-                          return (
-                            <option key={id} value={id}>
-                              {acc ? `${acc.name} (${acc.currency})` : id}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  </div>
-                  <div className={`${confirmFieldRow} sm:items-baseline`}>
-                    <span className={confirmLabelClass}>{tf.marketLabel}</span>
-                    <span className={`${confirmFieldWrap} font-medium text-slate-900 dark:text-slate-100 sm:text-right`}>
-                      {tx.market}
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.marketLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{confirmState.tx.market}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.tickerLabel}</span>
+                  <span className="font-medium font-mono text-slate-900 dark:text-slate-100">{confirmState.tx.ticker}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.typeLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{getTypeName(confirmState.tx.type)}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.priceLabel}</span>
+                  <span className="font-medium tabular-nums text-slate-900 dark:text-slate-100">
+                    {confirmState.tx.price.toFixed(2)} {getAccountCurrencyCode(confirmState.tx.accountId)}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.quantityLabel}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                    {tf.cashDividendQuantityConfirm}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400">{tf.feesLabel}</span>
+                  <span className="font-medium tabular-nums text-slate-900 dark:text-slate-100">
+                    {confirmState.tx.fees.toFixed(2)} {getAccountCurrencyCode(confirmState.tx.accountId)}
+                  </span>
+                </div>
+                {confirmState.tx.withheldUsTaxNative != null && confirmState.tx.withheldUsTaxNative > 0 && (
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700 text-rose-700 dark:text-rose-400">
+                    <span>{dtx.estNetAfterWithholding}</span>
+                    <span className="font-medium tabular-nums">
+                      −{confirmState.tx.withheldUsTaxNative.toFixed(2)}{' '}
+                      {getAccountCurrencyCode(confirmState.tx.accountId)}
                     </span>
                   </div>
-                  <div className={`${confirmFieldRow} sm:items-baseline`}>
-                    <span className={confirmLabelClass}>{tf.tickerLabel}</span>
-                    <span className={`${confirmFieldWrap} font-medium font-mono text-slate-900 dark:text-slate-100 sm:text-right`}>
-                      {tx.ticker}
+                )}
+                {confirmState.tx.withheldNhiTwd != null && confirmState.tx.withheldNhiTwd > 0 && (
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700 text-rose-700 dark:text-rose-400">
+                    <span>{dtx.estNhiFee}</span>
+                    <span className="font-medium tabular-nums">
+                      −{confirmState.tx.withheldNhiTwd.toLocaleString()} TWD
                     </span>
                   </div>
-                  <div className={`${confirmFieldRow} sm:items-baseline`}>
-                    <span className={confirmLabelClass}>{tf.typeLabel}</span>
-                    <span className={`${confirmFieldWrap} font-medium text-slate-900 dark:text-slate-100 sm:text-right`}>
-                      {getTypeName(tx.type)}
+                )}
+                {confirmState.tx.note && (
+                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400">{tf.noteLabel}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100 text-right max-w-[60%]">{confirmState.tx.note}</span>
+                  </div>
+                )}
+                <div className="border-t-2 border-slate-300 dark:border-slate-600 pt-2 mt-2">
+                  <div className="flex justify-between items-baseline gap-3">
+                    <span className="text-slate-700 dark:text-slate-300 font-semibold shrink-0">{tf.totalAmount}</span>
+                    <span className="font-bold text-lg text-slate-900 dark:text-amber-400 tabular-nums text-right">
+                      {confirmState.tx.amount?.toFixed(2) ?? '0.00'}{' '}
+                      {getAccountCurrencyCode(confirmState.tx.accountId)}
                     </span>
-                  </div>
-                  <div className={confirmFieldRow}>
-                    <label className={confirmLabelClass} htmlFor="pending-confirm-price">
-                      {dtx.pendingActualEstAmount}：
-                    </label>
-                    <div className={`${confirmFieldWrap} flex items-center gap-1.5`}>
-                      <input
-                        id="pending-confirm-price"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={tx.price}
-                        onChange={e => {
-                          const n = parseFloat(e.target.value);
-                          if (!Number.isNaN(n)) patchConfirmTx({ price: n });
-                        }}
-                        className={`${confirmInputClass} flex-1`}
-                      />
-                      <span className="text-slate-500 dark:text-slate-400 shrink-0 text-xs">{cur}</span>
-                    </div>
-                  </div>
-                  <div className={`${confirmFieldRow} sm:items-baseline`}>
-                    <span className={confirmLabelClass}>{tf.quantityLabel}</span>
-                    <span className={`${confirmFieldWrap} font-medium text-slate-900 dark:text-slate-100 sm:text-right`}>
-                      {tf.cashDividendQuantityConfirm}
-                    </span>
-                  </div>
-                  <div className={confirmFieldRow}>
-                    <label className={confirmLabelClass} htmlFor="pending-confirm-fees">{tf.feesLabel}</label>
-                    <div className={`${confirmFieldWrap} flex items-center gap-1.5`}>
-                      <input
-                        id="pending-confirm-fees"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={tx.fees}
-                        onChange={e => {
-                          const n = parseFloat(e.target.value);
-                          if (!Number.isNaN(n)) patchConfirmTx({ fees: n });
-                        }}
-                        className={`${confirmInputClass} flex-1`}
-                      />
-                      <span className="text-slate-500 dark:text-slate-400 shrink-0 text-xs">{cur}</span>
-                    </div>
-                  </div>
-                  {tx.market === Market.US && (
-                    <div className={confirmFieldRow}>
-                      <label className={`${confirmLabelClass} text-rose-700 dark:text-rose-400`} htmlFor="pending-confirm-us-tax">
-                        {dtx.usNetTooltipTitle}：
-                      </label>
-                      <div className={`${confirmFieldWrap} flex items-center gap-1.5`}>
-                        <input
-                          id="pending-confirm-us-tax"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={tx.withheldUsTaxNative ?? ''}
-                          placeholder="0"
-                          onChange={e => {
-                            const raw = e.target.value;
-                            if (raw === '') {
-                              patchConfirmTx({ withheldUsTaxNative: undefined });
-                              return;
-                            }
-                            const n = parseFloat(raw);
-                            if (!Number.isNaN(n)) patchConfirmTx({ withheldUsTaxNative: n });
-                          }}
-                          className={`${confirmInputClass} flex-1`}
-                        />
-                        <span className="text-slate-500 dark:text-slate-400 shrink-0 text-xs">{cur}</span>
-                      </div>
-                    </div>
-                  )}
-                  {tx.market === Market.TW && (
-                    <div className={confirmFieldRow}>
-                      <label className={`${confirmLabelClass} text-rose-700 dark:text-rose-400`} htmlFor="pending-confirm-nhi">
-                        {dtx.estNhiFee}：
-                      </label>
-                      <div className={`${confirmFieldWrap} flex items-center gap-1.5`}>
-                        <input
-                          id="pending-confirm-nhi"
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={tx.withheldNhiTwd ?? ''}
-                          placeholder="0"
-                          onChange={e => {
-                            const raw = e.target.value;
-                            if (raw === '') {
-                              patchConfirmTx({ withheldNhiTwd: undefined });
-                              return;
-                            }
-                            const n = parseFloat(raw);
-                            if (!Number.isNaN(n)) patchConfirmTx({ withheldNhiTwd: Math.round(n) });
-                          }}
-                          className={`${confirmInputClass} flex-1`}
-                        />
-                        <span className="text-slate-500 dark:text-slate-400 shrink-0 text-xs">TWD</span>
-                      </div>
-                    </div>
-                  )}
-                  <div className={confirmFieldRow}>
-                    <label className={confirmLabelClass} htmlFor="pending-confirm-note">{tf.noteLabel}</label>
-                    <div className={confirmFieldWrap}>
-                      <textarea
-                        id="pending-confirm-note"
-                        rows={2}
-                        value={tx.note ?? ''}
-                        onChange={e => patchConfirmTx({ note: e.target.value })}
-                        className={`${confirmInputClass} resize-y min-h-[2.5rem]`}
-                      />
-                    </div>
-                  </div>
-                  <div className="border-t-2 border-slate-300 dark:border-slate-600 pt-2 mt-2">
-                    <div className="flex justify-between items-baseline gap-3">
-                      <span className="text-slate-700 dark:text-slate-300 font-semibold shrink-0">{tf.totalAmount}</span>
-                      <span className="font-bold text-lg text-slate-900 dark:text-amber-400 tabular-nums text-right">
-                        {fmtTotal} {cur}
-                      </span>
-                    </div>
                   </div>
                 </div>
-                <div className="pt-4 flex gap-3 shrink-0">
-                  <button
-                    type="button"
-                    onClick={cancelConfirmPendingActual}
-                    className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
-                  >
-                    {tf.cancel}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={confirmAndSavePendingActual}
-                    className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
-                  >
-                    {tf.confirmSave}
-                  </button>
-                </div>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={cancelConfirmPendingActual}
+                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
+                >
+                  {tf.backToEdit}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmAndSavePendingActual}
+                  className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
+                >
+                  {tf.confirmSave}
+                </button>
               </div>
             </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 };
