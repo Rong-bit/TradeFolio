@@ -24,3 +24,37 @@ declare module '@vercel/node' {
   ) => void | Promise<void>;
 }
 
+declare module 'googleapis' {
+  export const google: {
+    auth: {
+      JWT: new (
+        email?: string,
+        keyFile?: string,
+        key?: string,
+        scopes?: string[],
+        subject?: string
+      ) => {
+        authorize: () => Promise<void>;
+      };
+    };
+    androidpublisher: (opts: { version: string; auth: unknown }) => {
+      purchases: {
+        subscriptions: {
+          get: (args: {
+            packageName: string;
+            subscriptionId: string;
+            token: string;
+          }) => Promise<{ data: Record<string, unknown> }>;
+        };
+        products: {
+          get: (args: {
+            packageName: string;
+            productId: string;
+            token: string;
+          }) => Promise<{ data: Record<string, unknown> }>;
+        };
+      };
+    };
+  };
+}
+
