@@ -289,6 +289,7 @@ export const en: Translations = {
     pendingActualEstAmount: 'Est. net (after tax)',
     pendingActualAccount: 'Account',
     pendingActualNoteTemplate: 'Auto-import: {perShare} per share, {qty} shares',
+    pendingActualConfirmGrossAmount: 'Gross amount (pre-tax)',
   },
   funds: {
     title: 'Fund Management',

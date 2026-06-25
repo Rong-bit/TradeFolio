@@ -234,6 +234,7 @@ export const hi: Translations = {
     pendingActualEstAmount: 'अनुमानित शुद्ध (कर बाद)',
     pendingActualAccount: 'जमा खाता',
     pendingActualNoteTemplate: 'ऑटो-आयात: प्रति शेयर {perShare}, होल्डिंग {qty}',
+    pendingActualConfirmGrossAmount: 'कर-पूर्व कुल राशि',
   },
   funds: {
     ...en.funds,

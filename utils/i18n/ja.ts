@@ -288,6 +288,7 @@ export const ja: Translations = {
     pendingActualEstAmount: '試算実領（税引後）',
     pendingActualAccount: '入金口座',
     pendingActualNoteTemplate: '自動取込：1株 {perShare}、保有 {qty} 株',
+    pendingActualConfirmGrossAmount: '税引前総額',
   },
   funds: {
     title: '資金管理',

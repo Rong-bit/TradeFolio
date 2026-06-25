@@ -231,6 +231,7 @@ zhCN.dividendTax = {
   pendingActualEstAmount: '试算实领（税后）',
   pendingActualAccount: '入账账户',
   pendingActualNoteTemplate: '自动导入：每股 {perShare}，持股 {qty}',
+  pendingActualConfirmGrossAmount: '税前总额',
 };
 zhCN.funds = {
   ...zhTW.funds,

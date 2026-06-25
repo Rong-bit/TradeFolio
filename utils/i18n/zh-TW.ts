@@ -285,6 +285,7 @@ export const zhTW: Translations = {
     pendingActualEstAmount: '試算實領（稅後）',
     pendingActualAccount: '入帳帳戶',
     pendingActualNoteTemplate: '自動匯入：每股 {perShare}，持股 {qty}',
+    pendingActualConfirmGrossAmount: '稅前總額',
   },
   funds: {
     title: '資金管理',

@@ -288,6 +288,7 @@ export const ko: Translations = {
     pendingActualEstAmount: '세후 실수령(예상)',
     pendingActualAccount: '입금 계좌',
     pendingActualNoteTemplate: '자동 가져오기: 주당 {perShare}, 보유 {qty}주',
+    pendingActualConfirmGrossAmount: '세전 총액',
   },
   funds: {
     title: '자금 관리',

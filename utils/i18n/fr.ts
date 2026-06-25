@@ -259,6 +259,7 @@ export const fr: Translations = {
     pendingActualEstAmount: 'Net estime (apres impots)',
     pendingActualAccount: 'Compte credite',
     pendingActualNoteTemplate: 'Import auto : {perShare} par action, {qty} actions',
+    pendingActualConfirmGrossAmount: 'Montant brut (avant impôt)',
   },
   funds: { 
     ...en.funds, 

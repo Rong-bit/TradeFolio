@@ -234,6 +234,7 @@ export const ar: Translations = {
     pendingActualEstAmount: 'صافي تقديري (بعد الضريبة)',
     pendingActualAccount: 'حساب الإيداع',
     pendingActualNoteTemplate: 'استيراد تلقائي: لكل سهم {perShare}، الكمية {qty}',
+    pendingActualConfirmGrossAmount: 'المبلغ الإجمالي قبل الضريبة',
   },
   funds: { 
     ...en.funds,
