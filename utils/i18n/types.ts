@@ -325,6 +325,9 @@ export interface Translations {
     pendingActualEstAmount: string;
     pendingActualAccount: string;
     pendingActualNoteTemplate: string;
+    /** 待入帳確認框：欄位可直接編輯 */
+    pendingActualConfirmEditHint: string;
+    pendingActualConfirmInvalidAmount: string;
   };
   // 資金管理
   funds: {

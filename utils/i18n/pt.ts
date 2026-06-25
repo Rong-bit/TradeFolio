@@ -234,6 +234,8 @@ export const pt: Translations = {
     pendingActualEstAmount: 'Liquido est. (apos impostos)',
     pendingActualAccount: 'Conta de entrada',
     pendingActualNoteTemplate: 'Importação automática: por ação {perShare}, posição {qty}',
+    pendingActualConfirmEditHint: 'Pode editar os campos abaixo (data, conta, valor líquido, retenção, nota, etc.) antes de guardar.',
+    pendingActualConfirmInvalidAmount: 'Introduza um valor líquido superior a 0.',
   },
   funds: { 
     ...en.funds, 

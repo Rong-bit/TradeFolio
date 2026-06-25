@@ -288,6 +288,8 @@ export const ja: Translations = {
     pendingActualEstAmount: '試算実領（税引後）',
     pendingActualAccount: '入金口座',
     pendingActualNoteTemplate: '自動取込：1株 {perShare}、保有 {qty} 株',
+    pendingActualConfirmEditHint: '以下の項目（日付、口座、受取額、源泉徴収、メモなど）を編集してから保存できます。',
+    pendingActualConfirmInvalidAmount: '受取額は 0 より大きい値を入力してください。',
   },
   funds: {
     title: '資金管理',

@@ -289,6 +289,8 @@ export const en: Translations = {
     pendingActualEstAmount: 'Est. net (after tax)',
     pendingActualAccount: 'Account',
     pendingActualNoteTemplate: 'Auto-import: {perShare} per share, {qty} shares',
+    pendingActualConfirmEditHint: 'You can edit the fields below (date, account, net amount, withholding, note, etc.) before saving.',
+    pendingActualConfirmInvalidAmount: 'Please enter a net amount greater than 0.',
   },
   funds: {
     title: 'Fund Management',
