@@ -25,8 +25,9 @@ import {
   twNhiSupplementFloorTwd,
   TW_NHI_SUPPLEMENT_THRESHOLD_TWD,
   US_DIVIDEND_WITHHOLDING_RATE,
+  formatUsDividendNativeAmount,
+  usCashDividendCentBreakdown,
 } from '../utils/dividendTaxHelpers';
-import { formatDividendPerShare } from '../utils/yahooProxyUrl';
 
 function colorForAmount(amount: number, maxAmount: number): string {
   if (amount === 0) return '#f1f5f9';
@@ -117,13 +118,11 @@ const DividendHeatmap: React.FC = () => {
     if (grossNative <= 0) return { grossNative: 0, netNative: 0 };
 
     if (row.market === Market.US) {
-      const grossCents = Math.round(grossNative * 100);
-      const taxCents = Math.round(grossCents * US_DIVIDEND_WITHHOLDING_RATE);
-      const netCents = Math.max(0, grossCents - taxCents);
+      const calc = usCashDividendCentBreakdown(row.quantity, row.amountPerShare);
       return {
-        grossNative: grossCents / 100,
-        netNative: netCents / 100,
-        withheldUsTaxNative: taxCents / 100,
+        grossNative: calc.grossNative,
+        netNative: calc.netNative,
+        withheldUsTaxNative: calc.taxNative,
       };
     }
     if (row.market === Market.TW) {
@@ -316,7 +315,7 @@ const DividendHeatmap: React.FC = () => {
     const calc = getCashDividendCalc(row);
     if (calc.netNative <= 0) return;
     const note = translate('dividendTax.pendingActualNoteTemplate', language, {
-      perShare: formatDividendPerShare(row.amountPerShare),
+      perShare: row.amountPerShare.toLocaleString(undefined, { maximumFractionDigits: 6 }),
       qty: row.quantity.toLocaleString(),
     });
     const tx: Transaction = {
@@ -386,20 +385,20 @@ const DividendHeatmap: React.FC = () => {
     const paOptionAccountIds = new Set(pa.accountOptions.map(o => o.accountId));
     const calc = getCashDividendCalc(pa);
     const cur = pa.currency ?? getAccountCurrencyCode(paSelectedAccount);
-    const fmtAmt = (n: number) =>
-      n.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+    const fmtAmt = (n: number, market: Market) =>
+      market === Market.US ? formatUsDividendNativeAmount(n) : n.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
     const accountLabel =
       accounts.find(a => a.id === pa.accountId)?.name ?? pa.accountId;
     const tipLines: string[] = [];
     tipLines.push(`${accountLabel}：${pa.quantity} 股`);
     tipLines.push(
-      `${dtx.pendingActualPerShare}: ${formatDividendPerShare(pa.amountPerShare)} × ${pa.quantity} = ${fmtAmt(calc.grossNative)} ${cur}`
+      `${dtx.pendingActualPerShare}: ${pa.amountPerShare} × ${pa.quantity} = ${fmtAmt(calc.grossNative, pa.market)} ${cur}`
     );
     if (calc.withheldUsTaxNative != null && calc.withheldUsTaxNative > 0) {
       tipLines.push(
-        `− ${(US_DIVIDEND_WITHHOLDING_RATE * 100).toFixed(0)}% = -${fmtAmt(calc.withheldUsTaxNative)} ${cur}`
+        `− ${(US_DIVIDEND_WITHHOLDING_RATE * 100).toFixed(0)}% = -${fmtAmt(calc.withheldUsTaxNative, pa.market)} ${cur}`
       );
-      tipLines.push(`= ${fmtAmt(calc.netNative)} ${cur}`);
+      tipLines.push(`= ${fmtAmt(calc.netNative, pa.market)} ${cur}`);
     }
     const sourceLabel =
       pa.source === 'stockanalysis'
@@ -421,7 +420,7 @@ const DividendHeatmap: React.FC = () => {
             className="rounded px-1.5 py-0.5 bg-sky-50 border border-sky-200 text-sky-800 font-semibold tabular-nums"
             title={tipLines.join('\n')}
           >
-            {fmtAmt(calc.netNative)} {cur}
+            {fmtAmt(calc.netNative, pa.market)} {cur}
           </span>
         )}
         {showTicker && (
@@ -660,10 +659,13 @@ const DividendHeatmap: React.FC = () => {
                             ) : null}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">
-                            {formatDividendPerShare(pa.amountPerShare)} {cur}
+                            {pa.amountPerShare.toLocaleString(undefined, { maximumFractionDigits: 4 })} {cur}
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums">
-                            {calc.netNative.toLocaleString(undefined, { maximumFractionDigits: 2 })} {cur}
+                          <td className="px-3 py-2 text-right tabular-nums font-medium">
+                            {pa.market === Market.US
+                              ? formatUsDividendNativeAmount(calc.netNative)
+                              : calc.netNative.toLocaleString(undefined, { maximumFractionDigits: 2 })}{' '}
+                            {cur}
                           </td>
                           <td className="px-3 py-2 text-center">{renderPendingAddRow(pa, { showTicker: false })}</td>
                         </tr>
