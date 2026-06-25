@@ -27,8 +27,48 @@ import {
   US_DIVIDEND_WITHHOLDING_RATE,
   formatUsDividendNativeAmount,
   usCashDividendCentBreakdown,
+  usWithholdingFromGrossNative,
+  twNetFromGrossTwd,
 } from '../utils/dividendTaxHelpers';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
+
+function formatGrossForConfirmEdit(market: Market, grossNative: number): string {
+  if (!Number.isFinite(grossNative) || grossNative <= 0) return '0';
+  if (market === Market.US) return formatUsDividendNativeAmount(grossNative);
+  return String(Math.round(grossNative));
+}
+
+function normalizeGrossForConfirm(market: Market, grossNative: number): number {
+  if (!Number.isFinite(grossNative) || grossNative <= 0) return 0;
+  if (market === Market.US) return Math.round(grossNative * 100) / 100;
+  return Math.round(grossNative);
+}
+
+function netAndWithholdingFromGross(
+  market: Market,
+  grossNative: number
+): {
+  netNative: number;
+  withheldUsTaxNative?: number;
+  withheldNhiTwd?: number;
+} {
+  const gross = normalizeGrossForConfirm(market, grossNative);
+  if (gross <= 0) {
+    return { netNative: 0 };
+  }
+  if (market === Market.US) {
+    const { taxNative, netNative } = usWithholdingFromGrossNative(gross);
+    return {
+      netNative,
+      withheldUsTaxNative: taxNative > 0 ? taxNative : undefined,
+    };
+  }
+  if (market === Market.TW) {
+    const { netNative, withheldNhiTwd } = twNetFromGrossTwd(gross);
+    return { netNative, withheldNhiTwd };
+  }
+  return { netNative: gross };
+}
 
 function colorForAmount(amount: number, maxAmount: number): string {
   if (amount === 0) return '#f1f5f9';
@@ -343,22 +383,66 @@ const DividendHeatmap: React.FC = () => {
         ? { withheldUsTaxNative: calc.withheldUsTaxNative }
         : {}),
     };
-    const amountStr = calc.netNative.toFixed(2);
-    setConfirmState({ tx, rowKey: row.key, editPrice: amountStr, editAmount: amountStr });
+    setConfirmState({
+      tx,
+      rowKey: row.key,
+      editPrice: formatGrossForConfirmEdit(row.market, calc.grossNative),
+      editAmount: calc.netNative.toFixed(2),
+    });
+  };
+
+  const applyConfirmGrossEdit = (grossStr: string) => {
+    setConfirmState(prev => {
+      if (!prev) return null;
+      const gross = parseFloat(grossStr);
+      if (!Number.isFinite(gross)) {
+        return { ...prev, editPrice: grossStr };
+      }
+      const { netNative, withheldUsTaxNative, withheldNhiTwd } = netAndWithholdingFromGross(
+        prev.tx.market,
+        gross
+      );
+      const nextTx: Transaction = { ...prev.tx };
+      if (withheldUsTaxNative != null && withheldUsTaxNative > 0) {
+        nextTx.withheldUsTaxNative = withheldUsTaxNative;
+      } else {
+        delete nextTx.withheldUsTaxNative;
+      }
+      if (withheldNhiTwd != null && withheldNhiTwd > 0) {
+        nextTx.withheldNhiTwd = withheldNhiTwd;
+      } else {
+        delete nextTx.withheldNhiTwd;
+      }
+      return {
+        ...prev,
+        tx: nextTx,
+        editPrice: grossStr,
+        editAmount: netNative > 0 ? netNative.toFixed(2) : prev.editAmount,
+      };
+    });
   };
 
   const confirmAndSavePendingActual = () => {
     if (!confirmState) return;
-    const price = parseFloat(confirmState.editPrice);
-    const amount = parseFloat(confirmState.editAmount);
-    if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(amount) || amount <= 0) return;
-    addTransaction({
+    const net = parseFloat(confirmState.editAmount);
+    if (!Number.isFinite(net) || net <= 0) return;
+    const gross = normalizeGrossForConfirm(confirmState.tx.market, parseFloat(confirmState.editPrice));
+    const saved: Transaction = {
       ...confirmState.tx,
-      price,
-      amount,
+      price: net,
+      amount: net,
       fees: 0,
       quantity: 1,
-    });
+    };
+    if (
+      confirmState.tx.market === Market.US &&
+      Number.isFinite(gross) &&
+      gross > net
+    ) {
+      const tax = Math.round((gross - net) * 100) / 100;
+      if (tax > 0) saved.withheldUsTaxNative = tax;
+    }
+    addTransaction(saved);
     const rowKey = confirmState.rowKey;
     setPendingAccountByKey(prev => {
       const next = { ...prev };
@@ -727,18 +811,14 @@ const DividendHeatmap: React.FC = () => {
                   <span className="font-medium text-slate-900 dark:text-slate-100">{getTypeName(confirmState.tx.type)}</span>
                 </div>
                 <div className="flex justify-between items-center gap-3 py-1 border-b border-slate-100 dark:border-slate-700">
-                  <span className="text-slate-600 dark:text-slate-400 shrink-0">{tf.placeholderQuantity}</span>
+                  <span className="text-slate-600 dark:text-slate-400 shrink-0">{dtx.pendingActualConfirmGrossAmount}</span>
                   <div className="flex items-center gap-1.5 min-w-0">
                     <input
                       type="number"
-                      step="any"
+                      step={confirmState.tx.market === Market.US ? '0.01' : '1'}
                       min="0"
                       value={confirmState.editPrice}
-                      onChange={e =>
-                        setConfirmState(prev =>
-                          prev ? { ...prev, editPrice: e.target.value } : prev
-                        )
-                      }
+                      onChange={e => applyConfirmGrossEdit(e.target.value)}
                       className={`w-28 text-right tabular-nums border border-slate-300 rounded-md p-1.5 text-sm ${FORM_FIELD_THEME}`}
                     />
                     <span className="text-slate-500 dark:text-slate-400 text-xs shrink-0">
@@ -754,7 +834,7 @@ const DividendHeatmap: React.FC = () => {
                 </div>
                 {confirmState.tx.withheldUsTaxNative != null && confirmState.tx.withheldUsTaxNative > 0 && (
                   <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700 text-rose-700 dark:text-rose-400">
-                    <span>{dtx.estNetAfterWithholding}</span>
+                    <span>{dtx.usNetTooltipTitle}</span>
                     <span className="font-medium tabular-nums">
                       −{confirmState.tx.withheldUsTaxNative.toFixed(2)}{' '}
                       {getAccountCurrencyCode(confirmState.tx.accountId)}
@@ -777,7 +857,7 @@ const DividendHeatmap: React.FC = () => {
                 )}
                 <div className="border-t-2 border-slate-300 dark:border-slate-600 pt-2 mt-2">
                   <div className="flex justify-between items-center gap-3">
-                    <span className="text-slate-700 dark:text-slate-300 font-semibold shrink-0">{tf.totalAmount}</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-semibold shrink-0">{dtx.pendingActualEstAmount}</span>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <input
                         type="number"
