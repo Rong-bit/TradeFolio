@@ -150,3 +150,9 @@ export function usCashDividendCentBreakdown(
 export function usEstimatedNetDividendNative(shares: number, lastAmountPerShareUsd: number): number {
   return usCashDividendCentBreakdown(shares, lastAmountPerShareUsd).netNative;
 }
+
+/** 美股配息金額顯示（固定 2 位小數，避免 toLocaleString 銀行家捨入） */
+export function formatUsDividendNativeAmount(value: number): string {
+  if (!Number.isFinite(value)) return '-';
+  return (Math.round(value * 100) / 100).toFixed(2);
+}
