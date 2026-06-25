@@ -422,6 +422,20 @@ const DividendHeatmap: React.FC = () => {
     });
   };
 
+  const applyConfirmNetEdit = (raw: string) => {
+    setConfirmState(prev => {
+      if (!prev) return null;
+      const n = parseFloat(raw);
+      if (!Number.isFinite(n)) return { ...prev, editAmount: raw };
+      const clamped = Math.max(0, n);
+      const formatted =
+        prev.tx.market === Market.US
+          ? (Math.round(clamped * 100) / 100).toFixed(2)
+          : String(Math.round(clamped));
+      return { ...prev, editAmount: formatted };
+    });
+  };
+
   const confirmAndSavePendingActual = () => {
     if (!confirmState) return;
     const net = parseFloat(confirmState.editAmount);
@@ -861,14 +875,10 @@ const DividendHeatmap: React.FC = () => {
                     <div className="flex items-center gap-1.5 min-w-0">
                       <input
                         type="number"
-                        step="any"
+                        step={confirmState.tx.market === Market.US ? '0.01' : '1'}
                         min="0"
                         value={confirmState.editAmount}
-                        onChange={e =>
-                          setConfirmState(prev =>
-                            prev ? { ...prev, editAmount: e.target.value } : prev
-                          )
-                        }
+                        onChange={e => applyConfirmNetEdit(e.target.value)}
                         className={`w-28 text-right tabular-nums font-bold text-lg border border-slate-300 rounded-md p-1.5 ${FORM_FIELD_THEME}`}
                       />
                       <span className="text-slate-500 dark:text-slate-400 text-xs shrink-0">
