@@ -44,6 +44,8 @@ function normalizeGrossForConfirm(market: Market, grossNative: number): number {
   return Math.round(grossNative);
 }
 
+const USD_NET_STEP = 0.01;
+
 /** 台股待確認：試算二代健保固定；手動調整實領的差額併入手續費（非 withheldNhiTwd） */
 function twPendingConfirmSaveFields(params: {
   gross: number;
@@ -469,6 +471,29 @@ const DividendHeatmap: React.FC = () => {
       const formatted = (Math.round(n * 100) / 100).toFixed(2);
       if (formatted === prev.editAmount) return prev;
       return { ...prev, editAmount: formatted };
+    });
+  };
+
+  const stepConfirmNetAmount = (delta: number) => {
+    setConfirmState(prev => {
+      if (!prev || prev.tx.market !== Market.US) return prev;
+      const gross = normalizeGrossForConfirm(prev.tx.market, parseFloat(prev.editPrice));
+      const grossCap =
+        Number.isFinite(gross) && gross > 0 ? Math.round(gross * 100) / 100 : Infinity;
+      const current = parseFloat(prev.editAmount);
+      const base = Number.isFinite(current) ? current : 0;
+      let next = Math.round((base + delta) * 100) / 100;
+      next = Math.max(0, Math.min(next, grossCap));
+      const formatted = next.toFixed(2);
+      const nextTx: Transaction = { ...prev.tx };
+      if (gross > next) {
+        const tax = Math.round((gross - next) * 100) / 100;
+        if (tax > 0) nextTx.withheldUsTaxNative = tax;
+        else delete nextTx.withheldUsTaxNative;
+      } else {
+        delete nextTx.withheldUsTaxNative;
+      }
+      return { ...prev, tx: nextTx, editAmount: formatted };
     });
   };
 
@@ -959,6 +984,44 @@ const DividendHeatmap: React.FC = () => {
                         onBlur={formatConfirmNetOnBlur}
                         className={`w-28 text-right tabular-nums font-bold text-lg border border-slate-300 rounded-md p-1.5 ${FORM_FIELD_THEME}`}
                       />
+                      {confirmState.tx.market === Market.US && (() => {
+                        const grossCap = normalizeGrossForConfirm(
+                          Market.US,
+                          parseFloat(confirmState.editPrice),
+                        );
+                        const current = parseFloat(confirmState.editAmount);
+                        const net = Number.isFinite(current) ? current : 0;
+                        const canStepDown = net > 0;
+                        const canStepUp = grossCap > 0 && net < grossCap;
+                        const stepBtnClass =
+                          'flex h-5 w-7 items-center justify-center rounded border border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600';
+                        return (
+                          <div className="flex flex-col shrink-0 gap-0.5" role="group" aria-label={dtx.pendingActualEstAmount}>
+                            <button
+                              type="button"
+                              disabled={!canStepUp}
+                              onClick={() => stepConfirmNetAmount(USD_NET_STEP)}
+                              className={stepBtnClass}
+                              aria-label={`+${USD_NET_STEP.toFixed(2)}`}
+                            >
+                              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+                                <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!canStepDown}
+                              onClick={() => stepConfirmNetAmount(-USD_NET_STEP)}
+                              className={stepBtnClass}
+                              aria-label={`−${USD_NET_STEP.toFixed(2)}`}
+                            >
+                              <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          </div>
+                        );
+                      })()}
                       <span className="text-slate-500 dark:text-slate-400 text-xs shrink-0">
                         {getAccountCurrencyCode(confirmState.tx.accountId)}
                       </span>
