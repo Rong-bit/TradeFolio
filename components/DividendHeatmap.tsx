@@ -22,13 +22,14 @@ import {
 import {
   dividendScheduleMapKey,
   marketToYahooMarketForDividends,
-  twEstimatedSingleDividendTwd,
-  twNhiSupplementFloorTwd,
   TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD,
-  TW_NHI_SUPPLEMENT_THRESHOLD_TWD,
-  US_DIVIDEND_WITHHOLDING_RATE,
+  cashDividendBreakdownForMarket,
+  formatCashDividendNativeAmountForMarket,
   formatUsDividendNativeAmount,
-  usCashDividendCentBreakdown,
+  getMarketWithholdingReferenceRatePercent,
+  marketCashDividendPriceIsNetAfterWithholding,
+  netPriceMarketCashDividendSaveFields,
+  readTransactionStatutoryWithholding,
 } from '../utils/dividendTaxHelpers';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 
@@ -99,6 +100,9 @@ function confirmNetMaxNetFromState(prev: PendingConfirmState): number {
     const gross = parsedGross > 0 ? parsedGross : net + nhi;
     return Math.max(gross - wireFee, net);
   }
+  if (market === Market.US) {
+    return prev.baseNetNative > 0 ? prev.baseNetNative : parsedGross > 0 ? parsedGross : net;
+  }
   return parsedGross > 0 ? parsedGross : net;
 }
 
@@ -112,17 +116,9 @@ function canStepConfirmNetUp(prev: PendingConfirmState): boolean {
 
 function syncConfirmNetAmount(prev: PendingConfirmState, raw: string): PendingConfirmState | null {
   if (raw !== '' && !confirmNetInputPattern(prev.tx.market).test(raw)) return null;
-  const gross = normalizeGrossForConfirm(prev.tx.market, parseFloat(prev.editPrice));
   const nextTx: Transaction = { ...prev.tx };
 
-  if (prev.tx.market === Market.US) {
-    const n = parseFloat(raw);
-    if (Number.isFinite(n) && n >= 0 && gross > n) {
-      const tax = Math.round((gross - n) * 100) / 100;
-      if (tax > 0) nextTx.withheldUsTaxNative = tax;
-      else delete nextTx.withheldUsTaxNative;
-    }
-  } else if (prev.tx.market === Market.TW) {
+  if (prev.tx.market === Market.TW) {
     if (prev.baseWithheldNhiTwd != null && prev.baseWithheldNhiTwd > 0) {
       nextTx.withheldNhiTwd = prev.baseWithheldNhiTwd;
     } else {
@@ -160,6 +156,12 @@ function twPendingConfirmSaveFields(params: {
     amount: params.net,
     ...(baseNhi > 0 ? { withheldNhiTwd: baseNhi } : {}),
   };
+}
+
+function cashDividendStatutoryLabel(market: Market, dtx: ReturnType<typeof t>['dividendTax']): string {
+  if (market === Market.TW) return dtx.estNhiFee;
+  if (market === Market.US) return dtx.usNetTooltipTitle;
+  return dtx.marketWithholdingRef;
 }
 
 function colorForAmount(amount: number, maxAmount: number): string {
@@ -255,36 +257,8 @@ const DividendHeatmap: React.FC = () => {
 
   const getCashDividendCalc = (
     row: { market: Market; amountPerShare: number; quantity: number }
-  ): {
-    grossNative: number;
-    netNative: number;
-    withheldUsTaxNative?: number;
-    withheldNhiTwd?: number;
-  } => {
-    const grossNative = Math.max(0, row.amountPerShare * row.quantity);
-    if (grossNative <= 0) return { grossNative: 0, netNative: 0 };
-
-    if (row.market === Market.US) {
-      const calc = usCashDividendCentBreakdown(row.quantity, row.amountPerShare);
-      return {
-        grossNative: calc.grossNative,
-        netNative: calc.netNative,
-        withheldUsTaxNative: calc.taxNative,
-      };
-    }
-    if (row.market === Market.TW) {
-      const totalRoundedTwd = twEstimatedSingleDividendTwd(row.quantity, row.amountPerShare);
-      const withheldNhiTwd =
-        totalRoundedTwd >= TW_NHI_SUPPLEMENT_THRESHOLD_TWD
-          ? twNhiSupplementFloorTwd(totalRoundedTwd)
-          : undefined;
-      const netNative =
-        withheldNhiTwd != null && withheldNhiTwd > 0
-          ? totalRoundedTwd - withheldNhiTwd
-          : totalRoundedTwd;
-      return { grossNative: totalRoundedTwd, netNative, withheldNhiTwd };
-    }
-    return { grossNative, netNative: grossNative };
+  ): ReturnType<typeof cashDividendBreakdownForMarket> => {
+    return cashDividendBreakdownForMarket(row.market, row.quantity, row.amountPerShare);
   };
 
   const mergedHoldingsForDiv = useMemo(() => {
@@ -483,6 +457,9 @@ const DividendHeatmap: React.FC = () => {
       ...(calc.withheldUsTaxNative != null && calc.withheldUsTaxNative > 0
         ? { withheldUsTaxNative: calc.withheldUsTaxNative }
         : {}),
+      ...(calc.withheldTaxNative != null && calc.withheldTaxNative > 0
+        ? { withheldTaxNative: calc.withheldTaxNative }
+        : {}),
     };
     setConfirmState({
       tx,
@@ -588,12 +565,28 @@ const DividendHeatmap: React.FC = () => {
       } else {
         delete saved.withheldNhiTwd;
       }
-    } else if (confirmState.tx.market === Market.US) {
-      saved.price = net;
-      if (Number.isFinite(gross) && gross > net) {
-        const tax = Math.round((gross - net) * 100) / 100;
-        if (tax > 0) saved.withheldUsTaxNative = tax;
-        else delete saved.withheldUsTaxNative;
+    } else if (marketCashDividendPriceIsNetAfterWithholding(confirmState.tx.market)) {
+      const statutoryTax = readTransactionStatutoryWithholding(confirmState.tx);
+      const netFields = netPriceMarketCashDividendSaveFields({
+        market: confirmState.tx.market,
+        autoNet: confirmState.baseNetNative,
+        net,
+        statutoryTax,
+      });
+      saved.price = netFields.price;
+      saved.fees = netFields.fees;
+      saved.amount = netFields.amount;
+      delete saved.withheldNhiTwd;
+      delete saved.withheldUsTaxNative;
+      delete saved.withheldTaxNative;
+      if (netFields.withheldNhiTwd != null && netFields.withheldNhiTwd > 0) {
+        saved.withheldNhiTwd = netFields.withheldNhiTwd;
+      }
+      if (netFields.withheldUsTaxNative != null && netFields.withheldUsTaxNative > 0) {
+        saved.withheldUsTaxNative = netFields.withheldUsTaxNative;
+      }
+      if (netFields.withheldTaxNative != null && netFields.withheldTaxNative > 0) {
+        saved.withheldTaxNative = netFields.withheldTaxNative;
       }
     } else {
       saved.price = net;
@@ -643,7 +636,7 @@ const DividendHeatmap: React.FC = () => {
     const calc = getCashDividendCalc(pa);
     const cur = pa.currency ?? getAccountCurrencyCode(paSelectedAccount);
     const fmtAmt = (n: number, market: Market) =>
-      market === Market.US ? formatUsDividendNativeAmount(n) : n.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+      formatCashDividendNativeAmountForMarket(market, n);
     const accountLabel =
       accounts.find(a => a.id === pa.accountId)?.name ?? pa.accountId;
     const tipLines: string[] = [];
@@ -651,10 +644,10 @@ const DividendHeatmap: React.FC = () => {
     tipLines.push(
       `${dtx.pendingActualPerShare}: ${pa.amountPerShare} × ${pa.quantity} = ${fmtAmt(calc.grossNative, pa.market)} ${cur}`
     );
-    if (calc.withheldUsTaxNative != null && calc.withheldUsTaxNative > 0) {
-      tipLines.push(
-        `− ${(US_DIVIDEND_WITHHOLDING_RATE * 100).toFixed(0)}% = -${fmtAmt(calc.withheldUsTaxNative, pa.market)} ${cur}`
-      );
+    if (calc.taxNative > 0) {
+      const pct = getMarketWithholdingReferenceRatePercent(pa.market);
+      const pctLabel = pct != null ? `${pct}%` : '';
+      tipLines.push(`− ${pctLabel} = -${fmtAmt(calc.taxNative, pa.market)} ${cur}`);
       tipLines.push(`= ${fmtAmt(calc.netNative, pa.market)} ${cur}`);
     }
     const sourceLabel =
@@ -919,9 +912,7 @@ const DividendHeatmap: React.FC = () => {
                             {pa.amountPerShare.toLocaleString(undefined, { maximumFractionDigits: 4 })} {cur}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">
-                            {pa.market === Market.US
-                              ? formatUsDividendNativeAmount(calc.netNative)
-                              : calc.netNative.toLocaleString(undefined, { maximumFractionDigits: 2 })}{' '}
+                            {formatCashDividendNativeAmountForMarket(pa.market, calc.netNative)}{' '}
                             {cur}
                           </td>
                           <td className="px-3 py-2 text-center">{renderPendingAddRow(pa, { showTicker: false })}</td>
@@ -980,23 +971,22 @@ const DividendHeatmap: React.FC = () => {
                     {tf.cashDividendQuantityConfirm}
                   </span>
                 </div>
-                {confirmState.tx.withheldUsTaxNative != null && confirmState.tx.withheldUsTaxNative > 0 && (
-                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700 text-rose-700 dark:text-rose-400">
-                    <span>{dtx.usNetTooltipTitle}</span>
-                    <span className="font-medium tabular-nums">
-                      −{confirmState.tx.withheldUsTaxNative.toFixed(2)}{' '}
-                      {getAccountCurrencyCode(confirmState.tx.accountId)}
-                    </span>
-                  </div>
-                )}
-                {confirmState.tx.withheldNhiTwd != null && confirmState.tx.withheldNhiTwd > 0 && (
-                  <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700 text-rose-700 dark:text-rose-400">
-                    <span>{dtx.estNhiFee}</span>
-                    <span className="font-medium tabular-nums">
-                      −{confirmState.tx.withheldNhiTwd.toLocaleString()} TWD
-                    </span>
-                  </div>
-                )}
+                {(() => {
+                  const tax = readTransactionStatutoryWithholding(confirmState.tx);
+                  if (tax == null || tax <= 0) return null;
+                  const market = confirmState.tx.market;
+                  const cur = getAccountCurrencyCode(confirmState.tx.accountId);
+                  const amountLabel =
+                    market === Market.TW
+                      ? `−${tax.toLocaleString()} TWD`
+                      : `−${formatCashDividendNativeAmountForMarket(market, tax)} ${cur}`;
+                  return (
+                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700 text-rose-700 dark:text-rose-400">
+                      <span>{cashDividendStatutoryLabel(market, dtx)}</span>
+                      <span className="font-medium tabular-nums">{amountLabel}</span>
+                    </div>
+                  );
+                })()}
                 {confirmState.tx.market === Market.TW && (
                   <div className="py-2 border-b border-slate-100 dark:border-slate-700">
                     <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
