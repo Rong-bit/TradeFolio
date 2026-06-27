@@ -13,7 +13,7 @@ import {
   ACTUAL_DIVIDENDS_LS_KEY,
 } from '../utils/actualDividendCache';
 
-// v7：TW/US 採高精度來源，其他市場改用 Yahoo；清除舊版快取。
+// v12：台股個股改走 Yahoo 台股股利頁快速真實日期；清除舊版慢路徑快取。
 const LS_KEY = ACTUAL_DIVIDENDS_LS_KEY;
 const LEGACY_LS_KEYS = [
   'tf-actual-dividends-v1',
@@ -22,6 +22,11 @@ const LEGACY_LS_KEYS = [
   'tf-actual-dividends-v4',
   'tf-actual-dividends-v5',
   'tf-actual-dividends-v6',
+  'tf-actual-dividends-v7',
+  'tf-actual-dividends-v8',
+  'tf-actual-dividends-v9',
+  'tf-actual-dividends-v10',
+  'tf-actual-dividends-v11',
 ] as const;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const EMPTY_CACHE_TTL_MS = 10 * 60 * 1000;
