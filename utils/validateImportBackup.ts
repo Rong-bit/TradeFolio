@@ -208,6 +208,10 @@ function parseTransaction(raw: unknown, index: number): Transaction {
       o.withheldUsTaxNative,
       `transactions[${index}].withheldUsTaxNative`
     ),
+    withheldTaxNative: optionalNum(
+      o.withheldTaxNative,
+      `transactions[${index}].withheldTaxNative`
+    ),
   };
   return tx;
 }
