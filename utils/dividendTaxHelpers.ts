@@ -1,7 +1,7 @@
 import { Market } from '../types';
 import type { YahooMarket } from '../services/yahooFinanceService';
 
-/** 與 useDividendSchedules 快取鍵一致 */
+/** 配息相關 map 鍵：`${market}\x1e${ticker}` */
 export function dividendScheduleMapKey(market: Market, ticker: string): string {
   return `${market}\x1e${ticker.trim().toUpperCase()}`;
 }
