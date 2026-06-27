@@ -44,7 +44,102 @@ function normalizeGrossForConfirm(market: Market, grossNative: number): number {
   return Math.round(grossNative);
 }
 
-const USD_NET_STEP = 0.01;
+/** 試算實領步進：台日韓印整數元，其餘 0.01 */
+const INTEGER_NET_MARKETS = new Set<Market>([Market.TW, Market.JP, Market.KR, Market.IN]);
+
+function confirmNetUsesIntegerStep(market: Market): boolean {
+  return INTEGER_NET_MARKETS.has(market);
+}
+
+function confirmNetStep(market: Market): number {
+  return confirmNetUsesIntegerStep(market) ? 1 : 0.01;
+}
+
+function confirmNetInputPattern(market: Market): RegExp {
+  return confirmNetUsesIntegerStep(market) ? /^\d+$/ : /^\d*\.?\d{0,2}$/;
+}
+
+function normalizeNetForConfirm(market: Market, value: number): number {
+  if (!Number.isFinite(value) || value < 0) return 0;
+  if (confirmNetUsesIntegerStep(market)) return Math.round(value);
+  return Math.round(value * 100) / 100;
+}
+
+function formatNetForConfirmEdit(market: Market, netNative: number): string {
+  if (!Number.isFinite(netNative) || netNative <= 0) {
+    return confirmNetUsesIntegerStep(market) ? '0' : '0.00';
+  }
+  if (confirmNetUsesIntegerStep(market)) return String(Math.round(netNative));
+  return normalizeNetForConfirm(market, netNative).toFixed(2);
+}
+
+function confirmNetGrossCap(market: Market, gross: number): number {
+  if (!Number.isFinite(gross) || gross <= 0) return Infinity;
+  return normalizeGrossForConfirm(market, gross);
+}
+
+type PendingConfirmState = {
+  tx: Transaction;
+  rowKey: string;
+  editPrice: string;
+  editAmount: string;
+  baseNetNative: number;
+  baseWithheldNhiTwd?: number;
+  deductWireFee: boolean;
+};
+
+/** 試算實領步進上限（台股若有二代健保，最高可調回稅前毛額） */
+function confirmNetMaxNetFromState(prev: PendingConfirmState): number {
+  const market = prev.tx.market;
+  const net = normalizeNetForConfirm(market, parseFloat(prev.editAmount));
+  const parsedGross = normalizeGrossForConfirm(market, parseFloat(prev.editPrice));
+  if (market === Market.TW) {
+    const nhi = prev.baseWithheldNhiTwd ?? 0;
+    const wireFee = prev.deductWireFee ? TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD : 0;
+    const gross = parsedGross > 0 ? parsedGross : net + nhi;
+    return Math.max(gross - wireFee, net);
+  }
+  return parsedGross > 0 ? parsedGross : net;
+}
+
+function canStepConfirmNetUp(prev: PendingConfirmState): boolean {
+  const market = prev.tx.market;
+  const step = confirmNetStep(market);
+  const net = normalizeNetForConfirm(market, parseFloat(prev.editAmount));
+  const maxNet = confirmNetMaxNetFromState(prev);
+  return Number.isFinite(maxNet) && maxNet > 0 && net + step <= maxNet + 1e-9;
+}
+
+function syncConfirmNetAmount(prev: PendingConfirmState, raw: string): PendingConfirmState | null {
+  if (raw !== '' && !confirmNetInputPattern(prev.tx.market).test(raw)) return null;
+  const gross = normalizeGrossForConfirm(prev.tx.market, parseFloat(prev.editPrice));
+  const nextTx: Transaction = { ...prev.tx };
+
+  if (prev.tx.market === Market.US) {
+    const n = parseFloat(raw);
+    if (Number.isFinite(n) && n >= 0 && gross > n) {
+      const tax = Math.round((gross - n) * 100) / 100;
+      if (tax > 0) nextTx.withheldUsTaxNative = tax;
+      else delete nextTx.withheldUsTaxNative;
+    }
+  } else if (prev.tx.market === Market.TW) {
+    if (prev.baseWithheldNhiTwd != null && prev.baseWithheldNhiTwd > 0) {
+      nextTx.withheldNhiTwd = prev.baseWithheldNhiTwd;
+    } else {
+      delete nextTx.withheldNhiTwd;
+    }
+  }
+  return { ...prev, tx: nextTx, editAmount: raw };
+}
+
+function stepConfirmNetValue(prev: PendingConfirmState, current: number, delta: number): number {
+  const market = prev.tx.market;
+  const cap = confirmNetMaxNetFromState(prev);
+  let next = current + delta;
+  next = normalizeNetForConfirm(market, next);
+  if (!Number.isFinite(cap) || cap <= 0) return Math.max(0, next);
+  return Math.max(0, Math.min(next, cap));
+}
 
 /** 台股待確認：試算二代健保固定；手動調整實領的差額併入手續費（非 withheldNhiTwd） */
 function twPendingConfirmSaveFields(params: {
@@ -393,10 +488,7 @@ const DividendHeatmap: React.FC = () => {
       tx,
       rowKey: row.key,
       editPrice: formatGrossForConfirmEdit(row.market, calc.grossNative),
-      editAmount:
-        row.market === Market.US
-          ? calc.netNative.toFixed(2)
-          : String(Math.round(calc.netNative)),
+      editAmount: formatNetForConfirmEdit(row.market, calc.netNative),
       baseNetNative: calc.netNative,
       baseWithheldNhiTwd: calc.withheldNhiTwd,
       deductWireFee: false,
@@ -439,71 +531,39 @@ const DividendHeatmap: React.FC = () => {
   const applyConfirmNetEdit = (raw: string) => {
     setConfirmState(prev => {
       if (!prev) return null;
-      const gross = normalizeGrossForConfirm(prev.tx.market, parseFloat(prev.editPrice));
-      const nextTx: Transaction = { ...prev.tx };
-
-      if (prev.tx.market === Market.US) {
-        if (raw !== '' && !/^\d*\.?\d{0,2}$/.test(raw)) return prev;
-        const n = parseFloat(raw);
-        if (Number.isFinite(n) && n >= 0 && gross > n) {
-          const tax = Math.round((gross - n) * 100) / 100;
-          if (tax > 0) nextTx.withheldUsTaxNative = tax;
-          else delete nextTx.withheldUsTaxNative;
-        }
-        return { ...prev, tx: nextTx, editAmount: raw };
-      }
-
-      if (raw !== '' && !/^\d+$/.test(raw)) return prev;
-      if (prev.baseWithheldNhiTwd != null && prev.baseWithheldNhiTwd > 0) {
-        nextTx.withheldNhiTwd = prev.baseWithheldNhiTwd;
-      } else {
-        delete nextTx.withheldNhiTwd;
-      }
-      return { ...prev, tx: nextTx, editAmount: raw };
+      return syncConfirmNetAmount(prev, raw) ?? prev;
     });
   };
 
   const formatConfirmNetOnBlur = () => {
     setConfirmState(prev => {
-      if (!prev || prev.tx.market !== Market.US) return prev;
+      if (!prev || confirmNetUsesIntegerStep(prev.tx.market)) return prev;
       const n = parseFloat(prev.editAmount);
       if (!Number.isFinite(n) || n < 0) return prev;
-      const formatted = (Math.round(n * 100) / 100).toFixed(2);
+      const formatted = formatNetForConfirmEdit(prev.tx.market, n);
       if (formatted === prev.editAmount) return prev;
-      return { ...prev, editAmount: formatted };
+      return syncConfirmNetAmount(prev, formatted) ?? prev;
     });
   };
 
   const stepConfirmNetAmount = (delta: number) => {
     setConfirmState(prev => {
-      if (!prev || prev.tx.market !== Market.US) return prev;
-      const gross = normalizeGrossForConfirm(prev.tx.market, parseFloat(prev.editPrice));
-      const grossCap =
-        Number.isFinite(gross) && gross > 0 ? Math.round(gross * 100) / 100 : Infinity;
+      if (!prev) return prev;
+      const market = prev.tx.market;
       const current = parseFloat(prev.editAmount);
       const base = Number.isFinite(current) ? current : 0;
-      let next = Math.round((base + delta) * 100) / 100;
-      next = Math.max(0, Math.min(next, grossCap));
-      const formatted = next.toFixed(2);
-      const nextTx: Transaction = { ...prev.tx };
-      if (gross > next) {
-        const tax = Math.round((gross - next) * 100) / 100;
-        if (tax > 0) nextTx.withheldUsTaxNative = tax;
-        else delete nextTx.withheldUsTaxNative;
-      } else {
-        delete nextTx.withheldUsTaxNative;
-      }
-      return { ...prev, tx: nextTx, editAmount: formatted };
+      const next = stepConfirmNetValue(prev, base, delta);
+      const formatted = formatNetForConfirmEdit(market, next);
+      return syncConfirmNetAmount(prev, formatted) ?? prev;
     });
   };
 
   const confirmAndSavePendingActual = () => {
     if (!confirmState) return;
     const netRaw = parseFloat(confirmState.editAmount);
-    const net =
-      confirmState.tx.market === Market.US && Number.isFinite(netRaw)
-        ? Math.round(netRaw * 100) / 100
-        : netRaw;
+    const net = Number.isFinite(netRaw)
+      ? normalizeNetForConfirm(confirmState.tx.market, netRaw)
+      : NaN;
     if (!Number.isFinite(net) || net <= 0) return;
     const gross = normalizeGrossForConfirm(confirmState.tx.market, parseFloat(confirmState.editPrice));
 
@@ -977,22 +1037,23 @@ const DividendHeatmap: React.FC = () => {
                     <div className="flex items-center gap-1.5 min-w-0">
                       <input
                         type="text"
-                        inputMode={confirmState.tx.market === Market.US ? 'decimal' : 'numeric'}
+                        inputMode={confirmNetUsesIntegerStep(confirmState.tx.market) ? 'numeric' : 'decimal'}
                         min="0"
                         value={confirmState.editAmount}
                         onChange={e => applyConfirmNetEdit(e.target.value)}
                         onBlur={formatConfirmNetOnBlur}
                         className={`w-28 text-right tabular-nums font-bold text-lg border border-slate-300 rounded-md p-1.5 ${FORM_FIELD_THEME}`}
                       />
-                      {confirmState.tx.market === Market.US && (() => {
-                        const grossCap = normalizeGrossForConfirm(
-                          Market.US,
-                          parseFloat(confirmState.editPrice),
-                        );
+                      {(() => {
+                        const market = confirmState.tx.market;
+                        const step = confirmNetStep(market);
                         const current = parseFloat(confirmState.editAmount);
-                        const net = Number.isFinite(current) ? current : 0;
+                        const net = Number.isFinite(current) ? normalizeNetForConfirm(market, current) : 0;
                         const canStepDown = net > 0;
-                        const canStepUp = grossCap > 0 && net < grossCap;
+                        const canStepUp = canStepConfirmNetUp(confirmState);
+                        const stepLabel = confirmNetUsesIntegerStep(market)
+                          ? String(step)
+                          : step.toFixed(2);
                         const stepBtnClass =
                           'flex h-5 w-7 items-center justify-center rounded border border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600';
                         return (
@@ -1000,9 +1061,9 @@ const DividendHeatmap: React.FC = () => {
                             <button
                               type="button"
                               disabled={!canStepUp}
-                              onClick={() => stepConfirmNetAmount(USD_NET_STEP)}
+                              onClick={() => stepConfirmNetAmount(step)}
                               className={stepBtnClass}
-                              aria-label={`+${USD_NET_STEP.toFixed(2)}`}
+                              aria-label={`+${stepLabel}`}
                             >
                               <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
                                 <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -1011,9 +1072,9 @@ const DividendHeatmap: React.FC = () => {
                             <button
                               type="button"
                               disabled={!canStepDown}
-                              onClick={() => stepConfirmNetAmount(-USD_NET_STEP)}
+                              onClick={() => stepConfirmNetAmount(-step)}
                               className={stepBtnClass}
-                              aria-label={`−${USD_NET_STEP.toFixed(2)}`}
+                              aria-label={`−${stepLabel}`}
                             >
                               <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
