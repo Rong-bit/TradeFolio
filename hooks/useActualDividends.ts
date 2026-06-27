@@ -90,7 +90,7 @@ function normalizeRequests(requests: Array<{ ticker: string; market: Market }>) 
 /**
  * 依持倉代號批次抓取「歷史已發放」現金配息。
  * TW/US 優先高精度來源；其他市場用 Yahoo Finance events=div。
- * 使用 localStorage 快取 24 小時；快取 key 與 useDividendSchedules 一致。
+ * 使用 localStorage 快取 24 小時（`tf-actual-dividends-v12`）。
  */
 export function useActualDividends(
   requests: Array<{ ticker: string; market: Market }>
