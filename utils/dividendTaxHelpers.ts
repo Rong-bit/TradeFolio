@@ -1,4 +1,5 @@
 import { Market } from '../types';
+import type { Transaction } from '../types';
 import type { YahooMarket } from '../services/yahooFinanceService';
 
 /** 配息相關 map 鍵：`${market}\x1e${ticker}` */
@@ -218,4 +219,283 @@ export function twNetFromGrossTwd(grossTwd: number): {
 export function formatUsDividendNativeAmount(value: number): string {
   if (!Number.isFinite(value)) return '-';
   return (Math.round(value * 100) / 100).toFixed(2);
+}
+
+/** 配息試算：日／韓／印等以整數元（分）呈現的市場 */
+export const DIVIDEND_INTEGER_AMOUNT_MARKETS = new Set<Market>([
+  Market.TW,
+  Market.JP,
+  Market.KR,
+  Market.IN,
+]);
+
+export type MarketDividendWithholdingMode = 'none' | 'flat_rate' | 'tw_nhi' | 'us_broker';
+
+export type MarketDividendWithholdingConfig = {
+  mode: MarketDividendWithholdingMode;
+  /** 固定預扣率 0–1（tw_nhi / none 忽略；us_broker 用 US_DIVIDEND_WITHHOLDING_RATE） */
+  referenceRate?: number;
+};
+
+/**
+ * 各市场配息预扣试算（参考常数；实际依券商、租税条约、账户类型而异，非报税建议）。
+ * 台湾投资者常见情境：外国源扣缴 + 台股二代健保。
+ */
+export const MARKET_DIVIDEND_WITHHOLDING: Record<Market, MarketDividendWithholdingConfig> = {
+  [Market.US]: { mode: 'us_broker', referenceRate: US_DIVIDEND_WITHHOLDING_RATE },
+  [Market.TW]: { mode: 'tw_nhi' },
+  [Market.UK]: { mode: 'none', referenceRate: 0 },
+  [Market.HK]: { mode: 'none', referenceRate: 0 },
+  [Market.JP]: { mode: 'flat_rate', referenceRate: 0.1 },
+  [Market.CN]: { mode: 'flat_rate', referenceRate: 0.1 },
+  [Market.SZ]: { mode: 'flat_rate', referenceRate: 0.1 },
+  [Market.KR]: { mode: 'flat_rate', referenceRate: 0.15 },
+  [Market.IN]: { mode: 'flat_rate', referenceRate: 0.2 },
+  [Market.CA]: { mode: 'flat_rate', referenceRate: 0.15 },
+  [Market.FR]: { mode: 'flat_rate', referenceRate: 0.15 },
+  [Market.DE]: { mode: 'flat_rate', referenceRate: 0.26375 },
+  [Market.AU]: { mode: 'flat_rate', referenceRate: 0.3 },
+  [Market.SA]: { mode: 'flat_rate', referenceRate: 0.05 },
+  [Market.BR]: { mode: 'none', referenceRate: 0 },
+};
+
+export type CashDividendBreakdown = {
+  grossNative: number;
+  taxNative: number;
+  netNative: number;
+  withheldNhiTwd?: number;
+  withheldUsTaxNative?: number;
+  withheldTaxNative?: number;
+  referenceRate?: number;
+};
+
+function roundDividendNativeAmount(market: Market, value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  if (DIVIDEND_INTEGER_AMOUNT_MARKETS.has(market)) return Math.round(value);
+  return Math.round(value * 100) / 100;
+}
+
+function cashDividendGrossNative(market: Market, shares: number, perShare: number): number {
+  if (shares <= 0 || perShare <= 0) return 0;
+  if (market === Market.US) return usDividendGrossNative(shares, perShare);
+  if (market === Market.TW) return twEstimatedSingleDividendTwd(shares, perShare);
+  return roundDividendNativeAmount(market, shares * perShare);
+}
+
+function flatRateWithholdingTax(
+  market: Market,
+  grossNative: number,
+  rate: number
+): number {
+  if (grossNative <= 0 || rate <= 0) return 0;
+  const raw = grossNative * rate;
+  if (DIVIDEND_INTEGER_AMOUNT_MARKETS.has(market)) return Math.round(raw);
+  return roundToCents(raw);
+}
+
+/** 是否有试算预扣（非 none） */
+export function marketHasStatutoryWithholdingTrial(market: Market): boolean {
+  const cfg = MARKET_DIVIDEND_WITHHOLDING[market];
+  if (cfg.mode === 'tw_nhi' || cfg.mode === 'us_broker') return true;
+  return cfg.mode === 'flat_rate' && (cfg.referenceRate ?? 0) > 0;
+}
+
+/** 股息 price 栏存「扣完试算预扣后净额」的市场（台股仍为毛额／扣 NHI 后总额） */
+export function marketCashDividendPriceIsNetAfterWithholding(market: Market): boolean {
+  if (market === Market.TW) return false;
+  return marketHasStatutoryWithholdingTrial(market);
+}
+
+/** 参考预扣率百分比（供 UI 显示；无则 null） */
+export function getMarketWithholdingReferenceRatePercent(market: Market): number | null {
+  const cfg = MARKET_DIVIDEND_WITHHOLDING[market];
+  if (cfg.mode === 'tw_nhi') return TW_NHI_SUPPLEMENT_RATE * 100;
+  if (cfg.mode === 'us_broker') return US_DIVIDEND_WITHHOLDING_RATE * 100;
+  if (cfg.mode === 'flat_rate' && (cfg.referenceRate ?? 0) > 0) {
+    return Math.round((cfg.referenceRate ?? 0) * 10000) / 100;
+  }
+  return null;
+}
+
+export function formatCashDividendNativeAmountForMarket(market: Market, value: number): string {
+  if (!Number.isFinite(value)) return '-';
+  if (market === Market.US) return formatUsDividendNativeAmount(value);
+  if (DIVIDEND_INTEGER_AMOUNT_MARKETS.has(market)) return String(Math.round(value));
+  return (Math.round(value * 100) / 100).toFixed(2);
+}
+
+/** 全市場：每股 × 股數試算毛額、预扣、實領 */
+export function cashDividendBreakdownForMarket(
+  market: Market,
+  shares: number,
+  perShare: number,
+  opts?: { explicitTaxNative?: number }
+): CashDividendBreakdown {
+  const grossNative = cashDividendGrossNative(market, shares, perShare);
+  if (grossNative <= 0) {
+    return { grossNative: 0, taxNative: 0, netNative: 0 };
+  }
+
+  const cfg = MARKET_DIVIDEND_WITHHOLDING[market];
+
+  if (cfg.mode === 'tw_nhi') {
+    const nhi =
+      opts?.explicitTaxNative != null && opts.explicitTaxNative > 0
+        ? Math.round(opts.explicitTaxNative)
+        : twNhiSupplementFloorTwd(grossNative);
+    const taxNative = nhi > 0 ? nhi : 0;
+    const netNative = grossNative - taxNative;
+    return {
+      grossNative,
+      taxNative,
+      netNative,
+      ...(taxNative > 0 ? { withheldNhiTwd: taxNative } : {}),
+      referenceRate: taxNative > 0 ? TW_NHI_SUPPLEMENT_RATE : undefined,
+    };
+  }
+
+  if (cfg.mode === 'us_broker') {
+    const formula = usCashDividendCentBreakdown(shares, perShare, opts?.explicitTaxNative);
+    return {
+      grossNative: formula.grossNative,
+      taxNative: formula.taxNative,
+      netNative: formula.netNative,
+      ...(formula.taxNative > 0 ? { withheldUsTaxNative: formula.taxNative } : {}),
+      referenceRate: US_DIVIDEND_WITHHOLDING_RATE,
+    };
+  }
+
+  const rate = cfg.referenceRate ?? 0;
+  const taxNative =
+    opts?.explicitTaxNative != null && opts.explicitTaxNative > 0
+      ? roundDividendNativeAmount(market, opts.explicitTaxNative)
+      : flatRateWithholdingTax(market, grossNative, rate);
+  const netNative = roundDividendNativeAmount(market, grossNative - taxNative);
+  return {
+    grossNative,
+    taxNative,
+    netNative,
+    ...(taxNative > 0 ? { withheldTaxNative: taxNative } : {}),
+    ...(rate > 0 ? { referenceRate: rate } : {}),
+  };
+}
+
+export function readTransactionStatutoryWithholding(tx: {
+  market: Market;
+  withheldNhiTwd?: number;
+  withheldUsTaxNative?: number;
+  withheldTaxNative?: number;
+}): number | undefined {
+  if (tx.market === Market.TW && tx.withheldNhiTwd != null && tx.withheldNhiTwd > 0) {
+    return tx.withheldNhiTwd;
+  }
+  if (tx.market === Market.US && tx.withheldUsTaxNative != null && tx.withheldUsTaxNative > 0) {
+    return tx.withheldUsTaxNative;
+  }
+  if (tx.withheldTaxNative != null && tx.withheldTaxNative > 0) {
+    return tx.withheldTaxNative;
+  }
+  return undefined;
+}
+
+export function statutoryWithholdingFieldsForMarket(
+  market: Market,
+  taxNative: number | undefined
+): Pick<Transaction, 'withheldNhiTwd' | 'withheldUsTaxNative' | 'withheldTaxNative'> {
+  if (taxNative == null || taxNative <= 0) return {};
+  if (market === Market.TW) return { withheldNhiTwd: Math.round(taxNative) };
+  if (market === Market.US) {
+    return { withheldUsTaxNative: roundToCents(taxNative) };
+  }
+  return { withheldTaxNative: roundDividendNativeAmount(market, taxNative) };
+}
+
+/** 待確認／表單：試算预扣固定；手動調整實領差額併入手續費（台股匯費等另用 twPendingConfirmSaveFields） */
+export function netPriceMarketCashDividendSaveFields(params: {
+  market: Market;
+  autoNet: number;
+  net: number;
+  statutoryTax?: number;
+}): {
+  price: number;
+  fees: number;
+  amount: number;
+} & Pick<Transaction, 'withheldNhiTwd' | 'withheldUsTaxNative' | 'withheldTaxNative'> {
+  const autoNet = roundDividendNativeAmount(params.market, params.autoNet);
+  const net = roundDividendNativeAmount(params.market, params.net);
+  const manualFee = Math.max(
+    0,
+    roundDividendNativeAmount(params.market, autoNet - net)
+  );
+  return {
+    price: autoNet,
+    fees: manualFee,
+    amount: net,
+    ...statutoryWithholdingFieldsForMarket(params.market, params.statutoryTax),
+  };
+}
+
+/** 備註每股×股數：存檔欄位（台股毛額模式 vs 其他扣稅後淨額模式） */
+export function cashDividendSaveFromNoteBreakdown(params: {
+  market: Market;
+  shares: number;
+  perShare: number;
+  formPrice: number;
+  formFees: number;
+  preservedTaxNative?: number;
+}): {
+  price: number;
+  fees: number;
+  amount: number;
+} & Pick<Transaction, 'withheldNhiTwd' | 'withheldUsTaxNative' | 'withheldTaxNative'> {
+  const calc = cashDividendBreakdownForMarket(
+    params.market,
+    params.shares,
+    params.perShare,
+    { explicitTaxNative: params.preservedTaxNative }
+  );
+
+  if (params.market === Market.TW) {
+    const grossNative = calc.grossNative;
+    const nhi = calc.taxNative;
+    const fees = roundDividendNativeAmount(Market.TW, params.formFees);
+    const price = nhi > 0 ? grossNative - nhi : grossNative;
+    return {
+      price,
+      fees,
+      amount: roundDividendNativeAmount(Market.TW, grossNative - nhi - fees),
+      ...statutoryWithholdingFieldsForMarket(Market.TW, nhi > 0 ? nhi : undefined),
+    };
+  }
+
+  if (marketCashDividendPriceIsNetAfterWithholding(params.market)) {
+    const autoNet = calc.netNative;
+    let fees = roundDividendNativeAmount(params.market, params.formFees);
+    const userPrice = params.formPrice;
+    if (Number.isFinite(userPrice) && userPrice < autoNet) {
+      fees = Math.max(
+        0,
+        roundDividendNativeAmount(params.market, autoNet - userPrice + fees)
+      );
+    }
+    return {
+      price: autoNet,
+      fees,
+      amount: roundDividendNativeAmount(params.market, autoNet - fees),
+      ...statutoryWithholdingFieldsForMarket(
+        params.market,
+        calc.taxNative > 0 ? calc.taxNative : undefined
+      ),
+    };
+  }
+
+  const price = Number.isFinite(params.formPrice)
+    ? roundDividendNativeAmount(params.market, params.formPrice)
+    : calc.grossNative;
+  const fees = roundDividendNativeAmount(params.market, params.formFees);
+  return {
+    price,
+    fees,
+    amount: roundDividendNativeAmount(params.market, price - fees),
+  };
 }
