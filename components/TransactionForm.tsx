@@ -8,7 +8,6 @@ import { parseCashDividendNoteBreakdown } from '../utils/cashDividendNoteParse';
 import {
   twEstimatedSingleDividendTwd,
   usCashDividendCentBreakdown,
-  usCashDividendFromNoteWithNetOverride,
   formatUsDividendNativeAmount,
 } from '../utils/dividendTaxHelpers';
 import { usePortfolio } from '../contexts/PortfolioContext';
@@ -20,7 +19,7 @@ interface Props {
   editingTransaction: Transaction | null;
 }
 
-/** 現金股息：價格欄為股息總額、數量固定 1；舊資料若 quantity≠1 則併入 price */
+/** 現金股息：價格欄為股息總額（毛額）、數量固定 1；舊資料若 quantity≠1 則併入 price */
 function cashDividendFormFromTransaction(tx: Transaction): {
   price: string;
   quantity: string;
@@ -28,12 +27,40 @@ function cashDividendFormFromTransaction(tx: Transaction): {
 } {
   const fees = tx.fees || 0;
   if (tx.quantity === 1) {
-    const priceStr =
-      tx.market === Market.US
-        ? formatUsDividendNativeAmount(tx.price)
-        : tx.price.toString();
+    const breakdown = parseCashDividendNoteBreakdown(tx.note);
+    if (breakdown) {
+      if (tx.market === Market.US) {
+        const gross = usCashDividendCentBreakdown(breakdown.shares, breakdown.perShare).grossNative;
+        return {
+          price: formatUsDividendNativeAmount(gross),
+          quantity: '1',
+          fees: tx.fees.toString(),
+        };
+      }
+      if (tx.market === Market.TW) {
+        const gross = twEstimatedSingleDividendTwd(breakdown.shares, breakdown.perShare);
+        return {
+          price: String(gross),
+          quantity: '1',
+          fees: tx.fees.toString(),
+        };
+      }
+    }
+    if (tx.market === Market.US) {
+      const gross =
+        tx.withheldUsTaxNative != null && tx.withheldUsTaxNative > 0
+          ? tx.price + tx.withheldUsTaxNative
+          : tx.price;
+      return {
+        price: formatUsDividendNativeAmount(gross),
+        quantity: '1',
+        fees: tx.fees.toString(),
+      };
+    }
+    const grossTwd =
+      tx.withheldNhiTwd != null && tx.withheldNhiTwd > 0 ? tx.price + tx.withheldNhiTwd : tx.price;
     return {
-      price: priceStr,
+      price: grossTwd.toString(),
       quantity: '1',
       fees: tx.fees.toString(),
     };
@@ -134,14 +161,14 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     }
   }, [formData.type, editingTransaction]);
 
-  // 美股現金股息：備註含每股×股數時，新增交易才自動同步試算淨額（編輯時保留手動實領）
+  // 美股現金股息：備註含每股×股數時，新增交易才自動同步試算毛額（編輯時保留已存資料）
   useEffect(() => {
     if (editingTransaction) return;
     if (formData.type !== TransactionType.CASH_DIVIDEND || formData.market !== Market.US) return;
     const breakdown = parseCashDividendNoteBreakdown(formData.note);
     if (!breakdown) return;
     const calc = usCashDividendCentBreakdown(breakdown.shares, breakdown.perShare);
-    const nextPrice = calc.netNative.toFixed(2);
+    const nextPrice = formatUsDividendNativeAmount(calc.grossNative);
     if (formData.price !== nextPrice) {
       setFormData(prev => ({ ...prev, price: nextPrice }));
     }
@@ -187,24 +214,65 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     let withheldUsTaxNative: number | undefined;
     let withheldNhiTwd: number | undefined;
 
+    let finalAmount: number;
+
     if (formData.type === TransactionType.CASH_DIVIDEND && noteBreakdown) {
       if (formData.market === Market.US) {
-        const calc = usCashDividendFromNoteWithNetOverride(
+        const formula = usCashDividendCentBreakdown(
           noteBreakdown.shares,
-          noteBreakdown.perShare,
-          parseFloat(formData.price)
+          noteBreakdown.perShare
         );
-        price = calc.netNative;
-        if (calc.taxNative > 0) withheldUsTaxNative = calc.taxNative;
-      } else if (formData.market === Market.TW) {
-        const grossNative = twEstimatedSingleDividendTwd(noteBreakdown.shares, noteBreakdown.perShare);
-        if (isEditing && editingTransaction?.withheldNhiTwd != null && editingTransaction.withheldNhiTwd > 0) {
-          withheldNhiTwd = editingTransaction.withheldNhiTwd;
-          price = grossNative - withheldNhiTwd;
+        const grossNative = formula.grossNative;
+        const taxNative =
+          isEditing &&
+          editingTransaction?.withheldUsTaxNative != null &&
+          editingTransaction.withheldUsTaxNative > 0
+            ? editingTransaction.withheldUsTaxNative
+            : formula.taxNative;
+        if (taxNative > 0) {
+          withheldUsTaxNative = taxNative;
+          price = Math.round((grossNative - taxNative) * 100) / 100;
         } else {
+          withheldUsTaxNative = undefined;
           price = grossNative;
         }
+        finalAmount = Math.round((grossNative - taxNative - fees) * 100) / 100;
+      } else if (formData.market === Market.TW) {
+        const grossNative = twEstimatedSingleDividendTwd(
+          noteBreakdown.shares,
+          noteBreakdown.perShare
+        );
+        const nhi =
+          isEditing &&
+          editingTransaction?.withheldNhiTwd != null &&
+          editingTransaction.withheldNhiTwd > 0
+            ? editingTransaction.withheldNhiTwd
+            : 0;
+        if (nhi > 0) {
+          withheldNhiTwd = nhi;
+          price = grossNative - nhi;
+        } else {
+          withheldNhiTwd = undefined;
+          price = grossNative;
+        }
+        finalAmount = grossNative - nhi - fees;
+      } else {
+        finalAmount = computeTransactionAmount(
+          formData.type,
+          formData.market,
+          price,
+          quantity,
+          fees
+        );
       }
+    } else {
+      finalAmount = computeTransactionAmount(
+        formData.type,
+        formData.market,
+        price,
+        quantity,
+        fees
+      );
     }
 
     if (!isEditing && formData.type === TransactionType.TRANSFER_OUT) {
@@ -220,14 +288,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         return;
       }
     }
-    
-    const finalAmount = computeTransactionAmount(
-      formData.type,
-      formData.market,
-      price,
-      quantity,
-      fees
-    );
 
     const newTx: Transaction = {
       id: isEditing && editingTransaction ? editingTransaction.id : uuidv4(),
@@ -245,23 +305,9 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
 
     if (withheldUsTaxNative != null && withheldUsTaxNative > 0) {
       newTx.withheldUsTaxNative = withheldUsTaxNative;
-    } else if (
-      isEditing &&
-      editingTransaction?.type === TransactionType.CASH_DIVIDEND &&
-      formData.type === TransactionType.CASH_DIVIDEND &&
-      editingTransaction.withheldUsTaxNative != null
-    ) {
-      newTx.withheldUsTaxNative = editingTransaction.withheldUsTaxNative;
     }
     if (withheldNhiTwd != null && withheldNhiTwd > 0) {
       newTx.withheldNhiTwd = withheldNhiTwd;
-    } else if (
-      isEditing &&
-      editingTransaction?.type === TransactionType.CASH_DIVIDEND &&
-      formData.type === TransactionType.CASH_DIVIDEND &&
-      editingTransaction.withheldNhiTwd != null
-    ) {
-      newTx.withheldNhiTwd = editingTransaction.withheldNhiTwd;
     }
 
     if (shouldCreateTransferPair) {
@@ -484,12 +530,13 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
 
     const withheld = getCashDividendWithheld();
     if (formData.market === Market.US) {
-      const userNet = parseFloat(formData.price);
-      return usCashDividendFromNoteWithNetOverride(
-        breakdown.shares,
-        breakdown.perShare,
-        Number.isFinite(userNet) ? userNet : undefined
-      );
+      const formula = usCashDividendCentBreakdown(breakdown.shares, breakdown.perShare);
+      const taxNative = withheld > 0 ? withheld : formula.taxNative;
+      return {
+        grossNative: formula.grossNative,
+        taxNative,
+        netNative: Math.round((formula.grossNative - taxNative) * 100) / 100,
+      };
     }
     if (formData.market === Market.TW) {
       const grossNative = twEstimatedSingleDividendTwd(breakdown.shares, breakdown.perShare);
@@ -553,10 +600,9 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         const sharesLabel = formatDisplayQuantity(breakdown.shares);
         const grossLabel = formatDividendDetailAmount(gross, formData.market);
         let formula = `${tf.calculationMethod}${perShareLabel} × ${sharesLabel} ${tf.shares} = ${grossLabel}`;
-        const breakdownDeduction =
-          breakdownCalc && breakdownCalc.taxNative > 0
-            ? breakdownCalc.taxNative
-            : deduction;
+        const nhiDeduction = breakdownCalc?.taxNative ?? 0;
+        const totalDeduction = nhiDeduction + fees;
+        const breakdownDeduction = totalDeduction > 0 ? totalDeduction : deduction;
         if (breakdownDeduction > 0) {
           formula += ` − ${formatDividendDetailAmount(breakdownDeduction, formData.market)} (${tf.deductionShort})`;
         }
@@ -613,7 +659,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     <>
       {/* 確認對話框 */}
       {transferValidationMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[70]">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[70]">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="bg-red-600 p-4">
               <h3 className="text-white font-bold text-lg">{tf.confirmTitle}</h3>
@@ -634,7 +680,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         </div>
       )}
       {showConfirmDialog && pendingTransaction && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60] overflow-y-auto">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col my-auto">
             <div className="bg-slate-900 p-4 shrink-0">
               <h3 className="text-white font-bold text-lg">{tf.confirmTitle}</h3>
@@ -679,7 +725,9 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
-                  <span className="text-slate-600 dark:text-slate-400">{tf.feesLabel}</span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    {tf.feesLabel}
+                  </span>
                   <span className="font-medium text-slate-900 dark:text-slate-100 tabular-nums">
                     {pendingTransaction.fees.toFixed(2)} {getAccountCurrencyCode(pendingTransaction.accountId)}
                   </span>
@@ -726,7 +774,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         </div>
       )}
 
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col my-auto">
           <div className="bg-slate-900 p-4 flex justify-between items-center shrink-0">
             <h2 className="text-white font-bold text-lg">{isEditing ? tf.editTransaction : tf.addTransaction}</h2>
