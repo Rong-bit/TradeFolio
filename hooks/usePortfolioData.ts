@@ -1,9 +1,19 @@
 import { useState, useCallback } from 'react';
 import { usePortfolioLocalStorage } from './usePortfolioLocalStorage';
-import { Transaction, Account, CashFlow, HistoricalData, Market, RecurringDepositRule, StockSplitEvent } from '../types';
+import {
+  Transaction,
+  Account,
+  CashFlow,
+  HistoricalData,
+  Market,
+  RecurringDepositRule,
+  StockSplitEvent,
+  TransactionType,
+} from '../types';
 import { applyRecurringDeposits } from '../utils/recurringDeposits';
 import { holdingPriceKey, quoteCurrencyForTransaction } from '../utils/calculations';
 import { invalidateActualDividendCacheForTx } from '../utils/actualDividendCache';
+import { clearDismissedPendingDividendKeysForTransaction } from '../utils/pendingDividendDismissals';
 
 export interface PortfolioDataState {
   transactions: Transaction[];
@@ -51,6 +61,13 @@ const INITIAL_STATE: PortfolioDataState = {
   recurringDepositRules: [],
   stockSplits: [],
 };
+
+function invalidatePendingDividendStateForTx(tx: Transaction): void {
+  invalidateActualDividendCacheForTx(tx);
+  if (tx.type === TransactionType.CASH_DIVIDEND) {
+    clearDismissedPendingDividendKeysForTransaction(tx);
+  }
+}
 
 export function usePortfolioData(userPrefix: string | undefined) {
   const [data, setData] = useState<PortfolioDataState>(INITIAL_STATE);
@@ -121,8 +138,8 @@ export function usePortfolioData(userPrefix: string | undefined) {
   const updateTransaction = useCallback((tx: Transaction) => {
     setData(prev => {
       const old = prev.transactions.find(t => t.id === tx.id);
-      if (old) invalidateActualDividendCacheForTx(old);
-      invalidateActualDividendCacheForTx(tx);
+      if (old) invalidatePendingDividendStateForTx(old);
+      invalidatePendingDividendStateForTx(tx);
       return {
         ...prev,
         transactions: prev.transactions.map(t => (t.id === tx.id ? tx : t)),
@@ -133,7 +150,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
   const removeTransaction = useCallback((id: string) => {
     setData(prev => {
       const removed = prev.transactions.find(t => t.id === id);
-      if (removed) invalidateActualDividendCacheForTx(removed);
+      if (removed) invalidatePendingDividendStateForTx(removed);
       return {
         ...prev,
         transactions: prev.transactions.filter(t => t.id !== id),
@@ -162,7 +179,10 @@ export function usePortfolioData(userPrefix: string | undefined) {
   }, []);
 
   const clearTransactions = useCallback(() => {
-    setData(prev => ({ ...prev, transactions: [] }));
+    setData(prev => {
+      prev.transactions.forEach(invalidatePendingDividendStateForTx);
+      return { ...prev, transactions: [] };
+    });
   }, []);
 
   const removeTransactionsByIds = useCallback((ids: string[]) => {
@@ -171,7 +191,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
     setData(prev => {
       prev.transactions
         .filter(tx => idSet.has(tx.id))
-        .forEach(invalidateActualDividendCacheForTx);
+        .forEach(invalidatePendingDividendStateForTx);
       return {
         ...prev,
         transactions: prev.transactions.filter(tx => !idSet.has(tx.id)),
