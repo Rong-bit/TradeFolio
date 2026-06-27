@@ -179,6 +179,8 @@ export interface Transaction {
   withheldNhiTwd?: number;
   /** 現金股利：美股預扣稅金額（證券戶幣別，多為 USD），供統計 */
   withheldUsTaxNative?: number;
+  /** 現金股利：其他市場源國／券商預扣稅（證券戶幣別），供統計 */
+  withheldTaxNative?: number;
 }
 
 export interface Holding {
@@ -418,5 +420,28 @@ export interface AlertDialogState {
   title: string;
   message: string;
   type: 'info' | 'success' | 'error';
+}
+
+// 訂閱相關類型
+export type SubscriptionStatus = 'active' | 'expired' | 'none';
+export type SubscriptionPlan = 'monthly' | 'yearly';
+
+export interface SubscriptionInfo {
+  status: SubscriptionStatus;
+  plan?: SubscriptionPlan;
+  expiryDate?: Date;
+  productId?: string;
+  transactionId?: string;
+  platform?: 'ios' | 'android' | 'web';
+}
+
+export interface SubscriptionProduct {
+  id: string;
+  title: string;
+  description: string;
+  price: string;
+  priceValue: number;
+  currency: string;
+  plan: SubscriptionPlan;
 }
 
