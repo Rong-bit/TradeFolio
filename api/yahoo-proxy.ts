@@ -1,4 +1,3 @@
-
 // Vercel Serverless Function - Yahoo Finance 代理
 // 用途：在伺服器端呼叫 Yahoo Finance / 相關目標，解決瀏覽器 CORS 問題
 
@@ -17,6 +16,8 @@ const ALLOWED_PREFIXES = [
   'https://www.moneydj.com/',
   // 富邦 DJ 鏡像：台股個股重大行事曆（除息日、息值、現金股利發放日）
   'https://fubon-ebrokerdj.fbs.com.tw/',
+  // 公開資訊觀測站：台股個股除權息公告（真實現金股利發放日）
+  'https://mopsov.twse.com.tw/',
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -55,6 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const isMoneyDjEtf = targetUrl.startsWith('https://www.moneydj.com/ETF/');
     const isMoneyDjOther =
       targetUrl.startsWith('https://www.moneydj.com/') && !isMoneyDjEtf;
+    const isMops = targetUrl.startsWith('https://mopsov.twse.com.tw/');
     const upstream = await fetch(targetUrl, {
       method: 'GET',
       headers: {
@@ -69,6 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ...(isMoneyDjConcords ? { Referer: 'https://concords.moneydj.com/' } : {}),
         ...(isMoneyDjEtf ? { Referer: 'https://www.moneydj.com/etf/' } : {}),
         ...(isMoneyDjOther ? { Referer: 'https://www.moneydj.com/' } : {}),
+        ...(isMops ? { Referer: 'https://mopsov.twse.com.tw/mops/web/t108sb19_q1' } : {}),
       },
     });
 
