@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Market, Transaction, TransactionType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
@@ -15,6 +15,7 @@ import { formatLocalYmd } from '../utils/recurringDeposits';
 import {
   persistDismissedPendingDividendKeys,
   persistPendingDividendListVisible,
+  PENDING_DIVIDEND_DISMISSALS_CHANGED_EVENT,
   readDismissedPendingDividendKeys,
   readPendingDividendListVisible,
 } from '../utils/pendingDividendDismissals';
@@ -23,6 +24,7 @@ import {
   marketToYahooMarketForDividends,
   twEstimatedSingleDividendTwd,
   twNhiSupplementFloorTwd,
+  TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD,
   TW_NHI_SUPPLEMENT_THRESHOLD_TWD,
   US_DIVIDEND_WITHHOLDING_RATE,
   formatUsDividendNativeAmount,
@@ -40,6 +42,27 @@ function normalizeGrossForConfirm(market: Market, grossNative: number): number {
   if (!Number.isFinite(grossNative) || grossNative <= 0) return 0;
   if (market === Market.US) return Math.round(grossNative * 100) / 100;
   return Math.round(grossNative);
+}
+
+/** 台股待確認：試算二代健保固定；手動調整實領的差額併入手續費（非 withheldNhiTwd） */
+function twPendingConfirmSaveFields(params: {
+  gross: number;
+  net: number;
+  baseWithheldNhiTwd?: number;
+  deductWireFee: boolean;
+}): { price: number; fees: number; amount: number; withheldNhiTwd?: number } {
+  const baseNhi = params.baseWithheldNhiTwd ?? 0;
+  const wireFee = params.deductWireFee ? TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD : 0;
+  const expectedAutoNet = params.gross - baseNhi - wireFee;
+  const manualFee = Math.max(0, Math.round(expectedAutoNet - params.net));
+  const fees = wireFee + manualFee;
+  const price = baseNhi > 0 ? params.gross - baseNhi : params.gross;
+  return {
+    price,
+    fees,
+    amount: params.net,
+    ...(baseNhi > 0 ? { withheldNhiTwd: baseNhi } : {}),
+  };
 }
 
 function colorForAmount(amount: number, maxAmount: number): string {
@@ -74,7 +97,7 @@ type PendingActualRow = {
   payDateEstimated?: boolean;
   amountPerShare: number;
   currency?: string;
-  source: 'moneydj' | 'dj' | 'stockanalysis' | 'yahoo';
+  source: 'mops' | 'moneydj' | 'dj' | 'stockanalysis' | 'yahoo';
   estTotalNative: number;
   accountId: string;
   accountOptions: Array<{ accountId: string; quantity: number }>;
@@ -98,7 +121,16 @@ const DividendHeatmap: React.FC = () => {
     rowKey: string;
     editPrice: string;
     editAmount: string;
+    baseNetNative: number;
+    baseWithheldNhiTwd?: number;
+    deductWireFee: boolean;
   } | null>(null);
+
+  useEffect(() => {
+    const syncDismissedKeys = () => setDismissedPendingKeys(readDismissedPendingDividendKeys());
+    window.addEventListener(PENDING_DIVIDEND_DISMISSALS_CHANGED_EVENT, syncDismissedKeys);
+    return () => window.removeEventListener(PENDING_DIVIDEND_DISMISSALS_CHANGED_EVENT, syncDismissedKeys);
+  }, []);
 
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const dtx = tr.dividendTax;
@@ -359,55 +391,129 @@ const DividendHeatmap: React.FC = () => {
       tx,
       rowKey: row.key,
       editPrice: formatGrossForConfirmEdit(row.market, calc.grossNative),
-      editAmount: calc.netNative.toFixed(2),
+      editAmount:
+        row.market === Market.US
+          ? calc.netNative.toFixed(2)
+          : String(Math.round(calc.netNative)),
+      baseNetNative: calc.netNative,
+      baseWithheldNhiTwd: calc.withheldNhiTwd,
+      deductWireFee: false,
+    });
+  };
+
+  const applyConfirmWireFeeChoice = (checked: boolean) => {
+    setConfirmState(prev => {
+      if (!prev || prev.tx.market !== Market.TW) return prev;
+      const currentNet = parseFloat(prev.editAmount);
+      const adjustedNet = Number.isFinite(currentNet)
+        ? Math.max(
+            0,
+            Math.round(
+              checked
+                ? currentNet - TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD
+                : currentNet + TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD
+            )
+          )
+        : Math.max(
+            0,
+            Math.round(prev.baseNetNative) -
+              (checked ? TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD : 0)
+          );
+      const nextTx: Transaction = { ...prev.tx };
+      if (prev.baseWithheldNhiTwd != null && prev.baseWithheldNhiTwd > 0) {
+        nextTx.withheldNhiTwd = prev.baseWithheldNhiTwd;
+      } else {
+        delete nextTx.withheldNhiTwd;
+      }
+      return {
+        ...prev,
+        tx: nextTx,
+        deductWireFee: checked,
+        editAmount: String(adjustedNet),
+      };
     });
   };
 
   const applyConfirmNetEdit = (raw: string) => {
     setConfirmState(prev => {
       if (!prev) return null;
-      const n = parseFloat(raw);
-      if (!Number.isFinite(n)) return { ...prev, editAmount: raw };
-      const clamped = Math.max(0, n);
-      const formatted =
-        prev.tx.market === Market.US
-          ? (Math.round(clamped * 100) / 100).toFixed(2)
-          : String(Math.round(clamped));
       const gross = normalizeGrossForConfirm(prev.tx.market, parseFloat(prev.editPrice));
       const nextTx: Transaction = { ...prev.tx };
-      if (prev.tx.market === Market.US && gross > clamped) {
-        const tax = Math.round((gross - clamped) * 100) / 100;
-        if (tax > 0) nextTx.withheldUsTaxNative = tax;
-        else delete nextTx.withheldUsTaxNative;
-      } else if (prev.tx.market === Market.TW && gross > clamped) {
-        const nhi = Math.round(gross - clamped);
-        if (nhi > 0) nextTx.withheldNhiTwd = nhi;
-        else delete nextTx.withheldNhiTwd;
+
+      if (prev.tx.market === Market.US) {
+        if (raw !== '' && !/^\d*\.?\d{0,2}$/.test(raw)) return prev;
+        const n = parseFloat(raw);
+        if (Number.isFinite(n) && n >= 0 && gross > n) {
+          const tax = Math.round((gross - n) * 100) / 100;
+          if (tax > 0) nextTx.withheldUsTaxNative = tax;
+          else delete nextTx.withheldUsTaxNative;
+        }
+        return { ...prev, tx: nextTx, editAmount: raw };
       }
-      return { ...prev, tx: nextTx, editAmount: formatted };
+
+      if (raw !== '' && !/^\d+$/.test(raw)) return prev;
+      if (prev.baseWithheldNhiTwd != null && prev.baseWithheldNhiTwd > 0) {
+        nextTx.withheldNhiTwd = prev.baseWithheldNhiTwd;
+      } else {
+        delete nextTx.withheldNhiTwd;
+      }
+      return { ...prev, tx: nextTx, editAmount: raw };
+    });
+  };
+
+  const formatConfirmNetOnBlur = () => {
+    setConfirmState(prev => {
+      if (!prev || prev.tx.market !== Market.US) return prev;
+      const n = parseFloat(prev.editAmount);
+      if (!Number.isFinite(n) || n < 0) return prev;
+      const formatted = (Math.round(n * 100) / 100).toFixed(2);
+      if (formatted === prev.editAmount) return prev;
+      return { ...prev, editAmount: formatted };
     });
   };
 
   const confirmAndSavePendingActual = () => {
     if (!confirmState) return;
-    const net = parseFloat(confirmState.editAmount);
+    const netRaw = parseFloat(confirmState.editAmount);
+    const net =
+      confirmState.tx.market === Market.US && Number.isFinite(netRaw)
+        ? Math.round(netRaw * 100) / 100
+        : netRaw;
     if (!Number.isFinite(net) || net <= 0) return;
     const gross = normalizeGrossForConfirm(confirmState.tx.market, parseFloat(confirmState.editPrice));
+
     const saved: Transaction = {
       ...confirmState.tx,
-      price: net,
-      amount: net,
-      fees: 0,
       quantity: 1,
+      amount: net,
     };
-    if (
-      confirmState.tx.market === Market.US &&
-      Number.isFinite(gross) &&
-      gross > net
-    ) {
-      const tax = Math.round((gross - net) * 100) / 100;
-      if (tax > 0) saved.withheldUsTaxNative = tax;
+
+    if (confirmState.tx.market === Market.TW) {
+      const twFields = twPendingConfirmSaveFields({
+        gross,
+        net,
+        baseWithheldNhiTwd: confirmState.baseWithheldNhiTwd,
+        deductWireFee: confirmState.deductWireFee,
+      });
+      saved.price = twFields.price;
+      saved.fees = twFields.fees;
+      saved.amount = twFields.amount;
+      if (twFields.withheldNhiTwd != null && twFields.withheldNhiTwd > 0) {
+        saved.withheldNhiTwd = twFields.withheldNhiTwd;
+      } else {
+        delete saved.withheldNhiTwd;
+      }
+    } else if (confirmState.tx.market === Market.US) {
+      saved.price = net;
+      if (Number.isFinite(gross) && gross > net) {
+        const tax = Math.round((gross - net) * 100) / 100;
+        if (tax > 0) saved.withheldUsTaxNative = tax;
+        else delete saved.withheldUsTaxNative;
+      }
+    } else {
+      saved.price = net;
     }
+
     addTransaction(saved);
     const rowKey = confirmState.rowKey;
     setPendingAccountByKey(prev => {
@@ -727,7 +833,7 @@ const DividendHeatmap: React.FC = () => {
                           <td className="px-3 py-2 text-right tabular-nums">
                             {pa.amountPerShare.toLocaleString(undefined, { maximumFractionDigits: 4 })} {cur}
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums font-medium">
+                          <td className="px-3 py-2 text-right tabular-nums">
                             {pa.market === Market.US
                               ? formatUsDividendNativeAmount(calc.netNative)
                               : calc.netNative.toLocaleString(undefined, { maximumFractionDigits: 2 })}{' '}
@@ -806,6 +912,34 @@ const DividendHeatmap: React.FC = () => {
                     </span>
                   </div>
                 )}
+                {confirmState.tx.market === Market.TW && (
+                  <div className="py-2 border-b border-slate-100 dark:border-slate-700">
+                    <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={confirmState.deductWireFee}
+                        onChange={e => applyConfirmWireFeeChoice(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                      />
+                      <span>
+                        <span className="font-medium">
+                          {dtx.pendingActualWireFeeOption}
+                        </span>
+                        <span className="block text-xs text-slate-500 dark:text-slate-400">
+                          {dtx.pendingActualWireFeeHint}
+                        </span>
+                      </span>
+                    </label>
+                    {confirmState.deductWireFee && (
+                      <div className="mt-1 flex justify-between text-sm text-rose-700 dark:text-rose-400">
+                        <span>{dtx.pendingActualWireFeeLabel}</span>
+                        <span className="font-medium tabular-nums">
+                          −{TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD.toLocaleString()} TWD
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {confirmState.tx.note && (
                   <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
                     <span className="text-slate-600 dark:text-slate-400">{tf.noteLabel}</span>
@@ -817,11 +951,12 @@ const DividendHeatmap: React.FC = () => {
                     <span className="text-slate-700 dark:text-slate-300 font-semibold shrink-0">{dtx.pendingActualEstAmount}</span>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <input
-                        type="number"
-                        step={confirmState.tx.market === Market.US ? '0.01' : '1'}
+                        type="text"
+                        inputMode={confirmState.tx.market === Market.US ? 'decimal' : 'numeric'}
                         min="0"
                         value={confirmState.editAmount}
                         onChange={e => applyConfirmNetEdit(e.target.value)}
+                        onBlur={formatConfirmNetOnBlur}
                         className={`w-28 text-right tabular-nums font-bold text-lg border border-slate-300 rounded-md p-1.5 ${FORM_FIELD_THEME}`}
                       />
                       <span className="text-slate-500 dark:text-slate-400 text-xs shrink-0">
