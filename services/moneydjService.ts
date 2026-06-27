@@ -26,7 +26,7 @@ export interface ActualDividendRecord {
   /** 報價幣別（hint） */
   currency?: string;
   /** 來源標記，用於 UI 顯示徽章 */
-  source: 'moneydj' | 'dj' | 'stockanalysis' | 'yahoo';
+  source: 'mops' | 'moneydj' | 'dj' | 'stockanalysis' | 'yahoo';
 }
 
 const PAY_DATE_OFFSET_DAYS_BY_MARKET: Partial<Record<Market, number>> = {
@@ -69,9 +69,13 @@ function isMoneyDjTarget(target: string): boolean {
   return /^https:\/\/(www\.)?moneydj\.com\//i.test(target);
 }
 
+function isMopsTarget(target: string): boolean {
+  return /^https:\/\/mopsov\.twse\.com\.tw\//i.test(target);
+}
+
 async function fetchAsTextOnce(target: string): Promise<string | null> {
   const candidates = buildProxiedFetchUrls(target);
-  const FETCH_TIMEOUT_MS = isMoneyDjTarget(target)
+  const FETCH_TIMEOUT_MS = isMoneyDjTarget(target) || isMopsTarget(target)
     ? Math.max(proxyFetchTimeoutMs(), 15_000)
     : proxyFetchTimeoutMs();
   for (const url of candidates) {
@@ -79,7 +83,10 @@ async function fetchAsTextOnce(target: string): Promise<string | null> {
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
       const res = await fetch(url, {
-        headers: { Accept: 'text/html,application/json,*/*;q=0.8' },
+        headers: {
+          Accept: 'text/html,application/json,*/*;q=0.8',
+          ...(isMopsTarget(target) ? { Referer: 'https://mopsov.twse.com.tw/mops/web/t108sb19_q1' } : {}),
+        },
         signal: ctrl.signal,
       });
       clearTimeout(tid);
@@ -109,6 +116,38 @@ async function fetchAsText(target: string): Promise<string | null> {
     }
     const text = await fetchAsTextOnce(target);
     if (text) return text;
+  }
+  return null;
+}
+
+async function fetchMopsAsText(target: string): Promise<string | null> {
+  const candidates = [
+    target,
+    ...buildProxiedFetchUrls(target).filter(url => url !== target),
+  ];
+  const FETCH_TIMEOUT_MS = Math.max(proxyFetchTimeoutMs(), 15_000);
+  for (const url of candidates) {
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+      const res = await fetch(url, {
+        headers: {
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          Referer: 'https://mopsov.twse.com.tw/mops/web/t108sb19_q1',
+        },
+        signal: ctrl.signal,
+      });
+      clearTimeout(tid);
+      if (!res.ok) continue;
+      const text = await res.text();
+      const t = text.trim();
+      if (!t) continue;
+      if (/^\s*\{\s*"error"\s*:/.test(t)) continue;
+      if (/請選擇查詢條件/.test(t) && t.length < 3000) continue;
+      return text;
+    } catch {
+      /* CORS / timeout / proxy not deployed → try next candidate */
+    }
   }
   return null;
 }
@@ -163,6 +202,12 @@ function normalizeYmd(slashYmd: string): string {
   return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
 }
 
+function normalizeSlashYmd(raw: string): string {
+  const m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(stripHtml(raw).trim());
+  if (!m) return '';
+  return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+}
+
 function stripHtml(s: string): string {
   return s
     .replace(/<[^>]+>/g, '')
@@ -174,6 +219,16 @@ function stripHtml(s: string): string {
 function normalizeTwRocOrYmd(raw: string): string {
   const s = raw.trim();
   const m = /^(\d{2,4})\/(\d{1,2})\/(\d{1,2})$/.exec(s);
+  if (!m) return '';
+  const year = Number(m[1]);
+  if (!Number.isFinite(year)) return '';
+  const westernYear = year < 1911 ? year + 1911 : year;
+  return `${westernYear}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+}
+
+function normalizeTwRocChineseDate(raw: string): string {
+  const compact = stripHtml(raw).replace(/\s+/g, '');
+  const m = /^(\d{2,4})年(\d{1,2})月(\d{1,2})日$/.exec(compact);
   if (!m) return '';
   const year = Number(m[1]);
   if (!Number.isFinite(year)) return '';
@@ -305,6 +360,150 @@ async function fetchDjTwStockCalendarHistory(ticker: string): Promise<ActualDivi
   const html = await fetchAsText(url);
   if (!html) return [];
   return parseDjTwStockCalendarHtml(html);
+}
+
+// ── 台股個股：MOPS 除權息公告（官方真實現金股利發放日） ────────────────
+interface MopsTwStockAnnouncementRef {
+  date1: string;
+  seqNo: string;
+  comp: string;
+}
+
+export function parseMopsTwStockAnnouncementRefs(html: string): MopsTwStockAnnouncementRef[] {
+  const refs: MopsTwStockAnnouncementRef[] = [];
+  const seen = new Set<string>();
+  const re =
+    /DATE1\.value="(\d+)";document\.t108sb22_fm1\.SEQ_NO\.value="([^"]+)";document\.t108sb22_fm1\.COMP\.value="([^"]+)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) != null) {
+    const ref = { date1: m[1], seqNo: m[2], comp: m[3] };
+    const key = `${ref.date1}|${ref.seqNo}|${ref.comp}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    refs.push(ref);
+  }
+  refs.sort((a, b) => a.date1.localeCompare(b.date1) || a.seqNo.localeCompare(b.seqNo));
+  return refs;
+}
+
+export function parseMopsTwStockDividendDetailHtml(html: string): ActualDividendRecord | null {
+  const text = stripHtml(html)
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, '');
+
+  const amountMatch = /除息--普通股：每壹股配發現金\(股利\)([\d,.]+)元/.exec(text);
+  const payDateMatch = /現金股利發放日：(\d{2,4}年\d{1,2}月\d{1,2}日)/.exec(text);
+  const exDateMatch = /除權\/除息交易日：(\d{2,4}年\d{1,2}月\d{1,2}日)/.exec(text);
+
+  const rawAmount = Number((amountMatch?.[1] ?? '').replace(/,/g, ''));
+  const amount = Number.isFinite(rawAmount) ? Math.round(rawAmount * 1e6) / 1e6 : rawAmount;
+  const payDate = normalizeTwRocChineseDate(payDateMatch?.[1] ?? '');
+  const exDate = normalizeTwRocChineseDate(exDateMatch?.[1] ?? '');
+
+  const rec: ActualDividendRecord = {
+    exDate,
+    payDate,
+    amountPerShare: amount,
+    currency: 'TWD',
+    source: 'mops',
+  };
+  return isCompleteRecord(rec) ? rec : null;
+}
+
+async function fetchMopsTwStockDividendHistory(ticker: string): Promise<ActualDividendRecord[]> {
+  const sanitized = String(ticker).replace(/^TPE:/i, '').replace(/\D/g, '');
+  if (!/^\d{4,6}$/.test(sanitized)) return [];
+
+  const currentRocYear = new Date().getFullYear() - 1911;
+  const years = [currentRocYear - 1, currentRocYear];
+  const detailRefs: MopsTwStockAnnouncementRef[] = [];
+
+  for (const year of years) {
+    const listParams = new URLSearchParams({
+      step: '1',
+      TYPEK: 'all',
+      year: String(year),
+      co_id: sanitized,
+      month: 'all',
+      b_date: '',
+      e_date: '',
+      isnew: 'false',
+      firstin: 'true',
+    });
+    const listUrl = `https://mopsov.twse.com.tw/mops/web/ajax_t108sb19?${listParams.toString()}`;
+    const html = await fetchMopsAsText(listUrl);
+    if (!html) continue;
+    detailRefs.push(...parseMopsTwStockAnnouncementRefs(html));
+  }
+
+  detailRefs.sort((a, b) => a.date1.localeCompare(b.date1) || a.seqNo.localeCompare(b.seqNo));
+
+  const byExDate = new Map<string, ActualDividendRecord>();
+  for (const ref of detailRefs) {
+    const detailParams = new URLSearchParams({
+      firstin: 'true',
+      colorchg: '',
+      TYPEK: 'all',
+      isnew: 'false',
+      id: '',
+      DATE1: ref.date1,
+      SEQ_NO: ref.seqNo,
+      COMP: ref.comp,
+      kind: '',
+      SKIND: 'G',
+      step: '2',
+    });
+    const detailUrl = `https://mopsov.twse.com.tw/mops/web/ajax_t108sb22?${detailParams.toString()}`;
+    const html = await fetchMopsAsText(detailUrl);
+    if (!html) continue;
+    const rec = parseMopsTwStockDividendDetailHtml(html);
+    if (rec) byExDate.set(rec.exDate, rec);
+  }
+
+  return Array.from(byExDate.values()).sort((a, b) => b.exDate.localeCompare(a.exDate));
+}
+
+// ── 台股個股：Yahoo 台股股利政策頁（備援真實發放日；既有 proxy 已允許） ───────
+export function parseYahooTwDividendPageHtml(html: string): ActualDividendRecord[] {
+  const rows: ActualDividendRecord[] = [];
+  const flat = html.replace(/[\r\n]+/g, ' ');
+  const rowRe = /<li class="List\(n\)">([\s\S]*?)<\/div><\/li>/g;
+  let m: RegExpExecArray | null;
+
+  while ((m = rowRe.exec(flat)) != null) {
+    const rowHtml = m[1];
+    if (!/20\d{2}Q[1-4]/.test(rowHtml)) continue;
+
+    const cells = Array.from(rowHtml.matchAll(/<div[^>]*>([\s\S]*?)<\/div>/g))
+      .map(match => stripHtml(match[1]).replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+    const quarterIdx = cells.findIndex(cell => /^20\d{2}Q[1-4]$/.test(cell));
+    if (quarterIdx < 0) continue;
+
+    const amount = normalizeAmountPerShare(Number((cells[quarterIdx + 1] ?? '').replace(/,/g, '')));
+    const exDate = normalizeSlashYmd(cells[quarterIdx + 5] ?? '');
+    const payDate = normalizeSlashYmd(cells[quarterIdx + 7] ?? '');
+    const rec: ActualDividendRecord = {
+      exDate,
+      payDate,
+      amountPerShare: amount,
+      currency: 'TWD',
+      source: 'yahoo',
+    };
+    if (isCompleteRecord(rec)) rows.push(rec);
+  }
+
+  rows.sort((a, b) => b.exDate.localeCompare(a.exDate));
+  return rows;
+}
+
+async function fetchYahooTwDividendPageHistory(ticker: string): Promise<ActualDividendRecord[]> {
+  const sanitized = String(ticker).replace(/^TPE:/i, '').replace(/\D/g, '');
+  if (!/^\d{4,6}$/.test(sanitized)) return [];
+  const url = `https://tw.stock.yahoo.com/quote/${encodeURIComponent(sanitized)}.TW/dividend`;
+  const html = await fetchAsText(url);
+  if (!html) return [];
+  return parseYahooTwDividendPageHtml(html);
 }
 
 // ── 美股個股：StockAnalysis dividend page（完整 Ex-Date / Amount / Pay Date） ─
@@ -439,7 +638,7 @@ async function fetchYahooDividendEvents(
  *
  * 精度優先來源：
  *  - ETF（台股自動補 .tw）：MoneyDJ ETF 配息頁。
- *  - 台股個股：DJ 鏡像重大行事曆（通常僅下一季）＋ Yahoo 補齊今年已除息歷史。
+ *  - 台股個股：Yahoo 台股股利頁（真實發放日，快速）＋MOPS/DJ 備援＋Yahoo chart 補缺。
  *  - 美股個股：StockAnalysis dividend page（個股 /stocks/、ETF /etf/）。
  *  - 美股／台股 ETF 若上述來源皆無資料：Yahoo Finance events=div（發放日推估）。
  *  - 其他市場個股與 ETF：Yahoo Finance events=div。
@@ -482,16 +681,21 @@ export async function fetchActualDividendHistory(
     }
   }
 
-  const records =
-    market === Market.TW
-      ? await fetchDjTwStockCalendarHistory(ticker).catch(() => [])
-      : market === Market.US
+  if (market === Market.TW) {
+    mergeRecords(await fetchYahooTwDividendPageHistory(ticker).catch(() => []));
+    if (byExDate.size === 0) {
+      mergeRecords(await fetchMopsTwStockDividendHistory(ticker).catch(() => []));
+      mergeRecords(await fetchDjTwStockCalendarHistory(ticker).catch(() => []), { fillGapsOnly: true });
+    }
+  } else {
+    const records =
+      market === Market.US
         ? await fetchStockAnalysisUsStockDividends(ticker).catch(() => [])
         : await fetchYahooDividendEvents(ticker, market, yahooMarket).catch(() => []);
+    mergeRecords(records);
+  }
 
-  mergeRecords(records);
-
-  // 台股個股：DJ 行事曆多半只有「下一季」且除息後會換季，需用 Yahoo 補齊今年已除息（如 2330 季配）。
+  // 台股個股：Yahoo 台股股利頁/MOPS/DJ 先提供真實發放日；Yahoo chart 只補缺口，缺口仍標示為估算發放日。
   if (market === Market.TW) {
     mergeRecords(
       await fetchYahooDividendEvents(ticker, market, yahooMarket).catch(() => []),
