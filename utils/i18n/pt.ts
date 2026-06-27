@@ -235,6 +235,9 @@ export const pt: Translations = {
     pendingActualAccount: 'Conta de entrada',
     pendingActualNoteTemplate: 'Importação automática: por ação {perShare}, posição {qty}',
     pendingActualConfirmGrossAmount: 'Valor bruto (antes de impostos)',
+    pendingActualWireFeeOption: 'Deduzir taxa de transferência de TWD 10',
+    pendingActualWireFeeHint: 'A taxa varia por corretora/banco; marque apenas se foi cobrada no depósito.',
+    pendingActualWireFeeLabel: 'Taxa de transferência',
   },
   funds: { 
     ...en.funds, 

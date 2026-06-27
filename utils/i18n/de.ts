@@ -259,6 +259,9 @@ export const de: Translations = {
     pendingActualAccount: 'Konto',
     pendingActualNoteTemplate: 'Auto-Import: {perShare} pro Aktie, {qty} Stück',
     pendingActualConfirmGrossAmount: 'Bruttobetrag (vor Steuer)',
+    pendingActualWireFeeOption: 'TWD 10 Überweisungsgebühr abziehen',
+    pendingActualWireFeeHint: 'Gebühren variieren je nach Broker/Bank; nur aktivieren, wenn sie tatsächlich abgezogen wurden.',
+    pendingActualWireFeeLabel: 'Überweisungsgebühr',
   },
   funds: { title: 'Fondsverwaltung', operations: 'Aktionen', clearAll: 'Gefilterte Mittel löschen', batchImport: 'Import', addRecord: '+ Eintrag', filter: 'Suche/Filter', clearFilters: 'Zurücksetzen', accountFilter: 'Konto', typeFilter: 'Typ', dateFrom: 'Von', dateTo: 'Bis', allAccounts: 'Alle', allTypes: 'Alle', deposit: 'Einzahlung', withdraw: 'Auszahlung', transfer: 'Überweisung', interest: 'Zinsen', loanInterest: 'Kreditzinsen', showRecords: '{count} Einträge', totalRecords: 'Gesamt {total}', last30Days: 'Letzte 30 Tage', thisYear: 'Dieses Jahr', confirmClearAll: '{count} gefilterte Fondseinträge löschen?', confirmClearAllMessage: 'Ein- und Auszahlungen, die Ihren aktuellen Filtern entsprechen, werden gelöscht. Dies kann nicht rückgängig gemacht werden. Bitte sichern Sie zuerst Ihre Daten.', confirmClear: 'Löschen' },
   history: {

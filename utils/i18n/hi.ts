@@ -235,6 +235,9 @@ export const hi: Translations = {
     pendingActualAccount: 'जमा खाता',
     pendingActualNoteTemplate: 'ऑटो-आयात: प्रति शेयर {perShare}, होल्डिंग {qty}',
     pendingActualConfirmGrossAmount: 'कर-पूर्व कुल राशि',
+    pendingActualWireFeeOption: 'TWD 10 ट्रांसफर शुल्क घटाएँ',
+    pendingActualWireFeeHint: 'ताइवान स्टॉक शुल्क broker/bank पर निर्भर है; वास्तविक कटौती होने पर ही चुनें।',
+    pendingActualWireFeeLabel: 'ट्रांसफर शुल्क',
   },
   funds: {
     ...en.funds,

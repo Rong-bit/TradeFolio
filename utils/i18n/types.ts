@@ -327,6 +327,9 @@ export interface Translations {
     pendingActualNoteTemplate: string;
     /** 待入帳確認框：可編輯的稅前毛額欄位 */
     pendingActualConfirmGrossAmount: string;
+    pendingActualWireFeeOption: string;
+    pendingActualWireFeeHint: string;
+    pendingActualWireFeeLabel: string;
   };
   // 資金管理
   funds: {

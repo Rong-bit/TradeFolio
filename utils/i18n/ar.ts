@@ -235,6 +235,9 @@ export const ar: Translations = {
     pendingActualAccount: 'حساب الإيداع',
     pendingActualNoteTemplate: 'استيراد تلقائي: لكل سهم {perShare}، الكمية {qty}',
     pendingActualConfirmGrossAmount: 'المبلغ الإجمالي قبل الضريبة',
+    pendingActualWireFeeOption: 'خصم رسوم تحويل TWD 10',
+    pendingActualWireFeeHint: 'تختلف الرسوم حسب الوسيط/البنك؛ فعّلها فقط إذا تم خصمها فعلاً.',
+    pendingActualWireFeeLabel: 'رسوم التحويل',
   },
   funds: { 
     ...en.funds,

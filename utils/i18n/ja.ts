@@ -289,6 +289,9 @@ export const ja: Translations = {
     pendingActualAccount: '入金口座',
     pendingActualNoteTemplate: '自動取込：1株 {perShare}、保有 {qty} 株',
     pendingActualConfirmGrossAmount: '税引前総額',
+    pendingActualWireFeeOption: '送金手数料 TWD 10 を差し引く',
+    pendingActualWireFeeHint: '台湾株の送金手数料は証券会社／銀行により異なります。実際に差し引かれた場合のみ選択してください。',
+    pendingActualWireFeeLabel: '送金手数料',
   },
   funds: {
     title: '資金管理',

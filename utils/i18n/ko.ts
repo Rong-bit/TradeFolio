@@ -289,6 +289,9 @@ export const ko: Translations = {
     pendingActualAccount: '입금 계좌',
     pendingActualNoteTemplate: '자동 가져오기: 주당 {perShare}, 보유 {qty}주',
     pendingActualConfirmGrossAmount: '세전 총액',
+    pendingActualWireFeeOption: '송금 수수료 TWD 10 차감',
+    pendingActualWireFeeHint: '대만 주식 송금 수수료는 증권사/은행에 따라 다릅니다. 실제 차감된 경우에만 선택하세요.',
+    pendingActualWireFeeLabel: '송금 수수료',
   },
   funds: {
     title: '자금 관리',

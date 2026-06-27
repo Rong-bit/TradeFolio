@@ -286,6 +286,9 @@ export const zhTW: Translations = {
     pendingActualAccount: '入帳帳戶',
     pendingActualNoteTemplate: '自動匯入：每股 {perShare}，持股 {qty}',
     pendingActualConfirmGrossAmount: '稅前總額',
+    pendingActualWireFeeOption: '扣除匯費 10 元',
+    pendingActualWireFeeHint: '台股匯費依券商／銀行而定；若實際入帳有扣款再勾選。',
+    pendingActualWireFeeLabel: '匯費',
   },
   funds: {
     title: '資金管理',

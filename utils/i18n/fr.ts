@@ -260,6 +260,9 @@ export const fr: Translations = {
     pendingActualAccount: 'Compte credite',
     pendingActualNoteTemplate: 'Import auto : {perShare} par action, {qty} actions',
     pendingActualConfirmGrossAmount: 'Montant brut (avant impôt)',
+    pendingActualWireFeeOption: 'Déduire 10 TWD de frais de virement',
+    pendingActualWireFeeHint: 'Les frais varient selon le courtier/la banque ; activez seulement si le versement les a déduits.',
+    pendingActualWireFeeLabel: 'Frais de virement',
   },
   funds: { 
     ...en.funds, 

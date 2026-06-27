@@ -290,6 +290,9 @@ export const en: Translations = {
     pendingActualAccount: 'Account',
     pendingActualNoteTemplate: 'Auto-import: {perShare} per share, {qty} shares',
     pendingActualConfirmGrossAmount: 'Gross amount (pre-tax)',
+    pendingActualWireFeeOption: 'Deduct TWD 10 transfer fee',
+    pendingActualWireFeeHint: 'TW transfer fees vary by broker/bank; enable only if your deposit was charged.',
+    pendingActualWireFeeLabel: 'Transfer fee',
   },
   funds: {
     title: 'Fund Management',

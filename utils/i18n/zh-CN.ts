@@ -232,6 +232,9 @@ zhCN.dividendTax = {
   pendingActualAccount: '入账账户',
   pendingActualNoteTemplate: '自动导入：每股 {perShare}，持股 {qty}',
   pendingActualConfirmGrossAmount: '税前总额',
+  pendingActualWireFeeOption: '扣除汇费 10 元',
+  pendingActualWireFeeHint: '台股汇费依券商／银行而定；若实际入账有扣款再勾选。',
+  pendingActualWireFeeLabel: '汇费',
 };
 zhCN.funds = {
   ...zhTW.funds,
