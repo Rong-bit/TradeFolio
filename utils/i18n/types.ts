@@ -238,10 +238,10 @@ export interface Translations {
     subtitle: string;
     /** 各市場加總：以 TWD 合計 (市值−成本)/成本，非年化 */
     cumulativeReturn: string;
-    cumulativeReturnShort: string;
     weight: string;
-    weightShort: string;
     value: string;
+    cumulativeReturnShort: string;
+    weightShort: string;
     valueShort: string;
     noData: string;
     ratio: string;
@@ -284,13 +284,14 @@ export interface Translations {
     recordedLabel: string;
     pendingLabel: string;
   };
-  /** 配息試算：台股二代健保、美股預扣、未來除息清單 */
+  /** 配息試算：台股二代健保、美股預扣、待補登實績清單 */
   dividendTax: {
     twTooltipTitle: string;
     estSinglePayout: string;
     estNhiFee: string;
     splitHint0050: string;
     usNetTooltipTitle: string;
+    marketWithholdingRef: string;
     estGrossPerPayout: string;
     estNetAfterWithholding: string;
     upcomingTitle: string;
@@ -307,12 +308,11 @@ export interface Translations {
     nhiForecastTag: string;
     pendingActualTitle: string;
     pendingActualSubtitle: string;
-    /** 待補登清單：股息再投入勿用「新增」 */
+    /** 待補登清單：股息再投入請至 nav.history 用 history.addRecord，勿用 pendingActualAddBtn */
     pendingActualDripHint: string;
     pendingActualEmpty: string;
     pendingActualLoading: string;
     pendingActualAddBtn: string;
-    /** 待補登配息表格欄標題（非按鈕文字） */
     pendingActualAddCol: string;
     pendingActualDismissBtn: string;
     pendingActualToggleHide: string;
@@ -325,7 +325,6 @@ export interface Translations {
     pendingActualEstAmount: string;
     pendingActualAccount: string;
     pendingActualNoteTemplate: string;
-    /** 待入帳確認框：可編輯的稅前毛額欄位 */
     pendingActualConfirmGrossAmount: string;
     pendingActualWireFeeOption: string;
     pendingActualWireFeeHint: string;
@@ -682,6 +681,14 @@ export interface Translations {
     contactTitle: string;
     contactDesc: string;
     contactEmail: string;
+    subscription: string;
+    subscriptionTitle: string;
+    subscriptionDesc: string;
+    subscribeButton: string;
+    deleteAppAccount: string;
+    deleteAppAccountDesc: string;
+    confirmDeleteAppAccount: string;
+    confirmDeleteAppAccountMessage: string;
     documentation: string;
     copyAll: string;
     copied: string;
@@ -691,10 +698,6 @@ export interface Translations {
     confirmImportWarning: string;
     confirmOverride: string;
     documentationContent: string;
-    deleteAppAccount: string;
-    deleteAppAccountDesc: string;
-    confirmDeleteAppAccount: string;
-    confirmDeleteAppAccountMessage: string;
   };
   // 交易表單
   transactionForm: {
@@ -727,14 +730,14 @@ export interface Translations {
     noteLabel: string;
     totalAmount: string;
     shares: string;
+    /** 現金股息確認：數量固定為 1 筆交易，非持股股數 */
+    cashDividendQuantityConfirm: string;
     backToEdit: string;
     confirmSave: string;
     previewTitle: string;
     calculationFormula: string;
     calculationMethod: string;
     deductionShort: string;
-    /** 現金股息確認：數量固定為 1 筆交易，非持股股數 */
-    cashDividendQuantityConfirm: string;
     marketTW: string;
     marketUS: string;
     marketUK: string;
@@ -935,6 +938,46 @@ export interface Translations {
     alertFetchFailed: string;
     alertAiError: string;
   };
+  // 會員訂閱（iOS 內購）
+  subscription: {
+    plan: string;
+    monthly: string;
+    yearly: string;
+    periodEndLabel: string;
+    lengthLabel: string;
+    lengthMonth: string;
+    lengthYear: string;
+    monthlyDesc: string;
+    yearlyDesc: string;
+    savePercent: string;
+    featureTitle: string;
+    feature1: string;
+    feature2: string;
+    feature3: string;
+    feature4: string;
+    title: string;
+    subtitle: string;
+    memberStatus: string;
+    inAppOnlyTitle: string;
+    inAppOnlyDesc: string;
+    loading: string;
+    recommended: string;
+    currentPlan: string;
+    processing: string;
+    perYear: string;
+    perMonth: string;
+    restorePurchases: string;
+    termsOfUse: string;
+    privacyPolicy: string;
+    purchaseSuccess: string;
+    purchaseFailedPrefix: string;
+    restoreSuccess: string;
+    restoreNotFound: string;
+    initFailed: string;
+    purchaseFailed: string;
+    restoreFailed: string;
+    becomeMember: string;
+  };
   /** 付費方案彈窗（可選，缺省時由元件 fallback） */
   purchaseModal?: {
     title: string;
@@ -1005,6 +1048,8 @@ export interface Translations {
     enterEmail: string;
     adminWelcome: string;
     adminPasswordWrong: string;
+    memberModeLoginSuccess?: string;
+    guestModeLoginSuccess?: string;
     guestLoginNotice: string;
     contactSubject: string;
     contactBody: string;

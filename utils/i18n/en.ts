@@ -27,7 +27,7 @@ export const en: Translations = {
     search: 'Search',
     logoutConfirm: 'Are you sure you want to logout?',
     baseCurrency: 'Base Currency',
-    upgrade: 'Report Issue',
+    upgrade: 'Upgrade',
     footerLocalDataPrivacy:
       'All transaction data is stored locally on your device to protect your privacy.',
   },
@@ -144,7 +144,7 @@ export const en: Translations = {
     chartLoading: 'Loading chart...',
     noChartData: 'Please add fund deposits and transactions first',
     noHoldings: 'No holdings',
-    noAccounts: 'No brokerage accounts. Please add accounts in Account Management.',
+    noAccounts: 'No brokerage accounts. Please add accounts in Accounts.',
     costBreakdown: 'Net Invested Cost Breakdown',
     netInvestedBreakdown: 'Net Invested Breakdown',
     calculationFormula: 'Formula: Net Invested = Deposits - Withdrawals',
@@ -208,10 +208,10 @@ export const en: Translations = {
     title: 'Market Performance',
     subtitle: 'Grouped by market — cumulative return & portfolio weight',
     cumulativeReturn: 'Cumulative Return',
-    cumulativeReturnShort: 'Return',
     weight: 'Weight',
-    weightShort: 'Weight',
     value: 'Value',
+    cumulativeReturnShort: 'Return',
+    weightShort: 'Weight',
     valueShort: 'Value',
     noData: 'No holdings data',
     ratio: 'Weight',
@@ -257,6 +257,7 @@ export const en: Translations = {
     estNhiFee: 'Est. NHI supplement (2.11%, illustrative)',
     splitHint0050: 'Splitting across brokers may change per-payment thresholds; withholding follows the payer.',
     usNetTooltipTitle: 'US dividend withholding (reference)',
+    marketWithholdingRef: 'Dividend withholding (reference estimate)',
     estGrossPerPayout: 'Est. gross (per share × shares)',
     estNetAfterWithholding: 'Est. net after ~30% withholding (~70%)',
     upcomingTitle: 'Upcoming ex-dividend (90d, Yahoo)',
@@ -317,8 +318,8 @@ export const en: Translations = {
     totalRecords: 'Total {total}',
     last30Days: 'Last 30 Days',
     thisYear: 'This Year',
-    confirmClearAll: 'Confirm clearing {count} filtered fund records?',
-    confirmClearAllMessage: 'This will delete deposit, withdrawal, transfer and interest records matching your current filters. This action cannot be undone. Please backup your data first.',
+    confirmClearAll: 'Confirm clearing filtered fund records?',
+    confirmClearAllMessage: 'This will delete {count} deposit, withdrawal, transfer and interest record(s) in the current filter. This action cannot be undone. Please backup your data first.',
     confirmClear: 'Confirm Clear',
   },
   history: {
@@ -326,7 +327,7 @@ export const en: Translations = {
     tabTimeline: 'Holding Timeline',
     operations: 'Operations',
     batchUpdateMarket: 'Batch Update Market',
-    clearAll: 'Clear Filtered Records',
+    clearAll: 'Clear Filtered Transactions',
     batchImport: 'Batch Import',
     addRecord: '+ Add Record',
     filter: 'Filter',
@@ -637,6 +638,10 @@ export const en: Translations = {
     contactTitle: 'Feedback & Support',
     contactDesc: 'For feature suggestions or bug reports, please email us. Maintained in spare time; responses may be slower.',
     contactEmail: 'Contact Administrator (Email)',
+    subscription: 'Membership Subscription (In-App Purchase)',
+    subscriptionTitle: 'Become a Member / Manage Subscription',
+    subscriptionDesc: 'Subscribe via the App Store to unlock all features. View plans, purchase, or restore purchases here.',
+    subscribeButton: 'Open Subscription Plans',
     deleteAppAccount: 'Delete Account & Data',
     deleteAppAccountDesc: 'Permanently clears login state and all local data (transactions, accounts, etc.) on this device. This cannot be undone. To cancel a subscription, go to Settings → Subscriptions on your device.',
     confirmDeleteAppAccount: 'Confirm Delete Account & Data',
@@ -655,7 +660,7 @@ export const en: Translations = {
 > This system adopts an offline-first architecture. **All transaction data is stored locally on your device** (iOS/Android app or desktop browser) and is not uploaded to any server. **The system does not involve collecting personal information**. Please use with confidence.
 
 ## 1. System Introduction
-TradeView is an asset management tool that supports global stock markets, helping investors track asset changes, calculate returns, and manage fund flows.
+TradeView is an asset management tool that supports stock markets worldwide, helping investors track asset changes, calculate returns, and manage fund flows.
 
 ## 2. Quick Start
 Follow this order for first-time setup (matches the hamburger menu workflow "Accounts → Funds → Transactions → Dashboard"):
@@ -767,8 +772,7 @@ Q: How does debt relate to net invested, XIRR, and net worth?
 A: **Debt draws/repayments** (liability↔brokerage transfers) count in **net invested** and **XIRR** (leverage); **loan interest** does not. **Total assets** = holdings + brokerage cash; **total debt** = sum of liability balances (converted); **net worth** = total assets − total debt. After balance reaches zero, debt cards and alerts hide, but historical draws/repayments remain in the net-invested breakdown. Interpret XIRR carefully if you used leverage.
 
 Q: What is the Dashboard "overseas income tax progress" section?
-A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section shows an overseas income estimate (realized P/L and dividends from non-Taiwan markets), with reference thresholds at NT
-    M (filing) and NT$6.7M (basic deduction) for minimum tax. **For tax planning reference only**—excludes other income such as insurance payouts; not tax advice.
+A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section shows an overseas income estimate (realized P/L and dividends from non-Taiwan markets), with reference thresholds at NT$1M (filing) and NT$6.7M (basic deduction) for minimum tax. **For tax planning reference only**—excludes other income such as insurance payouts; not tax advice.
 
 ## 5. Important Disclaimers
 
@@ -788,7 +792,6 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
 - Stock prices, exchange rates, and other data provided by this application may differ from actual market prices due to network delays.
 - Users should not use data from this application as the sole reference for actual trading.
 - It is recommended to use real-time quotes provided by securities companies or financial institutions.`,
-
   },
   transactionForm: {
     addTransaction: 'Add Transaction',
@@ -820,13 +823,13 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
     noteLabel: 'Note:',
     totalAmount: 'Total Amount:',
     shares: 'shares',
+    cashDividendQuantityConfirm: '1 record',
     backToEdit: 'Back to Edit',
     confirmSave: 'Confirm & Save',
     previewTitle: 'Amount Preview:',
     calculationFormula: 'Calculation Formula:',
     calculationMethod: 'Calculation:',
     deductionShort: 'deduction',
-    cashDividendQuantityConfirm: '1 record',
     marketTW: 'Taiwan (TW)',
     marketUS: 'US (US)',
     marketUK: 'UK (UK)',
@@ -945,7 +948,7 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
     selectAccount: '1. Select Import Account',
     selectAccountPlaceholder: '-- Please select account --',
     noAccountsWarning: '⚠️ Cannot perform batch import',
-    noAccountsMessage: 'There are no accounts in the system. Please go to the "Account Management" page to create an account first, then come back to perform batch import.',
+    noAccountsMessage: 'There are no accounts in the system. Please go to the "Accounts" page to create an account first, then come back to perform batch import.',
     tabPaste: 'Paste Text',
     tabUpload: 'Upload CSV File',
     pasteLabel: 'Paste Excel or table data here (Supported format: Date | Buy/Sell/Dividend/Transfer | Ticker | Price | Quantity | Fees | Total Amount)',
@@ -1019,6 +1022,45 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
       'Could not fetch historical prices for {count} symbol(s). Check your connection and try again.\n\nSymbols: {tickers}',
     alertAiError: 'Update failed. Please try again later.',
   },
+  subscription: {
+    plan: 'Plan:',
+    monthly: 'Monthly',
+    yearly: 'Yearly',
+    periodEndLabel: 'Valid until: ',
+    lengthLabel: 'Plan length: ',
+    lengthMonth: '1 month',
+    lengthYear: '12 months',
+    monthlyDesc: 'Pay monthly, cancel anytime',
+    yearlyDesc: 'Pay yearly, save more',
+    savePercent: 'Save 2 months',
+    featureTitle: 'Membership includes:',
+    feature1: 'Advanced dashboard & asset allocation charts',
+    feature2: 'Asset rebalancing',
+    feature3: 'Market performance, dividend heatmap & historical analysis',
+    feature4: 'Ongoing member-exclusive feature updates',
+    title: 'Become TradeView Member',
+    subtitle: 'Unlock all features and enjoy the full portfolio management experience',
+    memberStatus: 'You are a member',
+    inAppOnlyTitle: 'Membership application available in app only',
+    inAppOnlyDesc: 'Please download the iOS or Android app to become a member.',
+    loading: 'Loading...',
+    recommended: 'RECOMMENDED',
+    currentPlan: 'Current Plan',
+    processing: 'Processing...',
+    perYear: '/year',
+    perMonth: '/month',
+    restorePurchases: 'Restore Purchases',
+    termsOfUse: 'Terms of Use (EULA)',
+    privacyPolicy: 'Privacy Policy',
+    purchaseSuccess: 'Membership application successful! Thank you for your support.',
+    purchaseFailedPrefix: 'Purchase failed: ',
+    restoreSuccess: 'Membership restored!',
+    restoreNotFound: 'No membership found to restore.',
+    initFailed: 'Initialization failed',
+    purchaseFailed: 'Purchase failed',
+    restoreFailed: 'Restore failed',
+    becomeMember: 'Become Member',
+  },
   purchaseModal: {
     title: 'Choose Membership Plan',
     subtitle: 'Choose a plan that suits you to unlock all premium features',
@@ -1086,7 +1128,10 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
     enterEmail: 'Please enter your email address',
     adminWelcome: 'Welcome back, admin!',
     adminPasswordWrong: 'Incorrect admin password',
-    guestLoginNotice: 'You are now logged in as guest mode.\n\nSome advanced features may be limited. If you encounter issues, go to System Management to report a problem.',
+    memberModeLoginSuccess: 'You are now logged in as a member.',
+    guestModeLoginSuccess:
+      'You are logged in as a guest.\n\nYou are not a member yet. To become a member, please tap "Become Member" to purchase.',
+    guestLoginNotice: 'You are now logged in as a guest.\n\nIf you want full membership access, click "Upgrade" to send an application email to the administrator.',
     contactSubject: 'TradeView Bug Report / Feedback',
     contactBody: 'Hi Admin,\n\nMy account: {user}\n\nI would like to report the following issue or suggestion:\n\n(Please describe the bug, steps to reproduce, or feature request here)\n\nThank you.',
     updatePriceSuccess: 'Updated {count} prices',
@@ -1100,16 +1145,16 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
     txUpdated: 'Transaction updated',
     marketUpdated: 'Updated market settings for {count} transactions',
     txDeleted: 'Transaction deleted',
-    txCleared: '✅ Cleared {count} filtered records successfully!',
+    txCleared: '✅ Cleared {count} transactions successfully!',
     accountUpdated: 'Account "{name}" updated',
     accountDeleted: 'Account "{name}" deleted',
     cashFlowUpdated: 'Fund record updated',
     cashFlowDeleted: 'Cash flow record deleted',
-    cashFlowCleared: '✅ Cleared {count} filtered fund records successfully!',
+    cashFlowCleared: '✅ Cleared {count} filtered fund record(s) successfully!',
     historicalSaved: 'Historical asset data updated. Reports are now corrected by real prices.',
     loginPasswordPlaceholder: 'Enter password',
-    confirmClearTxTitle: 'Confirm clearing {count} filtered records?',
-    confirmClearTxMessage: 'This will delete transactions and fund records matching your current filters. This action cannot be undone. Please backup your data first.',
+    confirmClearTxTitle: 'Confirm clearing filtered transactions?',
+    confirmClearTxMessage: 'This will delete {count} transaction(s) in the current filter. This action cannot be undone. Please make sure you have a backup.',
     confirmClearAction: 'Confirm Clear',
     deleteTxTitle: 'Delete Transaction',
     deleteTxMessage: 'Are you sure you want to delete this transaction?',

@@ -4,7 +4,7 @@ import { en } from './en';
 export const ar: Translations = {
   ...en,
   baseCurrency: { ...en.baseCurrency, TWD: 'دولار تايواني', USD: 'دولار أمريكي', JPY: 'ين ياباني', EUR: 'يورو', GBP: 'جنيه إسترليني', HKD: 'دولار هونغ كونغ', KRW: 'وون كوري', CAD: 'دولار كندي', INR: 'روبية هندية', CNY: 'يوان صيني', AUD: 'دولار أسترالي', SAR: 'ريال سعودي', BRL: 'ريال برازيلي' },
-  common: { ...en.common, confirm: 'تأكيد', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', save: 'حفظ', close: 'إغلاق', loading: 'جاري التحميل...', search: 'بحث', logoutConfirm: 'تسجيل الخروج؟', baseCurrency: 'العملة الأساسية', upgrade: 'الإبلاغ عن مشكلة', footerLocalDataPrivacy: 'تُخزَّن جميع بيانات المعاملات محلياً على جهازك لحماية خصوصيتك.' },
+  common: { ...en.common, confirm: 'تأكيد', cancel: 'إلغاء', delete: 'حذف', edit: 'تعديل', save: 'حفظ', close: 'إغلاق', loading: 'جاري التحميل...', search: 'بحث', logoutConfirm: 'تسجيل الخروج؟', baseCurrency: 'العملة الأساسية', upgrade: 'ترقية', footerLocalDataPrivacy: 'تُخزَّن جميع بيانات المعاملات محلياً على جهازك لحماية خصوصيتك.' },
   nav: { dashboard: 'لوحة التحكم', history: 'السجل', funds: 'الأموال', accounts: 'الحسابات', rebalance: 'إعادة التوازن', simulator: 'المحاكي', splits: 'تقسيم الأسهم', help: 'النظام', logout: 'تسجيل الخروج' },
   pages: { ...en.pages, dashboard: 'لوحة المحفظة', history: 'السجل (المعاملات والتدفق)', funds: 'إدارة الأموال', accounts: 'إدارة الحسابات', rebalance: 'إعادة التوازن', simulator: 'محاكي التخصيص', splits: 'إدارة تقسيم الأسهم', help: 'النظام والنسخ' },
   login: { title: 'تسجيل الدخول TradeView', subtitle: 'مدير الأصول الاستثمارية', email: 'البريد', password: 'كلمة المرور', login: 'دخول', privacy: 'الخصوصية', privacyDesc: 'البيانات مخزنة محلياً. لا جمع للبيانات الشخصية.', riskDisclaimer: 'إخلاء المسؤولية', riskDisclaimerDesc: 'الاستثمار ينطوي على مخاطر.' },
@@ -89,7 +89,7 @@ export const ar: Translations = {
     chartLoading: 'جاري تحميل الرسم البياني...',
     noChartData: 'يرجى إضافة الإيداعات والمعاملات أولاً',
     noHoldings: 'لا توجد مراكز',
-    noAccounts: 'لا توجد حسابات وسيطة. يرجى إضافة حسابات في إدارة الحسابات.',
+    noAccounts: 'لا توجد حسابات وسيطة. يرجى إضافة حسابات في الحسابات.',
     costBreakdown: 'تفصيل تكلفة الاستثمار الصافي',
     netInvestedBreakdown: 'تفصيل الاستثمار الصافي',
     calculationFormula: 'الصيغة: الاستثمار الصافي = الإيداعات - السحوبات',
@@ -153,10 +153,10 @@ export const ar: Translations = {
     title: 'أداء الأسواق',
     subtitle: 'العائد التراكمي والوزن حسب السوق',
     cumulativeReturn: 'العائد التراكمي',
-    cumulativeReturnShort: 'العائد',
     weight: 'الوزن',
-    weightShort: 'الوزن',
     value: 'القيمة',
+    cumulativeReturnShort: 'العائد',
+    weightShort: 'الوزن',
     valueShort: 'القيمة',
     noData: 'لا توجد بيانات',
     ratio: 'النسبة',
@@ -202,6 +202,7 @@ export const ar: Translations = {
     estNhiFee: 'تقدير قسط NHI الإضافي (2.11%، تقديري)',
     splitHint0050: 'إذا كان الصرف عبر وسطاء/جهات دفع متعددة فقد يختلف تجاوز الحد؛ التطبيق الفعلي حسب جهة الصرف.',
     usNetTooltipTitle: 'حجب توزيعات الأسهم الأمريكية (مرجع)',
+    marketWithholdingRef: 'حجب التوزيعات (تقدير مرجعي)',
     estGrossPerPayout: 'إجمالي متوقع لكل دفعة (توزيع السهم × عدد الأسهم)',
     estNetAfterWithholding: 'صافي متوقع بعد الضريبة (على فرض حجب 30%، أي نحو 70%)',
     upcomingTitle: 'توزيعات متوقعة خلال 90 يوماً (Yahoo)',
@@ -263,8 +264,8 @@ export const ar: Translations = {
     totalRecords: 'الإجمالي {total}',
     last30Days: 'آخر 30 يوم',
     thisYear: 'هذا العام',
-    confirmClearAll: 'تأكيد مسح {count} سجل أموال مفلتر؟',
-    confirmClearAllMessage: 'سيتم حذف سجلات الإيداع والسحب والتحويل والفائدة التي تطابق عوامل التصفية الحالية. لا يمكن التراجع عن هذا الإجراء. يُنصح بعمل نسخة احتياطية أولاً.',
+    confirmClearAll: 'هل تريد مسح سجلات الأموال المفلترة؟',
+    confirmClearAllMessage: 'سيتم حذف {count} سجل(سجلات) إيداع وسحب وتحويل وفائدة ضمن التصفية الحالية.',
     confirmClear: 'حذف',
   },
   history: { 
@@ -273,7 +274,7 @@ export const ar: Translations = {
     tabTimeline: 'الخط الزمني للحيازة',
     operations: 'العمليات',
     batchUpdateMarket: 'تحديث السوق المجمع',
-    clearAll: 'مسح السجلات المفلترة',
+    clearAll: 'مسح المعاملات المفلترة',
     batchImport: 'استيراد مجمع',
     addRecord: '+ إضافة سجل',
     filter: 'تصفية',
@@ -589,9 +590,13 @@ export const ar: Translations = {
     contactTitle: 'يعجبك النظام؟',
     contactDesc: 'غير عضو وترغب بحق استخدام دائم أو لديك اقتراحات/أخطاء؟ تواصل مع المطور. قد يتأخر الرد.',
     contactEmail: 'الاتصال بالمسؤول (بريد)',
+    subscription: 'اشتراك العضوية (شراء داخل التطبيق)',
+    subscriptionTitle: 'كن عضوًا / إدارة الاشتراك',
+    subscriptionDesc: 'اشترك عبر App Store لفتح جميع الميزات. اعرض الخطط أو اشترِ أو استعد المشتريات هنا.',
+    subscribeButton: 'فتح خطط الاشتراك',
     deleteAppAccount: 'حذف الحساب والبيانات',
     deleteAppAccountDesc: 'يمسح حالة تسجيل الدخول وجميع البيانات المحلية على هذا الجهاز نهائياً. لا يمكن التراجع. لإلغاء الاشتراك: الإعدادات → الاشتراكات.',
-    confirmDeleteAppAccount: 'حذف الحساب والبيانات',
+    confirmDeleteAppAccount: 'تأكيد حذف الحساب',
     confirmDeleteAppAccountMessage: 'سيتم حذف جميع البيانات المحلية لـ «{user}» نهائياً. المتابعة؟',
     documentation: 'التوثيق',
     copyAll: 'نسخ الكل',
@@ -607,7 +612,7 @@ export const ar: Translations = {
 > بنية دون اتصال. **جميع البيانات مخزنة محلياً على جهازك** (تطبيق iOS/Android أو متصفح)، لا على خوادم. **لا جمع للبيانات الشخصية.**
 
 ## 1. مقدمة
-TradeView أداة إدارة أصول لأسواق الأسهم العالمية تساعد المستثمرين على تتبع تغيرات الأصول وحساب العوائد وإدارة تدفقات الأموال.
+TradeView أداة إدارة أصول تدعم أسواق الأسهم في مختلف البلدان وتساعد المستثمرين على تتبع تغيرات الأصول وحساب العوائد وإدارة تدفقات الأموال.
 
 ## 2. البدء السريع
 اتبع هذا الترتيب في الإعداد الأول (يطابق مسار قائمة الهامبرغر « الحسابات → الأموال → السجل → لوحة التحكم »):
@@ -739,7 +744,6 @@ TradeView أداة إدارة أصول لأسواق الأسهم العالمي�
 - قد تختلف البيانات مثل أسعار الأسهم وأسعار الصرف المقدمة من هذا التطبيق عن أسعار السوق الفعلية بسبب تأخيرات الشبكة.
 - لا ينبغي للمستخدمين استخدام بيانات هذا التطبيق كأساس مرجعي وحيد للمعاملات الفعلية.
 - يُنصح بالرجوع إلى الأسعار في الوقت الفعلي المقدمة من شركات الأوراق المالية أو المؤسسات المالية.`,
-
   },
   transactionForm: {
     ...en.transactionForm,
@@ -772,13 +776,13 @@ TradeView أداة إدارة أصول لأسواق الأسهم العالمي�
     noteLabel: 'ملاحظة:',
     totalAmount: 'المبلغ الإجمالي:',
     shares: 'أسهم',
+    cashDividendQuantityConfirm: '1 سجل',
     backToEdit: 'رجوع',
     confirmSave: 'تأكيد وحفظ',
     previewTitle: 'معاينة المبلغ:',
     calculationFormula: 'المعادلة:',
     calculationMethod: 'طريقة الحساب:',
     deductionShort: 'خصم',
-    cashDividendQuantityConfirm: '1 سجل',
     marketTW: 'تايوان (TW)',
     marketUS: 'الولايات المتحدة (US)',
     marketUK: 'بريطانيا (UK)',
@@ -897,7 +901,7 @@ TradeView أداة إدارة أصول لأسواق الأسهم العالمي�
     selectAccount: '1. حدد حساب الاستيراد',
     selectAccountPlaceholder: '-- يرجى اختيار حساب --',
     noAccountsWarning: '⚠️ لا يمكن إجراء الاستيراد الدفعي',
-    noAccountsMessage: 'لا توجد أي حسابات في النظام. انتقل أولاً إلى "إدارة الحسابات" لإنشاء حساب ثم عد للاستيراد.',
+    noAccountsMessage: 'لا توجد أي حسابات في النظام. انتقل أولاً إلى "الحسابات" لإنشاء حساب ثم عد للاستيراد.',
     tabPaste: 'لصق مباشر (Paste)',
     tabUpload: 'رفع ملف CSV (Upload)',
     pasteLabel: 'الصق بيانات Excel/الجدول هنا (الصيغة المدعومة: التاريخ | شراء/بيع/توزيع/تحويل | الرمز | السعر | الكمية | الرسوم | الإجمالي)',
@@ -1039,7 +1043,7 @@ TradeView أداة إدارة أصول لأسواق الأسهم العالمي�
     adminWelcome: 'مرحباً بعودتك أيها المسؤول!',
     adminPasswordWrong: 'كلمة مرور المسؤول غير صحيحة',
     guestLoginNotice:
-      'تم تسجيل دخولك بوضع الضيف.\n\nقد تكون بعض الميزات محدودة. عند وجود مشكلة استخدم «إدارة النظام» للإبلاغ.',
+      'تم تسجيل دخولك بوضع الضيف.\n\nللحصول على الوصول الكامل، اضغط «ترقية» لإرسال طلب بريد إلكتروني إلى المسؤول.',
     contactSubject: 'TradeView بلاغ خطأ / ملاحظات',
     contactBody:
       'مرحباً Admin،\n\nحسابي: {user}\n\nأود الإبلاغ عن المشكلة أو الاقتراح التالي:\n\n(يرجى وصف الخطأ أو خطوات إعادة الإنتاج أو اقتراح ميزة)\n\nشكراً لك.',
@@ -1054,16 +1058,16 @@ TradeView أداة إدارة أصول لأسواق الأسهم العالمي�
     txUpdated: 'تم تحديث المعاملة',
     marketUpdated: 'تم تحديث إعدادات السوق لـ {count} معاملة',
     txDeleted: 'تم حذف المعاملة',
-    txCleared: '✅ تم مسح {count} سجلًا مفلترًا بنجاح!',
+    txCleared: '✅ تم مسح {count} معاملة بنجاح!',
     accountUpdated: 'تم تحديث الحساب "{name}"',
     accountDeleted: 'تم حذف الحساب "{name}"',
     cashFlowUpdated: 'تم تحديث سجل التدفق النقدي',
     cashFlowDeleted: 'تم حذف سجل التدفق النقدي',
-    cashFlowCleared: '✅ تم مسح {count} سجل أموال مفلتر بنجاح!',
+    cashFlowCleared: '✅ تم مسح {count} سجل(سجلات) تدفق نقدي مفلتر!',
     historicalSaved: 'تم تحديث بيانات الأصول التاريخية. تم تصحيح التقارير باستخدام الأسعار الحقيقية.',
     loginPasswordPlaceholder: 'أدخل كلمة المرور',
-    confirmClearTxTitle: 'تأكيد مسح {count} سجلًا مفلترًا؟',
-    confirmClearTxMessage: 'سيتم حذف المعاملات وسجلات الأموال التي تطابق عوامل التصفية الحالية. لا يمكن التراجع عن هذا الإجراء. يُنصح بعمل نسخة احتياطية أولاً.',
+    confirmClearTxTitle: 'تأكيد مسح المعاملات المفلترة؟',
+    confirmClearTxMessage: 'سيتم حذف {count} معاملة ضمن التصفية الحالية. لا يمكن التراجع عن هذا الإجراء. يرجى التأكد من وجود نسخة احتياطية.',
     confirmClearAction: 'تأكيد المسح',
     deleteTxTitle: 'حذف المعاملة',
     deleteTxMessage: 'هل أنت متأكد من حذف هذه المعاملة؟',

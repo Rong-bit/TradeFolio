@@ -4,7 +4,7 @@ import { en } from './en';
 export const hi: Translations = {
   ...en,
   baseCurrency: { TWD: 'ताइवान डॉलर', USD: 'अमेरिकी डॉलर', JPY: 'जापानी येन', EUR: 'यूरो', GBP: 'ब्रिटिश पाउंड', HKD: 'हाँगकाँग डॉलर', KRW: 'कोरियाई वॉन', CAD: 'कैनेडियन डॉलर', INR: 'भारतीय रुपया', CNY: 'चीनी युआन', AUD: 'ऑस्ट्रेलियाई डॉलर', SAR: 'सऊदी रियाल', BRL: 'ब्राज़ीलियाई रियाल' },
-  common: { ...en.common, confirm: 'पुष्टि', cancel: 'रद्द', delete: 'हटाएं', edit: 'संपादित', save: 'सहेजें', close: 'बंद', loading: 'लोड हो रहा...', search: 'खोज', logoutConfirm: 'लॉग आउट करें?', baseCurrency: 'आधार मुद्रा', upgrade: 'समस्या रिपोर्ट', footerLocalDataPrivacy: 'आपकी गोपनीयता के लिए सभी लेनदेन डेटा केवल आपके डिवाइस पर संग्रहीत होता है।' },
+  common: { ...en.common, confirm: 'पुष्टि', cancel: 'रद्द', delete: 'हटाएं', edit: 'संपादित', save: 'सहेजें', close: 'बंद', loading: 'लोड हो रहा...', search: 'खोज', logoutConfirm: 'लॉग आउट करें?', baseCurrency: 'आधार मुद्रा', upgrade: 'अपग्रेड', footerLocalDataPrivacy: 'आपकी गोपनीयता के लिए सभी लेनदेन डेटा केवल आपके डिवाइस पर संग्रहीत होता है।' },
   nav: { dashboard: 'डैशबोर्ड', history: 'इतिहास', funds: 'निधि', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'सिम्युलेटर', splits: 'स्टॉक स्प्लिट', help: 'सहायता', logout: 'लॉग आउट' },
   pages: { ...en.pages, dashboard: 'पोर्टफोलियो', history: 'लेनदेन और नकदी प्रवाह', funds: 'निधि प्रबंधन', accounts: 'खाते', rebalance: 'रीबैलेंस', simulator: 'आवंटन सिम्युलेटर', splits: 'स्टॉक स्प्लिट प्रबंधन', help: 'सेटिंग और बैकअप' },
   login: { title: 'TradeView लॉगिन', subtitle: 'निवेश संपत्ति प्रबंधक', email: 'ईमेल', password: 'पासवर्ड', login: 'लॉग इन', privacy: 'गोपनीयता', privacyDesc: 'डेटा लोकल संग्रहीत। कोई निजी डेटा एकत्र नहीं।', riskDisclaimer: 'चेतावनी', riskDisclaimerDesc: 'निवेश में जोखिम है।' },
@@ -89,7 +89,7 @@ export const hi: Translations = {
     chartLoading: 'चार्ट लोड हो रहा है...',
     noChartData: 'कृपया पहले फंड जमा और लेनदेन जोड़ें',
     noHoldings: 'कोई होल्डिंग नहीं',
-    noAccounts: 'कोई ब्रोकरेज खाते नहीं। कृपया खाता प्रबंधन में खाते जोड़ें।',
+    noAccounts: 'कोई ब्रोकरेज खाते नहीं। कृपया खाते में खाते जोड़ें।',
     costBreakdown: 'शुद्ध निवेश लागत विवरण',
     netInvestedBreakdown: 'शुद्ध निवेश विवरण',
     calculationFormula: 'सूत्र: शुद्ध निवेश = जमा - निकासी',
@@ -153,10 +153,10 @@ export const hi: Translations = {
     title: 'बाज़ार प्रदर्शन',
     subtitle: 'बाज़ार के अनुसार संचित रिटर्न और भार',
     cumulativeReturn: 'संचित रिटर्न',
-    cumulativeReturnShort: 'रिटर्न',
     weight: 'भार',
-    weightShort: 'भार',
     value: 'मूल्य',
+    cumulativeReturnShort: 'रिटर्न',
+    weightShort: 'भार',
     valueShort: 'मूल्य',
     noData: 'कोई होल्डिंग डेटा नहीं',
     ratio: 'अनुपात',
@@ -202,6 +202,7 @@ export const hi: Translations = {
     estNhiFee: 'अनुमानित NHI अतिरिक्त प्रीमियम (2.11%, अनुमान)',
     splitHint0050: 'यदि भुगतान अलग-अलग ब्रोकरेज/भुगतान इकाइयों से होता है, तो सीमा पार होने की स्थिति बदल सकती है; वास्तविक कटौती भुगतान इकाई के अनुसार होगी।',
     usNetTooltipTitle: 'US लाभांश withholding (संदर्भ)',
+    marketWithholdingRef: 'लाभांश withholding (संदर्भ अनुमान)',
     estGrossPerPayout: 'अनुमानित प्रति-पेमेंट सकल राशि (प्रति-शेयर × शेयर मात्रा)',
     estNetAfterWithholding: 'अनुमानित कर-पश्चात राशि (30% withholding मानकर लगभग 70%)',
     upcomingTitle: 'आने वाले 90 दिनों में अनुमानित ex-dividend (Yahoo)',
@@ -263,8 +264,8 @@ export const hi: Translations = {
     totalRecords: 'कुल {total}',
     last30Days: 'पिछले 30 दिन',
     thisYear: 'इस वर्ष',
-    confirmClearAll: '{count} फ़िल्टर की गई निधि रिकॉर्ड साफ करने की पुष्टि करें?',
-    confirmClearAllMessage: 'वर्तमान फ़िल्टर से मेल खाने वाले जमा, निकासी, स्थानांतरण और ब्याज रिकॉर्ड हटाए जाएंगे। यह कार्रवाई पूर्ववत नहीं की जा सकती। कृपया पहले अपना डेटा बैकअप करें।',
+    confirmClearAll: 'फ़िल्टर की गई निधि रिकॉर्ड साफ करने की पुष्टि करें?',
+    confirmClearAllMessage: 'यह वर्तमान फ़िल्टर में {count} जमा, निकासी, स्थानांतरण और ब्याज रिकॉर्ड हटा देगा। यह कार्रवाई पूर्ववत नहीं की जा सकती। कृपया पहले अपना डेटा बैकअप करें।',
     confirmClear: 'साफ करने की पुष्टि करें',
   },
   history: { 
@@ -273,7 +274,7 @@ export const hi: Translations = {
     tabTimeline: 'होल्डिंग टाइमलाइन',
     operations: 'संचालन',
     batchUpdateMarket: 'बैच मार्केट अपडेट',
-    clearAll: 'फ़िल्टर किए गए रिकॉर्ड साफ करें',
+    clearAll: 'फ़िल्टर किए गए लेनदेन साफ करें',
     batchImport: 'बैच आयात',
     addRecord: '+ रिकॉर्ड जोड़ें',
     filter: 'फ़िल्टर',
@@ -589,9 +590,13 @@ export const hi: Translations = {
     contactTitle: 'सिस्टम पसंद है?',
     contactDesc: 'गैर-सदस्य स्थायी उपयोग चाहते हैं या सुझाव/बग रिपोर्ट: डेवलपर से संपर्क करें। जवाब में देरी हो सकती है।',
     contactEmail: 'व्यवस्थापक से संपर्क (ईमेल)',
+    subscription: 'सदस्यता (इन-ऐप खरीद)',
+    subscriptionTitle: 'सदस्य बनें / सदस्यता प्रबंधित करें',
+    subscriptionDesc: 'App Store पर सदस्यता लेकर सभी सुविधाएँ अनलॉक करें। योजनाएँ देखें, खरीदें या पुनर्स्थापित करें।',
+    subscribeButton: 'सदस्यता योजनाएँ खोलें',
     deleteAppAccount: 'खाता और डेटा हटाएं',
     deleteAppAccountDesc: 'इस डिवाइस पर लॉगिन स्थिति और सभी स्थानीय डेटा स्थायी रूप से हटाएं। पूर्ववत नहीं। सदस्यता रद्द: सेटिंग्स → सदस्यताएँ।',
-    confirmDeleteAppAccount: 'खाता और डेटा हटाएं',
+    confirmDeleteAppAccount: 'खाता हटाने की पुष्टि',
     confirmDeleteAppAccountMessage: '「{user}」का सभी स्थानीय डेटा स्थायी रूप से हटा दिया जाएगा। जारी रखें?',
     documentation: 'दस्तावेज़ीकरण',
     copyAll: 'सब कॉपी करें',
@@ -607,7 +612,7 @@ export const hi: Translations = {
 > ऑफ़लाइन-फर्स्ट। **सभी डेटा आपके डिवाइस पर स्थानीय रूप से संग्रहीत** (iOS/Android ऐप या ब्राउज़र), सर्वर पर नहीं। **कोई निजी डेटा संग्रह नहीं।**
 
 ## 1. परिचय
-TradeView विभिन्न देशों के शेयर बाजारों के लिए एक संपत्ति प्रबंधन टूल है जो निवेशकों को संपत्ति परिवर्तनों को ट्रैक करने, रिटर्न की गणना करने और धन प्रवाह का प्रबंधन करने में मदद करता है।
+TradeView विभिन्न देशों के शेयर बाजारों को सपोर्ट करने वाला एक संपत्ति प्रबंधन टूल है जो निवेशकों को संपत्ति परिवर्तनों को ट्रैक करने, रिटर्न की गणना करने और धन प्रवाह का प्रबंधन करने में मदद करता है।
 
 ## 2. त्वरित शुरुआत
 पहली बार सेटअप इस क्रम में करें (हैमबर्गर मेनू « खाते → निधि → इतिहास → डैशबोर्ड » के प्रवाह के अनुरूप):
@@ -739,7 +744,6 @@ TradeView विभिन्न देशों के शेयर बाजा
 - इस एप्लिकेशन द्वारा प्रदान किए गए स्टॉक कीमतें, विनिमय दरें आदि डेटा नेटवर्क विलंब के कारण वास्तविक बाजार मूल्यों से भिन्न हो सकते हैं।
 - उपयोगकर्ताओं को इस एप्लिकेशन के डेटा को वास्तविक खरीद/बिक्री के एकमात्र संदर्भ आधार के रूप में उपयोग नहीं करना चाहिए।
 - प्रतिभूति कंपनियों या वित्तीय संस्थानों द्वारा प्रदान किए गए वास्तविक समय उद्धरणों को मानक के रूप में सुझाव दिया जाता है。`,
-
   },
   transactionForm: {
     ...en.transactionForm,
@@ -772,13 +776,13 @@ TradeView विभिन्न देशों के शेयर बाजा
     noteLabel: 'नोट:',
     totalAmount: 'कुल राशि:',
     shares: 'शेयर',
+    cashDividendQuantityConfirm: '1 रिकॉर्ड',
     backToEdit: 'वापस',
     confirmSave: 'पुष्टि और सहेजें',
     previewTitle: 'राशि पूर्वावलोकन:',
     calculationFormula: 'सूत्र:',
     calculationMethod: 'गणना:',
     deductionShort: 'कटौती',
-    cashDividendQuantityConfirm: '1 रिकॉर्ड',
     marketTW: 'ताइवान (TW)',
     marketUS: 'अमेरिका (US)',
     marketUK: 'ब्रिटेन (UK)',
@@ -897,7 +901,7 @@ TradeView विभिन्न देशों के शेयर बाजा
     selectAccount: '1. आयात खाता चुनें',
     selectAccountPlaceholder: '-- खाता चुनें --',
     noAccountsWarning: '⚠️ बैच आयात संभव नहीं',
-    noAccountsMessage: 'सिस्टम में कोई खाता नहीं है। पहले "खाता प्रबंधन" में खाता बनाएं, फिर बैच आयात करें।',
+    noAccountsMessage: 'सिस्टम में कोई खाता नहीं है। पहले "खाते" में खाता बनाएं, फिर बैच आयात करें।',
     tabPaste: 'सीधा पेस्ट (Paste)',
     tabUpload: 'CSV अपलोड (Upload)',
     pasteLabel: 'Excel/टेबल डेटा यहां पेस्ट करें (समर्थित प्रारूप: तारीख | खरीद/बेच/लाभांश/ट्रांसफर | टिकर | मूल्य | मात्रा | शुल्क | कुल राशि)',
@@ -1039,7 +1043,7 @@ TradeView विभिन्न देशों के शेयर बाजा
     adminWelcome: 'वापसी पर स्वागत है, एडमिन!',
     adminPasswordWrong: 'एडमिन पासवर्ड गलत है',
     guestLoginNotice:
-      'आप अब गेस्ट मोड में लॉगिन हैं।\n\nकुछ सुविधाएँ सीमित हो सकती हैं। समस्या हो तो «सिस्टम प्रबंधन» में जाकर रिपोर्ट करें।',
+      'आप अब गेस्ट मोड में लॉगिन हैं।\n\nपूर्ण सदस्यता के लिए “Upgrade” पर क्लिक करके एडमिन को ईमेल अनुरोध भेजें।',
     contactSubject: 'TradeView बग रिपोर्ट / प्रतिक्रिया',
     contactBody:
       'नमस्ते एडमिन,\n\nमेरा खाता: {user}\n\nमैं निम्न समस्या या सुझाव की रिपोर्ट करना चाहता/चाहती हूँ:\n\n(कृपया बग, पुनरुत्पादन के चरण या सुविधा सुझाव लिखें)\n\nधन्यवाद।',
@@ -1054,16 +1058,16 @@ TradeView विभिन्न देशों के शेयर बाजा
     txUpdated: 'लेनदेन अपडेट हुआ',
     marketUpdated: '{count} लेनदेन की मार्केट सेटिंग अपडेट हुई',
     txDeleted: 'लेनदेन हटाया गया',
-    txCleared: '✅ {count} फ़िल्टर किए गए रिकॉर्ड सफलतापूर्वक साफ़ किए गए!',
+    txCleared: '✅ {count} लेनदेन सफलतापूर्वक साफ़ किए गए!',
     accountUpdated: 'खाता "{name}" अपडेट हुआ',
     accountDeleted: 'खाता "{name}" हटाया गया',
     cashFlowUpdated: 'कैश फ्लो रिकॉर्ड अपडेट हुआ',
     cashFlowDeleted: 'कैश फ्लो रिकॉर्ड हटाया गया',
-    cashFlowCleared: '✅ {count} फ़िल्टर की गई निधि रिकॉर्ड सफलतापूर्वक साफ़ किए गए!',
+    cashFlowCleared: '✅ {count} फ़िल्टर किए गए कैश फ्लो रिकॉर्ड साफ़ किए गए!',
     historicalSaved: 'ऐतिहासिक संपत्ति डेटा अपडेट हुआ। रिपोर्ट अब वास्तविक कीमतों से सुधारी गई है।',
     loginPasswordPlaceholder: 'पासवर्ड दर्ज करें',
-    confirmClearTxTitle: '{count} फ़िल्टर किए गए रिकॉर्ड साफ़ करें?',
-    confirmClearTxMessage: 'वर्तमान फ़िल्टर से मेल खाने वाले लेनदेन और निधि रिकॉर्ड हटाए जाएंगे। यह कार्रवाई पूर्ववत नहीं की जा सकती। कृपया पहले अपना डेटा बैकअप करें।',
+    confirmClearTxTitle: 'फ़िल्टर किए गए लेनदेन साफ़ करें?',
+    confirmClearTxMessage: 'यह वर्तमान फ़िल्टर में {count} लेनदेन हटा देगा। यह कार्रवाई वापस नहीं की जा सकती। कृपया बैकअप सुनिश्चित करें।',
     confirmClearAction: 'साफ़ करने की पुष्टि',
     deleteTxTitle: 'लेनदेन हटाएँ',
     deleteTxMessage: 'क्या आप इस लेनदेन को हटाना चाहते हैं?',

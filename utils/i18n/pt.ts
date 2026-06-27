@@ -4,7 +4,7 @@ import { en } from './en';
 export const pt: Translations = {
   ...en,
   baseCurrency: { ...en.baseCurrency, TWD: 'Dólar taiwanês', USD: 'Dólar americano', JPY: 'Iene japonês', EUR: 'Euro', GBP: 'Libra esterlina', HKD: 'Dólar de Hong Kong', KRW: 'Won coreano', CAD: 'Dólar canadense', INR: 'Rúpia indiana', CNY: 'Yuan chinês', AUD: 'Dólar australiano', SAR: 'Riyal saudita', BRL: 'Real brasileiro' },
-  common: { ...en.common, confirm: 'Confirmar', cancel: 'Cancelar', delete: 'Excluir', edit: 'Editar', save: 'Salvar', close: 'Fechar', loading: 'Carregando...', search: 'Buscar', logoutConfirm: 'Sair?', baseCurrency: 'Moeda base', upgrade: 'Reportar problema', footerLocalDataPrivacy: 'Todos os dados de transações ficam armazenados localmente no seu dispositivo para proteger a sua privacidade.' },
+  common: { ...en.common, confirm: 'Confirmar', cancel: 'Cancelar', delete: 'Excluir', edit: 'Editar', save: 'Salvar', close: 'Fechar', loading: 'Carregando...', search: 'Buscar', logoutConfirm: 'Sair?', baseCurrency: 'Moeda base', upgrade: 'Atualizar', footerLocalDataPrivacy: 'Todos os dados de transações ficam armazenados localmente no seu dispositivo para proteger a sua privacidade.' },
   nav: { dashboard: 'Painel', history: 'Histórico', funds: 'Fundos', accounts: 'Contas', rebalance: 'Rebalanceamento', simulator: 'Simulador', splits: 'Desdobramentos', help: 'Sistema', logout: 'Sair' },
   pages: { ...en.pages, dashboard: 'Painel da carteira', history: 'Histórico (transações e fluxo)', funds: 'Gestão de fundos', accounts: 'Gestão de contas', rebalance: 'Rebalanceamento', simulator: 'Simulador de alocação', splits: 'Gestão de desdobramentos', help: 'Sistema e backup' },
   login: { title: 'Login TradeView', subtitle: 'Gestor de Ativos de Investimento', email: 'E-mail', password: 'Senha', login: 'Entrar', privacy: 'Privacidade', privacyDesc: 'Dados armazenados localmente. Sem coleta de dados pessoais.', riskDisclaimer: 'Aviso', riskDisclaimerDesc: 'Investimentos envolvem riscos.' },
@@ -89,7 +89,7 @@ export const pt: Translations = {
     chartLoading: 'Carregando gráfico...',
     noChartData: 'Por favor, adicione depósitos de fundos e transações primeiro',
     noHoldings: 'Sem posições',
-    noAccounts: 'Sem contas de corretagem. Por favor, adicione contas em Gestão de Contas.',
+    noAccounts: 'Sem contas de corretagem. Por favor, adicione contas em Contas.',
     costBreakdown: 'Detalhamento do Custo de Investimento Líquido',
     netInvestedBreakdown: 'Detalhamento do Investimento Líquido',
     calculationFormula: 'Fórmula: Investimento Líquido = Depósitos - Saques',
@@ -153,10 +153,10 @@ export const pt: Translations = {
     title: 'Desempenho por Mercado',
     subtitle: 'Retorno acumulado e peso por mercado',
     cumulativeReturn: 'Retorno acumulado',
-    cumulativeReturnShort: 'Retorno',
     weight: 'Peso',
-    weightShort: 'Peso',
     value: 'Valor',
+    cumulativeReturnShort: 'Retorno',
+    weightShort: 'Peso',
     valueShort: 'Valor',
     noData: 'Sem posições',
     ratio: 'Proporção',
@@ -202,6 +202,7 @@ export const pt: Translations = {
     estNhiFee: 'Prêmio suplementar NHI estimado (2,11%, simulação)',
     splitHint0050: 'Se os pagamentos forem distribuídos entre corretoras/unidades pagadoras diferentes, o limite por evento pode variar; a retenção real segue a unidade pagadora.',
     usNetTooltipTitle: 'Retenção de dividendos EUA (referência)',
+    marketWithholdingRef: 'Retenção de dividendos (estimativa de referência)',
     estGrossPerPayout: 'Bruto estimado por pagamento (por ação × quantidade)',
     estNetAfterWithholding: 'Líquido estimado após retenção (assumindo 30%, aprox. 70%)',
     upcomingTitle: 'Próximos ex-dividendos em 90 dias (Yahoo)',
@@ -263,8 +264,8 @@ export const pt: Translations = {
     totalRecords: 'Total de {total}',
     last30Days: 'Últimos 30 dias',
     thisYear: 'Este ano',
-    confirmClearAll: 'Confirmar limpeza de {count} registos de fundos filtrados?',
-    confirmClearAllMessage: 'Serão eliminados os registos de depósito, levantamento, transferência e juros que correspondem aos filtros atuais. Esta operação não pode ser desfeita. Recomenda-se fazer backup dos dados primeiro.',
+    confirmClearAll: 'Confirmar limpeza dos registos de fundos filtrados?',
+    confirmClearAllMessage: 'Esta operação eliminará {count} registo(s) de depósito, levantamento, transferência e juros no filtro atual, e não pode ser desfeita. Recomenda-se fazer backup dos dados primeiro.',
     confirmClear: 'Confirmar limpeza',
   },
   history: {
@@ -272,7 +273,7 @@ export const pt: Translations = {
     tabTimeline: 'Linha do tempo de posição',
     operations: 'Operações',
     batchUpdateMarket: 'Atualizar mercados em lote',
-    clearAll: 'Limpar registos filtrados',
+    clearAll: 'Limpar transações filtradas',
     batchImport: 'Importação em lote',
     addRecord: '+ Adicionar registro',
     filter: 'Filtrar',
@@ -571,9 +572,13 @@ export const pt: Translations = {
     contactTitle: 'Gosta do sistema?',
     contactDesc: 'Não membro e quer direitos permanentes, ou sugestões/erros? Contacte o desenvolvedor. Respostas podem demorar.',
     contactEmail: 'Contactar administrador (e-mail)',
+    subscription: 'Assinatura de membro (compra no app)',
+    subscriptionTitle: 'Tornar-se membro / Gerir assinatura',
+    subscriptionDesc: 'Assine pela App Store para desbloquear todas as funcionalidades. Veja planos, compre ou restaure compras aqui.',
+    subscribeButton: 'Abrir planos de assinatura',
     deleteAppAccount: 'Excluir conta e dados',
     deleteAppAccountDesc: 'Remove permanentemente o estado de login e todos os dados locais neste dispositivo. Irreversível. Para cancelar assinatura: Ajustes → Assinaturas.',
-    confirmDeleteAppAccount: 'Excluir conta e dados',
+    confirmDeleteAppAccount: 'Confirmar exclusão da conta',
     confirmDeleteAppAccountMessage: 'Todos os dados locais de «{user}» serão excluídos permanentemente. Continuar?',
     documentation: 'Documentação',
     copyAll: 'Copiar tudo',
@@ -589,7 +594,7 @@ export const pt: Translations = {
 > Arquitetura offline-first. **Todos os dados ficam localmente no seu dispositivo** (app iOS/Android ou navegador), não em servidores. **Sem recolha de dados pessoais.**
 
 ## 1. Introdução
-TradeView é uma ferramenta de gestão de ativos para mercados acionistas internacionais que ajuda os investidores a acompanhar mudanças de ativos, calcular retornos e gerir fluxos de fundos.
+TradeView é uma ferramenta de gestão de ativos para mercados de ações de vários países que ajuda os investidores a acompanhar mudanças de ativos, calcular retornos e gerir fluxos de fundos.
 
 ## 2. Início rápido
 Siga esta ordem na primeira configuração (igual ao fluxo do menu hamburger « Contas → Fundos → Histórico → Painel »):
@@ -721,7 +726,6 @@ R: **Moeda base TWD** : **Estatísticas detalhadas** estima rendimentos no estra
 - Dados como preços das ações e taxas de câmbio fornecidos por esta aplicação podem diferir dos preços de mercado reais devido a atrasos na rede.
 - Os utilizadores não devem usar os dados desta aplicação como única base de referência para transações reais.
 - É recomendado referir-se a cotações em tempo real fornecidas por empresas de valores mobiliários ou instituições financeiras.`,
-
   },
   transactionForm: {
     ...en.transactionForm,
@@ -754,13 +758,13 @@ R: **Moeda base TWD** : **Estatísticas detalhadas** estima rendimentos no estra
     noteLabel: 'Nota:',
     totalAmount: 'Valor total:',
     shares: 'ações',
+    cashDividendQuantityConfirm: '1 registro',
     backToEdit: 'Voltar',
     confirmSave: 'Confirmar e salvar',
     previewTitle: 'Pré-visualização do valor:',
     calculationFormula: 'Fórmula:',
     calculationMethod: 'Cálculo:',
     deductionShort: 'retenção',
-    cashDividendQuantityConfirm: '1 registro',
     marketTW: 'Taiwanês (TW)',
     marketUS: 'EUA (US)',
     marketUK: 'Reino Unido (UK)',
@@ -879,7 +883,7 @@ R: **Moeda base TWD** : **Estatísticas detalhadas** estima rendimentos no estra
     selectAccount: '1. Selecione a conta de importação',
     selectAccountPlaceholder: '-- Selecione uma conta --',
     noAccountsWarning: '⚠️ Não é possível importar em lote',
-    noAccountsMessage: 'Não há contas no sistema. Vá em "Gestão de contas" e crie uma conta antes de voltar para importar.',
+    noAccountsMessage: 'Não há contas no sistema. Vá em "Contas" e crie uma conta antes de voltar para importar.',
     tabPaste: 'Colar texto (Paste)',
     tabUpload: 'Enviar CSV (Upload)',
     pasteLabel: 'Cole aqui dados do Excel/tabela (formato suportado: Data | Comprar/Vender/Dividendo/Transferência | Código | Preço | Quantidade | Taxas | Valor total)',
@@ -1021,7 +1025,7 @@ R: **Moeda base TWD** : **Estatísticas detalhadas** estima rendimentos no estra
     adminWelcome: 'Bem-vindo de volta, administrador!',
     adminPasswordWrong: 'Palavra-passe de administrador incorreta',
     guestLoginNotice:
-      'Entrou no modo visitante.\n\nAlgumas funções podem estar limitadas. Se tiver problemas, vá a « Gestão do sistema » para reportar.',
+      'Entrou no modo visitante.\n\nPara acesso completo, clique em "Upgrade" para enviar um pedido por e-mail ao administrador.',
     contactSubject: 'TradeView Relatório de bug / Feedback',
     contactBody:
       'Olá Admin,\n\nA minha conta: {user}\n\nGostaria de reportar o seguinte problema ou sugestão:\n\n(Descreva o bug, passos para reproduzir ou sugestão de funcionalidade)\n\nObrigado.',
@@ -1036,16 +1040,16 @@ R: **Moeda base TWD** : **Estatísticas detalhadas** estima rendimentos no estra
     txUpdated: 'Transação atualizada',
     marketUpdated: 'Configurações de mercado atualizadas para {count} transações',
     txDeleted: 'Transação eliminada',
-    txCleared: '✅ {count} registos filtrados limpos com sucesso!',
+    txCleared: '✅ {count} transações limpas com sucesso!',
     accountUpdated: 'Conta "{name}" atualizada',
     accountDeleted: 'Conta "{name}" eliminada',
     cashFlowUpdated: 'Registo de fluxo de caixa atualizado',
     cashFlowDeleted: 'Registo de fluxo de caixa eliminado',
-    cashFlowCleared: '✅ {count} registos de fundos filtrados limpos com sucesso!',
+    cashFlowCleared: '✅ {count} registo(s) de fluxo de caixa filtrado(s) limpos!',
     historicalSaved: 'Dados históricos de ativos atualizados. Relatórios corrigidos com preços reais.',
     loginPasswordPlaceholder: 'Introduzir palavra-passe',
-    confirmClearTxTitle: 'Confirmar limpeza de {count} registos filtrados?',
-    confirmClearTxMessage: 'Serão eliminadas as transações e registos de fundos que correspondem aos filtros atuais. Esta operação não pode ser desfeita. Recomenda-se fazer backup dos dados primeiro.',
+    confirmClearTxTitle: 'Confirmar limpeza das transações filtradas?',
+    confirmClearTxMessage: 'Esta ação eliminará {count} transação(ões) no filtro atual. Não pode ser desfeita. Confirme que possui backup.',
     confirmClearAction: 'Confirmar limpeza',
     deleteTxTitle: 'Eliminar transação',
     deleteTxMessage: 'Tem a certeza de que deseja eliminar esta transação?',

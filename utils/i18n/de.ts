@@ -3,7 +3,7 @@ import { en } from './en';
 
 export const de: Translations = {
   baseCurrency: { TWD: 'Taiwan-Dollar', USD: 'US-Dollar', JPY: 'Japanischer Yen', EUR: 'Euro', GBP: 'Britisches Pfund', HKD: 'Hongkong-Dollar', KRW: 'Suedkoreanischer Won', CAD: 'Kanadischer Dollar', INR: 'Indische Rupie', CNY: 'Chinesischer Yuan', AUD: 'Australischer Dollar', SAR: 'Saudi-Riyal', BRL: 'Brasilianischer Real' },
-  common: { confirm: 'Bestätigen', cancel: 'Abbrechen', delete: 'Löschen', edit: 'Bearbeiten', save: 'Speichern', close: 'Schließen', loading: 'Laden...', search: 'Suchen', logoutConfirm: 'Möchten Sie sich abmelden?', baseCurrency: 'Basiswährung', upgrade: 'Problem melden', footerLocalDataPrivacy: 'Alle Transaktionsdaten werden lokal auf Ihrem Gerät gespeichert – zum Schutz Ihrer Privatsphäre.' },
+  common: { confirm: 'Bestätigen', cancel: 'Abbrechen', delete: 'Löschen', edit: 'Bearbeiten', save: 'Speichern', close: 'Schließen', loading: 'Laden...', search: 'Suchen', logoutConfirm: 'Möchten Sie sich abmelden?', baseCurrency: 'Basiswährung', upgrade: 'Aktualisieren', footerLocalDataPrivacy: 'Alle Transaktionsdaten werden lokal auf Ihrem Gerät gespeichert – zum Schutz Ihrer Privatsphäre.' },
   nav: { dashboard: 'Uebersicht', history: 'Transaktionen', funds: 'Fonds', accounts: 'Konten', rebalance: 'Rebalancing', simulator: 'Simulation', splits: 'Aktiensplits', help: 'Hilfe', logout: 'Abmelden' },
   pages: { dashboard: 'Portfolio-Dashboard', history: 'Verlauf (Transaktionen + Cashflow)', funds: 'Fondsverwaltung', accounts: 'Kontoverwaltung', rebalance: 'Rebalancing', simulator: 'Asset-Allocation-Simulator', splits: 'Aktiensplit-Verwaltung', help: 'System & Backup' },
   stockSplit: {
@@ -113,7 +113,7 @@ export const de: Translations = {
     chartLoading: 'Diagramm wird geladen...',
     noChartData: 'Bitte fügen Sie zuerst Einzahlungen und Transaktionen hinzu',
     noHoldings: 'Keine Positionen',
-    noAccounts: 'Keine Depotkonten. Bitte fügen Sie Konten in der Kontoverwaltung hinzu.',
+    noAccounts: 'Keine Depotkonten. Bitte fügen Sie Konten unter „Konten“ hinzu.',
     costBreakdown: 'Aufschlüsselung der Nettokosten',
     netInvestedBreakdown: 'Aufschlüsselung des Nettoinvestments',
     calculationFormula: 'Formel: Nettoinvestition = Einzahlungen - Auszahlungen',
@@ -177,10 +177,10 @@ export const de: Translations = {
     title: 'Marktleistungsvergleich',
     subtitle: 'Nach Markt gruppiert – kumulierte Rendite und Gewichtung',
     cumulativeReturn: 'Kumulierte Rendite',
-    cumulativeReturnShort: 'Rendite',
     weight: 'Gewichtung',
-    weightShort: 'Gewicht',
     value: 'Marktwert',
+    cumulativeReturnShort: 'Rendite',
+    weightShort: 'Anteil',
     valueShort: 'Wert',
     noData: 'Keine Positionen',
     ratio: 'Anteil',
@@ -226,6 +226,7 @@ export const de: Translations = {
     estNhiFee: 'Geschaetzter NHI-Zusatzbeitrag (2,11 %, unverbindlich)',
     splitHint0050: 'Bei Verteilung auf mehrere Broker/Auszahlungsstellen kann der Schwellenwert je Auszahlung unterschiedlich sein; massgeblich ist der Einbehalt der Auszahlungsstelle.',
     usNetTooltipTitle: 'US-Dividendenquellensteuer (Referenz)',
+    marketWithholdingRef: 'Dividendenquellensteuer (Referenzschaetzung)',
     estGrossPerPayout: 'Geschaetzter Bruttobetrag je Ausschuettung (pro Aktie x Stueckzahl)',
     estNetAfterWithholding: 'Geschaetzter Nettobetrag nach Steuer (ca. 30 % Einbehalt, etwa 70 % verbleiben)',
     upcomingTitle: 'Voraussichtliche Ex-Dividenden in den naechsten 90 Tagen (Yahoo)',
@@ -263,13 +264,13 @@ export const de: Translations = {
     pendingActualWireFeeHint: 'Gebühren variieren je nach Broker/Bank; nur aktivieren, wenn sie tatsächlich abgezogen wurden.',
     pendingActualWireFeeLabel: 'Überweisungsgebühr',
   },
-  funds: { title: 'Fondsverwaltung', operations: 'Aktionen', clearAll: 'Gefilterte Mittel löschen', batchImport: 'Import', addRecord: '+ Eintrag', filter: 'Suche/Filter', clearFilters: 'Zurücksetzen', accountFilter: 'Konto', typeFilter: 'Typ', dateFrom: 'Von', dateTo: 'Bis', allAccounts: 'Alle', allTypes: 'Alle', deposit: 'Einzahlung', withdraw: 'Auszahlung', transfer: 'Überweisung', interest: 'Zinsen', loanInterest: 'Kreditzinsen', showRecords: '{count} Einträge', totalRecords: 'Gesamt {total}', last30Days: 'Letzte 30 Tage', thisYear: 'Dieses Jahr', confirmClearAll: '{count} gefilterte Fondseinträge löschen?', confirmClearAllMessage: 'Ein- und Auszahlungen, die Ihren aktuellen Filtern entsprechen, werden gelöscht. Dies kann nicht rückgängig gemacht werden. Bitte sichern Sie zuerst Ihre Daten.', confirmClear: 'Löschen' },
+  funds: { title: 'Fondsverwaltung', operations: 'Aktionen', clearAll: 'Gefilterte Fonds löschen', batchImport: 'Import', addRecord: '+ Eintrag', filter: 'Suche/Filter', clearFilters: 'Zurücksetzen', accountFilter: 'Konto', typeFilter: 'Typ', dateFrom: 'Von', dateTo: 'Bis', allAccounts: 'Alle', allTypes: 'Alle', deposit: 'Einzahlung', withdraw: 'Auszahlung', transfer: 'Überweisung', interest: 'Zinsen', loanInterest: 'Kreditzinsen', showRecords: '{count} Einträge', totalRecords: 'Gesamt {total}', last30Days: 'Letzte 30 Tage', thisYear: 'Dieses Jahr', confirmClearAll: 'Gefilterte Fondsdaten löschen?', confirmClearAllMessage: '{count} Ein- und Auszahlung(en) im aktuellen Filter werden gelöscht.', confirmClear: 'Löschen' },
   history: {
     tabTransactions: 'Transaktionen',
     tabTimeline: 'Haltedauer-Zeitleiste',
     operations: 'Aktionen',
     batchUpdateMarket: 'Märkte stapelweise aktualisieren',
-    clearAll: 'Gefilterte Einträge löschen',
+    clearAll: 'Gefilterte Transaktionen löschen',
     batchImport: 'Stapelimport',
     addRecord: '+ Eintrag hinzufügen',
     filter: 'Suche/Filter',
@@ -544,9 +545,13 @@ holdings: {
     contactTitle: 'Gefällt Ihnen das System?',
     contactDesc: 'Als Nicht-Mitglied dauerhafte Nutzungsrechte oder Vorschläge/Meldungen? Bitte den Entwickler kontaktieren. Pflege in Freizeit, Antworten können verzögert sein.',
     contactEmail: 'Administrator kontaktieren (E-Mail)',
+    subscription: 'Mitgliedschaft (In-App-Kauf)',
+    subscriptionTitle: 'Mitglied werden / Abo verwalten',
+    subscriptionDesc: 'Über den App Store abonnieren, um alle Funktionen freizuschalten. Pläne ansehen, kaufen oder Käufe wiederherstellen.',
+    subscribeButton: 'Abo-Pläne öffnen',
     deleteAppAccount: 'Konto und Daten löschen',
     deleteAppAccountDesc: 'Löscht dauerhaft Anmeldestatus und alle lokalen Daten auf diesem Gerät. Nicht rückgängig zu machen. Abo kündigen: Einstellungen → Abonnements.',
-    confirmDeleteAppAccount: 'Konto und Daten löschen',
+    confirmDeleteAppAccount: 'Konto und Daten löschen bestätigen',
     confirmDeleteAppAccountMessage: 'Alle lokalen Daten für „{user}“ werden dauerhaft gelöscht. Fortfahren?',
     documentation: 'Dokumentation',
     copyAll: 'Alles kopieren',
@@ -562,7 +567,7 @@ holdings: {
 > Offline-First-Architektur. **Alle Daten werden nur lokal auf Ihrem Gerät gespeichert** (iOS/Android-App oder Desktop-Browser), nicht auf Servern. **Keine Erfassung personenbezogener Daten.**
 
 ## 1. Einführung
-TradeView ist ein Vermögensverwaltungstool für internationale Aktienmärkte, das Anlegern hilft, Vermögensänderungen zu verfolgen, Renditen zu berechnen und Geldströme zu verwalten.
+TradeView ist ein Vermögensverwaltungstool für Aktienmärkte weltweit, das Anlegern hilft, Vermögensänderungen zu verfolgen, Renditen zu berechnen und Geldströme zu verwalten.
 
 ## 2. Schnellstart
 Folgen Sie dieser Reihenfolge für die Ersteinrichtung (entspricht dem Ablauf im Hamburger-Menü „Konten → Fonds → Transaktionen → Uebersicht"):
@@ -694,7 +699,6 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistik** eine Schätzung au
 - Von dieser Anwendung bereitgestellte Daten wie Aktienkurse und Wechselkurse können aufgrund von Netzwerkverzögerungen von den tatsächlichen Marktpreisen abweichen.
 - Benutzer sollten die Daten dieser Anwendung nicht als einzige Referenzbasis für tatsächliche Transaktionen verwenden.
 - Es wird empfohlen, sich an Echtzeitkurse zu halten, die von Wertpapierfirmen oder Finanzinstituten bereitgestellt werden.`,
-
   },
   transactionForm: {
     ...en.transactionForm,
@@ -727,13 +731,13 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistik** eine Schätzung au
     noteLabel: 'Notiz:',
     totalAmount: 'Gesamtbetrag:',
     shares: 'Aktien',
+    cashDividendQuantityConfirm: '1 Buchung',
     backToEdit: 'Zurück',
     confirmSave: 'Bestätigen & Speichern',
     previewTitle: 'Betrag:',
     calculationFormula: 'Formel:',
     calculationMethod: 'Berechnung:',
     deductionShort: 'Abzug',
-    cashDividendQuantityConfirm: '1 Buchung',
     marketTW: 'Taiwanische Aktien (TW)',
     marketUS: 'USA (US)',
     marketUK: 'Britische Aktien (UK)',
@@ -852,7 +856,7 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistik** eine Schätzung au
     selectAccount: '1. Import-Konto auswählen',
     selectAccountPlaceholder: '-- Bitte Konto auswählen --',
     noAccountsWarning: '⚠️ Stapelimport nicht möglich',
-    noAccountsMessage: 'Es gibt keine Konten im System. Bitte gehen Sie zur Seite "Kontoverwaltung", um zuerst ein Konto zu erstellen, und kehren Sie dann zurück, um den Stapelimport durchzuführen.',
+    noAccountsMessage: 'Es gibt keine Konten im System. Bitte gehen Sie zur Seite "Konten", um zuerst ein Konto zu erstellen, und kehren Sie dann zurück, um den Stapelimport durchzuführen.',
     tabPaste: 'Text einfügen',
     tabUpload: 'CSV-Datei hochladen',
     pasteLabel: 'Excel- oder Tabellendaten hier einfügen (Unterstütztes Format: Datum | Kauf/Verkauf/Dividende/Übertragung | Ticker | Preis | Menge | Gebühren | Gesamtbetrag)',
@@ -926,6 +930,7 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistik** eine Schätzung au
       'Historische Kurse für {count} Symbol(e) konnten nicht geladen werden. Verbindung prüfen.\n\nSymbole: {tickers}',
     alertAiError: 'Aktualisierung fehlgeschlagen. Bitte später erneut versuchen.',
   },
+  subscription: en.subscription,
   purchaseModal: {
     title: 'Mitgliedschaft wählen',
     subtitle: 'Wählen Sie einen passenden Plan, um alle Premium-Funktionen freizuschalten',
@@ -994,7 +999,7 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistik** eine Schätzung au
     adminWelcome: 'Willkommen zurück, Admin!',
     adminPasswordWrong: 'Falsches Admin-Passwort',
     guestLoginNotice:
-      'Sie sind jetzt im Gastmodus angemeldet.\n\nEinige Funktionen können eingeschränkt sein. Bei Problemen nutzen Sie „Systemverwaltung“ → Problem melden.',
+      'Sie sind jetzt im Gastmodus angemeldet.\n\nFür vollständigen Zugriff klicken Sie auf „Upgrade“, um eine Anfrage-E-Mail an den Administrator zu senden.',
     contactSubject: 'TradeView Bug-Meldung / Feedback',
     contactBody:
       'Hallo Admin,\n\nMein Konto: {user}\n\nIch möchte folgendes Problem oder einen Vorschlag melden:\n\n(Bitte Bug, Schritte zur Reproduktion oder Feature-Wunsch beschreiben)\n\nVielen Dank.',
@@ -1009,16 +1014,16 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistik** eine Schätzung au
     txUpdated: 'Transaktion aktualisiert',
     marketUpdated: 'Markteinstellungen für {count} Transaktionen aktualisiert',
     txDeleted: 'Transaktion gelöscht',
-    txCleared: '✅ {count} gefilterte Einträge erfolgreich gelöscht!',
+    txCleared: '✅ {count} Transaktionen erfolgreich gelöscht!',
     accountUpdated: 'Konto „{name}“ aktualisiert',
     accountDeleted: 'Konto „{name}“ gelöscht',
     cashFlowUpdated: 'Kapitalfluss-Eintrag aktualisiert',
     cashFlowDeleted: 'Kapitalfluss-Eintrag gelöscht',
-    cashFlowCleared: '✅ {count} gefilterte Fondseinträge erfolgreich gelöscht!',
+    cashFlowCleared: '✅ {count} gefilterte Kapitalfluss-Einträge erfolgreich gelöscht!',
     historicalSaved: 'Historische Vermögensdaten aktualisiert. Berichte wurden anhand realer Kurse korrigiert.',
     loginPasswordPlaceholder: 'Passwort eingeben',
-    confirmClearTxTitle: '{count} gefilterte Einträge wirklich löschen?',
-    confirmClearTxMessage: 'Transaktionen und Fondseinträge, die Ihren aktuellen Filtern entsprechen, werden gelöscht. Dies kann nicht rückgängig gemacht werden. Bitte sichern Sie zuerst Ihre Daten.',
+    confirmClearTxTitle: 'Gefilterte Transaktionen wirklich löschen?',
+    confirmClearTxMessage: '{count} Transaktion(en) im aktuellen Filter werden gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden. Bitte sichern Sie Ihre Daten.',
     confirmClearAction: 'Löschen bestätigen',
     deleteTxTitle: 'Transaktion löschen',
     deleteTxMessage: 'Möchten Sie diese Transaktion wirklich löschen?',
