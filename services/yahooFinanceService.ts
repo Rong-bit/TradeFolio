@@ -66,7 +66,7 @@ const CURRENCY_CFG: Record<string, { symbol: string; default: number }> = {
 
 const CONCURRENCY = 8;
 const BATCH_DELAY = 50; // ms，僅用於批量失敗後的逐檔備援
-const QUOTE_BATCH_SIZE = 50; // Yahoo v7 quote 單次請求上限
+const SPARK_BATCH_SIZE = 50;
 const TIMEOUT_MS  = 4000;
 const CACHE_TTL   = 5 * 60 * 1000; // 5 分鐘
 
@@ -234,10 +234,11 @@ function extractMeta(json: unknown): Record<string, any> | null {
 
 function extractOhlcv(json: unknown) {
   const r = (json as any)?.chart?.result?.[0];
+  const spark = !r && json && typeof json === 'object' ? (json as any) : null;
   return {
-    timestamps: (r?.timestamp ?? []) as number[],
-    closes:     (r?.indicators?.quote?.[0]?.close    ?? []) as (number | null)[],
-    adjCloses:  (r?.indicators?.adjclose?.[0]?.adjclose ?? []) as (number | null)[],
+    timestamps: (r?.timestamp ?? spark?.timestamp ?? []) as number[],
+    closes:     (r?.indicators?.quote?.[0]?.close ?? spark?.indicators?.quote?.[0]?.close ?? spark?.close ?? []) as (number | null)[],
+    adjCloses:  (r?.indicators?.adjclose?.[0]?.adjclose ?? spark?.indicators?.adjclose?.[0]?.adjclose ?? spark?.adjclose ?? []) as (number | null)[],
   };
 }
 
@@ -326,6 +327,60 @@ function pickLatestQuoteFromChart(
     bestP = regP || positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
   }
   return { price: bestP, source: 'fallback' };
+}
+
+function chartMetaToPriceData(
+  meta: Record<string, any>,
+  json: unknown,
+): { data: PriceData; source: 'regular' | 'post' | 'pre' | 'fallback' } | null {
+  const { price, source } = pickLatestQuoteFromChart(meta, json);
+  if (!price) return null;
+
+  const prev = positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
+  let chg: number;
+  let pct: number;
+  if (source === 'pre') {
+    const chosen = pickPreferMetaChange(
+      meta.preMarketChange,
+      meta.preMarketChangePercent,
+      price,
+      prev,
+    );
+    chg = chosen.change;
+    pct = chosen.pct;
+  } else if (source === 'post') {
+    const chosen = pickPreferMetaChange(
+      meta.postMarketChange,
+      meta.postMarketChangePercent,
+      price,
+      prev,
+    );
+    chg = chosen.change;
+    pct = chosen.pct;
+  } else if (source === 'regular') {
+    const chosen = pickPreferMetaChange(
+      meta.regularMarketChange,
+      meta.regularMarketChangePercent,
+      price,
+      prev,
+    );
+    chg = chosen.change;
+    pct = chosen.pct;
+  } else {
+    chg = prev > 0 ? price - prev : 0;
+    pct = prev > 0 ? (chg / prev) * 100 : 0;
+  }
+
+  return {
+    data: {
+      price,
+      change: isNaN(chg) ? 0 : chg,
+      changePercent: isNaN(pct) ? 0 : pct,
+      previousClose: prev > 0 ? prev : undefined,
+      currency: meta.currency ? normalizeYahooCurrency(meta.currency) : undefined,
+    },
+    source,
+  };
 }
 
 function findYearEnd(
@@ -612,70 +667,36 @@ async function fetchTwseQuote(code: string): Promise<PriceData | null> {
   return batch.get(code) ?? null;
 }
 
-/** 自 Yahoo chart／spark meta 解析即時報價（v7 quote 已停用，改走 spark／v8 chart） */
-function chartMetaToPriceData(
-  meta: Record<string, unknown>,
-  chartJson: unknown,
-): PriceData | null {
-  const { price, source } = pickLatestQuoteFromChart(meta, chartJson);
-  if (!price) return null;
+function extractSparkQuotePayload(json: unknown, symbol: string): Record<string, any> | null {
+  if (!json || typeof json !== 'object') return null;
+  const root = json as Record<string, any>;
+  const direct = root[symbol] ?? root[symbol.toUpperCase()] ?? root[symbol.toLowerCase()];
+  const candidates = [
+    direct,
+    ...(Array.isArray(root.spark?.result) ? root.spark.result : []),
+    ...(Array.isArray(root.finance?.result) ? root.finance.result : []),
+  ];
 
-  const prev =
-    positiveQuoteNum(meta.previousClose) || positiveQuoteNum(meta.chartPreviousClose) || 0;
+  for (const raw of candidates) {
+    if (!raw || typeof raw !== 'object') continue;
+    const row = raw as Record<string, any>;
+    const rowSymbol = String(row.symbol ?? row.meta?.symbol ?? '').trim();
+    if (rowSymbol && rowSymbol.toUpperCase() !== symbol.toUpperCase()) continue;
 
-  let chg: number;
-  let pct: number;
-  if (source === 'pre') {
-    const chosen = pickPreferMetaChange(
-      meta.preMarketChange,
-      meta.preMarketChangePercent,
-      price,
-      prev,
-    );
-    chg = chosen.change;
-    pct = chosen.pct;
-  } else if (source === 'post') {
-    const chosen = pickPreferMetaChange(
-      meta.postMarketChange,
-      meta.postMarketChangePercent,
-      price,
-      prev,
-    );
-    chg = chosen.change;
-    pct = chosen.pct;
-  } else if (source === 'regular') {
-    const chosen = pickPreferMetaChange(
-      meta.regularMarketChange,
-      meta.regularMarketChangePercent,
-      price,
-      prev,
-    );
-    chg = chosen.change;
-    pct = chosen.pct;
-  } else {
-    chg = prev > 0 ? price - prev : 0;
-    pct = prev > 0 ? (chg / prev) * 100 : 0;
+    const response = Array.isArray(row.response) ? row.response[0] : null;
+    if (response && typeof response === 'object') {
+      const responseRow = response as Record<string, any>;
+      const responseMeta = responseRow.meta && typeof responseRow.meta === 'object'
+        ? responseRow.meta as Record<string, any>
+        : {};
+      return { ...row, ...responseRow, ...responseMeta, symbol: rowSymbol || symbol };
+    }
+    return { ...row, symbol: rowSymbol || symbol };
   }
-
-  return {
-    price,
-    change: isNaN(chg) ? 0 : chg,
-    changePercent: isNaN(pct) ? 0 : pct,
-    previousClose: prev > 0 ? prev : undefined,
-    currency: meta.currency ? normalizeYahooCurrency(meta.currency) : undefined,
-  };
+  return null;
 }
 
-function parseSparkBatchItem(item: { response?: unknown[] }): PriceData | null {
-  const first = item.response?.[0];
-  if (!first || typeof first !== 'object') return null;
-  const row = first as Record<string, unknown>;
-  const meta = row.meta as Record<string, unknown> | undefined;
-  if (!meta) return null;
-  return chartMetaToPriceData(meta, { chart: { result: [row] } });
-}
-
-/** Yahoo v7 spark API：一次請求多檔非台股報價（v7 quote 已回 401） */
+/** Yahoo v7 spark API：一次請求多檔非台股報價 */
 async function fetchYahooQuoteBatch(
   symbols: string[],
   skipCache = false,
@@ -684,26 +705,29 @@ async function fetchYahooQuoteBatch(
   const unique = [...new Set(symbols.filter(Boolean))];
   if (!unique.length) return out;
 
-  for (let i = 0; i < unique.length; i += QUOTE_BATCH_SIZE) {
-    const chunk = unique.slice(i, i + QUOTE_BATCH_SIZE);
+  for (let i = 0; i < unique.length; i += SPARK_BATCH_SIZE) {
+    const chunk = unique.slice(i, i + SPARK_BATCH_SIZE);
     const bust = skipCache ? `&_=${Date.now()}` : '';
     const url =
-      `https://query1.finance.yahoo.com/v7/finance/spark` +
-      `?symbols=${chunk.map(s => encodeURIComponent(s)).join(',')}` +
+      `https://query1.finance.yahoo.com/v7/finance/spark?symbols=${chunk.map(s => encodeURIComponent(s)).join(',')}` +
       `&range=1d&interval=1m&includePrePost=true${bust}`;
     const resp = await tryFetch(url);
-    const results = (resp?.json as any)?.spark?.result;
-    if (!Array.isArray(results)) continue;
+    if (!resp?.json) continue;
 
-    for (const raw of results) {
-      if (!raw || typeof raw !== 'object') continue;
-      const item = raw as { symbol?: string; response?: unknown[] };
-      const sym = String(item.symbol ?? '').trim();
-      if (!sym) continue;
-      const data = parseSparkBatchItem(item);
-      if (!data) continue;
+    for (const sym of chunk) {
+      const payload = extractSparkQuotePayload(resp.json, sym);
+      if (!payload) continue;
+      const parsed = chartMetaToPriceData(payload, payload);
+      if (!parsed) continue;
+      const data = parsed.data;
       out.set(sym.toUpperCase(), data);
-      if (!skipCache) setCache(`price:${sym}`, data);
+      if (!skipCache) {
+        const ttl = parsed.source === 'pre' || parsed.source === 'post' ? 30 * 1000 : CACHE_TTL;
+        setCache(`price:${sym}`, data, ttl);
+      }
+    }
+    if (i + SPARK_BATCH_SIZE < unique.length) {
+      await new Promise(r => setTimeout(r, BATCH_DELAY));
     }
   }
   return out;
@@ -785,11 +809,11 @@ async function fetchSinglePrice(
     return interval === '1m' ? fetchSinglePrice(symbol, '1d', skipCache) : null;
   }
 
-  const result = chartMetaToPriceData(meta, resp?.json);
-  if (!result && interval === '1m') return fetchSinglePrice(symbol, '1d', skipCache);
-  if (!result) return null;
+  const parsed = chartMetaToPriceData(meta, resp?.json);
+  if (!parsed && interval === '1m') return fetchSinglePrice(symbol, '1d', skipCache);
+  if (!parsed) return null;
 
-  const source = pickLatestQuoteFromChart(meta, resp?.json).source;
+  const { data: result, source } = parsed;
   // 盤前/盤後波動快，縮短快取以避免畫面長時間停在舊值。
   if (source === 'pre' || source === 'post') {
     setCache(ck, result, 30 * 1000);
@@ -1265,22 +1289,21 @@ export const fetchAnnualizedReturn = async (
 
 // ── 除息／配息（供台股二代健保與美股預扣試算）──────────────────────────────────
 
-/** Yahoo chart events=div 與 quoteSummary 彙整後之最近一次配息與可選的下次除息日 */
+/** Yahoo chart events=div 回傳的最近一次配息資訊 */
 export interface DividendScheduleInfo {
   /** 最近一次每股現金股利（Yahoo 標的幣別，台股多為 TWD） */
   lastAmountPerShare: number;
   /** 最近除息日 YYYY-MM-DD */
   lastExDate: string;
-  /** Yahoo calendar 若提供且為未來之除息日（YYYY-MM-DD） */
+  /** 預留欄位：目前不再查詢 Yahoo calendarEvents */
   nextExDate?: string;
   /** 近年除息月份（0-11），由新到舊，供無 nextExDate 時推估月份 */
   recentExMonths?: number[];
   currency?: string;
 }
 
-
 /**
- * 自 Yahoo Finance 取得最近現金股利與（若有）下次除息日。
+ * 自 Yahoo Finance v8 chart events=div 取得最近現金股利。
  * 走既有 tryFetch／proxy 鏈，與股價更新一致。
  */
 export async function fetchDividendSchedule(
@@ -1290,13 +1313,14 @@ export async function fetchDividendSchedule(
   const symbol = toYahoo(ticker, market);
   const enc = encodeURIComponent(symbol);
   const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${enc}?events=div&interval=1d&range=5y`;
-  // v10 quoteSummary 已回 401；除息歷史改由 chart events=div，幣別由 chart meta
+
   const chartPack = await tryFetch(chartUrl);
 
   let lastAmount = 0;
   let lastTs = 0;
   const recentTs: number[] = [];
-  const divObj = (chartPack?.json as any)?.chart?.result?.[0]?.events?.dividends;
+  const chartResult = (chartPack?.json as any)?.chart?.result?.[0];
+  const divObj = chartResult?.events?.dividends;
   if (divObj && typeof divObj === 'object') {
     for (const v of Object.values(divObj) as any[]) {
       const amt = Number(v?.amount);
@@ -1315,14 +1339,8 @@ export async function fetchDividendSchedule(
     .map(ts => new Date(ts * 1000).getMonth())
     .filter(m => Number.isInteger(m) && m >= 0 && m <= 11);
 
-  let lastExDate = '';
-  if (lastTs > 0) {
-    lastExDate = new Date(lastTs * 1000).toISOString().slice(0, 10);
-  }
-
-  const curHint = normalizeYahooCurrency(
-    (chartPack?.json as any)?.chart?.result?.[0]?.meta?.currency,
-  );
+  const lastExDate = lastTs > 0 ? new Date(lastTs * 1000).toISOString().slice(0, 10) : '';
+  const curHint = normalizeYahooCurrency(chartResult?.meta?.currency);
 
   if (lastAmount <= 0 && !lastExDate) return null;
 
