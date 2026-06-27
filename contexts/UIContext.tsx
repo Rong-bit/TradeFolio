@@ -26,6 +26,9 @@ export interface UIContextValue {
   alertDialog: AlertState;
   showAlert: (message: string, title?: string, type?: 'info' | 'success' | 'error') => void;
   closeAlert: () => void;
+
+  /** 交易／資金紀錄剛新增時短暫高亮（約 1 分鐘後自動恢復） */
+  isRecordHighlighted: (id: string) => boolean;
 }
 
 export const UIContext = createContext<UIContextValue | null>(null);
