@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
-import { BaseCurrency, BASE_CURRENCIES } from '../types';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
+import { BaseCurrency, BASE_CURRENCIES, Transaction, CashFlow } from '../types';
 import { useLocalStorageDebouncedSimple } from '../hooks/useLocalStorageDebounced';
 import { useFilters } from '../hooks/useFilters';
 import { useDeleteState } from '../hooks/useDeleteState';
@@ -13,6 +13,7 @@ import { usePriceAutoUpdate } from '../hooks/usePriceAutoUpdate';
 import { useBackupRestore } from '../hooks/useBackupRestore';
 import { useAutoHistoricalSyncEffect } from '../hooks/useAutoHistoricalSyncEffect';
 import { useAppPortfolioHandlers } from '../hooks/useAppPortfolioHandlers';
+import { useRecentRecordHighlights } from '../hooks/useRecentRecordHighlights';
 import type { AuthSession } from '../hooks/useAuthSession';
 import { formatNumber, formatAmount } from '../utils/formatDisplay';
 import { countVisibleFilteredRecords } from '../utils/filteredRecordDelete';
@@ -162,6 +163,40 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     addStockSplit,
     removeStockSplit,
   } = portfolio;
+
+  const { markHighlighted, isHighlighted } = useRecentRecordHighlights();
+
+  const addTransactionWithHighlight = useCallback(
+    (tx: Transaction) => {
+      addTransaction(tx);
+      markHighlighted(tx.id);
+    },
+    [addTransaction, markHighlighted]
+  );
+
+  const addBatchTransactionsWithHighlight = useCallback(
+    (txs: Transaction[]) => {
+      addBatchTransactions(txs);
+      markHighlighted(txs.map(t => t.id));
+    },
+    [addBatchTransactions, markHighlighted]
+  );
+
+  const addCashFlowWithHighlight = useCallback(
+    (cf: CashFlow) => {
+      addCashFlow(cf);
+      markHighlighted(cf.id);
+    },
+    [addCashFlow, markHighlighted]
+  );
+
+  const addBatchCashFlowsWithHighlight = useCallback(
+    (cfs: CashFlow[]) => {
+      addBatchCashFlows(cfs);
+      markHighlighted(cfs.map(cf => cf.id));
+    },
+    [addBatchCashFlows, markHighlighted]
+  );
 
   useLocalStorageDebouncedSimple('baseCurrency', baseCurrency, 500, userPrefix);
 
@@ -361,20 +396,20 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     assetAllocation,
     annualPerformance,
     accountPerformance,
-    addTransaction,
+    addTransaction: addTransactionWithHighlight,
     updateTransaction,
     removeTransaction,
-    addBatchTransactions,
+    addBatchTransactions: addBatchTransactionsWithHighlight,
     clearTransactions,
     removeTransactionsByIds,
     batchUpdateMarket,
     addAccount: portfolio.addAccount,
     updateAccount: handlers.handleUpdateAccount,
     removeAccount: handlers.handleRemoveAccount,
-    addCashFlow,
+    addCashFlow: addCashFlowWithHighlight,
     updateCashFlow: handlers.handleUpdateCashFlow,
     removeCashFlow: handlers.handleRemoveCashFlow,
-    addBatchCashFlows,
+    addBatchCashFlows: addBatchCashFlowsWithHighlight,
     clearCashFlows,
     removeCashFlowsByIds,
     addRecurringDepositRule,
@@ -424,6 +459,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     alertDialog,
     showAlert,
     closeAlert,
+    isRecordHighlighted: isHighlighted,
   };
 
   const pageTitle =
@@ -754,7 +790,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
 
             {isFormOpen && (
               <TransactionForm
-                onAdd={addTransaction}
+                onAdd={addTransactionWithHighlight}
                 onUpdate={handlers.handleUpdateTransaction}
                 editingTransaction={transactionToEdit}
                 onClose={handlers.closeTransactionForm}
@@ -762,7 +798,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
             )}
             {isImportOpen && (
               <Suspense fallback={null}>
-                <BatchImportModal onImport={addBatchTransactions} onClose={() => setIsImportOpen(false)} />
+                <BatchImportModal onImport={addBatchTransactionsWithHighlight} onClose={() => setIsImportOpen(false)} />
               </Suspense>
             )}
             {isHistoricalModalOpen && (

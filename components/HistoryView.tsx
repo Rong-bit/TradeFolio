@@ -8,6 +8,7 @@ import { useFilters } from '../hooks/useFilters';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 import { noteContainsRecurringMarker, stripRecurringMarkersFromNote } from '../utils/recurringDeposits';
 import { formatCashDividendPrice } from '../utils/formatDisplay';
+import { recordRowClassName } from '../utils/recordHighlightClasses';
 
 interface Props {
   onAddTransaction: () => void;
@@ -60,7 +61,7 @@ const HistoryView: React.FC<Props> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'list' | 'timeline'>('list');
   const { transactions, accounts, cashFlows } = usePortfolio();
-  const { language } = useUI();
+  const { language, isRecordHighlighted } = useUI();
   const tr = t(language);
   const isChinese = language === 'zh-TW' || language === 'zh-CN';
 
@@ -286,8 +287,10 @@ const HistoryView: React.FC<Props> = ({
                   tAN = accounts.find(a => a.id === record.sourceAccountId)?.name ?? null;
               }
 
+              const highlighted = isRecordHighlighted(record.id);
+
               return (
-                <tr key={`${record.type}-${record.id}`} className="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                <tr key={`${record.type}-${record.id}`} className={recordRowClassName(highlighted)}>
                   <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-slate-600 dark:text-slate-300 text-xs sm:text-sm">
                     {record.date}
                   </td>

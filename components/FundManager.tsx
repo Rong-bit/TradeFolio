@@ -22,6 +22,7 @@ import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
+import { recordRowClassName } from '../utils/recordHighlightClasses';
 import {
   currentYearMonth,
   stripRecurringMarkersFromNote,
@@ -49,7 +50,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
   } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { exchangeRateUsdToTwd: currentExchangeRate, jpyExchangeRate: currentJpyExchangeRate, eurExchangeRate: currentEurExchangeRate, gbpExchangeRate: currentGbpExchangeRate, hkdExchangeRate: currentHkdExchangeRate, krwExchangeRate: currentKrwExchangeRate, cadExchangeRate: currentCadExchangeRate, inrExchangeRate: currentInrExchangeRate } = rates;
-  const { language, showAlert } = useUI();
+  const { language, showAlert, isRecordHighlighted } = useUI();
   const onAdd = addCashFlow;
   const onBatchAdd = addBatchCashFlows;
   const onDelete = removeCashFlow;
@@ -1084,7 +1085,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                        : getTypeName(cf.type);
 
                    return (
-                     <tr key={cf.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                     <tr key={cf.id} className={recordRowClassName(isRecordHighlighted(cf.id))}>
                        <td className="px-2 sm:px-3 py-2 text-slate-600 dark:text-slate-300 whitespace-nowrap">{cf.date}</td>
 
                        <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-800 dark:text-slate-100">
