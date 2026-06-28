@@ -26,6 +26,7 @@ const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin, onDelet
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [documentationOpen, setDocumentationOpen] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -201,14 +202,32 @@ const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin, onDelet
 
       {/* Help Content */}
       <div className="bg-white p-6 rounded-lg shadow border-l-4 border-slate-500">
-          <div className="flex justify-between items-center mb-4">
+          <button
+            type="button"
+            onClick={() => setDocumentationOpen(open => !open)}
+            aria-expanded={documentationOpen}
+            className="w-full flex justify-between items-center gap-3 text-left rounded-md -m-1 p-1 hover:bg-slate-50 transition"
+          >
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                   {translations.help.documentation}
               </h3>
-              <div className="flex gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`h-5 w-5 shrink-0 text-slate-500 transition-transform ${documentationOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+          </button>
+          {documentationOpen && (
+            <>
+              <div className="flex justify-end gap-2 mt-4 mb-4">
                   <button onClick={handleCopy} className="text-sm px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition">
                       {copyFeedback ? translations.help.copied : translations.help.copyAll}
                   </button>
@@ -221,16 +240,17 @@ const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin, onDelet
                     {pdfLoading ? translations.help.pdfGenerating : translations.help.downloadPdf}
                   </button>
               </div>
-          </div>
-          {pdfLoading && (
-            <div className="fixed inset-0 z-[10039] flex flex-col items-center justify-center gap-3 bg-white">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-indigo-600" />
-              <p className="text-sm text-slate-600">{translations.help.pdfGenerating}</p>
-            </div>
+              {pdfLoading && (
+                <div className="fixed inset-0 z-[10039] flex flex-col items-center justify-center gap-3 bg-white">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-indigo-600" />
+                  <p className="text-sm text-slate-600">{translations.help.pdfGenerating}</p>
+                </div>
+              )}
+              <div ref={documentationRef} className="prose prose-sm max-w-none text-slate-800">
+                  <DocumentationContent content={content} />
+              </div>
+            </>
           )}
-          <div ref={documentationRef} className="prose prose-sm max-w-none text-slate-800">
-              <DocumentationContent content={content} />
-          </div>
       </div>
 
       {/* Delete Account Confirmation Modal */}
