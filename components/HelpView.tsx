@@ -228,10 +228,7 @@ const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin, onDelet
               <p className="text-sm text-slate-600">{translations.help.pdfGenerating}</p>
             </div>
           )}
-          <div
-            ref={documentationRef}
-            className="prose prose-sm max-w-none text-slate-800 bg-white p-6 rounded-lg border border-slate-200"
-          >
+          <div ref={documentationRef} className="prose prose-sm max-w-none text-slate-800">
               <DocumentationContent content={content} />
           </div>
       </div>
