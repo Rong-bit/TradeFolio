@@ -1,1 +1,91 @@
+@import "tailwindcss";
 
+@source "../index.html";
+@source "../privacy-policy.html";
+@source "../public";
+@source "../App.tsx";
+@source "../components";
+@source "../contexts";
+@source "../hooks";
+@source "../services";
+@source "../src";
+@source "../utils";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #0f172a;
+  --color-secondary: #334155;
+  --color-accent: #3b82f6;
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+
+  --animate-fade-in: fadeIn 0.2s ease-out;
+  --animate-slide-up: slideUp 0.3s ease-out;
+  --animate-slide-right: slideRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@layer utilities {
+  /* 新增纪录高亮：浅色暖黄、深色青蓝，各自针对背景对比优化 */
+  .record-row-highlight {
+    border-left-width: 5px;
+    border-left-style: solid;
+    background-color: #fde68a; /* amber-200 */
+    border-left-color: #d97706; /* amber-600 */
+    transition: background-color 1s ease, box-shadow 1s ease, border-color 1s ease;
+    animation: recordHighlightPulseLight 2.5s ease-in-out infinite;
+  }
+
+  &:where(.dark, .dark *) .record-row-highlight {
+    background-color: rgb(8 47 73 / 0.72); /* sky-950 tint on slate table */
+    border-left-color: #38bdf8; /* sky-400 */
+    animation: recordHighlightPulseDark 2.5s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes recordHighlightPulseLight {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 2px rgb(245 158 11 / 0.55);
+  }
+  50% {
+    box-shadow: inset 0 0 0 3px rgb(217 119 6 / 0.9);
+  }
+}
+
+@keyframes recordHighlightPulseDark {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 2px rgb(56 189 248 / 0.45);
+  }
+  50% {
+    box-shadow: inset 0 0 0 3px rgb(125 211 252 / 0.95);
+  }
+}
