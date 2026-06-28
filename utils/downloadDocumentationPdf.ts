@@ -1,0 +1,160 @@
+import { Capacitor } from '@capacitor/core';
+import type { Language } from './i18n/types';
+import { DocumentationPdfWriter } from './documentationPdfTextLayout';
+import { getPdfFontSetForLanguage, type PdfFontSet } from './pdfFontConfig';
+import { shareOrDownloadBlob } from './shareDownloadBlob';
+
+/** html2pdf 失敗時常殘留 overlay（z-index:1000），會擋住 Alert 的確認按鈕 */
+export function removeHtml2PdfOverlays(): void {
+  document.querySelectorAll('.html2pdf__overlay').forEach(el => el.remove());
+}
+
+const fontCache = new Map<string, { regular: string; bold: string }>();
+
+function arrayBufferToBase64(buffer: ArrayBuffer): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result;
+      if (typeof result !== 'string') {
+        reject(new Error('read_failed'));
+        return;
+      }
+      resolve(result.split(',')[1] ?? '');
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('read_failed'));
+    reader.readAsDataURL(new Blob([buffer]));
+  });
+}
+
+async function fetchFontBase64(path: string): Promise<string> {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error('font_load_failed');
+  return arrayBufferToBase64(await res.arrayBuffer());
+}
+
+async function loadPdfFonts(fontSet: PdfFontSet): Promise<{ regular: string; bold: string }> {
+  const cached = fontCache.get(fontSet.id);
+  if (cached) return cached;
+
+  const [regular, bold] = await Promise.all([
+    fetchFontBase64(fontSet.regularPath),
+    fetchFontBase64(fontSet.boldPath),
+  ]);
+  const loaded = { regular, bold };
+  fontCache.set(fontSet.id, loaded);
+  return loaded;
+}
+
+function registerPdfFonts(
+  pdf: import('jspdf').jsPDF,
+  fontSet: PdfFontSet,
+  fonts: { regular: string; bold: string }
+): void {
+  pdf.addFileToVFS(fontSet.regularVfs, fonts.regular);
+  pdf.addFileToVFS(fontSet.boldVfs, fonts.bold);
+  pdf.addFont(fontSet.regularVfs, fontSet.family, 'normal');
+  pdf.addFont(fontSet.boldVfs, fontSet.family, 'bold');
+  pdf.setFont(fontSet.family, 'normal');
+}
+
+/** jsPDF 文字排版（iOS WKWebView 無法用 html2canvas 渲染 CJK／阿拉伯文等） */
+async function renderPdfBlobFromMarkdownText(
+  markdown: string,
+  language: Language
+): Promise<Blob> {
+  const fontSet = getPdfFontSetForLanguage(language);
+  const [{ jsPDF }, fonts] = await Promise.all([import('jspdf'), loadPdfFonts(fontSet)]);
+
+  const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  registerPdfFonts(pdf, fontSet, fonts);
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 14;
+
+  const writer = new DocumentationPdfWriter(pdf, margin, pageWidth, pageHeight, fontSet.family);
+  writer.renderMarkdown(markdown);
+
+  return pdf.output('blob');
+}
+
+const HTML2CANVAS_OPTS = {
+  scale: 2,
+  backgroundColor: '#ffffff',
+  logging: false,
+  scrollX: 0,
+  scrollY: 0,
+  useCORS: true,
+  allowTaint: true,
+} as const;
+
+async function renderPdfBlobHtml2pdf(element: HTMLElement, filename: string): Promise<Blob> {
+  const html2pdf = (await import('html2pdf.js')).default;
+
+  try {
+    const result = await html2pdf()
+      .set({
+        margin: [10, 10, 10, 10],
+        filename,
+        image: { type: 'jpeg', quality: 0.92 },
+        html2canvas: {
+          ...HTML2CANVAS_OPTS,
+          width: element.scrollWidth,
+          height: element.scrollHeight,
+          windowWidth: element.scrollWidth,
+          windowHeight: element.scrollHeight,
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      })
+      .from(element)
+      .outputPdf('blob');
+
+    return result instanceof Blob
+      ? result
+      : new Blob([result as BlobPart], { type: 'application/pdf' });
+  } finally {
+    removeHtml2PdfOverlays();
+  }
+}
+
+async function renderPdfBlob(
+  markdownContent: string,
+  language: Language,
+  webElement: HTMLElement | null | undefined,
+  filename: string
+): Promise<Blob> {
+  if (Capacitor.isNativePlatform()) {
+    return renderPdfBlobFromMarkdownText(markdownContent, language);
+  }
+
+  if (webElement) {
+    try {
+      return await renderPdfBlobHtml2pdf(webElement, filename);
+    } catch {
+      removeHtml2PdfOverlays();
+    }
+  }
+
+  return renderPdfBlobFromMarkdownText(markdownContent, language);
+}
+
+/** 將使用說明匯出為 PDF；iOS／Android 以系統分享（可存至「檔案」），Web 則觸發下載。 */
+export async function downloadDocumentationPdf(
+  markdownContent: string,
+  filename: string,
+  shareTitle: string,
+  language: Language,
+  webElement?: HTMLElement | null
+): Promise<void> {
+  try {
+    const blob = await renderPdfBlob(markdownContent, language, webElement, filename);
+    await shareOrDownloadBlob(blob, filename, {
+      shareTitle,
+      mimeType: 'application/pdf',
+      minSize: 64,
+    });
+  } finally {
+    removeHtml2PdfOverlays();
+  }
+}
