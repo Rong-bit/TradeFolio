@@ -649,7 +649,11 @@ export const en: Translations = {
     documentation: 'Documentation',
     copyAll: 'Copy All',
     copied: 'Copied!',
-    print: 'Print',
+    downloadPdf: 'Download PDF',
+    pdfGenerating: 'Generating PDF…',
+    pdfShareTitle: 'TradeView User Manual',
+    pdfDownloadFailed: 'Could not create or save the PDF. Please try again.',
+    pdfDownloadTextFallback: 'PDF export failed; shared as plain text (.txt) with the same manual content.',
     confirmImport: 'Warning: Confirm Override Data?',
     confirmImportMessage: 'You are about to import {fileName}.',
     confirmImportWarning: 'This will completely clear your current transaction records and settings, and cannot be undone.',
@@ -675,10 +679,10 @@ The sections below follow the hamburger menu order (**guest** and **member** vis
 ### Dashboard
 "Dashboard" is the default home page, showing performance summary cards and holdings. **Members** also get cumulative P/L charts, asset allocation pie chart, market performance, and dividend heatmap. If you have liability account debt, **Credit & debt** cards appear (see Credit Q&A below).
 
-**Dividend heatmap (members)**: For pending items that are **Dividend Reinvestment (DRIP)**, go to "Transactions" and tap "+ Add Record"—do **not** use **Add to records** on the heatmap (that button is for cash dividends only).
+**Dividend heatmap (members)**: For pending items that are **Dividend Reinvestment (DRIP)**, go to "Transactions" and tap "+ Add Record"—do **not** use **Add** on the heatmap pending list (that button is for cash dividends only).
 
 ### Transactions
-Record buys, sells, dividends, and stock transfers. Tap "+ Add Record" in the top right to add entries; use "Batch Update Market" to adjust market settings for multiple transactions at once.
+Record buys, sells, dividends, and stock transfers. Tap "+ Add Record" in the top right to add entries; use "Batch Update Market" to adjust market settings for multiple transactions at once. You can also tap **"Batch Import"** or **"Clear Filtered Transactions"**.
 
 **Transaction types**
 * **Buy/Sell**: General buy/sell transactions.
@@ -688,7 +692,7 @@ Record buys, sells, dividends, and stock transfers. Tap "+ Add Record" in the to
 * **Transfer In**: Stock transferred into this brokerage account.
 
 **Stock transfer (Brokerage A → Brokerage B)**
-**Recommended (one step)**: "+ Add Record" → type **Transfer Out** → account = source (A) → date, market, ticker, quantity → choose **Target Account** (B) → tap **Confirm & Save**. The app saves **both** Transfer Out and Transfer In records at once; the auto-created Transfer In has **fees = 0**—enter any transfer fees on the **Transfer Out** row. Price defaults to average cost for that account and ticker—use cost basis, not market price.
+**Recommended (one step)**: "+ Add Record" → type **Transfer Out** → account = source (A) → date, market, ticker, quantity → choose **Target Account** (B) → tap **Save Transaction**, then **Confirm & Save** in the confirmation dialog. The app saves **both** Transfer Out and Transfer In records at once; the auto-created Transfer In has **fees = 0**—enter any transfer fees on the **Transfer Out** row. Price defaults to average cost for that account and ticker—use cost basis, not market price.
 
 ### Funds
 Tap "+ Add Record" to log cash flows. Categories include:
@@ -697,6 +701,8 @@ Tap "+ Add Record" to log cash flows. Categories include:
 * **Transfer**: Fund movement between accounts (e.g., bank to brokerage account).
 * **Interest**: Deposit or brokerage account interest.
 * **Loan interest**: Loan interest expense; when recorded on a brokerage account, cash is reduced.
+
+You can also tap **"Batch Import"** or **"Clear Filtered Funds"**.
 
 ### Accounts
 Add or edit bank or brokerage accounts. **Account type** can be **Brokerage (investment)** or **Liability (debt)**; see Credit Q&A below for liability accounts.
@@ -712,40 +718,58 @@ The "Stock Splits" page lets you log split events. Transactions keep logged shar
 
 ### Credit / Liability Accounts (Q&A)
 
-Q: What does the liability account balance mean?
+Q: What does the liability account **Balance / Debt** mean?
 A: It is **principal owed** (how much you owe the bank), not spendable cash. Zero balance = paid off.
 
 Q: How do I create a liability account?
 A: "Accounts" → **Account type** **Liability (debt)** → fill in **Account name**, **Currency**, **Annual rate (%)**, and **Credit limit** (optional) → tap "Add". Leave initial balance at **0**.
 
 Q: How do I record a bank draw to my brokerage?
-A: "Funds" → **Transfer** → **liability → brokerage** → disbursement amount. **One entry only**; do not also record **Deposit** on the liability account (avoids double-counting debt).
+A: This means **the bank disburses credit funds into your brokerage cash account**. Use one **Transfer** entry to reflect both **increased liability principal** and **increased brokerage cash** (and net invested).
+
+**Steps** ("Funds" → tap **+ Add Record**):
+1. **Type** **Transfer**
+2. **Source account** **Liability (debt)**
+3. **Target Account** the receiving **Brokerage (investment)**
+4. Enter **disbursement date**, **amount** (actual principal disbursed); if currencies differ, enter **exchange rate**
+5. Save after confirming
+
+**One entry only**. Do **not** also record **Deposit** on the liability account, or debt will be double-counted. When liability → brokerage is selected, the form shows: "Debt draw: transfer liability → brokerage; counts toward net invested."
 
 Q: How do I record principal repayment?
-A: "Funds" → **Transfer** → **brokerage → liability** → amount = **principal only**. Liability balance tracks principal only and should reach zero when paid off.
+A: This means **paying down credit principal from brokerage cash** (excluding interest). Use one **Transfer** entry to reflect both **reduced brokerage cash** and **reduced liability principal** (and net invested).
+
+**Steps** ("Funds" → tap **+ Add Record**):
+1. **Type** **Transfer**
+2. **Source account** the debited **Brokerage (investment)**
+3. **Target Account** **Liability (debt)**
+4. Enter **repayment date**, **amount** (**principal only**; see next question for interest); if currencies differ, enter **exchange rate**
+5. Save after confirming
+
+Do **not** use **Withdraw** instead of principal repayment. Liability balance tracks **principal only** and should reach **0** when paid off. When brokerage → liability is selected, the form shows: "Debt repayment: transfer brokerage → liability."
 
 Q: Where do I record loan interest?
-A: **Brokerage account**. "Funds" → **Loan interest** → choose a brokerage account (dropdown lists brokerage accounts only). If the bank debits principal+interest together, use **two entries**: ① Transfer (brokerage→liability) for **principal**; ② Loan interest on the **brokerage** for interest.
+A: **Brokerage account**. "Funds" → **Loan interest** → choose a brokerage account (dropdown lists brokerage accounts only, not liability accounts). If the bank debits principal+interest together, use **two entries**: ① **Transfer** (brokerage→liability) for **principal**; ② **Loan interest** on the **brokerage** for interest.
 
 Q: When is the loan considered paid off?
-A: When the liability **balance reaches zero** (overpayment is also treated as paid off). Total repayments including interest often exceed the original draw—this is normal.
+A: When the liability **Balance / Debt** reaches **zero** (negative balance from overpaid interest also counts as paid off). Total repayments including interest often exceed the original draw—this is normal.
 
 Q: Should I delete the account after payoff?
-A: No. Keep the account and history. At zero balance the "Dashboard" hides the debt section.
+A: No. Keep the account and history. At zero balance the "Dashboard" hides the **Credit & debt** section.
 
 Q: How does the dashboard look when there is debt?
-A: **Liability "Balance / Debt" column > 0** (principal owed): shows Credit & debt cards; main card shows **net worth** (total assets − total debt). **Column = 0**: debt section hidden; main card shows **total assets**.
+A: **Liability account Balance / Debt column > 0** (principal owed): shows **Credit & debt** cards; main card shows **net worth** (total assets − total debt). **Column = 0**: debt section hidden; main card shows **total assets**.
 
 ## 4. Frequently Asked Questions (FAQ)
 
 Q: How is the annualized return rate calculated?
-A: "Dashboard" **Annualized Return (XIRR)** is a money-weighted annualized return from dated deposits/withdrawals and current total assets—not the same as price-only CAGR. "Simulator" auto-query uses CAGR.
+A: "Dashboard" **Annualized Return (XIRR)** is a money-weighted annualized return from dated deposits/withdrawals and current total assets—not the same as price-only CAGR. "Simulator" **🔍 Auto Query** uses CAGR.
 
 Q: How to set the exchange rate?
-A: You can set the global USD/TWD exchange rate in the top right corner, or specify the current exchange rate when transferring funds.
+A: You can set the global USD/TWD exchange rate in the top right corner, or specify the current exchange rate when using **Transfer**.
 
 Q: What is the difference between guest and member?
-A: **Guests** can sign in and use "Dashboard", "Transactions", "Funds", "Accounts", "Stock Splits", "Simulator", and other basics; the Dashboard shows summary cards and holdings. **Members** also unlock the "Rebalance" menu plus cumulative P/L charts, allocation charts, market performance, dividend heatmap, and AI historical asset correction. Subscribe from "System".
+A: **Guests** can sign in and use "Dashboard", "Transactions", "Funds", "Accounts", "Stock Splits", "Simulator", and other basics; the Dashboard shows summary cards and holdings. **Members** also unlock the "Rebalance" menu plus cumulative P/L charts, allocation charts, market performance, dividend heatmap, and **AI Correct Historical Assets**. From "System", tap **Become Member** or **Open Subscription Plans**.
 
 Q: What are the benefits of membership?
 A: Members unlock rebalancing, advanced dashboard and allocation charts, market performance, dividend heatmap, and historical data analysis to better understand their investment results.
@@ -762,16 +786,16 @@ A: Check if the stock market is set correctly. If incorrect, select "Batch Updat
 Q: Why are stock prices and exchange rates different from the current prices obtained by clicking "AI Update Prices & Exchange Rates"?
 A: Stock prices and exchange rates are scraped from web current values, so the current values may lag by three to five minutes. Therefore, do not use them as references for buying and selling. It is recommended to use securities companies as the main reference for buying and selling. This software is only suitable for statistical asset functions, such as emergency funds, travel funds, retirement funds, fixed deposits, stocks and bonds, etc. It does not have securities trading functions. Additionally, investments have profits and losses. Remember to reserve emergency funds. Thank you for using.
 
-Q: How are "used / limit / utilization %" calculated?
-A: Shown only when the liability account **"Balance / Debt" column > 0**. **Used** = that column (principal owed from fund records). **Limit** = credit limit (same currency). **Utilization** = used ÷ limit × 100% (capped at 100%). No progress bar if limit is not set.
+Q: How are used, limit, and utilization % calculated on "Dashboard"?
+A: Shown only when the liability account **Balance / Debt column > 0**. **Used** = that column (principal owed from fund records). **Limit** = **Credit limit** (same currency). **Utilization** = used ÷ limit × 100% (capped at 100%). No progress bar if limit is not set.
 
-Q: How is "Est. next-month interest" calculated?
-A: **Est. next-month interest** = current balance × annual rate(%) ÷ 100 ÷ 12. Example: 2,000,000 owed at 2.2% → about **3,667** per month. Simple-interest estimate for a full month; banks may accrue daily or vary with repayments; @ shows the account annual rate.
+Q: How is **Est. next-month interest** calculated?
+A: **Est. next-month interest** = current balance × **Annual rate (%)** ÷ 100 ÷ 12. Example: 2,000,000 owed at 2.2% → about **3,667** per month. Simple-interest estimate for a full month; banks may accrue daily or vary with repayments; @ shows the account annual rate.
 
 Q: How does debt relate to net invested, XIRR, and net worth?
-A: **Debt draws/repayments** (liability↔brokerage transfers) count in **net invested** and **XIRR** (leverage); **loan interest** does not. **Total assets** = holdings + brokerage cash; **total debt** = sum of liability balances (converted); **net worth** = total assets − total debt. After balance reaches zero, debt cards and alerts hide, but historical draws/repayments remain in the net-invested breakdown. Interpret XIRR carefully if you used leverage.
+A: **Debt draws/repayments** (liability↔brokerage transfers) count in **net invested** and **XIRR** (leverage); **Loan interest** does not. **Total assets** = holdings + brokerage cash; **total debt** = sum of liability balances (converted); **net worth** = total assets − total debt. After balance reaches zero, **Credit & debt** cards and debt alerts hide, but historical draws/repayments remain in the net-invested breakdown. Interpret XIRR carefully if you used leverage.
 
-Q: What is the Dashboard "overseas income tax progress" section?
+Q: What is the Dashboard **Detailed Statistics** overseas income tax progress section?
 A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section shows an overseas income estimate (realized P/L and dividends from non-Taiwan markets), with reference thresholds at NT$1M (filing) and NT$6.7M (basic deduction) for minimum tax. **For tax planning reference only**—excludes other income such as insurance payouts; not tax advice.
 
 ## 5. Important Disclaimers

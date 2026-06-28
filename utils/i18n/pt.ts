@@ -583,136 +583,160 @@ export const pt: Translations = {
     documentation: 'Documentação',
     copyAll: 'Copiar tudo',
     copied: 'Copiado!',
-    print: 'Imprimir',
+    downloadPdf: 'Descarregar PDF',
+    pdfGenerating: 'A gerar PDF…',
+    pdfShareTitle: 'Manual TradeView',
+    pdfDownloadFailed: 'Não foi possível criar ou guardar o PDF. Tente novamente.',
+    pdfDownloadTextFallback: 'Falha no PDF; partilhado como texto (.txt) com o mesmo conteúdo.',
     confirmImport: 'Atenção: confirmar substituição dos dados?',
     confirmImportMessage: 'Está prestes a importar {fileName}.',
     confirmImportWarning: 'Os seus registos e definições atuais serão apagados e não podem ser revertidos.',
     confirmOverride: 'Confirmar substituição',
     documentationContent: `# Manual do utilizador TradeView
 
-> **Privacidade** :
-> Arquitetura offline-first. **Todos os dados ficam localmente no seu dispositivo** (app iOS/Android ou navegador), não em servidores. **Sem recolha de dados pessoais.**
+> **Privacidade e segurança** :
+> Este sistema adopta uma arquitectura offline-first. **Todos os dados de transação ficam armazenados localmente no seu dispositivo** (app iOS/Android ou navegador), sem envio para servidores. **Não há recolha de dados pessoais** — utilize com confiança.
 
 ## 1. Introdução
-TradeView é uma ferramenta de gestão de ativos para mercados de ações de vários países que ajuda os investidores a acompanhar mudanças de ativos, calcular retornos e gerir fluxos de fundos.
+TradeView é uma ferramenta de gestão de activos para mercados de acções de vários países, que ajuda investidores a acompanhar alterações de activos, calcular retornos e gerir fluxos de fundos.
 
 ## 2. Início rápido
-Siga esta ordem na primeira configuração (igual ao fluxo do menu hamburger « Contas → Fundos → Histórico → Painel »):
-1. **Criar conta**: Vá para « Contas » para adicionar sua conta bancária ou de corretagem.
-2. **Importar fundos**: Vá para « Fundos », toque em « + Adicionar registro », selecione o tipo « Depósito » para registar salário ou depósitos.
-3. **Adicionar transação**: Em « Histórico », toque em « + Adicionar registro » no canto superior direito para compra/venda de ações.
-4. **Ver relatórios**: Volte ao « Painel » para resumo; **membros** também têm gráficos P/L acumulado, alocação, desempenho de mercado e mapa de calor de dividendos.
+Siga esta ordem na primeira configuração (igual ao menu hamburger « Contas → Fundos → Histórico → Painel »):
+1. **Criar conta**: Vá a « Contas » para adicionar a sua conta bancária ou de corretagem.
+2. **Importar fundos**: Vá a « Fundos », toque em « + Adicionar registo », escolha **Depósito** para registar salário ou depósitos.
+3. **Adicionar transação**: Em « Histórico », toque em « + Adicionar registro » no canto superior direito para compras/vendas.
+4. **Ver relatórios**: Volte ao « Painel » para o resumo; **membros** também têm gráficos P/L acumulado, alocação, desempenho de mercado e mapa de calor de dividendos.
 
 ## 3. Funcionalidades detalhadas
 As secções abaixo seguem a ordem do menu hamburger (**convidado** e **membro** : visibilidade ligeiramente diferente ; ver FAQ).
 
 ### Painel
-« Painel » é a página inicial com cartões resumo e posições. **Membros** : gráficos P/L acumulado, alocação, desempenho de mercado e mapa de calor de dividendos. Com dívida em conta passivo, cartões **Crédito & dívida** (ver Q&A abaixo).
+« Painel » é a página inicial com cartões de resumo e detalhe de posições. **Membros** : gráficos P/L acumulado, diagrama de alocação, desempenho de mercado e mapa de calor de dividendos. Com dívida em conta passivo, cartões **Crédito & dívida** (ver Q&A abaixo).
 
-**Mapa de calor de dividendos (membros)** : para **Reinvestimento de dividendos (DRIP)** pendente, vá a « Histórico » e « + Adicionar registro »—não use **Adicionar ao histórico** no mapa (apenas dividendos em dinheiro).
+**Mapa de calor de dividendos (membros)** : para **Reinvestimento de dividendos (DRIP)** pendente, vá a « Histórico » e « + Adicionar registro » ; **não** clique em « Adicionar » na lista pendente (apenas dividendos em dinheiro).
 
 ### Histórico
-Registe compras, vendas, dividendos e transferências de ações. « + Adicionar registro » no canto superior direito ; « Atualizar mercados em lote » para várias transações.
+Registe compras, vendas, dividendos e transferências de acções. « + Adicionar registro » no canto superior direito ; « Atualizar mercados em lote » para várias transacções. Também **« Importação em lote »** e **« Limpar transações filtradas »**.
 
-**Tipos de transações**
-* **Buy/Sell** : Compra/venda geral.
-* **Reinvestimento de dividendos (DRIP)** : aumenta o número de ações.
+**Tipos de transacções**
+* **Buy/Sell** : compra/venda geral.
+* **Reinvestimento de dividendos (DRIP)** : dividendo em acções ou reinvestimento ; quantidade aumenta.
 * **Dividendo em dinheiro** : crédito em dinheiro ; saldo aumenta.
-* **Transferência saída** : transferência de ações de uma conta de corretagem.
-* **Transferência entrada** : transferência de ações para uma conta de corretagem.
+* **Transferência saída** : acções transferidas desta conta de corretagem.
+* **Transferência entrada** : acções transferidas para esta conta de corretagem.
 
-**Transferência de ações (Corretora A → Corretora B)**
-**Recomendado (de uma vez)** : « + Adicionar registro » → tipo **Transferência saída** → conta origem (A) → data, mercado, símbolo, quantidade → **conta de destino** (B) → **Confirmar e salvar**. A app grava **saída e entrada em par** ; entrada automática **taxas = 0**—taxas na **Saída**. Preço = custo médio (não preço de mercado).
+**Transferência de acções (Corretora A → Corretora B)**
+**Recomendado (de uma vez)** : « + Adicionar registro » → categoria **Transferência saída** → conta origem (A) → data, mercado, símbolo, quantidade → escolher **Conta de destino da transação** (B) → primeiro **« Salvar »**, depois na janela de confirmação **« Confirmar e salvar »**. A app cria **Transferência saída e Transferência entrada em simultâneo** ; a entrada automática tem **taxas = 0** — taxas na **Saída**. O preço predefinido é o custo médio dessa conta e activo ; use a base de custo, não o preço de mercado.
 
 ### Fundos
-« + Adicionar registro » para fluxos de caixa :
+Toque em « + Adicionar registo » para fluxos de caixa :
 * **Depósito** : entrada externa (ex. salário).
-* **Levantamento** : saída (ex. despesas).
-* **Transferência** : entre contas (ex. banco → corretagem).
+* **Levantamento** : saída (ex. despesas de vida).
+* **Transferência** : movimento entre contas (ex. banco → corretagem).
 * **Juros** : juros em depósitos ou corretagem.
-* **Juros de empréstimo** : despesa ; em **conta de corretagem** reduz caixa.
+* **Juros de empréstimo** : despesa de juros ; em **Corretagem (investimento)**, reduz caixa.
+
+Também **« Importação em lote »** e **« Limpar fundos filtrados »**.
 
 ### Contas
 Adicione ou edite contas bancárias ou de corretagem. **Tipo de conta** : **Corretagem (investimento)** ou **Passivo (dívida)** ; ver Q&A de crédito abaixo.
 
 ### Desdobramentos
-« Desdobramentos » regista eventos de split. Transações mantêm quantidades e preços registados ; splits ajustam posições e P/L a partir da data efetiva. Não registar duas vezes trades pós-split.
+A página « Desdobramentos » regista eventos de split. As transacções mantêm quantidades e preços registados ; os splits ajustam posições e P/L a partir da data efectiva. Se operações posteriores já usam quantidades pós-split, não registe novamente.
 
 ### Rebalanceamento (membros)
 « Rebalanceamento » define pesos-alvo : símbolos iguais fundidos ; marque **Ativar** para participantes. Pesos guardados automaticamente ou « Redefinir para pesos atuais ».
 
 ### Simulador
-« Simulador » compara retornos esperados de alocações. Introduza retornos anualizados e pesos ; « 🔍 Auto Query » obtém CAGR (diferente de **Retorno anualizado (XIRR)** no « Painel »). ⚠️ Desempenho passado ≠ resultados futuros. Apenas referência.
+« Simulador » compara retornos esperados de alocações. Introduza retornos anualizados e pesos ; « 🔍 Consulta automática » obtém CAGR (diferente de **Retorno anualizado (XIRR)** no « Painel »). ⚠️ Desempenho passado ≠ resultados futuros. Apenas referência.
 
 ### Crédito / passivo (Q&A)
 
-P: O que significa o saldo de uma conta passivo?
-R: **Capital em dívida** (quanto deve ao banco), não caixa disponível. Saldo zero = quitado.
+P: O que significa o **saldo** de uma conta passivo?
+R: Representa a **dívida actual** (quanto deve ao banco), não caixa disponível. Saldo zero = totalmente pago.
 
 P: Como criar uma conta passivo?
-R: « Contas » → **Tipo de conta** **Passivo (dívida)** → **Nome**, **Moeda**, **Taxa anual (%)**, **Limite de crédito** (opcional) → **Adicionar**. Saldo inicial **0**.
+R: « Contas » → **Tipo de conta** **Passivo (dívida)** → **Nome da conta**, **Moeda**, **Taxa anual (%)**, **Limite de crédito** (opcional) → « Adicionar ». Deixe saldo inicial **0**.
 
 P: Como registar desembolso bancário para corretagem?
-R: « Fundos » → **Transferência** → **passivo → corretagem** → valor. **Apenas um registo** ; sem **Depósito** extra no passivo.
+R: Significa que **o banco transfere fundos de crédito para a sua conta corrente de corretagem**. Use uma **Transferência** que reflecta **aumento da dívida no passivo** e **aumento de caixa na corretagem** (contabilizado no investimento líquido).
+
+**Passos** (« Fundos » → **+ Adicionar registo**) :
+1. **Tipo** **Transferência**
+2. **Conta de origem** **Passivo (dívida)**
+3. **Conta de destino** a **Corretagem (investimento)** que recebe
+4. Preencher **Data**, **Valor** (capital efectivamente transferido) ; se **moedas diferentes**, **Taxa de câmbio**
+5. Confirmar e guardar
+
+**Apenas este registo**. **Não** registe **Depósito** extra no passivo, senão a dívida é contada duas vezes. Em « passivo → corretagem », o formulário mostra « Desembolso: passivo → corretagem ; conta no investimento líquido. »
 
 P: Como registar amortização de capital?
-R: « Fundos » → **Transferência** → **corretagem → passivo** → valor = **só capital**.
+R: Significa **retirar caixa da corretagem para pagar capital do empréstimo** (sem juros). Use **Transferência** que reflecte **caixa corretagem a diminuir** e **dívida passivo a diminuir** (contabilizado no investimento líquido).
+
+**Passos** (« Fundos » → **+ Adicionar registo**) :
+1. **Tipo** **Transferência**
+2. **Conta de origem** a **Corretagem (investimento)** debitada
+3. **Conta de destino** **Passivo (dívida)**
+4. Preencher **Data**, **Valor** (só **capital** ; juros : pergunta seguinte) ; se **moedas diferentes**, **Taxa de câmbio**
+5. Confirmar e guardar
+
+**Não** use **Levantamento** para amortização. O saldo passivo segue só **capital** e deve chegar a **0**. Em « corretagem → passivo », o formulário mostra « Amortização: corretagem → passivo. »
 
 P: Onde registar juros de empréstimo?
-R: **Conta de corretagem**. « Fundos » → **Juros de empréstimo** → corretagem. Débito capital+juros : **dois registos** : ① Transferência (corretagem→passivo) **capital** ; ② Juros na **corretagem**.
+R: Na **Corretagem (investimento)**. « Fundos » → **Juros de empréstimo** → corretagem (lista só corretagem, sem passivo). Se o banco debita **capital + juros** : **dois registos** — ① **Transferência** (corretagem → passivo) para **capital** ; ② **Juros de empréstimo** na **corretagem** para juros.
 
 P: Quando o empréstimo está quitado?
-R: Quando **saldo = zero** (pagamento a mais = quitado).
+R: Quando o **saldo de dívida do passivo chega a zero** (saldo negativo = juros pagos a mais, considerado quitado). O total repago com juros costuma exceder o capital inicial — é normal.
 
 P: Eliminar conta após quitação?
-R: Não. Mantenha conta e histórico. Saldo zero oculta secção de dívida no painel.
+R: Não. Conta e histórico podem permanecer ; com saldo zero, o « Painel » oculta a secção de crédito.
 
-P: Como o painel mostra dívida?
-R: **Coluna « Saldo / Dívida » > 0** : cartões Crédito & passivo, **património líquido**. **Coluna = 0** : **ativo total**.
+P: Como o « Painel » mostra dívida?
+R: Se **Saldo / Dívida** do passivo **> 0** (capital em dívida) : cartões **Crédito & dívida**, cartão principal **Património líquido** (Patrimônio total − Dívida total). Se **= 0** : sem secção crédito, cartão principal **Patrimônio total**.
 
 ## 4. Perguntas frequentes (FAQ)
 
 P: Como é calculada a taxa de retorno anualizada?
-R: **Retorno anualizado (XIRR)** no « Painel » : TIR/XIRR ponderada por fluxos—≠ CAGR só de preço. « Simulador » : CAGR na consulta automática.
+R: **Retorno anualizado (XIRR)** no « Painel » : retorno anualizado ponderado por fluxos (depósitos/levantamentos e património total actual), fluxos irregulares — diferente do CAGR só de preço. « Simulador » : CAGR na consulta automática.
 
 P: Como definir a taxa de câmbio?
-R: Taxa USD/TWD global no canto superior direito ou taxa ao transferir fundos.
+R: Taxa USD/TWD global no canto superior direito, ou taxa actual ao **Transferência**.
 
 P: Diferença entre convidado e membro?
-R: **Convidados** : « Painel », « Histórico », « Fundos », « Contas », « Desdobramentos », « Simulador » e bases ; cartões resumo e posições. **Membros** : « Rebalanceamento », gráficos P/L acumulado, alocação, desempenho de mercado, mapa de dividendos, correção histórica IA. Subscreva em « Sistema ».
+R: **Convidados** : « Painel », « Histórico », « Fundos », « Contas », « Desdobramentos », « Simulador » e bases ; cartões resumo e posições. **Membros** : « Rebalanceamento », gráficos P/L acumulado, alocação, desempenho de mercado, mapa de dividendos e **AI Corrigir Ativos Históricos**. Em « Sistema » : **Tornar-se membro / Gerir assinatura** e **Abrir planos de assinatura**.
 
 P: Quais são os benefícios da adesão?
-R: Rebalanceamento, gráficos avançados do painel e alocação, desempenho de mercado, mapa de calor de dividendos e análise histórica.
+R: Menu « Rebalanceamento », gráficos avançados do painel e alocação, desempenho de mercado, mapa de calor de dividendos e análise histórica para compreender melhor os resultados.
 
 P: Armazenamento de dados e privacidade?
-R: **Dados totalmente locais.** Use regularmente « Descarregar backup (.json) » abaixo.
+R: Como indicado, **dados totalmente locais**, sem questões de dados pessoais. Para evitar perda por desinstalação, avaria ou apagamento, **use regularmente « Descarregar backup (.json) »** abaixo.
 
 P: Não consegue descarregar o ficheiro de backup?
-R: **App iOS/Android** : partilhe para Ficheiros, iCloud. **Web** no LINE : use Safari ou Chrome.
+R: **App iOS/Android** : « Descarregar backup (.json) » e partilhe para Ficheiros, iCloud ou outra cloud. **Web** no LINE : pop-ups bloqueados — Safari ou Chrome.
 
-P: Por que os preços das ações não podem ser atualizados?
-R: Verifique o mercado. Use « Atualizar mercados em lote » em « Histórico ».
+P: Por que os preços das acções não actualizam?
+R: Verifique o mercado ; se incorrecto, « Atualizar mercados em lote » em « Histórico ».
 
 P: Por que preços e taxas diferem de « AI Atualizar Preços e Taxas de Câmbio »?
-R: Valores web com atraso de 3–5 minutos. Não use para negociar ; referência estatística de ativos apenas, sem trading. Reserve fundos de emergência. Obrigado.
+R: Valores web podem atrasar três a cinco minutos. Não use para negociar ; referência principal na corretora. Software só para estatística de activos (reserva de emergência, viagem, reforma, depósitos, acções/obrigações), sem trading. Investimentos têm ganhos e perdas — reserve fundos de emergência. Obrigado.
 
-P: Como se calculam « usado / limite / utilização % »?
-R: Se **coluna « Saldo / Dívida » > 0**. **Usado** = capital em dívida. **Limite** = limite de crédito. **Utilização** = usado ÷ limite × 100 %.
+P: Como se calculam **Usado / limite / utilização**?
+R: Só se **Saldo / Dívida** do passivo **> 0**. **Usado** = esse valor (capital acumulado dos fluxos). **Limite** = **Limite de crédito** (mesma moeda). **Utilização** = usado ÷ limite × 100 % (máx. 100 %). Sem limite, sem barra de progresso.
 
-P: Como se calcula « Juros estimados do próximo mês »?
-R: Saldo × taxa anual(%) ÷ 100 ÷ 12. Ex. 2 000 000 @ 2,2 % → ~**3 667**/mês.
+P: Como se calcula **Juros estimados do próximo mês**?
+R: **Juros estimados do próximo mês** = saldo de dívida actual × taxa anual(%) ÷ 100 ÷ 12. Ex. : 2 000 000 de dívida a 2,2 % → 2 000 000 × 2,2 ÷ 100 ÷ 12 ≈ **3 667** / mês. Estimativa simples com capital constante ; banco pode calcular ao dia ; @ = taxa anual da conta.
 
 P: Relação entre crédito, investimento líquido, XIRR e património líquido?
-R: **Desembolsos/amortizações** entram em **investimento líquido** e **XIRR** ; **juros de empréstimo** não. **Património líquido** = ativo total − dívida total.
+R: **Desembolsos/amortizações** (passivo↔corretagem) contam em **investimento líquido** e **XIRR** (alavancagem) ; **juros de empréstimo** não. **Patrimônio total** = posições + caixa corretagem ; **Dívida total** = soma saldos passivo (convertidos) ; **Património líquido** = património total − dívida total. Com saldo zero, cartões e alertas ocultos ; histórico mantém-se no detalhe investimento líquido. Interprete XIRR com cuidado se usou alavancagem.
 
-P: O que é « progresso fiscal rendimentos no estrangeiro »?
-R: **Moeda base TWD** : **Estatísticas detalhadas** estima rendimentos no estrangeiro (1 M / 6,7 M TWD). **Apenas referência fiscal**.
+P: O que é **progresso fiscal rendimentos no estrangeiro** no « Painel »?
+R: Com **moeda base TWD**, **Estatísticas Detalhadas** mostra progresso da estimativa de rendimentos no estrangeiro (P/L realizado e dividendos fora de Taiwan), com limiares 1 M NT$ (declaração) e 6,7 M NT$ (dedução básica) para imposto mínimo. **Apenas referência fiscal** — exclui outros rendimentos (seguros, etc.) ; não é aconselhamento fiscal.
 
 ## 5. Avisos legais importantes
 
 **Aviso de risco de investimento** :
 - ⚠️ Os investimentos envolvem riscos. O desempenho passado não garante resultados futuros.
-- Esta aplicação fornece apenas funções de estatísticas e gestão de ativos e não fornece aconselhamento de investimento.
+- Esta aplicação fornece apenas funções de estatísticas e gestão de activos e não fornece aconselhamento de investimento.
 - Esta aplicação não possui funções de negociação de valores mobiliários e não pode realizar operações de compra/venda reais.
 - Todas as decisões de investimento devem ser tomadas pelo utilizador por sua própria conta e risco, e o utilizador assume todos os riscos relacionados.
 - Os utilizadores devem avaliar os riscos de investimento de forma independente e consultar consultores financeiros profissionais quando necessário.
@@ -723,8 +747,8 @@ R: **Moeda base TWD** : **Estatísticas detalhadas** estima rendimentos no estra
 - Os utilizadores devem tomar decisões de investimento com base nas suas próprias circunstâncias e são responsáveis por todas as decisões de investimento.
 
 **Precisão dos dados** :
-- Dados como preços das ações e taxas de câmbio fornecidos por esta aplicação podem diferir dos preços de mercado reais devido a atrasos na rede.
-- Os utilizadores não devem usar os dados desta aplicação como única base de referência para transações reais.
+- Dados como preços das acções e taxas de câmbio fornecidos por esta aplicação podem diferir dos preços de mercado reais devido a atrasos na rede.
+- Os utilizadores não devem usar os dados desta aplicação como única base de referência para transacções reais.
 - É recomendado referir-se a cotações em tempo real fornecidas por empresas de valores mobiliários ou instituições financeiras.`,
   },
   transactionForm: {

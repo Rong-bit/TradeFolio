@@ -556,149 +556,173 @@ holdings: {
     documentation: 'Dokumentation',
     copyAll: 'Alles kopieren',
     copied: 'Kopiert!',
-    print: 'Drucken',
+    downloadPdf: 'PDF herunterladen',
+    pdfGenerating: 'PDF wird erstellt…',
+    pdfShareTitle: 'TradeView Benutzerhandbuch',
+    pdfDownloadFailed: 'PDF konnte nicht erstellt oder gespeichert werden. Bitte erneut versuchen.',
+    pdfDownloadTextFallback: 'PDF-Export fehlgeschlagen; als Textdatei (.txt) mit gleichem Inhalt geteilt.',
     confirmImport: 'Achtung: Daten überschreiben?',
     confirmImportMessage: 'Sie importieren gleich {fileName}.',
     confirmImportWarning: 'Alle aktuellen Transaktionen und Einstellungen werden gelöscht und können nicht rückgängig gemacht werden.',
     confirmOverride: 'Überschreiben bestätigen',
     documentationContent: `# TradeView Benutzerhandbuch
 
-> **Datenschutz**:
-> Offline-First-Architektur. **Alle Daten werden nur lokal auf Ihrem Gerät gespeichert** (iOS/Android-App oder Desktop-Browser), nicht auf Servern. **Keine Erfassung personenbezogener Daten.**
+> **Datenschutz & Sicherheit** :
+> Dieses System nutzt eine Offline-First-Architektur. **Alle Transaktionsdaten werden ausschließlich lokal auf Ihrem Gerät gespeichert** (iOS-/Android-App oder Desktop-Browser) und nicht auf Server hochgeladen. **Es werden keine personenbezogenen Daten erhoben** — Sie können die App bedenkenlos nutzen.
 
-## 1. Einführung
-TradeView ist ein Vermögensverwaltungstool für Aktienmärkte weltweit, das Anlegern hilft, Vermögensänderungen zu verfolgen, Renditen zu berechnen und Geldströme zu verwalten.
+## 1. Systemübersicht
+TradeView ist ein Vermögensverwaltungstool für Aktienmärkte weltweit. Es hilft Anlegern, Vermögensänderungen zu verfolgen, Renditen zu berechnen und Geldströme zu verwalten.
 
 ## 2. Schnellstart
-Folgen Sie dieser Reihenfolge für die Ersteinrichtung (entspricht dem Ablauf im Hamburger-Menü „Konten → Fonds → Transaktionen → Uebersicht"):
-1. **Konto erstellen**: Gehen Sie zu „Konten", um Ihr Bank- oder Depotkonto hinzuzufügen.
-2. **Geld einzahlen**: Gehen Sie zu „Fonds", tippen Sie „+ Eintrag hinzufügen", wählen Sie Typ „Einzahlung", um Gehalt oder Einlagen im System zu erfassen.
-3. **Transaktion hinzufügen**: In „Transaktionen" oben rechts auf „+ Eintrag hinzufügen" tippen, um Kauf-/Verkaufsaufzeichnungen einzugeben.
-4. **Berichte anzeigen**: Zurück zu „Uebersicht" für Leistungsübersicht; **Mitglieder** erhalten zusätzlich kumulative P/L-Diagramme, Allokation, Marktperformance und Dividenden-Heatmap.
+Folgen Sie dieser Reihenfolge für die Ersteinrichtung (entspricht dem Hamburger-Menü „Konten → Fonds → Transaktionen → Uebersicht"):
+1. **Konto anlegen**: Gehen Sie zu „Konten" und fügen Sie Ihr Bank- oder Depotkonto hinzu.
+2. **Geld einzahlen**: Gehen Sie zu „Fonds", tippen Sie „+ Eintrag", wählen Sie **Einzahlung**, um Gehalt oder Einlagen zu erfassen.
+3. **Transaktion hinzufügen**: Gehen Sie zu „Transaktionen", tippen Sie oben rechts „+ Eintrag hinzufügen" und erfassen Sie Kauf-/Verkaufsdaten.
+4. **Berichte ansehen**: Zurück zur „Uebersicht" für die Leistungsübersicht; **Mitglieder** erhalten zusätzlich kumulative G/V-Diagramme, Allokation, Marktperformance und Dividenden-Heatmap.
 
 ## 3. Funktionen im Detail
-Die folgenden Abschnitte entsprechen der Reihenfolge im Hamburger-Menü (**Gast** und **Mitglied** unterscheiden sich leicht; siehe FAQ).
+Die folgenden Abschnitte folgen der Reihenfolge im Hamburger-Menü (**Gast** und **Mitglied** unterscheiden sich leicht; siehe FAQ).
 
 ### Uebersicht
-„Uebersicht" ist die Standard-Startseite mit Leistungsübersichtskarten und Beständen. **Mitglieder** erhalten zusätzlich kumulative P/L-Diagramme, Allokationsdiagramm, Marktperformance und Dividenden-Heatmap. Bei Schulden auf Verbindlichkeitskonten erscheinen **Kredit & Verbindlichkeiten**-Karten (siehe Kredit-Q&A unten).
+„Uebersicht" ist die Standard-Startseite mit Leistungsübersichtskarten und Bestandsdetails. **Mitglieder** erhalten zusätzlich kumulative G/V-Diagramme, Allokationsdiagramm, Marktperformance und Dividenden-Heatmap. Bei Schulden auf Verbindlichkeitskonten erscheinen Karten zu **Kredit & Verbindlichkeiten** (siehe Kredit-Q&A unten).
 
-**Dividenden-Heatmap (Mitglieder)**: Bei ausstehenden **Dividenden-Reinvestition (DRIP)**-Einträgen gehen Sie zu „Transaktionen" und tippen „+ Eintrag hinzufügen"—**nicht** „Hinzufügen" auf der Heatmap (nur für Bardividenden).
+**Dividenden-Heatmap (Mitglieder)**: Bei ausstehenden Einträgen vom Typ **Dividenden-Reinvestition (DRIP)** gehen Sie zu „Transaktionen" und tippen „+ Eintrag hinzufügen"; **nicht** „Hinzufügen" in der Heatmap-Liste (dieser Button gilt nur für Bardividenden).
 
 ### Transaktionen
-Erfassen Sie Käufe, Verkäufe, Dividenden und Aktienübertragungen. Oben rechts „+ Eintrag hinzufügen"; „Märkte stapelweise aktualisieren" passt Markteinstellungen für mehrere Transaktionen an.
+Erfassen Sie Käufe, Verkäufe, Dividenden und Aktienübertragungen. Oben rechts „+ Eintrag hinzufügen"; mit „Märkte stapelweise aktualisieren" passen Sie die Markteinstellung mehrerer Transaktionen auf einmal an. Außerdem **„Stapelimport"** und **„Gefilterte Transaktionen löschen"**.
 
 **Transaktionstypen**
-* **Buy/Sell**: Allgemeine Käufe/Verkäufe.
-* **Dividenden-Reinvestition (DRIP)**: Erhöht die Stückzahl (Aktiendividende/Reinvestition).
-* **Bardividende**: Geld wird gutgeschrieben; Kontostand steigt.
-* **Ausbuchung**: Aktienübertragung aus einem Depotkonto.
-* **Einbuchung**: Aktienübertragung in ein Depotkonto.
+* **Buy/Sell**: Allgemeine Käufe und Verkäufe.
+* **Dividenden-Reinvestition (DRIP)**: Aktiendividende oder Reinvestition; Stückzahl steigt.
+* **Bardividende**: Bardividende; Kontostand steigt.
+* **Ausbuchung**: Aktien werden aus diesem Depotkonto übertragen.
+* **Einbuchung**: Aktien werden in dieses Depotkonto übertragen.
 
 **Aktienübertragung (Depot A → Depot B)**
-**Empfohlen (ein Schritt)**: „+ Eintrag hinzufügen" → Typ **Ausbuchung** → Konto = Quelle (A) → Datum, Markt, Symbol, Stückzahl → **Zielkonto** (B) wählen → **Bestätigen & Speichern**. Die App legt **Ausbuchung und Einbuchung paarweise** an; die automatisch erzeugte Einbuchung hat **Gebühren = 0**—Übertragungsgebühren nur bei der **Ausbuchung** erfassen. Preis = durchschnittliche Anschaffungskosten (nicht Marktpreis).
+**Empfohlen (ein Schritt)**: „+ Eintrag hinzufügen" → Kategorie **Ausbuchung** → Konto = Quelle (A) → Datum, Markt, Symbol, Stückzahl ausfüllen → **Zielkonto** (B) wählen → zuerst **„Transaktion speichern"**, dann im Bestätigungsdialog **„Bestätigen & Speichern"**. Das System legt **Ausbuchung und Einbuchung gleichzeitig** an; die automatisch erzeugte Einbuchung hat **Gebühren = 0** — Übertragungsgebühren nur bei der **Ausbuchung** erfassen. Der Preis entspricht standardmäßig den durchschnittlichen Anschaffungskosten dieses Kontos und Wertpapiers; Kostenbasis verwenden, nicht den Marktpreis.
 
 ### Fonds
-„+ Eintrag hinzufügen" für Geldflüsse. Kategorien:
-* **Einzahlung**: Externer Geldzufluss (z.B. Gehalt).
-* **Auszahlung**: Geldabfluss (z.B. Lebenshaltungskosten).
-* **Überweisung**: Geldbewegung zwischen Konten (z.B. Bank zu Depotkonto).
+Tippen Sie „+ Eintrag", um Geldflüsse zu erfassen. Kategorien:
+* **Einzahlung**: Externer Zufluss (z. B. Gehalt).
+* **Auszahlung**: Abfluss (z. B. Lebenshaltungskosten).
+* **Überweisung**: Geldbewegung zwischen Konten (z. B. Bank → Depot).
 * **Zinsen**: Zinsen auf Einlagen oder Depotkonten.
-* **Kreditzinsen**: Zinsaufwand; auf **Depotkonto** gebucht mindert es Bargeld.
+* **Kreditzinsen**: Kreditzinsen; auf **Depot (Anlage)** gebucht, mindert Bargeld.
+
+Außerdem **„Import"** und **„Gefilterte Fonds löschen"**.
 
 ### Konten
 Bank- oder Depotkonten hinzufügen oder bearbeiten. **Kontotyp** kann **Depot (Anlage)** oder **Verbindlichkeit (Kredit)** sein; siehe Kredit-Q&A unten.
 
 ### Aktiensplits
-Auf „Aktiensplits" Split-Ereignisse erfassen. Transaktionen behalten erfasste Stückzahlen und Preise; Splits passen Bestände und G/V ab dem Wirksamkeitsdatum an. Nach-Split-Trades nicht doppelt mit angepassten Stückzahlen erfassen.
+Auf der Seite „Aktiensplits" können Split-Ereignisse erfasst werden. Transaktionen behalten die damals erfassten Stückzahlen und Preise; Splits passen Bestände und G/V ab dem Wirksamkeitsdatum automatisch an. Wenn spätere Trades bereits mit gesplitteten Stückzahlen erfasst wurden, nicht erneut anlegen.
 
 ### Rebalancing (Mitglieder)
-„Rebalancing" setzt Zielgewichte je Wertpapier: gleiche Namen werden automatisch zusammengeführt; Spalte **Aktivieren** wählt Teilnehmer. Zielgewichte werden automatisch gespeichert, oder „Auf aktuelle Gewichte zurücksetzen" für schnellen Reset.
+„Rebalancing" setzt Zielgewichte je Wertpapier: gleiche Namen werden automatisch zusammengeführt; Spalte **Aktivieren** wählt die Teilnehmer. Zielgewichte werden automatisch gespeichert; alternativ „Auf aktuelle Gewichte zurücksetzen".
 
 ### Simulation
-„Simulation" vergleicht erwartete Renditen verschiedener Allokationen. Jahresrendite-Annahmen und Gewichte eingeben; „🔍 Auto Query" liefert CAGR (anders als **Annualisierte Rendite (XIRR)** in „Uebersicht"). ⚠️ Vergangene Performance garantiert keine zukünftigen Ergebnisse. Nur zur Referenz.
+„Simulation" vergleicht erwartete Renditen verschiedener Allokationen. Jahresrendite-Annahmen und Gewichte eingeben; „🔍 Automatische Abfrage" liefert CAGR (anders als **Annualisierte Rendite (XIRR)** in der „Uebersicht"). ⚠️ Vergangene Performance garantiert keine zukünftigen Ergebnisse. Nur zur Referenz.
 
 ### Kredit / Verbindlichkeiten (Q&A)
 
-Q: Was bedeutet der Saldo eines Verbindlichkeitskontos?
-A: **Geschuldetes Kapital** (wie viel Sie der Bank schulden), nicht verfügbares Bargeld. Saldo null = getilgt.
+Q: Was bedeutet der **Saldo** eines Verbindlichkeitskontos?
+A: Er steht für die **aktuelle Schuld** (wie viel Sie der Bank schulden), nicht für verfügbares Bargeld. Saldo null = vollständig getilgt.
 
 Q: Wie lege ich ein Verbindlichkeitskonto an?
-A: „Konten" → **Kontotyp** **Verbindlichkeit (Kredit)** → **Kontoname**, **Währung**, **Jahreszins (%)**, **Kreditlimit** (optional) → **Hinzufügen**. Anfangssaldo **0**.
+A: „Konten" → **Kontotyp** **Verbindlichkeit (Kredit)** → **Kontoname**, **Währung**, **Jahreszins (%)**, **Kreditlimit** (optional) → „Hinzufügen". Anfangssaldo **0** belassen.
 
 Q: Wie erfasse ich eine Bankauszahlung aufs Depot?
-A: „Fonds" → **Überweisung** → **Verbindlichkeit → Depot** → Auszahlungsbetrag. **Nur ein Eintrag**; kein zusätzliches **Einzahlung** auf dem Verbindlichkeitskonto (Doppelzählung vermeiden).
+A: Das bedeutet, dass **die Bank Kreditmittel auf Ihr Depot-Giro überweist**. Erfassen Sie es mit einer **Überweisung**, die gleichzeitig **steigende Schuld auf dem Verbindlichkeitskonto** und **steigendes Bargeld auf dem Depot** abbildet (und in die Nettoinvestition einfließt).
+
+**Schritte** („Fonds" → **+ Eintrag**):
+1. **Typ** **Überweisung** wählen
+2. **Von Konto** **Verbindlichkeit (Kredit)** wählen
+3. **Zielkonto** das empfangende **Depot (Anlage)** wählen
+4. **Datum**, **Betrag** (entspricht dem tatsächlich überwiesenen Kapital) ausfüllen; bei **unterschiedlicher Währung** **Kurs** angeben
+5. Bestätigen und speichern
+
+**Nur dieser eine Eintrag**. **Keine** zusätzliche **Einzahlung** auf dem Verbindlichkeitskonto — sonst wird die Schuld doppelt gezählt. Bei „Verbindlichkeit → Depot" erscheint der Hinweis „Kreditauszahlung: Verbindlichkeit → Depot; zählt zur Nettoinvestition."
 
 Q: Wie erfasse ich Tilgung?
-A: „Fonds" → **Überweisung** → **Depot → Verbindlichkeit** → Betrag = **nur Tilgung**. Der Saldo verfolgt nur Kapital und sollte bei Tilgung null sein.
+A: Das bedeutet, **Bargeld vom Depot zur Rückzahlung des Kreditkapitals** (ohne Zinsen). Erfassen Sie es mit einer **Überweisung**, die **sinkendes Depot-Bargeld** und **sinkende Schuld** abbildet (und in die Nettoinvestition einfließt).
+
+**Schritte** („Fonds" → **+ Eintrag**):
+1. **Typ** **Überweisung** wählen
+2. **Von Konto** das belastete **Depot (Anlage)** wählen
+3. **Zielkonto** **Verbindlichkeit (Kredit)** wählen
+4. **Datum**, **Betrag** (nur **Kapital**; Zinsen siehe nächste Frage) ausfüllen; bei **unterschiedlicher Währung** **Kurs** angeben
+5. Bestätigen und speichern
+
+**Nicht** **Auszahlung** für Tilgung verwenden. Der Verbindlichkeitssaldo verfolgt nur **Kapital** und sollte nach Tilgung **0** sein. Bei „Depot → Verbindlichkeit" erscheint der Hinweis „Kredittilgung: Depot → Verbindlichkeit."
 
 Q: Wo erfasse ich Kreditzinsen?
-A: **Depotkonto**. „Fonds" → **Kreditzinsen** → Depot wählen (nur Depotkonten in der Liste). Bei Bankabbuchung **Tilgung+Zinsen** **zwei Einträge**: ① Überweisung (Depot→Verbindlichkeit) **Tilgung**; ② Kreditzinsen auf **Depot** für Zinsen.
+A: Auf dem **Depot (Anlage)**. „Fonds" → **Kreditzinsen** → Depot wählen (Dropdown nur Depotkonten, ohne Verbindlichkeit). Wenn die Bank **Kapital + Zinsen** zusammen abbucht: **zwei Einträge** — ① **Überweisung** (Depot → Verbindlichkeit) für **Kapital**; ② **Kreditzinsen** auf dem **Depot** für Zinsen.
 
 Q: Wann gilt der Kredit als getilgt?
-A: Wenn der **Saldo null** ist (Überzahlung gilt ebenfalls als getilgt). Gesamtrückzahlung inkl. Zinsen übersteigt oft die ursprüngliche Auszahlung—normal.
+A: Maßgeblich ist, ob der **Schuldsaldo des Verbindlichkeitskontos null** ist (negativer Saldo = zu viel Zinsen gezahlt, gilt ebenfalls als abgeschlossen). Die Gesamtrückzahlung inkl. Zinsen übersteigt oft das ursprüngliche Kapital — das ist normal.
 
 Q: Konto nach Tilgung löschen?
-A: Nein. Konto und Verlauf behalten. Bei Saldo null blendet „Uebersicht" den Schuldbereich aus.
+A: Nein. Konto und Verlauf können bleiben; bei Saldo 0 blendet die „Uebersicht" den Kreditbereich aus.
 
-Q: Dashboard bei offener Schuld?
-A: **Spalte „Saldo / Schuld" > 0** (geschuldetes Kapital): Karten **Kredit & Verbindlichkeiten**, Hauptkarte **Reinvermögen** (Gesamtvermögen − Gesamtschuld). **Spalte = 0**: Schuldbereich aus, Hauptkarte **Gesamtvermögen**.
+Q: Wie zeigt die „Uebersicht" offene Schulden?
+A: Wenn **Saldo / Schuld** des Verbindlichkeitskontos **> 0** (geschuldetes Kapital): Karten **Kredit & Verbindlichkeiten**, Hauptkarte **Reinvermögen** (Gesamtvermögen − Gesamtschuld). Bei **= 0**: kein Kreditbereich, Hauptkarte **Gesamtvermögen**.
 
 ## 4. Häufig gestellte Fragen (FAQ)
 
 Q: Wie wird die annualisierte Rendite berechnet?
-A: **Annualisierte Rendite (XIRR)** in „Uebersicht" ist eine geldgewichtete Rendite aus datierten Ein-/Auszahlungen und aktuellem Gesamtvermögen—nicht dasselbe wie preisbasierte CAGR. „Simulation" verwendet bei Auto-Abfrage CAGR.
+A: **Annualisierte Rendite (XIRR)** in der „Uebersicht" ist eine geldgewichtete Jahresrendite aus Ein-/Auszahlungen und aktuellem Gesamtvermögen (unregelmäßige Cashflows) — anders als reine Kurs-CAGR. „Simulation" liefert bei automatischer Abfrage CAGR.
 
-Q: Wie wird der Wechselkurs festgelegt?
-A: Globalen USD/TWD-Wechselkurs oben rechts festlegen oder beim Überweisen den aktuellen Wechselkurs angeben.
+Q: Wie stelle ich den Wechselkurs ein?
+A: Globalen USD/TWD-Wechselkurs oben rechts festlegen oder beim **Überweisung** den aktuellen Kurs angeben.
 
 Q: Unterschied zwischen Gast und Mitglied?
-A: **Gäste** nutzen „Uebersicht", „Transaktionen", „Fonds", „Konten", „Aktiensplits", „Simulation" und weitere Grundlagen; Dashboard zeigt Übersichtskarten und Bestände. **Mitglieder** erhalten zusätzlich „Rebalancing" sowie kumulative P/L-Diagramme, Allokation, Marktperformance, Dividenden-Heatmap und KI-Historienkorrektur. Abo unter „Hilfe".
+A: **Gäste** nutzen „Uebersicht", „Transaktionen", „Fonds", „Konten", „Aktiensplits", „Simulation" und weitere Grundlagen; die Uebersicht zeigt Leistungskarten und Bestände. **Mitglieder** erhalten zusätzlich „Rebalancing" sowie kumulative G/V-Diagramme, Allokation, Marktperformance, Dividenden-Heatmap und **KI korrigiert historische Vermögenswerte**. Unter „Hilfe" **Mitglied werden / Abo verwalten** und **Abo-Pläne öffnen**.
 
 Q: Was sind die Vorteile einer Mitgliedschaft?
-A: Mitglieder erhalten Rebalancing, erweiterte Dashboard- und Allokationsdiagramme, Marktperformance, Dividenden-Heatmap und historische Datenanalyse, um Anlageergebnisse besser zu verstehen.
+A: Zusätzliche Menüpunkte wie „Rebalancing", erweiterte „Uebersicht"-Diagramme, Marktperformance, Dividenden-Heatmap und historische Analysen helfen, Anlageergebnisse besser zu verstehen.
 
 Q: Datenspeicherung und Datenschutz?
-A: **Daten werden vollständig lokal auf Ihrem Gerät gespeichert.** Zum Schutz vor App-Deinstallation, Geräteausfall oder Datenverlust **regelmäßig „Backup herunterladen (.json)"** nutzen und JSON-Dateien speichern.
+A: Wie oben: **Daten liegen vollständig lokal auf Ihrem Gerät**, ohne Personenbezug. Zum Schutz vor Deinstallation, Geräteausfall oder Datenverlust **regelmäßig „Backup herunterladen (.json)"** nutzen und JSON-Dateien sichern.
 
-Q: Kann die Sicherungsdatei nicht heruntergeladen werden?
-A: **iOS/Android-App**: „Backup herunterladen (.json)" und über das Teilen-Menü in „Dateien", iCloud o. Ä. speichern. **Webversion** in LINE kann Pop-ups blockieren—Safari oder Chrome verwenden.
+Q: Backup-Datei lässt sich nicht herunterladen?
+A: **iOS-/Android-App**: „Backup herunterladen (.json)" und über das Teilen-Menü in „Dateien", iCloud oder andere Cloud speichern. **Webversion** in LINE kann Pop-ups blockieren — Safari oder Chrome verwenden.
 
-Q: Warum können Aktienkurse nicht aktualisiert werden?
-A: Markteinstellung prüfen. Wenn falsch, „Märkte stapelweise aktualisieren" in „Transaktionen" wählen.
+Q: Warum lassen sich Kurse nicht aktualisieren?
+A: Marktzuordnung prüfen; bei Fehler in „Transaktionen" **Märkte stapelweise aktualisieren** nutzen.
 
-Q: Warum unterscheiden sich Aktienkurse und Wechselkurse von den Werten bei „KI aktualisiert Kurse & Wechselkurse"?
-A: Kurse werden aus Web-Aktualwerten gelesen und können drei bis fünf Minuten verzögert sein. Nicht als Referenz für Kauf/Verkauf verwenden; Wertpapierfirmen als Hauptreferenz nutzen. Diese Software dient nur der Vermögensstatistik (Notfallreserven, Reisefonds, Rente, Festgeld, Aktien/Anleihen usw.), ohne Wertpapierhandel. Investitionen haben Gewinne und Verluste—Notfallreserven einplanen. Vielen Dank für Ihre Nutzung.
+Q: Warum weichen Kurse und Wechselkurse von „KI aktualisiert Kurse & Wechselkurse" ab?
+A: Kurse stammen aus Web-Aktualwerten und können drei bis fünf Minuten verzögert sein. Nicht als Handelsreferenz verwenden; Broker als Hauptreferenz nutzen. Diese App dient nur der Vermögensstatistik (Notfallreserve, Reisefonds, Rente, Festgeld, Aktien/Anleihen usw.) ohne Wertpapierhandel. Investitionen bergen Gewinn und Verlust — Notfallreserve einplanen. Vielen Dank.
 
-Q: Wie werden „genutzt / Limit / Auslastung %" berechnet?
-A: Nur wenn **Spalte „Saldo / Schuld" > 0** für das Verbindlichkeitskonto. **Genutzt** = dieser Wert (Kapital aus Fondsbuchungen). **Limit** = Kreditlimit (gleiche Währung). **Auslastung** = genutzt ÷ Limit × 100 % (max. 100 %). Ohne Limit keine Fortschrittsanzeige.
+Q: Wie werden **Genutzt / Limit / Auslastung** berechnet?
+A: Nur wenn **Saldo / Schuld** des Verbindlichkeitskontos **> 0**. **Genutzt** = dieser Wert (kumuliertes Kapital aus Fondsbuchungen). **Limit** = **Kreditlimit** (gleiche Währung). **Auslastung** = Genutzt ÷ Limit × 100 % (max. 100 %). Ohne Limit keine Fortschrittsanzeige.
 
-Q: Wie wird „Geschätzte Zinsen nächsten Monat" berechnet?
-A: **Monatszins** = aktueller Saldo × Jahreszins(%) ÷ 100 ÷ 12. Beispiel: 2.000.000 bei 2,2 % → ca. **3.667** pro Monat. Einfache Schätzung; Bank kann abweichen. @ = Jahreszins des Kontos.
+Q: Wie wird **Geschätzte Zinsen nächsten Monat** berechnet?
+A: **Geschätzte Zinsen nächsten Monat** = aktueller Schuldsaldo × Jahreszins(%) ÷ 100 ÷ 12. Beispiel: 2.000.000 Schuld, 2,2 % → 2.000.000 × 2,2 ÷ 100 ÷ 12 ≈ **3.667** pro Monat. Einfache Schätzung bei unverändertem Kapital; Banken können täglich verzinsen oder Tilgungen berücksichtigen; @ = Kontozins.
 
 Q: Zusammenhang Kredit, Nettoinvestition, XIRR und Reinvermögen?
-A: **Auszahlung/Tilgung** (Verbindlichkeit↔Depot) zählt zu **Nettoinvestition** und **XIRR** (Hebel); **Kreditzinsen** nicht. **Gesamtvermögen** = Bestände + Depot-Bargeld; **Gesamtschuld** = Summe der Verbindlichkeitssalden (umgerechnet); **Reinvermögen** = Gesamtvermögen − Gesamtschuld. Bei Saldo null werden Schuldkarten ausgeblendet, Verlauf bleibt in der Nettoinvestitions-Aufstellung. XIRR bei früherem Fremdkapital vorsichtig interpretieren.
+A: **Kreditauszahlung/Tilgung** (Verbindlichkeit↔Depot) zählt zu **Nettoinvestition** und **XIRR** (Hebel); **Kreditzinsen** nicht. **Gesamtvermögen** = Wertpapiere + Depot-Bargeld; **Gesamtschuld** = Summe der Verbindlichkeitssalden (umgerechnet); **Reinvermögen** = Gesamtvermögen − Gesamtschuld. Nach Saldo null werden Kreditkarten und Schuldwarnungen ausgeblendet; historische Auszahlungen/Tilgungen bleiben in der Nettoinvestitions-Aufstellung. XIRR bei früherem Fremdkapital vorsichtig interpretieren.
 
-Q: Was ist „Fortschritt Auslandssteuer" im Dashboard?
-A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistik** eine Schätzung ausländischer Einkünfte (realisierte P/L und Dividenden außerhalb Taiwans) mit Referenzschwellen 1 Mio. NT$ (Meldepflicht) und 6,7 Mio. NT$ (Grundfreibetrag) für Mindeststeuer. **Nur zur Steuerplanung**—ohne Versicherungsleistungen etc.; keine Steuerberatung.
+Q: Was ist der **Fortschritt Auslandssteuer** in der „Uebersicht"?
+A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistiken** den Fortschritt der Schätzung ausländischer Einkünfte (realisierte G/V und Dividenden außerhalb Taiwans) mit Referenzschwellen 1 Mio. NT$ (Meldepflicht) und 6,7 Mio. NT$ (Grundfreibetrag) für Mindeststeuer. **Nur zur Steuerplanung** — ohne Versicherungsleistungen usw.; keine Steuerberatung.
 
 ## 5. Wichtige Haftungsausschlüsse
 
 **Anlagerisikowarnung**:
-- ⚠️ Investitionen bergen Risiken. Die vergangene Leistung garantiert keine zukünftigen Ergebnisse.
-- Diese Anwendung bietet nur Funktionen zur Vermögensstatistik und -verwaltung und bietet keine Anlageberatung.
-- Diese Anwendung verfügt nicht über Wertpapierhandelsfunktionen und kann keine tatsächlichen Kauf-/Verkaufsoperationen durchführen.
-- Alle Investitionsentscheidungen sollten vom Benutzer selbst getroffen werden, und der Benutzer trägt alle damit verbundenen Risiken.
-- Benutzer sollten Anlagerisiken selbst bewerten und bei Bedarf professionelle Finanzberater konsultieren.
+- ⚠️ Investitionen bergen Risiken. Vergangene Performance garantiert keine zukünftigen Ergebnisse.
+- Diese Anwendung bietet nur Vermögensstatistik und -verwaltung, keine Anlageberatung.
+- Diese Anwendung hat keine Wertpapierhandelsfunktion und kann keine Kauf-/Verkaufsgeschäfte ausführen.
+- Alle Investitionsentscheidungen treffen Nutzer selbst und tragen die damit verbundenen Risiken.
+- Nutzer sollten Risiken selbst bewerten und bei Bedarf professionelle Finanzberater konsultieren.
 
-**Keine Anlageberatungserklärung**:
-- Alle von dieser Anwendung bereitgestellten Informationen, Analysen, Diagramme und KI-Empfehlungen dienen nur als Referenz und stellen keine Anlageberatung dar.
-- Diese Anwendung garantiert keine Investitionsergebnisse oder Renditen.
-- Benutzer sollten Investitionsentscheidungen basierend auf ihren eigenen Umständen treffen und für alle Investitionsentscheidungen verantwortlich sein.
+**Keine Anlageberatung**:
+- Alle Informationen, Analysen, Diagramme und KI-Vorschläge dienen nur als Referenz und sind keine Anlageberatung.
+- Diese Anwendung garantiert keine Anlageergebnisse oder Renditen.
+- Nutzer treffen Entscheidungen nach eigener Situation und sind für alle Anlageentscheidungen verantwortlich.
 
 **Datengenauigkeit**:
-- Von dieser Anwendung bereitgestellte Daten wie Aktienkurse und Wechselkurse können aufgrund von Netzwerkverzögerungen von den tatsächlichen Marktpreisen abweichen.
-- Benutzer sollten die Daten dieser Anwendung nicht als einzige Referenzbasis für tatsächliche Transaktionen verwenden.
-- Es wird empfohlen, sich an Echtzeitkurse zu halten, die von Wertpapierfirmen oder Finanzinstituten bereitgestellt werden.`,
+- Kurse und Wechselkurse können durch Netzwerkverzögerung von Marktpreisen abweichen.
+- Daten dieser Anwendung nicht als alleinige Handelsreferenz verwenden.
+- Echtzeitkurse von Brokern oder Finanzinstituten als maßgeblich betrachten.`,
   },
   transactionForm: {
     ...en.transactionForm,

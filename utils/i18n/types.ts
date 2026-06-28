@@ -692,7 +692,11 @@ export interface Translations {
     documentation: string;
     copyAll: string;
     copied: string;
-    print: string;
+    downloadPdf: string;
+    pdfGenerating: string;
+    pdfShareTitle: string;
+    pdfDownloadFailed: string;
+    pdfDownloadTextFallback: string;
     confirmImport: string;
     confirmImportMessage: string;
     confirmImportWarning: string;

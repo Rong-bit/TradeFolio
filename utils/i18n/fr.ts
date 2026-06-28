@@ -584,130 +584,154 @@ export const fr: Translations = {
     documentation: 'Guide utilisateur',
     copyAll: 'Tout copier',
     copied: 'Copié !',
-    print: 'Imprimer',
+    downloadPdf: 'Télécharger le PDF',
+    pdfGenerating: 'Génération du PDF…',
+    pdfShareTitle: 'Manuel TradeView',
+    pdfDownloadFailed: 'Impossible de créer ou enregistrer le PDF. Veuillez réessayer.',
+    pdfDownloadTextFallback: 'Échec du PDF ; partage en texte (.txt) avec le même contenu.',
     confirmImport: 'Attention : confirmer l\'écrasement des données ?',
     confirmImportMessage: 'Vous allez importer {fileName}.',
     confirmImportWarning: 'Vos transactions et paramètres actuels seront effacés de façon irréversible.',
     confirmOverride: 'Confirmer l\'écrasement',
     documentationContent: `# Manuel TradeView
 
-> **Confidentialité** :
-> Architecture hors ligne. **Toutes les données sont stockées localement sur votre appareil** (app iOS/Android ou navigateur), pas sur des serveurs. **Aucune collecte de données personnelles.**
+> **Confidentialité et sécurité** :
+> Ce système adopte une architecture hors ligne. **Toutes les données de transaction sont stockées localement sur votre appareil** (app iOS/Android ou navigateur), sans envoi vers un serveur. **Aucune collecte de données personnelles** — utilisez l'application en toute confiance.
 
 ## 1. Présentation
-TradeView est un outil de gestion d'actifs pour les marchés boursiers internationaux qui aide les investisseurs à suivre les changements d'actifs, calculer les rendements et gérer les flux de fonds.
+TradeView est un outil de gestion d'actifs pour les marchés boursiers internationaux, qui aide les investisseurs à suivre l'évolution de leurs actifs, calculer les rendements et gérer les flux de trésorerie.
 
 ## 2. Démarrage rapide
-Suivez cet ordre pour la première configuration (identique au parcours du menu hamburger « Comptes → Fonds → Historique → Tableau de bord ») :
+Suivez cet ordre pour la première configuration (identique au menu hamburger « Comptes → Fonds → Historique → Tableau de bord ») :
 1. **Créer un compte** : Allez dans « Comptes » pour ajouter votre compte bancaire ou de courtage.
-2. **Importer des fonds** : Allez dans « Fonds », appuyez sur « + Ajouter un enregistrement », sélectionnez le type « Dépôt » pour enregistrer votre salaire ou vos dépôts dans le système.
-3. **Ajouter une transaction** : Dans « Historique », appuyez sur « + Ajouter un enregistrement » en haut à droite pour saisir les achats/ventes d'actions.
-4. **Voir les rapports** : Retournez au « Tableau de bord » pour le résumé ; les **membres** ont aussi graphiques P/L cumulé, allocation, performance marché et carte thermique des dividendes.
+2. **Importer des fonds** : Allez dans « Fonds », appuyez sur « + Ajouter un enregistrement », choisissez **Dépôt** pour enregistrer salaire ou dépôts.
+3. **Ajouter une transaction** : Dans « Historique », appuyez sur « + Ajouter un enregistrement » en haut à droite pour saisir achats/ventes.
+4. **Consulter les rapports** : Retournez au « Tableau de bord » pour le résumé ; les **membres** ont aussi graphiques P/L cumulé, allocation, performance marché et carte thermique des dividendes.
 
 ## 3. Fonctions détaillées
 Les sections ci-dessous suivent l'ordre du menu hamburger (**invité** et **membre** : visibilité légèrement différente ; voir FAQ).
 
 ### Tableau de bord
-« Tableau de bord » est la page d'accueil par défaut avec cartes résumé et positions. **Membres** : graphiques P/L cumulé, allocation, performance marché et carte thermique des dividendes. En cas de dette sur compte passif, cartes **Crédit & passif** (voir Q&R crédit ci-dessous).
+« Tableau de bord » est la page d'accueil par défaut avec cartes résumé et détail des positions. **Membres** : graphiques P/L cumulé, diagramme d'allocation, performance marché et carte thermique des dividendes. En cas de dette sur compte passif, cartes **Crédit & passif** (voir Q&R crédit ci-dessous).
 
-**Carte thermique des dividendes (membres)** : pour un **Réinvestissement des dividendes (DRIP)** en attente, allez dans « Historique » et « + Ajouter un enregistrement »—ne pas utiliser **Ajouter aux transactions** sur la carte (réservé aux dividendes en espèces).
+**Carte thermique des dividendes (membres)** : pour un **Réinvestissement des dividendes (DRIP)** en attente, allez dans « Historique » et « + Ajouter un enregistrement » ; **ne pas** appuyer sur « Ajouter » dans la liste en attente (réservé aux dividendes en espèces).
 
 ### Historique
-Enregistrez achats, ventes, dividendes et transferts d'actions. « + Ajouter un enregistrement » en haut à droite ; « Mise à jour groupée des marchés » pour ajuster plusieurs transactions.
+Enregistrez achats, ventes, dividendes et transferts d'actions. « + Ajouter un enregistrement » en haut à droite ; « Mise à jour groupée des marchés » pour ajuster plusieurs transactions. Vous pouvez aussi **« Import groupé »** et **« Effacer les transactions filtrées »**.
 
 **Types de transactions**
-* **Buy/Sell** : Achat/vente général.
-* **Réinvestissement des dividendes (DRIP)** : augmente le nombre d'actions (dividende en actions ou réinvestissement).
-* **Dividende en espèces** : crédit en espèces ; le solde augmente.
-* **Transfert sortant** : transfert d'actions hors d'un compte de courtage.
-* **Transfert entrant** : transfert d'actions dans un compte de courtage.
+* **Buy/Sell** : achat/vente général.
+* **Réinvestissement des dividendes (DRIP)** : dividende en actions ou réinvestissement ; quantité augmente.
+* **Dividende en espèces** : crédit en espèces ; solde augmente.
+* **Transfert sortant** : actions transférées hors de ce compte de courtage.
+* **Transfert entrant** : actions transférées vers ce compte de courtage.
 
 **Transfert d'actions (Courtier A → Courtier B)**
-**Recommandé (en une fois)** : « + Ajouter un enregistrement » → type **Transfert sortant** → compte source (A) → date, marché, symbole, quantité → choisir le **compte cible** (B) → **Confirmer et enregistrer**. L'application crée **sortant et entrant ensemble** ; l'entrée auto a **frais = 0**—saisissez les frais sur la **sortie**. Prix par défaut = coût moyen (pas le cours du marché).
+**Recommandé (en une fois)** : « + Ajouter un enregistrement » → catégorie **Transfert sortant** → compte source (A) → date, marché, symbole, quantité → choisir **Compte cible** (B) → d'abord **« Enregistrer »**, puis dans la fenêtre de confirmation **« Confirmer et enregistrer »**. L'application crée **Transfert sortant et Transfert entrant simultanément** ; l'entrée auto a **frais = 0** — saisissez les frais sur la **sortie**. Le prix par défaut est le coût moyen pour ce compte et ce titre ; utilisez la base de coût, pas le cours du marché.
 
 ### Fonds
-« + Ajouter un enregistrement » pour les flux. Catégories :
+Appuyez sur « + Ajouter un enregistrement » pour les flux. Catégories :
 * **Dépôt** : entrée externe (ex. salaire).
 * **Retrait** : sortie (ex. frais de subsistance).
-* **Virement** : mouvement entre comptes (ex. banque vers courtage).
+* **Virement** : mouvement entre comptes (ex. banque → courtage).
 * **Intérêts** : intérêts sur dépôts ou comptes de courtage.
-* **Intérêts d'emprunt** : charge d'intérêts ; sur **compte de courtage**, réduit la trésorerie.
+* **Intérêts d'emprunt** : charge d'intérêts ; sur **Courtage (investissement)**, réduit la trésorerie.
+
+Vous pouvez aussi **« Import en lot »** et **« Effacer les fonds filtrés »**.
 
 ### Comptes
 Ajoutez ou modifiez comptes bancaires ou de courtage. **Type de compte** : **Courtage (investissement)** ou **Passif (dette)** ; voir Q&R crédit ci-dessous.
 
 ### Splits
-La page « Splits » enregistre les événements de split. Les transactions conservent quantités et prix saisis ; les splits ajustent positions et P/L à partir de la date d'effet. Ne pas enregistrer deux fois des trades post-split avec quantités déjà ajustées.
+La page « Splits » enregistre les événements de split. Les transactions conservent quantités et prix saisis ; les splits ajustent positions et P/L à partir de la date d'effet. Si des opérations postérieures utilisent déjà les quantités post-split, ne pas enregistrer à nouveau.
 
 ### Rééquilibrage (membres)
 « Rééquilibrage » définit les poids cibles : mêmes symboles fusionnés ; cochez **Activer** pour choisir les participants. Poids sauvegardés automatiquement, ou « Réinitialiser aux poids actuels ».
 
 ### Simulateur
-« Simulateur » compare les rendements attendus de différentes allocations. Saisissez rendements annualisés et poids ; « 🔍 Auto Query » récupère le CAGR (différent du **Rendement annualisé (XIRR)** du « Tableau de bord »). ⚠️ Performances passées ≠ résultats futurs. Référence uniquement.
+« Simulateur » compare les rendements attendus de différentes allocations. Saisissez rendements annualisés et poids ; « 🔍 Requête automatique » récupère le CAGR (différent du **Rendement annualisé (XIRR)** du « Tableau de bord »). ⚠️ Performances passées ≠ résultats futurs. Référence uniquement.
 
 ### Crédit / passif (Q&R)
 
-Q : Que signifie le solde d'un compte passif ?
-R : **Capital dû** (ce que vous devez à la banque), pas de la trésorerie disponible. Solde zéro = soldé.
+Q : Que signifie le **solde** d'un compte passif ?
+R : Il représente la **dette actuelle** (ce que vous devez à la banque), pas la trésorerie disponible. Solde zéro = entièrement remboursé.
 
 Q : Comment créer un compte passif ?
-R : « Comptes » → **Type de compte** **Passif (dette)** → **Nom**, **Devise**, **Taux annuel (%)**, **Plafond de crédit** (optionnel) → **Ajouter**. Solde initial **0**.
+R : « Comptes » → **Type de compte** **Passif (dette)** → **Nom du compte**, **Devise**, **Taux annuel (%)**, **Plafond de crédit** (optionnel) → « Ajouter ». Laissez le solde initial à **0**.
 
 Q : Comment enregistrer un décaissement bancaire vers le courtage ?
-R : « Fonds » → **Virement** → **passif → courtage** → montant. **Une seule écriture** ; pas de **Dépôt** supplémentaire sur le passif.
+R : Cela signifie que **la banque verse des fonds empruntés sur votre compte courant de courtage**. Utilisez un **Virement** qui reflète à la fois **l'augmentation de la dette passif** et **l'augmentation de trésorerie courtage** (comptabilisé dans l'investi net).
+
+**Étapes** (« Fonds » → **+ Ajouter un enregistrement**) :
+1. **Type de flux** **Virement**
+2. **Compte source** **Passif (dette)**
+3. **Compte cible** le **Courtage (investissement)** receveur
+4. Renseigner **date**, **montant** (capital effectivement versé) ; si **devises différentes**, indiquer le **Taux de change**
+5. Confirmer et enregistrer
+
+**Un seul enregistrement suffit**. **Ne pas** ajouter un **Dépôt** sur le passif, sinon la dette est comptée deux fois. Pour « passif → courtage », le formulaire affiche « Tirage crédit : passif → courtage ; compte dans investi net. »
 
 Q : Comment enregistrer le remboursement du capital ?
-R : « Fonds » → **Virement** → **courtage → passif** → montant = **capital uniquement**. Le solde passif ne suit que le capital.
+R : Cela signifie **retirer de la trésorerie courtage pour rembourser le capital** (hors intérêts). Utilisez un **Virement** qui reflète **trésorerie courtage en baisse** et **dette passif en baisse** (comptabilisé dans l'investi net).
+
+**Étapes** (« Fonds » → **+ Ajouter un enregistrement**) :
+1. **Type de flux** **Virement**
+2. **Compte source** le **Courtage (investissement)** débité
+3. **Compte cible** **Passif (dette)**
+4. Renseigner **date**, **montant** (**capital uniquement** ; intérêts : question suivante) ; si **devises différentes**, **Taux de change**
+5. Confirmer et enregistrer
+
+**Ne pas** utiliser **Retrait** pour le remboursement du capital. Le solde passif ne suit que le **capital** et doit revenir à **0**. Pour « courtage → passif », le formulaire affiche « Remboursement : courtage → passif. »
 
 Q : Où enregistrer les intérêts d'emprunt ?
-R : **Compte de courtage**. « Fonds » → **Intérêts d'emprunt** → courtage (liste courtage uniquement). Débit « capital+intérêts » : **deux écritures** : ① Virement (courtage→passif) **capital** ; ② Intérêts d'emprunt sur **courtage**.
+R : Sur le **Courtage (investissement)**. « Fonds » → **Intérêts d'emprunt** → courtage (liste courtage uniquement, sans passif). Si la banque débite **capital + intérêts** : **deux écritures** — ① **Virement** (courtage → passif) pour le **capital** ; ② **Intérêts d'emprunt** sur le **courtage** pour les intérêts.
 
 Q : Quand le prêt est-il considéré comme soldé ?
-R : Lorsque le **solde atteint zéro** (trop-perçu = soldé). Total remboursé incluant intérêts > montant initial—normal.
+R : Lorsque le **solde de dette du compte passif atteint zéro** (solde négatif = intérêts payés en excès, considéré comme soldé). Le total remboursé incluant intérêts dépasse souvent le capital initial — c'est normal.
 
 Q : Supprimer le compte après remboursement ?
-R : Non. Conservez compte et historique. Solde zéro : section dette masquée sur le tableau de bord.
+R : Non. Compte et historique peuvent rester ; à solde zéro, le « Tableau de bord » masque la section crédit.
 
-Q : Affichage du tableau de bord avec dette ?
-R : **Colonne « Solde / Dette » > 0** : cartes Crédit & passif, **patrimoine net** (actif total − dette). **Colonne = 0** : section masquée, **actif total**.
+Q : Affichage du « Tableau de bord » avec dette ?
+R : Si **Solde / Dette** du passif **> 0** (capital dû) : cartes **Crédit & passif**, carte principale **Patrimoine net** (Actif total − Dette totale). Si **= 0** : pas de section crédit, carte principale **Actif total**.
 
 ## 4. Questions fréquemment posées (FAQ)
 
 Q : Comment le taux de rendement annualisé est-il calculé ?
-R : **Rendement annualisé (XIRR)** du « Tableau de bord » : rendement pondéré par les flux (entrées/sorties et actif total)—≠ CAGR prix seul. « Simulateur » : CAGR en requête auto.
+R : **Rendement annualisé (XIRR)** du « Tableau de bord » : rendement annualisé pondéré par les flux (dépôts/retraits et actif total actuel), flux irréguliers — différent du CAGR basé sur la seule évolution des prix. « Simulateur » : CAGR en requête automatique.
 
 Q : Comment définir le taux de change ?
-R : Taux USD/TWD global en haut à droite, ou taux actuel lors d'un virement.
+R : Taux USD/TWD global en haut à droite, ou taux actuel lors d'un **Virement**.
 
 Q : Différence entre invité et membre ?
-R : **Invités** : « Tableau de bord », « Historique », « Fonds », « Comptes », « Splits », « Simulateur » et bases ; cartes résumé et positions. **Membres** : « Rééquilibrage », graphiques P/L cumulé, allocation, performance marché, carte dividendes, correction historique IA. Abonnement via « Aide ».
+R : **Invités** : « Tableau de bord », « Historique », « Fonds », « Comptes », « Splits », « Simulateur » et bases ; cartes résumé et positions. **Membres** : « Rééquilibrage », graphiques P/L cumulé, allocation, performance marché, carte dividendes et **IA Corriger les Actifs Historiques**. Sous « Aide » : **Devenir membre / Gérer l'abonnement** et **Ouvrir les offres d'abonnement**.
 
 Q : Quels sont les avantages de l'adhésion ?
-R : Rééquilibrage, graphiques avancés du tableau de bord et d'allocation, performance de marché, carte thermique des dividendes et analyse historique pour mieux comprendre vos résultats.
+R : Menu « Rééquilibrage », graphiques avancés du tableau de bord et d'allocation, performance de marché, carte thermique des dividendes et analyse historique pour mieux comprendre vos résultats.
 
 Q : Stockage des données et confidentialité ?
-R : **Données entièrement locales.** **Utilisez régulièrement « Télécharger la sauvegarde (.json) »** ci-dessous pour sauvegarder des JSON.
+R : Comme indiqué, **données entièrement locales**, sans enjeu de données personnelles. Pour éviter perte lors de désinstallation, panne matériel ou effacement, **utilisez régulièrement « Télécharger la sauvegarde (.json) »** ci-dessous.
 
 Q : Impossible de télécharger le fichier de sauvegarde ?
-R : **App iOS/Android** : partage vers Fichiers, iCloud, etc. **Web** dans LINE : pop-ups bloqués—Safari ou Chrome.
+R : **App iOS/Android** : « Télécharger la sauvegarde (.json) » puis partage vers Fichiers, iCloud ou autre cloud. **Web** dans LINE : pop-ups bloqués — Safari ou Chrome.
 
 Q : Pourquoi les prix des actions ne peuvent-ils pas être mis à jour ?
-R : Vérifiez le marché. Sinon « Mise à jour groupée des marchés » dans « Historique ».
+R : Vérifiez le marché ; si incorrect, « Mise à jour groupée des marchés » dans « Historique ».
 
 Q : Pourquoi les prix et taux diffèrent-ils de « IA Mettre à Jour les Prix et Taux de Change » ?
-R : Valeurs web retardées de 3–5 minutes. Ne pas utiliser pour acheter/vendre ; référez-vous aux sociétés de valeurs. Logiciel statistique d'actifs uniquement (réserves, voyage, retraite, dépôts, actions/obligations), sans trading. Investissez prudemment et gardez des réserves d'urgence. Merci.
+R : Les valeurs web peuvent avoir trois à cinq minutes de retard. Ne pas les utiliser pour acheter/vendre ; référez-vous aux sociétés de bourse. Logiciel de statistique d'actifs uniquement (réserves, voyage, retraite, dépôts, actions/obligations), sans trading. Investissez prudemment et gardez des réserves d'urgence. Merci.
 
-Q : Comment sont calculés « emprunté / plafond / utilisation % » ?
-R : Si **colonne « Solde / Dette » > 0**. **Emprunté** = capital dû. **Plafond** = limite de crédit. **Utilisation** = emprunté ÷ plafond × 100 % (max. 100 %).
+Q : Comment sont calculés **Emprunté / plafond / utilisation** ?
+R : Uniquement si **Solde / Dette** du passif **> 0**. **Emprunté** = cette valeur (capital cumulé des flux). **Plafond** = **Plafond de crédit** (même devise). **Utilisation** = emprunté ÷ plafond × 100 % (max. 100 %). Sans plafond, pas de barre de progression.
 
-Q : Comment est calculé « Intérêts estimés mois prochain » ?
-R : Solde × taux annuel(%) ÷ 100 ÷ 12. Ex. 2 000 000 @ 2,2 % → ~**3 667**/mois. Estimation simple.
+Q : Comment est calculé **Intérêts estimés mois prochain** ?
+R : **Intérêts estimés mois prochain** = solde de dette actuel × taux annuel(%) ÷ 100 ÷ 12. Ex. : 2 000 000 de dette à 2,2 % → 2 000 000 × 2,2 ÷ 100 ÷ 12 ≈ **3 667** / mois. Estimation simple à capital constant ; la banque peut calculer au jour le jour ; @ = taux annuel du compte.
 
-Q : Lien entre crédit, investissement net, XIRR et patrimoine net ?
-R : **Tirages/remboursements** (passif↔courtage) dans **investissement net** et **XIRR** ; **intérêts d'emprunt** non. **Patrimoine net** = actif total − dette totale. Interpréter XIRR avec prudence si effet de levier.
+Q : Lien entre crédit, investi net, XIRR et patrimoine net ?
+R : **Tirages/remboursements** (passif↔courtage) comptent dans **investi net** et **XIRR** (effet de levier) ; **intérêts d'emprunt** non. **Actif total** = titres + trésorerie courtage ; **Dette totale** = somme des soldes passif (convertis) ; **Patrimoine net** = actif total − dette totale. À solde zéro, cartes crédit et alertes masquées ; historique conservé dans le détail investi net. Interpréter XIRR avec prudence si effet de levier.
 
-Q : Qu'est-ce que « progression fiscale revenus étrangers » ?
-R : **Devise de base TWD** : **Statistiques détaillées** estime revenus étrangers avec seuils 1 M / 6,7 M TWD. **Référence fiscale uniquement** ; pas un conseil fiscal.
+Q : Qu'est-ce que la **progression fiscale revenus étrangers** du « Tableau de bord » ?
+R : Si **devise de base TWD**, **Statistiques Détaillées** affiche la progression de l'estimation des revenus étrangers (P/L réalisé et dividendes hors marché taïwanais), avec seuils de référence 1 M NT$ (déclaration) et 6,7 M NT$ (abattement de base) pour l'impôt minimum. **Référence fiscale uniquement** — hors autres revenus (assurances, etc.) ; pas un conseil fiscal.
 
 ## 5. Avertissements importants
 
