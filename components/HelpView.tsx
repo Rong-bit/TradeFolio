@@ -5,6 +5,7 @@ import { ADMIN_EMAIL } from '../config';
 import { openMailTo } from '../utils/openMailTo';
 import DocumentationContent from './DocumentationContent';
 import { MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
+import { downloadDocumentationPdf, removeHtml2PdfOverlays } from '../utils/downloadDocumentationPdf';
 
 interface Props {
   onExport: () => void;
@@ -14,15 +15,17 @@ interface Props {
 }
 
 const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin, onDeleteAccount }) => {
-  const { language, currentUser, isGuest } = useUI();
+  const { language, currentUser, isGuest, showAlert } = useUI();
   const authorizedUsers: string[] = [];
   const translations = t(language);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+  const documentationRef = useRef<HTMLDivElement>(null);
+
   // State for custom confirmation modals
   const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,8 +70,25 @@ const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin, onDelet
 
   const content = translations.help.documentationContent;
 
-  const handlePrint = () => {
-    window.print();
+  const handleDownloadPdf = async () => {
+    const el = documentationRef.current;
+    if (!el || pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      const date = new Date().toISOString().split('T')[0];
+      await downloadDocumentationPdf(
+        content,
+        `TradeView_Manual_${date}.pdf`,
+        translations.help.pdfShareTitle,
+        language,
+        el
+      );
+    } catch {
+      showAlert(translations.help.pdfDownloadFailed, translations.help.documentation, 'error');
+    } finally {
+      removeHtml2PdfOverlays();
+      setPdfLoading(false);
+    }
   };
 
   const handleCopy = () => {
@@ -192,12 +212,26 @@ const HelpView: React.FC<Props> = ({ onExport, onImport, onContactAdmin, onDelet
                   <button onClick={handleCopy} className="text-sm px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition">
                       {copyFeedback ? translations.help.copied : translations.help.copyAll}
                   </button>
-                  <button onClick={handlePrint} className="text-sm px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition">
-                      {translations.help.print}
+                  <button
+                    type="button"
+                    onClick={handleDownloadPdf}
+                    disabled={pdfLoading}
+                    className="text-sm px-3 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition disabled:opacity-60"
+                  >
+                    {pdfLoading ? translations.help.pdfGenerating : translations.help.downloadPdf}
                   </button>
               </div>
           </div>
-          <div className="prose prose-sm max-w-none text-slate-600 bg-slate-50 p-6 rounded-lg border border-slate-200">
+          {pdfLoading && (
+            <div className="fixed inset-0 z-[10039] flex flex-col items-center justify-center gap-3 bg-white">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-indigo-600" />
+              <p className="text-sm text-slate-600">{translations.help.pdfGenerating}</p>
+            </div>
+          )}
+          <div
+            ref={documentationRef}
+            className="prose prose-sm max-w-none text-slate-800 bg-white p-6 rounded-lg border border-slate-200"
+          >
               <DocumentationContent content={content} />
           </div>
       </div>
