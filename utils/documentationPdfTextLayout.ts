@@ -1,9 +1,10 @@
 import type { jsPDF } from 'jspdf';
 
+const SLATE_900: [number, number, number] = [15, 23, 42];
 const SLATE_800: [number, number, number] = [30, 41, 59];
+const SLATE_700: [number, number, number] = [51, 65, 85];
 const SLATE_600: [number, number, number] = [71, 85, 105];
-const SLATE_400: [number, number, number] = [148, 163, 184];
-const SLATE_300: [number, number, number] = [203, 213, 225];
+const SLATE_500: [number, number, number] = [100, 116, 139];
 
 /** 不可放在行首（CJK 排版） */
 const NO_BREAK_BEFORE = /[,:;!?)\]}>.]/;
@@ -170,7 +171,7 @@ export class DocumentationPdfWriter {
 
     const fontSize = style.fontSize;
     const lineHeight = style.lineHeight;
-    const color = style.color ?? SLATE_800;
+    const color = style.color ?? SLATE_900;
     const x = style.x ?? this.margin;
     const maxWidth = style.maxWidth ?? this.maxWidth - (x - this.margin);
     const segments = parseInlineSegments(text, style.forceBold ?? false);
@@ -182,7 +183,7 @@ export class DocumentationPdfWriter {
       this.y += lineHeight;
     }
 
-    this.pdf.setTextColor(...SLATE_800);
+    this.pdf.setTextColor(...SLATE_900);
     if (style.gapAfter) this.y += style.gapAfter;
   }
 
@@ -222,23 +223,23 @@ export class DocumentationPdfWriter {
 
     for (const line of lines) {
       this.ensureSpace(lineHeight);
-      this.drawRichLine(line, textX, this.y, fontSize, SLATE_600);
+      this.drawRichLine(line, textX, this.y, fontSize, SLATE_700);
       this.y += lineHeight;
     }
 
     this.y += 2;
     const blockBottom = this.y - lineHeight * 0.65;
-    this.pdf.setDrawColor(...SLATE_300);
+    this.pdf.setDrawColor(...SLATE_500);
     this.pdf.setLineWidth(1.1);
     this.pdf.line(borderX, blockTop, borderX, blockBottom);
   }
 
   writeBullet(text: string): void {
-    this.writeListItem('•', text, 2, 6.5, SLATE_400);
+    this.writeListItem('•', text, 2, 6.5, SLATE_600);
   }
 
   writeNumberedItem(index: string, text: string): void {
-    this.writeListItem(`${index}.`, text, 2, 9, SLATE_800);
+    this.writeListItem(`${index}.`, text, 2, 9, SLATE_900);
   }
 
   private writeListItem(
@@ -264,7 +265,7 @@ export class DocumentationPdfWriter {
         this.pdf.setTextColor(...markerColor);
         this.pdf.text(marker, markerX, this.y);
       }
-      this.drawRichLine(lines[i], textX, this.y, fontSize, SLATE_800);
+      this.drawRichLine(lines[i], textX, this.y, fontSize, SLATE_900);
       this.y += lineHeight;
     }
 
