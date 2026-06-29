@@ -44,6 +44,11 @@ async function shareFileNative(blob: Blob, filename: string, shareTitle?: string
   }
 }
 
+function isMobileWeb(): boolean {
+  const ua = navigator.userAgent;
+  return /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+}
+
 function triggerBrowserDownload(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   try {
@@ -71,7 +76,7 @@ export type ShareDownloadBlobOptions = {
 };
 
 /**
- * iOS／Android 以 Capacitor 原生分享（可存至「檔案」）；Web 優先 Web Share API，否則觸發下載。
+ * iOS／Android 以 Capacitor 原生分享（可存至「檔案」）；行動版 Web 可用 Web Share，桌面 Web 直接下載。
  * 勿在 navigator.share 同時帶 title + files，否則「儲存到檔案」可能多存一份僅含標題的 .txt。
  */
 export async function shareOrDownloadBlob(
@@ -92,7 +97,8 @@ export async function shareOrDownloadBlob(
     return;
   }
 
-  if (navigator.share) {
+  // Windows／macOS 桌面瀏覽器的 Web Share 會開系統分享面板，下載類操作改直接存檔
+  if (isMobileWeb() && navigator.share) {
     try {
       const file = new File([fileBlob], filename, { type: mimeType });
       if (navigator.canShare?.({ files: [file] })) {
