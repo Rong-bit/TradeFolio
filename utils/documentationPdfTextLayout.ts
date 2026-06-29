@@ -1,10 +1,10 @@
 import type { jsPDF } from 'jspdf';
 
-const SLATE_900: [number, number, number] = [15, 23, 42];
-const SLATE_800: [number, number, number] = [30, 41, 59];
-const SLATE_700: [number, number, number] = [51, 65, 85];
-const SLATE_600: [number, number, number] = [71, 85, 105];
-const SLATE_500: [number, number, number] = [100, 116, 139];
+const SLATE_900: [number, number, number] = [0, 0, 0];
+const SLATE_800: [number, number, number] = [15, 23, 42];
+const SLATE_700: [number, number, number] = [30, 41, 59];
+const SLATE_600: [number, number, number] = [51, 65, 85];
+const SLATE_500: [number, number, number] = [71, 85, 105];
 
 /** 不可放在行首（CJK 排版） */
 const NO_BREAK_BEFORE = /[,:;!?)\]}>.]/;
