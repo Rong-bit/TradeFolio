@@ -97,10 +97,10 @@ function applyPdfExportColors(root: ParentNode): void {
   if (!el) return;
 
   el.style.setProperty('background-color', '#ffffff', 'important');
-  el.style.setProperty('color', '#0f172a', 'important');
+  el.style.setProperty('color', '#000000', 'important');
 
   el.querySelectorAll<HTMLElement>('*').forEach(node => {
-    node.style.setProperty('color', '#0f172a', 'important');
+    node.style.setProperty('color', '#000000', 'important');
     if (node.tagName !== 'STRONG' && node.tagName !== 'H2' && node.tagName !== 'H3' && node.tagName !== 'H4') {
       node.style.setProperty('background-color', 'transparent', 'important');
     }
@@ -153,19 +153,20 @@ async function renderPdfBlob(
   webElement: HTMLElement | null | undefined,
   filename: string
 ): Promise<Blob> {
-  if (Capacitor.isNativePlatform()) {
-    return renderPdfBlobFromMarkdownText(markdownContent, language);
-  }
-
-  if (webElement) {
+  // 優先 jsPDF 向量文字：對比穩定、可選取、檔案小；html2pdf 截圖易偏淡且動輒數十 MB
+  try {
+    return await renderPdfBlobFromMarkdownText(markdownContent, language);
+  } catch {
+    if (Capacitor.isNativePlatform() || !webElement) {
+      throw new Error('pdf_render_failed');
+    }
     try {
       return await renderPdfBlobHtml2pdf(webElement, filename);
     } catch {
       removeHtml2PdfOverlays();
+      throw new Error('pdf_render_failed');
     }
   }
-
-  return renderPdfBlobFromMarkdownText(markdownContent, language);
 }
 
 /** 將使用說明匯出為 PDF；iOS／Android 以系統分享（可存至「檔案」），Web 則觸發下載。 */
