@@ -40,7 +40,7 @@ export const PDF_FONT_SETS: Record<PdfFontSetId, PdfFontSet> = {
   sc: fontSet('sc', 'NotoSansSC', 'NotoSansSC'),
   jp: fontSet('jp', 'NotoSansJP', 'NotoSansJP'),
   kr: fontSet('kr', 'NotoSansKR', 'NotoSansKR'),
-  'latin-ext': fontSet('latin-ext', 'NotoSans', 'NotoSansLatinExt'),
+  'latin-ext': fontSet('latin-ext', 'NotoSans', 'NotoSansLatin'),
   arabic: fontSet('arabic', 'NotoSansArabic', 'NotoSansArabic'),
   devanagari: fontSet('devanagari', 'NotoSansDevanagari', 'NotoSansDevanagari'),
 };
