@@ -706,14 +706,14 @@ const DividendHeatmap: React.FC = () => {
         <button
           type="button"
           onClick={() => handleAddPendingActual(pa)}
-          className="rounded border border-sky-300 bg-sky-50 px-3 py-1.5 text-sm font-semibold text-sky-800 hover:bg-sky-100"
+          className="rounded border border-sky-300 bg-sky-50 px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-semibold text-sky-800 hover:bg-sky-100 whitespace-normal"
         >
           {dtx.pendingActualAddBtn}
         </button>
         <button
           type="button"
           onClick={() => dismissPendingRow(pa.key)}
-          className="rounded border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-100"
+          className="rounded border border-rose-200 bg-rose-50 px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-semibold text-rose-700 hover:bg-rose-100 whitespace-normal"
           title={dtx.pendingActualDismissBtn}
         >
           {dtx.pendingActualDismissBtn}
@@ -725,20 +725,20 @@ const DividendHeatmap: React.FC = () => {
   if (isGuest) return null;
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-      <div className="flex justify-between items-start mb-5">
-        <div>
+    <div className="bg-white p-4 sm:p-6 rounded-xl shadow min-w-0 max-w-full overflow-hidden">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-5">
+        <div className="min-w-0">
           <h3 className="font-bold text-slate-800 text-xl">{tr.dividendHeatmap.title}</h3>
-          <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">{tr.dividendHeatmap.subtitle}</p>
+          <p className="text-sm text-slate-500 mt-0.5 leading-relaxed break-words">{tr.dividendHeatmap.subtitle}</p>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-slate-400">{tr.dividendHeatmap.totalDividend}</div>
+        <div className="text-left sm:text-right shrink-0">
+          <div className="text-xs text-slate-400 break-words">{tr.dividendHeatmap.totalDividend}</div>
           <div className="text-lg font-bold text-amber-600">{fmt(totalDividend)} {baseCurrency}</div>
         </div>
       </div>
 
       {hasHeatmapData ? (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 max-w-full">
           <div className="min-w-[540px]">
             <div className="flex mb-1.5">
               <div className="w-14 shrink-0" />
@@ -747,7 +747,7 @@ const DividendHeatmap: React.FC = () => {
                   {m}
                 </div>
               ))}
-              <div className="w-20 shrink-0 text-sm font-medium text-slate-400 text-right pr-1">
+              <div className="w-[4.5rem] sm:w-20 shrink-0 text-xs sm:text-sm font-medium text-slate-400 text-right pr-1 whitespace-normal leading-tight">
                 {tr.dividendHeatmap.yearTotal}
               </div>
             </div>
@@ -790,14 +790,14 @@ const DividendHeatmap: React.FC = () => {
                     </div>
                   );
                 })}
-                <div className="w-20 shrink-0 text-xs font-bold text-amber-600 text-right pr-1 tabular-nums">
+                <div className="w-[4.5rem] sm:w-20 shrink-0 text-xs font-bold text-amber-600 text-right pr-1 tabular-nums">
                   {(yearTotals[year] ?? 0) > 0 ? fmt(yearTotals[year] ?? 0) : '—'}
                 </div>
               </div>
             ))}
 
             <div className="flex items-center mt-2 border-t border-slate-100 pt-2">
-              <div className="w-14 shrink-0 text-[10px] text-slate-400 text-right pr-2">
+              <div className="w-14 shrink-0 text-[10px] text-slate-400 text-right pr-2 whitespace-normal leading-tight">
                 {tr.dividendHeatmap.monthTotal}
               </div>
               {monthTotals.map((total, m) => (
@@ -807,7 +807,7 @@ const DividendHeatmap: React.FC = () => {
                   </span>
                 </div>
               ))}
-              <div className="w-20 shrink-0" />
+              <div className="w-[4.5rem] sm:w-20 shrink-0" />
             </div>
           </div>
         </div>
@@ -852,9 +852,9 @@ const DividendHeatmap: React.FC = () => {
         </span>
       </div>
 
-      <div className="mt-6 border-t border-slate-100 pt-4">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <h4 className="text-xl font-bold text-slate-800">{dtx.pendingActualTitle}</h4>
+      <div className="mt-6 border-t border-slate-100 pt-4 min-w-0">
+        <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h4 className="text-xl font-bold text-slate-800 min-w-0 break-words">{dtx.pendingActualTitle}</h4>
           <button
             type="button"
             onClick={() => {
@@ -864,15 +864,15 @@ const DividendHeatmap: React.FC = () => {
                 return next;
               });
             }}
-            className="shrink-0 rounded border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            className="shrink-0 self-start sm:self-auto rounded border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 hover:bg-slate-50 whitespace-normal text-left"
           >
             {pendingListVisible ? dtx.pendingActualToggleHide : dtx.pendingActualToggleShow}
           </button>
         </div>
         {pendingListVisible ? (
           <>
-            <p className="text-sm text-slate-500 mb-2 leading-relaxed">{dtx.pendingActualSubtitle}</p>
-            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 leading-relaxed">
+            <p className="text-sm text-slate-500 mb-2 leading-relaxed break-words">{dtx.pendingActualSubtitle}</p>
+            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 leading-relaxed break-words">
               {dtx.pendingActualDripHint}
             </p>
             {pendingActualLoading ? (
@@ -880,17 +880,17 @@ const DividendHeatmap: React.FC = () => {
             ) : visiblePendingRows.length === 0 ? (
               <p className="text-sm text-slate-400 py-2">{dtx.pendingActualEmpty}</p>
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-slate-100">
-                <table className="min-w-full text-sm text-left">
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 max-w-full rounded-lg border border-slate-100">
+                <table className="w-full min-w-[44rem] text-sm text-left">
                   <thead className="bg-slate-50 text-slate-500 font-semibold">
                     <tr>
-                      <th className="px-3 py-2">{tr.holdings.ticker}</th>
-                      <th className="px-3 py-2">Mkt</th>
-                      <th className="px-3 py-2">{dtx.upcomingExDate}</th>
-                      <th className="px-3 py-2">{dtx.pendingActualPayDate}</th>
-                      <th className="px-3 py-2 text-right">{dtx.pendingActualPerShare}</th>
-                      <th className="px-3 py-2 text-right">{dtx.pendingActualEstAmount}</th>
-                      <th className="px-3 py-2 text-center">{tr.labels.action}</th>
+                      <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{tr.holdings.ticker}</th>
+                      <th className="px-2 sm:px-3 py-2 whitespace-nowrap">Mkt</th>
+                      <th className="px-2 sm:px-3 py-2 whitespace-normal leading-tight">{dtx.upcomingExDate}</th>
+                      <th className="px-2 sm:px-3 py-2 whitespace-normal leading-tight">{dtx.pendingActualPayDate}</th>
+                      <th className="px-2 sm:px-3 py-2 text-right whitespace-normal leading-tight">{dtx.pendingActualPerShare}</th>
+                      <th className="px-2 sm:px-3 py-2 text-right whitespace-normal leading-tight">{dtx.pendingActualEstAmount}</th>
+                      <th className="px-2 sm:px-3 py-2 text-center min-w-[10rem] whitespace-normal leading-tight">{tr.labels.action}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -899,23 +899,23 @@ const DividendHeatmap: React.FC = () => {
                       const cur = pa.currency ?? getAccountCurrencyCode(pa.accountId);
                       return (
                         <tr key={pa.key} className="border-b border-slate-100 text-slate-600 last:border-b-0 dark:border-slate-700">
-                          <td className="px-3 py-2 font-mono font-medium">{pa.ticker}</td>
-                          <td className="px-3 py-2">{pa.market}</td>
-                          <td className="px-3 py-2 tabular-nums">{pa.exDate}</td>
-                          <td className="px-3 py-2 tabular-nums">
+                          <td className="px-2 sm:px-3 py-2 font-mono font-medium">{pa.ticker}</td>
+                          <td className="px-2 sm:px-3 py-2">{pa.market}</td>
+                          <td className="px-2 sm:px-3 py-2 tabular-nums whitespace-nowrap">{pa.exDate}</td>
+                          <td className="px-2 sm:px-3 py-2 tabular-nums">
                             {pa.payDate ?? '—'}
                             {pa.payDateEstimated ? (
-                              <span className="ml-1 text-xs text-slate-400">({dtx.pendingActualEstimatedDate})</span>
+                              <span className="ml-1 text-xs text-slate-400 whitespace-normal">({dtx.pendingActualEstimatedDate})</span>
                             ) : null}
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums">
+                          <td className="px-2 sm:px-3 py-2 text-right tabular-nums whitespace-nowrap">
                             {pa.amountPerShare.toLocaleString(undefined, { maximumFractionDigits: 4 })} {cur}
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums">
+                          <td className="px-2 sm:px-3 py-2 text-right tabular-nums whitespace-nowrap">
                             {formatCashDividendNativeAmountForMarket(pa.market, calc.netNative)}{' '}
                             {cur}
                           </td>
-                          <td className="px-3 py-2 text-center">{renderPendingAddRow(pa, { showTicker: false })}</td>
+                          <td className="px-2 sm:px-3 py-2 text-center">{renderPendingAddRow(pa, { showTicker: false })}</td>
                         </tr>
                       );
                     })}
@@ -958,8 +958,8 @@ const DividendHeatmap: React.FC = () => {
                   <span className="text-slate-600 dark:text-slate-400">{tf.typeLabel}</span>
                   <span className="font-medium text-slate-900 dark:text-slate-100">{getTypeName(confirmState.tx.type)}</span>
                 </div>
-                <div className="flex justify-between items-center gap-3 py-1 border-b border-slate-100 dark:border-slate-700">
-                  <span className="text-slate-600 dark:text-slate-400 shrink-0">{dtx.pendingActualConfirmGrossAmount}</span>
+                <div className="flex justify-between items-start gap-3 py-1 border-b border-slate-100 dark:border-slate-700">
+                  <span className="text-slate-600 dark:text-slate-400 shrink-0 min-w-0 break-words">{dtx.pendingActualConfirmGrossAmount}</span>
                   <span className="font-medium tabular-nums text-slate-900 dark:text-slate-100">
                     {confirmState.editPrice}{' '}
                     {getAccountCurrencyCode(confirmState.tx.accountId)}
@@ -981,8 +981,8 @@ const DividendHeatmap: React.FC = () => {
                       ? `−${tax.toLocaleString()} TWD`
                       : `−${formatCashDividendNativeAmountForMarket(market, tax)} ${cur}`;
                   return (
-                    <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700 text-rose-700 dark:text-rose-400">
-                      <span>{cashDividendStatutoryLabel(market, dtx)}</span>
+                    <div className="flex justify-between items-start gap-3 py-1 border-b border-slate-100 dark:border-slate-700 text-rose-700 dark:text-rose-400">
+                      <span className="min-w-0 break-words">{cashDividendStatutoryLabel(market, dtx)}</span>
                       <span className="font-medium tabular-nums">{amountLabel}</span>
                     </div>
                   );
@@ -1022,8 +1022,8 @@ const DividendHeatmap: React.FC = () => {
                   </div>
                 )}
                 <div className="border-t-2 border-slate-300 dark:border-slate-600 pt-2 mt-2">
-                  <div className="flex justify-between items-center gap-3">
-                    <span className="text-slate-700 dark:text-slate-300 font-semibold shrink-0">{dtx.pendingActualEstAmount}</span>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <span className="text-slate-700 dark:text-slate-300 font-semibold shrink-0 min-w-0 break-words">{dtx.pendingActualEstAmount}</span>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <input
                         type="text"
@@ -1080,18 +1080,18 @@ const DividendHeatmap: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="pt-4 flex gap-3">
+              <div className="pt-4 flex flex-col sm:flex-row gap-3">
                 <button
                   type="button"
                   onClick={cancelConfirmPendingActual}
-                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700"
+                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 whitespace-normal"
                 >
                   {tf.backToEdit}
                 </button>
                 <button
                   type="button"
                   onClick={confirmAndSavePendingActual}
-                  className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800"
+                  className="flex-1 px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 whitespace-normal"
                 >
                   {tf.confirmSave}
                 </button>
