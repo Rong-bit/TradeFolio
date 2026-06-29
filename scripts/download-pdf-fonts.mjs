@@ -16,7 +16,8 @@ const FONT_SPECS = [
   { filePrefix: 'NotoSansSC', pkg: 'noto-sans-sc', subset: 'chinese-simplified' },
   { filePrefix: 'NotoSansJP', pkg: 'noto-sans-jp', subset: 'japanese' },
   { filePrefix: 'NotoSansKR', pkg: 'noto-sans-kr', subset: 'korean' },
-  { filePrefix: 'NotoSansLatinExt', pkg: 'noto-sans', subset: 'latin-ext' },
+  // latin-ext 子集不含基本 ASCII (A-Z)，英文／德法葡说明书会整份空白；须用 latin
+  { filePrefix: 'NotoSansLatin', pkg: 'noto-sans', subset: 'latin' },
   { filePrefix: 'NotoSansArabic', pkg: 'noto-sans-arabic', subset: 'arabic' },
   { filePrefix: 'NotoSansDevanagari', pkg: 'noto-sans-devanagari', subset: 'devanagari' },
 ];
