@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import type { Language } from './i18n/types';
 import { DocumentationPdfWriter } from './documentationPdfTextLayout';
-import { getPdfFontSetForLanguage, type PdfFontSet } from './pdfFontConfig';
+import { getPdfFontSetForLanguage, getPdfLatinFallbackFontSet, type PdfFontSet } from './pdfFontConfig';
 import { shareOrDownloadBlob } from './shareDownloadBlob';
 
 /** html2pdf 失敗時常殘留 overlay（z-index:1000），會擋住 Alert 的確認按鈕 */
@@ -64,16 +64,30 @@ async function renderPdfBlobFromMarkdownText(
   language: Language
 ): Promise<Blob> {
   const fontSet = getPdfFontSetForLanguage(language);
-  const [{ jsPDF }, fonts] = await Promise.all([import('jspdf'), loadPdfFonts(fontSet)]);
+  const needsLatinFallback = fontSet.id === 'arabic' || fontSet.id === 'devanagari';
+  const latinFontSet = needsLatinFallback ? getPdfLatinFallbackFontSet() : null;
+
+  const [{ jsPDF }, fonts, latinFonts] = await Promise.all([
+    import('jspdf'),
+    loadPdfFonts(fontSet),
+    latinFontSet ? loadPdfFonts(latinFontSet) : Promise.resolve(null),
+  ]);
 
   const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   registerPdfFonts(pdf, fontSet, fonts);
+  if (latinFontSet && latinFonts) {
+    registerPdfFonts(pdf, latinFontSet, latinFonts);
+  }
 
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const margin = 14;
 
-  const writer = new DocumentationPdfWriter(pdf, margin, pageWidth, pageHeight, fontSet.family);
+  const writer = new DocumentationPdfWriter(pdf, margin, pageWidth, pageHeight, fontSet.family, {
+    latinFontFamily: latinFontSet?.family,
+    fontSplitMode:
+      fontSet.id === 'arabic' ? 'arabic' : fontSet.id === 'devanagari' ? 'devanagari' : 'none',
+  });
   writer.renderMarkdown(markdown);
 
   return pdf.output('blob');
