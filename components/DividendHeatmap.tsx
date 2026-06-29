@@ -835,21 +835,23 @@ const DividendHeatmap: React.FC = () => {
         </div>
       )}
 
-      <div className="mt-4 flex items-center gap-2 text-xs text-slate-400 flex-wrap">
-        <span>{tr.dividendHeatmap.less}</span>
-        {['#fef9c3', '#fde68a', '#fbbf24', '#f59e0b', '#d97706'].map(c => (
-          <div key={c} className="w-6 h-3 rounded-sm" style={{ backgroundColor: c }} />
-        ))}
-        <span>{tr.dividendHeatmap.more}</span>
+      <div className="mt-4 flex flex-col gap-2 text-xs text-slate-400 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span>{tr.dividendHeatmap.less}</span>
+          {['#fef9c3', '#fde68a', '#fbbf24', '#f59e0b', '#d97706'].map(c => (
+            <div key={c} className="w-6 h-3 rounded-sm shrink-0" style={{ backgroundColor: c }} />
+          ))}
+          <span>{tr.dividendHeatmap.more}</span>
+        </div>
         {hasHeatmapData && bestMonth >= 0 && monthTotals[bestMonth] > 0 && (
-          <span className="ml-4 text-amber-600 font-medium">
+          <p className="text-amber-600 font-medium break-words leading-snug">
             {tr.dividendHeatmap.bestMonth}：{MONTH_NAMES[bestMonth]}
-          </span>
+          </p>
         )}
-        <span className="ml-3 inline-flex items-center gap-1 text-amber-700 font-medium">
-          <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: '#f59e0b' }} />
+        <p className="inline-flex items-center gap-1.5 text-amber-700 font-medium break-words leading-snug">
+          <span className="inline-block w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: '#f59e0b' }} aria-hidden />
           {tr.dividendHeatmap.recordedLabel}
-        </span>
+        </p>
       </div>
 
       <div className="mt-6 border-t border-slate-100 pt-4 min-w-0">
