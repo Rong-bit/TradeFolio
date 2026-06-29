@@ -89,6 +89,32 @@ const HTML2CANVAS_OPTS = {
   allowTaint: true,
 } as const;
 
+/** 深色模式下 .dark body 會讓文字變淺；截圖前強制白底黑字，避免 PDF 對比過低 */
+function applyPdfExportColors(root: ParentNode): void {
+  const el = root instanceof HTMLElement && root.matches('[data-pdf-documentation]')
+    ? root
+    : root.querySelector<HTMLElement>('[data-pdf-documentation]');
+  if (!el) return;
+
+  el.style.setProperty('background-color', '#ffffff', 'important');
+  el.style.setProperty('color', '#0f172a', 'important');
+
+  el.querySelectorAll<HTMLElement>('*').forEach(node => {
+    node.style.setProperty('color', '#0f172a', 'important');
+    if (node.tagName !== 'STRONG' && node.tagName !== 'H2' && node.tagName !== 'H3' && node.tagName !== 'H4') {
+      node.style.setProperty('background-color', 'transparent', 'important');
+    }
+  });
+
+  el.querySelectorAll<HTMLElement>('blockquote, .text-slate-600').forEach(node => {
+    node.style.setProperty('color', '#334155', 'important');
+  });
+
+  el.querySelectorAll<HTMLElement>('.text-slate-400').forEach(node => {
+    node.style.setProperty('color', '#475569', 'important');
+  });
+}
+
 async function renderPdfBlobHtml2pdf(element: HTMLElement, filename: string): Promise<Blob> {
   const html2pdf = (await import('html2pdf.js')).default;
 
@@ -97,9 +123,12 @@ async function renderPdfBlobHtml2pdf(element: HTMLElement, filename: string): Pr
       .set({
         margin: [10, 10, 10, 10],
         filename,
-        image: { type: 'jpeg', quality: 0.92 },
+        image: { type: 'png' },
         html2canvas: {
           ...HTML2CANVAS_OPTS,
+          onclone: (clonedDoc: Document) => {
+            applyPdfExportColors(clonedDoc);
+          },
           width: element.scrollWidth,
           height: element.scrollHeight,
           windowWidth: element.scrollWidth,
