@@ -229,7 +229,7 @@ export function transactionAmountNativeToTWD(
   return nativeValueInAccountCurrencyToTWD(amountNative, ccy, rates);
 }
 
-/** 現金配息實領淨額：amount 已為淨入帳時直接採用，否則由 price×quantity 扣手續費 */
+/** 現金配息實領淨額：備註含每股×股數時與表單試算相同；否則有 amount 直接用，再 fallback price×qty − fees */
 export function cashDividendNetNative(
   tx: Pick<
     Transaction,
@@ -243,8 +243,6 @@ export function cashDividendNetNative(
     | 'withheldUsTaxNative'
   >
 ): number {
-  if (tx.amount !== undefined && tx.amount !== null) return tx.amount;
-
   const breakdown = parseCashDividendNoteBreakdown(tx.note);
   if (breakdown) {
     if (tx.market === Market.TW) {
@@ -262,6 +260,8 @@ export function cashDividendNetNative(
       return Math.round((autoNet - (tx.fees || 0)) * 100) / 100;
     }
   }
+
+  if (tx.amount !== undefined && tx.amount !== null) return tx.amount;
 
   let baseVal = tx.price * tx.quantity;
   if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
