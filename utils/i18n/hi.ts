@@ -974,6 +974,7 @@ TradeView विभिन्न देशों के शेयर बाजा
   historicalModal: {
     title: 'ऐतिहासिक कीमतें (Time Machine)',
     selectYearLabel: 'वर्ष',
+    selectQuarterLabel: 'तिमाही',
     yearOption: '{year} वर्ष',
     noHistoryYears: 'कोई वर्ष नहीं',
     fillYearEndButton: '🤖 {year} Q{quarter} लापता डेटा भरें',

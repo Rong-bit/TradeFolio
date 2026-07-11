@@ -1018,6 +1018,7 @@ A: **基準通貨が台湾ドル (TWD)** のとき、「ダッシュボード」
   historicalModal: {
     title: '履歴株価補正 (Time Machine)',
     selectYearLabel: '年を選択',
+    selectQuarterLabel: '四半期',
     yearOption: '{year} 年',
     noHistoryYears: '履歴なし',
     fillYearEndButton: '🤖 {year} Q{quarter} の欠損データを補完',

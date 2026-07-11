@@ -1015,6 +1015,7 @@ A: 當**基準幣為台幣 (TWD)** 時，「儀表板」的 **詳細統計** 區
   historicalModal: {
     title: '歷史股價校正 (Time Machine)',
     selectYearLabel: '選擇年份',
+    selectQuarterLabel: '季',
     yearOption: '{year} 年',
     noHistoryYears: '無歷史資料',
     fillYearEndButton: '🤖 補齊 {year} Q{quarter} 缺漏資料',

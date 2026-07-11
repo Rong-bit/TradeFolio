@@ -1018,6 +1018,7 @@ A: **기준 통화가 대만 달러(TWD)** 일 때 「대시보드」의 **상�
   historicalModal: {
     title: '역사적 주가 보정 (Time Machine)',
     selectYearLabel: '연도 선택',
+    selectQuarterLabel: '분기',
     yearOption: '{year}년',
     noHistoryYears: '기록된 연도 없음',
     fillYearEndButton: '🤖 {year} Q{quarter} 누락 데이터 보완',

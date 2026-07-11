@@ -915,6 +915,7 @@ export interface Translations {
   historicalModal: {
     title: string;
     selectYearLabel: string;
+    selectQuarterLabel: string;
     /** 下拉選項，{year} */
     yearOption: string;
     noHistoryYears: string;

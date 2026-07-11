@@ -1021,6 +1021,7 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
   historicalModal: {
     title: 'Historical Prices (Time Machine)',
     selectYearLabel: 'Year',
+    selectQuarterLabel: 'Quarter',
     yearOption: '{year}',
     noHistoryYears: 'No historical years',
     fillYearEndButton: '🤖 Fill {year} Q{quarter} gaps',

@@ -711,6 +711,7 @@ zhCN.batchImportModal = {
 zhCN.historicalModal = {
   title: '历史股价校正 (Time Machine)',
   selectYearLabel: '选择年份',
+  selectQuarterLabel: '季',
   yearOption: '{year} 年',
   noHistoryYears: '无历史资料',
   fillYearEndButton: '🤖 补齐 {year} Q{quarter} 缺漏资料',

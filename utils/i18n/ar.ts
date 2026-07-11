@@ -974,6 +974,7 @@ TradeView أداة إدارة أصول تدعم أسواق الأسهم في م�
   historicalModal: {
     title: 'الأسعار التاريخية (Time Machine)',
     selectYearLabel: 'السنة',
+    selectQuarterLabel: 'الربع',
     yearOption: '{year} سنة',
     noHistoryYears: 'لا توجد سنوات',
     fillYearEndButton: '🤖 إكمال البيانات الناقصة {year} Q{quarter}',

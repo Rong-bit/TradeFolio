@@ -956,6 +956,7 @@ R: Com **moeda base TWD**, **Estatísticas Detalhadas** mostra progresso da esti
   historicalModal: {
     title: 'Preços históricos (Time Machine)',
     selectYearLabel: 'Ano',
+    selectQuarterLabel: 'Trimestre',
     yearOption: '{year}º ano',
     noHistoryYears: 'Sem anos',
     fillYearEndButton: '🤖 Preencher dados faltantes {year} Q{quarter}',

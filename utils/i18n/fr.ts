@@ -957,6 +957,7 @@ R : Si **devise de base TWD**, **Statistiques Détaillées** affiche la progress
   historicalModal: {
     title: 'Prix historiques (Time Machine)',
     selectYearLabel: 'Année',
+    selectQuarterLabel: 'Trimestre',
     yearOption: 'Annee {year}',
     noHistoryYears: 'Aucune année',
     fillYearEndButton: '🤖 Compléter les données manquantes {year} Q{quarter}',

@@ -929,6 +929,7 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistiken** den Fortschritt 
   historicalModal: {
     title: 'Historische Kurse (Time Machine)',
     selectYearLabel: 'Jahr wählen',
+    selectQuarterLabel: 'Quartal',
     yearOption: '{year} (Jahr)',
     noHistoryYears: 'Keine Jahresdaten',
     fillYearEndButton: '🤖 Fehlende Daten {year} Q{quarter} ergänzen',
