@@ -4,7 +4,7 @@ import { Market, Transaction, TransactionType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { transactionAmountNativeToTWD, valueInBaseCurrency } from '../utils/calculations';
+import { transactionAmountNativeToTWD, valueInBaseCurrency, cashDividendRecordAmount } from '../utils/calculations';
 import { t, translate } from '../utils/i18n';
 import { useActualDividends } from '../hooks/useActualDividends';
 import {
@@ -298,7 +298,7 @@ const DividendHeatmap: React.FC = () => {
       const d = new Date(tx.date);
       const year = d.getFullYear();
       const month = d.getMonth();
-      const amt = (tx.amount ?? tx.price * tx.quantity) - tx.fees;
+      const amt = cashDividendRecordAmount(tx);
       const amountTWD = transactionAmountNativeToTWD(amt, tx, accounts, rates);
       const amount = toBase(amountTWD);
       if (!map[year]) map[year] = {};
