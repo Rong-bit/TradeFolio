@@ -63,9 +63,10 @@ interface Params {
   appText: AppText;
   filteredRecords: CombinedRecord[];
   showAlert: (message: string, title?: string, type?: 'info' | 'success' | 'error') => void;
+  markHighlighted: (ids: string | string[]) => void;
 }
 
-export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, filteredRecords, showAlert }: Params) {
+export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, filteredRecords, showAlert, markHighlighted }: Params) {
   const {
     transactions,
     accounts,
@@ -110,9 +111,10 @@ export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, f
   const handleUpdateTransaction = useCallback(
     (tx: Transaction) => {
       updateTransaction(tx);
+      markHighlighted(tx.id);
       showAlert(appText.txUpdated, appText.updateSuccessTitle, 'success');
     },
-    [updateTransaction, appText, showAlert]
+    [updateTransaction, markHighlighted, appText, showAlert]
   );
 
   const handleBatchUpdateMarket = useCallback(
@@ -188,9 +190,10 @@ export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, f
   const handleUpdateCashFlow = useCallback(
     (cf: CashFlow) => {
       updateCashFlow(cf);
+      markHighlighted(cf.id);
       showAlert(appText.cashFlowUpdated, appText.updateSuccessTitle, 'success');
     },
-    [updateCashFlow, appText, showAlert]
+    [updateCashFlow, markHighlighted, appText, showAlert]
   );
 
   const handleRemoveCashFlow = useCallback(
