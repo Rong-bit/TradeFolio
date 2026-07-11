@@ -229,7 +229,7 @@ export function transactionAmountNativeToTWD(
   return nativeValueInAccountCurrencyToTWD(amountNative, ccy, rates);
 }
 
-/** 現金配息實領淨額：備註含每股×股數時與表單試算相同；否則有 amount 直接用，再 fallback price×qty − fees */
+/** 現金配息實領淨額：備註含每股×股數時試算淨額；有 amount 直接用；否則 price×qty（與交易紀錄相同，不再扣 fees） */
 export function cashDividendNetNative(
   tx: Pick<
     Transaction,
@@ -265,7 +265,8 @@ export function cashDividendNetNative(
 
   let baseVal = tx.price * tx.quantity;
   if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
-  return baseVal - (tx.fees || 0);
+  // 與 buildLedgerState 一致：無 amount 時不另扣 fees（手續費已列於 fees 欄；price 常為實領或毛額）
+  return baseVal;
 }
 
 /** 1 外幣 = 幾 TWD；缺值時與 valueInBaseCurrency 使用相同正數預設，避免回傳 0 導致換算／資金匯率 placeholder 誤用他幣 */
