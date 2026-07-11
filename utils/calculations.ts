@@ -33,6 +33,11 @@ import {
   isDebtRepaymentOutflow,
   effectiveLiabilityBalance,
 } from './debtAccountHelpers';
+import { parseCashDividendNoteBreakdown } from './cashDividendNoteParse';
+import {
+  twEstimatedSingleDividendTwd,
+  usCashDividendCentBreakdown,
+} from './dividendTaxHelpers';
 
 /** 匯率物件（X→TWD：1 X = N TWD） */
 export interface ExchangeRates {
@@ -225,8 +230,39 @@ export function transactionAmountNativeToTWD(
 }
 
 /** 現金配息實領淨額：amount 已為淨入帳時直接採用，否則由 price×quantity 扣手續費 */
-export function cashDividendNetNative(tx: Pick<Transaction, 'amount' | 'price' | 'quantity' | 'fees' | 'market'>): number {
+export function cashDividendNetNative(
+  tx: Pick<
+    Transaction,
+    | 'amount'
+    | 'price'
+    | 'quantity'
+    | 'fees'
+    | 'market'
+    | 'note'
+    | 'withheldNhiTwd'
+    | 'withheldUsTaxNative'
+  >
+): number {
   if (tx.amount !== undefined && tx.amount !== null) return tx.amount;
+
+  const breakdown = parseCashDividendNoteBreakdown(tx.note);
+  if (breakdown) {
+    if (tx.market === Market.TW) {
+      const grossNative = twEstimatedSingleDividendTwd(breakdown.shares, breakdown.perShare);
+      const nhi = tx.withheldNhiTwd ?? 0;
+      return grossNative - nhi - (tx.fees || 0);
+    }
+    if (tx.market === Market.US) {
+      const formula = usCashDividendCentBreakdown(breakdown.shares, breakdown.perShare);
+      const taxNative =
+        tx.withheldUsTaxNative != null && tx.withheldUsTaxNative > 0
+          ? tx.withheldUsTaxNative
+          : formula.taxNative;
+      const autoNet = Math.round((formula.grossNative - taxNative) * 100) / 100;
+      return Math.round((autoNet - (tx.fees || 0)) * 100) / 100;
+    }
+  }
+
   let baseVal = tx.price * tx.quantity;
   if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
   return baseVal - (tx.fees || 0);
