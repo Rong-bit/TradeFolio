@@ -960,6 +960,10 @@ A: **기준 통화가 대만 달러(TWD)** 일 때 「대시보드」의 **상�
     transferDebtRepaymentHint: '차입 상환: 증권→부채.',
     recurringRulesTitle: '정기 규칙',
     debtAlertSettingsTitle: '부채 알림 설정',
+    toggleShowRecurring: '정기 규정 표시',
+    toggleHideRecurring: '정기 규정 숨기기',
+    toggleShowDebtAlert: '부채 알림 표시',
+    toggleHideDebtAlert: '부채 알림 숨기기',
     minSafetySpread: '안전 마진 (%)',
     minSafetySpreadHelp:
       '부채 계좌에 **미상환 잔액**이 있을 때 연동 증권 수익률−대출 이율이 이 기준 미만이면 대시보드와 이 페이지에 경고(참고용). 잔액 0이면 숨김. 상환 알림은 위 「규칙 추가」로 설정하세요.',
@@ -1016,7 +1020,7 @@ A: **기준 통화가 대만 달러(TWD)** 일 때 「대시보드」의 **상�
     selectYearLabel: '연도 선택',
     yearOption: '{year}년',
     noHistoryYears: '기록된 연도 없음',
-    fillYearEndButton: '🤖 {year} 연말 누락 보완',
+    fillYearEndButton: '🤖 {year} Q{quarter} 누락 데이터 보완',
     aiSearching: '가져오는 중...',
     batchProgress: '⏳ 가져오는 중 {current}/{total} ({year}년)',
     batchFetchAll: '🚀 모든 연도 일괄 가져오기',
@@ -1030,7 +1034,7 @@ A: **기준 통화가 대만 달러(TWD)** 일 때 「대시보드」의 **상�
     pricePlaceholder: '주가 입력',
     hintTitle: '💡 안내:',
     hintBullet1:
-      '첫 번째 버튼(「🤖 {year} 연말 누락 보완」 표시): 드롭다운에서 고른 연도의 12/31 종가·환율만 가져옵니다. 0 또는 빈 칸만 채우며, 이미 입력된 값은 덮어쓰지 않습니다.',
+      '첫 번째 버튼(「🤖 {year} Q{quarter} 누락 데이터 보완」): 선택한 연도·분기의 기말 종가·환율을 가져옵니다. 0 또는 빈 칸만 채우며, 이미 입력된 값은 덮어쓰지 않습니다.',
     hintBullet2:
       '「🚀 모든 연도 일괄 가져오기」: 연말(12/31)과 Q1~Q3 분기말(3/31, 6/30, 9/30)을 함께 가져와 누적 손익 차트에 분기 실데이터를 쓸 수 있습니다.',
     hintBullet3: '「강제 다시 가져오기」를 선택하면 기존 데이터를 덮어씁니다.',

@@ -963,6 +963,10 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
     transferDebtDisbursementHint: 'Debt draw: transfer liability → brokerage; counts toward net invested.',
     transferDebtRepaymentHint: 'Debt repayment: transfer brokerage → liability.',
     debtAlertSettingsTitle: 'Debt alert settings',
+    toggleShowRecurring: 'Show recurring rules',
+    toggleHideRecurring: 'Hide recurring rules',
+    toggleShowDebtAlert: 'Show debt alerts',
+    toggleHideDebtAlert: 'Hide debt alerts',
     minSafetySpread: 'Min safety spread (%)',
     minSafetySpreadHelp:
       'When the liability account **still has a balance** and linked brokerage return minus loan rate falls below this margin, a spread warning appears on the dashboard and here (informational only). Hidden at zero balance. Add a rule above for payment due reminders.',
@@ -1019,7 +1023,7 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
     selectYearLabel: 'Year',
     yearOption: '{year}',
     noHistoryYears: 'No historical years',
-    fillYearEndButton: '🤖 Fill {year} year-end gaps',
+    fillYearEndButton: '🤖 Fill {year} Q{quarter} gaps',
     aiSearching: 'Fetching...',
     batchProgress: '⏳ Fetching {current}/{total} ({year})',
     batchFetchAll: '🚀 Fetch all years',
@@ -1033,7 +1037,7 @@ A: When **base currency is TWD**, the Dashboard **Detailed Statistics** section 
     pricePlaceholder: 'Enter price',
     hintTitle: '💡 Notes:',
     hintBullet1:
-      'First button (shows 🤖 Fill {year} year-end gaps): uses the year in the dropdown; fetches only Dec 31 closing prices/rates; fills zeros or empty fields only; does not overwrite filled values.',
+      'First button (shows 🤖 Fill {year} Q{quarter} gaps): uses the year and quarter-end in the dropdown; fetches only that quarter-end closing prices/rates; fills zeros or empty fields only; does not overwrite filled values.',
     hintBullet2:
       '🚀 Fetch all: Dec 31 plus Q1–Q3 quarter-ends (Mar 31, Jun 30, Sep 30) so the cumulative P/L chart can use real quarterly data.',
     hintBullet3: 'Check “Force re-fetch” to overwrite existing values.',

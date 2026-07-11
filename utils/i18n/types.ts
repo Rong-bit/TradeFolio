@@ -854,6 +854,12 @@ export interface Translations {
     /** 資金頁外層卡片標題 */
     recurringRulesTitle: string;
     debtAlertSettingsTitle: string;
+    /** 資金頁：展開／收合定期規程區塊 */
+    toggleShowRecurring: string;
+    toggleHideRecurring: string;
+    /** 資金頁：展開／收合負債警示設定 */
+    toggleShowDebtAlert: string;
+    toggleHideDebtAlert: string;
     minSafetySpread: string;
     minSafetySpreadHelp: string;
   };
@@ -912,7 +918,7 @@ export interface Translations {
     /** 下拉選項，{year} */
     yearOption: string;
     noHistoryYears: string;
-    /** 按鈕文案，{year} */
+    /** 按鈕文案，{year} {quarter} */
     fillYearEndButton: string;
     aiSearching: string;
     /** {current} {total} {year} */
@@ -929,7 +935,7 @@ export interface Translations {
     noHoldingsThisYear: string;
     pricePlaceholder: string;
     hintTitle: string;
-    /** {year} */
+    /** {year} {quarter} */
     hintBullet1: string;
     hintBullet2: string;
     hintBullet3: string;

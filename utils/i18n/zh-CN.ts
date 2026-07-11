@@ -713,7 +713,7 @@ zhCN.historicalModal = {
   selectYearLabel: '选择年份',
   yearOption: '{year} 年',
   noHistoryYears: '无历史资料',
-  fillYearEndButton: '🤖 补齐 {year} 年底缺漏',
+  fillYearEndButton: '🤖 补齐 {year} Q{quarter} 缺漏资料',
   aiSearching: 'AI 搜寻中...',
   batchProgress: '⏳ 抓取中 {current}/{total}（{year} 年）',
   batchFetchAll: '🚀 一键抓取所有年度',
@@ -727,7 +727,7 @@ zhCN.historicalModal = {
   pricePlaceholder: '输入股价',
   hintTitle: '💡 说明：',
   hintBullet1:
-    '第一颗按钮（文案含「🤖 补齐 {year} 年底缺漏」）：针对下拉菜单目前选定的年份，仅抓取该年 12/31 年底股价／汇率；只补数值为 0 或未填的字段，已填数据不会被覆盖。',
+    '第一颗按钮（文案含「🤖 补齐 {year} Q{quarter} 缺漏资料」）：针对下拉菜单目前选定的年份与季末，仅抓取该季末股价／汇率；只补数值为 0 或未填的字段，已填数据不会被覆盖。',
   hintBullet2:
     '「🚀 一键抓取」：同时抓取年底（12/31）+ Q1～Q3 季末（3/31、6/30、9/30）股价，让累积损益图可按季显示真实数据。',
   hintBullet3: '勾选「强制重新抓取」可覆盖已有数据。',
@@ -969,6 +969,10 @@ zhCN.fundForm = {
   recurringSectionTitle: '定期规程与负债警示',
   recurringRulesTitle: '定期规程',
   debtAlertSettingsTitle: '负债警示设定',
+  toggleShowRecurring: '显示定期规程',
+  toggleHideRecurring: '隐藏定期规程',
+  toggleShowDebtAlert: '显示负债警示',
+  toggleHideDebtAlert: '隐藏负债警示',
   minSafetySpread: '利差安全边际 (%)',
   minSafetySpreadHelp:
     '当负债专户**尚有欠款**且对应证券户之报酬率，扣除借贷年利率后低于此门槛时，于仪表板与本页显示利差偏低提示（仅供参考，非投资建议）。欠款余额为 0 时不显示。负债缴款提醒请以「新增规则」建立。',

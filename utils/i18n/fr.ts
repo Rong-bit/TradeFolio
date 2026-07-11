@@ -899,6 +899,10 @@ R : Si **devise de base TWD**, **Statistiques Détaillées** affiche la progress
     transferDebtDisbursementHint: 'Tirage crédit : passif → courtage ; compte dans investi net.',
     transferDebtRepaymentHint: 'Remboursement : courtage → passif.',
     debtAlertSettingsTitle: 'Alertes dette',
+    toggleShowRecurring: 'Afficher règles récurrentes',
+    toggleHideRecurring: 'Masquer règles récurrentes',
+    toggleShowDebtAlert: 'Afficher alertes dette',
+    toggleHideDebtAlert: 'Masquer alertes dette',
     minSafetySpread: 'Marge de sécurité du spread (%)',
     minSafetySpreadHelp:
       'Tant qu’il reste un **solde de dette** sur le passif, si rendement du courtage lié − taux d’emprunt est sous ce seuil, avertissement sur le tableau de bord et ici (indicatif). Masqué à solde zéro. Rappels d’échéance : règle ci-dessus.',
@@ -955,7 +959,7 @@ R : Si **devise de base TWD**, **Statistiques Détaillées** affiche la progress
     selectYearLabel: 'Année',
     yearOption: 'Annee {year}',
     noHistoryYears: 'Aucune année',
-    fillYearEndButton: '🤖 Compléter fin {year}',
+    fillYearEndButton: '🤖 Compléter les données manquantes {year} Q{quarter}',
     aiSearching: 'Chargement...',
     batchProgress: '⏳ {current}/{total} ({year})',
     batchFetchAll: '🚀 Tout récupérer',
@@ -969,7 +973,7 @@ R : Si **devise de base TWD**, **Statistiques Détaillées** affiche la progress
     pricePlaceholder: 'Saisir le cours',
     hintTitle: '💡 Remarques :',
     hintBullet1:
-      'Premier bouton (🤖 Compléter fin {year}) : année du menu ; cours/taux du 31/12 uniquement ; remplit 0 ou vides sans écraser.',
+      'Premier bouton (🤖 Compléter les données manquantes {year} Q{quarter}) : année et trimestre sélectionnés ; cours/taux de fin de période ; remplit 0 ou vides sans écraser.',
     hintBullet2:
       '🚀 Tout récupérer : 31/12 + fins de trimestre T1–T3 (31/03, 30/06, 30/09) pour des graphiques trimestriels réels.',
     hintBullet3: 'Cochez « Forcer la mise à jour » pour écraser les données existantes.',

@@ -898,6 +898,10 @@ R: Com **moeda base TWD**, **Estatísticas Detalhadas** mostra progresso da esti
     transferDebtDisbursementHint: 'Desembolso: passivo → corretagem; conta no investimento líquido.',
     transferDebtRepaymentHint: 'Amortização: corretagem → passivo.',
     debtAlertSettingsTitle: 'Alertas de dívida',
+    toggleShowRecurring: 'Mostrar regras recorrentes',
+    toggleHideRecurring: 'Ocultar regras recorrentes',
+    toggleShowDebtAlert: 'Mostrar alertas de dívida',
+    toggleHideDebtAlert: 'Ocultar alertas de dívida',
     minSafetySpread: 'Margem de segurança do spread (%)',
     minSafetySpreadHelp:
       'Com **saldo em dívida** no passivo, se o retorno da corretagem ligada menos a taxa do empréstimo ficar abaixo deste limiar, surge aviso no painel e aqui (informativo). Oculto com saldo zero. Lembretes de pagamento: «Adicionar regra» acima.',
@@ -954,7 +958,7 @@ R: Com **moeda base TWD**, **Estatísticas Detalhadas** mostra progresso da esti
     selectYearLabel: 'Ano',
     yearOption: '{year}º ano',
     noHistoryYears: 'Sem anos',
-    fillYearEndButton: '🤖 Preencher fim de {year}',
+    fillYearEndButton: '🤖 Preencher dados faltantes {year} Q{quarter}',
     aiSearching: 'A carregar...',
     batchProgress: '⏳ {current}/{total} ({year})',
     batchFetchAll: '🚀 Obter todos os anos',
@@ -968,7 +972,7 @@ R: Com **moeda base TWD**, **Estatísticas Detalhadas** mostra progresso da esti
     pricePlaceholder: 'Introduzir preço',
     hintTitle: '💡 Notas:',
     hintBullet1:
-      'Primeiro botão (🤖 Preencher fim de {year}): ano selecionado; apenas 31/12; preenche zeros ou vazios sem substituir valores.',
+      'Primeiro botão (🤖 Preencher dados faltantes {year} Q{quarter}): ano e trimestre selecionados; cotações/taxas de fim de período; preenche zeros ou vazios sem substituir valores.',
     hintBullet2:
       '🚀 Obter tudo: 31/12 + fins de trimestre T1–T3 (31/03, 30/06, 30/09) para gráficos trimestrais reais.',
     hintBullet3: 'Marque « Forçar nova obtenção » para substituir dados existentes.',

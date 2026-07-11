@@ -916,6 +916,10 @@ TradeView विभिन्न देशों के शेयर बाजा
     transferDebtDisbursementHint: 'ऋण निकासी: देनदारी → ब्रोकरेज; शुद्ध निवेश में गिना जाता है।',
     transferDebtRepaymentHint: 'पुनर्भुगतान: ब्रोकरेज → देनदारी।',
     debtAlertSettingsTitle: 'ऋण अलर्ट सेटिंग',
+    toggleShowRecurring: 'आवर्ती नियम दिखाएँ',
+    toggleHideRecurring: 'आवर्ती नियम छिपाएँ',
+    toggleShowDebtAlert: 'ऋण अलर्ट दिखाएँ',
+    toggleHideDebtAlert: 'ऋण अलर्ट छिपाएँ',
     minSafetySpread: 'स्प्रेड सुरक्षा मार्जिन (%)',
     minSafetySpreadHelp:
       'जब देनदारी पर **बकाया शेष** हो और लिंक्ड रिटर्न − ऋण दर इस सीमा से कम हो, तो डैशबोर्ड/यहाँ चेतावनी (संदर्भ)। शेष शून्य पर छिपी। भुगतान अनुस्मारक: ऊपर «नियम जोड़ें»।',
@@ -972,7 +976,7 @@ TradeView विभिन्न देशों के शेयर बाजा
     selectYearLabel: 'वर्ष',
     yearOption: '{year} वर्ष',
     noHistoryYears: 'कोई वर्ष नहीं',
-    fillYearEndButton: '🤖 {year} वर्षांत भरें',
+    fillYearEndButton: '🤖 {year} Q{quarter} लापता डेटा भरें',
     aiSearching: 'लोड हो रहा...',
     batchProgress: '⏳ {current}/{total} ({year})',
     batchFetchAll: '🚀 सभी वर्ष लाएँ',
@@ -986,7 +990,7 @@ TradeView विभिन्न देशों के शेयर बाजा
     pricePlaceholder: 'कीमत दर्ज करें',
     hintTitle: '💡 नोट:',
     hintBullet1:
-      'पहला बटन (🤖 {year} वर्षांत भरें): ड्रॉपडाउन वर्ष; केवल 31 दिसंबर बंद भाव/दर; 0 या खाली भरता है, भरे मान नहीं बदलता।',
+      'पहला बटन (🤖 {year} Q{quarter} लापता डेटा भरें): चुना हुआ वर्ष और तिमाही; उस अवधि के अंत का बंद भाव/दर; केवल 0 या खाली भरता है, भरे मान नहीं बदलता।',
     hintBullet2:
       '🚀 सभी वर्ष: 31/12 के साथ Q1–Q3 तिमाही अंत (31/03, 30/06, 30/09) वास्तविक तिमाही चार्ट के लिए।',
     hintBullet3: '«फिर से लाएँ» चुनकर मौजूदा डेटा अधिलेखित करें।',

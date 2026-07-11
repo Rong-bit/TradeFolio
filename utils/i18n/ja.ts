@@ -960,6 +960,10 @@ A: **基準通貨が台湾ドル (TWD)** のとき、「ダッシュボード」
     transferDebtRepaymentHint: '借入返済：証券口座→負債口座。',
     recurringRulesTitle: '定期ルール',
     debtAlertSettingsTitle: '負債アラート設定',
+    toggleShowRecurring: '定期規程を表示',
+    toggleHideRecurring: '定期規程を隠す',
+    toggleShowDebtAlert: '負債アラートを表示',
+    toggleHideDebtAlert: '負債アラートを隠す',
     minSafetySpread: '安全マージン (%)',
     minSafetySpreadHelp:
       '負債口座に**未返済残高がある**とき、連動証券口座のリターンから借入金利を引いた差がこの値未満なら、ダッシュボードと本ページにスプレッド警告を表示します（参考情報）。残高 0 では非表示。返済リマインダーは上の「ルール追加」から設定してください。',
@@ -1016,7 +1020,7 @@ A: **基準通貨が台湾ドル (TWD)** のとき、「ダッシュボード」
     selectYearLabel: '年を選択',
     yearOption: '{year} 年',
     noHistoryYears: '履歴なし',
-    fillYearEndButton: '🤖 {year} 年末の欠損を補完',
+    fillYearEndButton: '🤖 {year} Q{quarter} の欠損データを補完',
     aiSearching: '取得中...',
     batchProgress: '⏳ 取得中 {current}/{total}（{year} 年）',
     batchFetchAll: '🚀 全年度を一括取得',
@@ -1030,7 +1034,7 @@ A: **基準通貨が台湾ドル (TWD)** のとき、「ダッシュボード」
     pricePlaceholder: '株価を入力',
     hintTitle: '💡 説明：',
     hintBullet1:
-      '1つ目のボタン（「🤖 {year} 年末の欠損を補完」と表示）：ドロップダウンで選んだ年の 12/31 終値・為替のみ取得。0 または未入力のみ補い、入力済みは上書きしません。',
+      '1つ目のボタン（「🤖 {year} Q{quarter} の欠損データを補完」）：選択中の年・四半期の期末終値・為替を取得。0 または未入力のみ補い、入力済みは上書きしません。',
     hintBullet2:
       '「🚀 全年度を一括取得」：年末（12/31）に加え Q1～Q3 期末（3/31・6/30・9/30）も取得し、累積損益チャートを四半期ベースの実データにできます。',
     hintBullet3: '「強制再取得」にチェックすると既存データを上書きできます。',

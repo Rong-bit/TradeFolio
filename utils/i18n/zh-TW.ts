@@ -957,6 +957,10 @@ A: 當**基準幣為台幣 (TWD)** 時，「儀表板」的 **詳細統計** 區
     transferDebtDisbursementHint: '信貸撥款：從負債專戶轉入證券戶，將計入淨投入。',
     transferDebtRepaymentHint: '信貸還本：從證券戶轉回負債專戶。',
     debtAlertSettingsTitle: '負債警示設定',
+    toggleShowRecurring: '顯示定期規程',
+    toggleHideRecurring: '隱藏定期規程',
+    toggleShowDebtAlert: '顯示負債警示',
+    toggleHideDebtAlert: '隱藏負債警示',
     minSafetySpread: '利差安全邊際 (%)',
     minSafetySpreadHelp:
       '當負債專戶**尚有欠款**且對應證券戶之報酬率，扣除借貸年利率後低於此門檻時，於儀表板與本頁顯示利差偏低提示（僅供參考，非投資建議）。欠款餘額為 0 時不顯示。負債繳款提醒請以「新增規則」建立。',
@@ -1013,7 +1017,7 @@ A: 當**基準幣為台幣 (TWD)** 時，「儀表板」的 **詳細統計** 區
     selectYearLabel: '選擇年份',
     yearOption: '{year} 年',
     noHistoryYears: '無歷史資料',
-    fillYearEndButton: '🤖 補齊 {year} 年底缺漏',
+    fillYearEndButton: '🤖 補齊 {year} Q{quarter} 缺漏資料',
     aiSearching: 'AI 搜尋中...',
     batchProgress: '⏳ 抓取中 {current}/{total}（{year} 年）',
     batchFetchAll: '🚀 一鍵抓取所有年度',
@@ -1027,7 +1031,7 @@ A: 當**基準幣為台幣 (TWD)** 時，「儀表板」的 **詳細統計** 區
     pricePlaceholder: '輸入股價',
     hintTitle: '💡 說明：',
     hintBullet1:
-      '第一顆按鈕（文案含「🤖 補齊 {year} 年底缺漏」）：針對下拉選單目前選定的年份，僅抓取該年 12/31 年底股價／匯率；只補數值為 0 或未填的欄位，已填數據不會被覆蓋。',
+      '第一顆按鈕（「🤖 補齊 {year} Q{quarter} 缺漏資料」）：針對下拉選單目前選定的年份與季度，抓取該季末股價／匯率；只補數值為 0 或未填的欄位，已填數據不會被覆蓋。',
     hintBullet2:
       '「🚀 一鍵抓取」：同時抓取年底（12/31）+ Q1～Q3 季末（3/31、6/30、9/30）股價，讓累積損益圖可按季顯示真實數據。',
     hintBullet3: '勾選「強制重新抓取」可覆蓋已有數據。',

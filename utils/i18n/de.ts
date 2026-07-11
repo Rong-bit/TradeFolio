@@ -871,6 +871,10 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistiken** den Fortschritt 
     transferDebtDisbursementHint: 'Kreditauszahlung: Verbindlichkeit → Depot; zählt zur Nettoinvestition.',
     transferDebtRepaymentHint: 'Kredittilgung: Depot → Verbindlichkeit.',
     debtAlertSettingsTitle: 'Schuld-Hinweis-Einstellungen',
+    toggleShowRecurring: 'Dauerregeln anzeigen',
+    toggleHideRecurring: 'Dauerregeln ausblenden',
+    toggleShowDebtAlert: 'Schuld-Hinweise anzeigen',
+    toggleHideDebtAlert: 'Schuld-Hinweise ausblenden',
     minSafetySpread: 'Mindest-Zinsspanne (%)',
     minSafetySpreadHelp:
       'Solange auf dem Verbindlichkeitskonto noch **Schuldsaldo** besteht und verknüpfte Depot-Rendite minus Kreditzins unter dieser Schwelle liegt, Hinweis auf Dashboard und hier (nur Information). Bei Saldo null ausgeblendet. Rückzahlungs-Erinnerungen: „Regel hinzufügen“ oben.',
@@ -927,7 +931,7 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistiken** den Fortschritt 
     selectYearLabel: 'Jahr wählen',
     yearOption: '{year} (Jahr)',
     noHistoryYears: 'Keine Jahresdaten',
-    fillYearEndButton: '🤖 {year} Jahresende ergänzen',
+    fillYearEndButton: '🤖 Fehlende Daten {year} Q{quarter} ergänzen',
     aiSearching: 'Wird geladen...',
     batchProgress: '⏳ {current}/{total} ({year})',
     batchFetchAll: '🚀 Alle Jahre abrufen',
@@ -941,7 +945,7 @@ A: Bei **Basiswährung TWD** zeigt **Detaillierte Statistiken** den Fortschritt 
     pricePlaceholder: 'Kurs eingeben',
     hintTitle: '💡 Hinweise:',
     hintBullet1:
-      'Erster Button (🤖 {year} Jahresende ergänzen): nur 31.12.-Schlusskurse/-kurs für das gewählte Jahr; füllt nur 0 oder leere Felder, überschreibt keine vorhandenen Werte.',
+      'Erster Button (🤖 Fehlende Daten {year} Q{quarter} ergänzen): gewähltes Jahr und Quartal; Periodenend-Schlusskurse/-kurse; füllt nur 0 oder leere Felder, überschreibt keine vorhandenen Werte.',
     hintBullet2:
       '🚀 Alle Jahre: 31.12. plus Quartalsenden Q1–Q3 (31.03., 30.06., 30.09.) für echte Quartalsdaten in der Kumulativ-Chart.',
     hintBullet3: '„Neu abrufen“ aktiviert Überschreiben vorhandener Werte.',
