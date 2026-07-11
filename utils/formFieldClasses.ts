@@ -7,3 +7,9 @@ export const MODAL_CANCEL_BUTTON =
 export const MODAL_CANCEL_BUTTON_LG =
   'px-6 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition';
 
+/** 行動裝置數字鍵盤：含小數點（金額、比例、匯率等） */
+export const INPUT_MODE_DECIMAL = 'decimal' as const;
+
+/** 行動裝置數字鍵盤：整數（日期、天數等；不含小數點） */
+export const INPUT_MODE_NUMERIC = 'numeric' as const;
+
