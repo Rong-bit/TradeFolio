@@ -7,11 +7,8 @@ import { FORM_FIELD_THEME, INPUT_MODE_DECIMAL } from '../utils/formFieldClasses'
 import { parseCashDividendNoteBreakdown } from '../utils/cashDividendNoteParse';
 import {
   twEstimatedSingleDividendTwd,
-  formatCashDividendNativeAmountForMarket,
-  formatUsDividendNativeAmount,
-  marketCashDividendPriceIsNetAfterWithholding,
-  readTransactionStatutoryWithholding,
   usCashDividendCentBreakdown,
+  formatUsDividendNativeAmount,
 } from '../utils/dividendTaxHelpers';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
@@ -22,7 +19,7 @@ interface Props {
   editingTransaction: Transaction | null;
 }
 
-/** 現金股息：價格欄為股息總額、數量固定 1；扣稅後淨額模式市場存淨額，台股為毛額／扣 NHI 後 */
+/** 現金股息：價格欄為股息總額、數量固定 1；美股為扣完 30% 後金額，台股為毛額；舊資料若 quantity≠1 則併入 price */
 function cashDividendFormFromTransaction(tx: Transaction): {
   price: string;
   quantity: string;
@@ -32,6 +29,13 @@ function cashDividendFormFromTransaction(tx: Transaction): {
   if (tx.quantity === 1) {
     const breakdown = parseCashDividendNoteBreakdown(tx.note);
     if (breakdown) {
+      if (tx.market === Market.US) {
+        return {
+          price: formatUsDividendNativeAmount(tx.price),
+          quantity: '1',
+          fees: tx.fees.toString(),
+        };
+      }
       if (tx.market === Market.TW) {
         const gross = twEstimatedSingleDividendTwd(breakdown.shares, breakdown.perShare);
         return {
@@ -40,17 +44,10 @@ function cashDividendFormFromTransaction(tx: Transaction): {
           fees: tx.fees.toString(),
         };
       }
-      if (marketCashDividendPriceIsNetAfterWithholding(tx.market)) {
-        return {
-          price: formatCashDividendNativeAmountForMarket(tx.market, tx.price),
-          quantity: '1',
-          fees: tx.fees.toString(),
-        };
-      }
     }
-    if (marketCashDividendPriceIsNetAfterWithholding(tx.market)) {
+    if (tx.market === Market.US) {
       return {
-        price: formatCashDividendNativeAmountForMarket(tx.market, tx.price),
+        price: formatUsDividendNativeAmount(tx.price),
         quantity: '1',
         fees: tx.fees.toString(),
       };
@@ -167,19 +164,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     if (!breakdown) return;
     const calc = usCashDividendCentBreakdown(breakdown.shares, breakdown.perShare);
     const nextPrice = formatUsDividendNativeAmount(calc.netNative);
-    if (formData.price !== nextPrice) {
-      setFormData(prev => ({ ...prev, price: nextPrice }));
-    }
-  }, [editingTransaction, formData.type, formData.market, formData.note]);
-
-  // 台股現金股息：備註含每股×股數時，新增交易才自動同步試算毛額（編輯時保留已存資料）
-  useEffect(() => {
-    if (editingTransaction) return;
-    if (formData.type !== TransactionType.CASH_DIVIDEND || formData.market !== Market.TW) return;
-    const breakdown = parseCashDividendNoteBreakdown(formData.note);
-    if (!breakdown) return;
-    const grossNative = twEstimatedSingleDividendTwd(breakdown.shares, breakdown.perShare);
-    const nextPrice = String(grossNative);
     if (formData.price !== nextPrice) {
       setFormData(prev => ({ ...prev, price: nextPrice }));
     }
@@ -335,6 +319,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     if (withheldNhiTwd != null && withheldNhiTwd > 0) {
       newTx.withheldNhiTwd = withheldNhiTwd;
     }
+
     if (shouldCreateTransferPair) {
       const transferInTx: Transaction = {
         id: uuidv4(),
@@ -540,7 +525,13 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
 
   const getCashDividendWithheld = (): number => {
     if (!isEditing || !editingTransaction) return 0;
-    return readTransactionStatutoryWithholding(editingTransaction) ?? 0;
+    if (editingTransaction.withheldUsTaxNative != null && editingTransaction.withheldUsTaxNative > 0) {
+      return editingTransaction.withheldUsTaxNative;
+    }
+    if (editingTransaction.withheldNhiTwd != null && editingTransaction.withheldNhiTwd > 0) {
+      return editingTransaction.withheldNhiTwd;
+    }
+    return 0;
   };
 
   const getCashDividendBreakdownCalc = () => {
