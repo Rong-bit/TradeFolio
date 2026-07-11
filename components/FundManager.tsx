@@ -21,7 +21,7 @@ import { t, translate } from '../utils/i18n';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
+import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON, INPUT_MODE_DECIMAL, INPUT_MODE_NUMERIC } from '../utils/formFieldClasses';
 import { recordRowClassName } from '../utils/recordHighlightClasses';
 import {
   currentYearMonth,
@@ -94,6 +94,14 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
   const [recEnabled, setRecEnabled] = useState(true);
   const [recKind, setRecKind] = useState<ScheduledRuleKind>('RECURRING_DEPOSIT');
   const [recLeadDays, setRecLeadDays] = useState('3');
+
+  const [showRecurringPanel, setShowRecurringPanel] = useState(false);
+  const [showDebtAlertPanel, setShowDebtAlertPanel] = useState(false);
+
+  const schedulePanelToggleClass = (open: boolean) =>
+    open
+      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700';
 
   const openRecModal = (rule?: RecurringDepositRule) => {
     if (rule) {
@@ -571,10 +579,31 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
       </div>
 
       {/* 1b. 定期規程與負債警示 */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 space-y-4">
-        <h3 className="text-base sm:text-lg font-bold text-slate-700">{ff.recurringSectionTitle}</h3>
+      <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h3 className="text-base sm:text-lg font-bold text-slate-700">{ff.recurringSectionTitle}</h3>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setShowRecurringPanel(v => !v)}
+              className={`px-3 py-1.5 rounded text-xs sm:text-sm font-medium border transition whitespace-nowrap ${schedulePanelToggleClass(showRecurringPanel)}`}
+            >
+              {showRecurringPanel ? ff.toggleHideRecurring : ff.toggleShowRecurring}
+            </button>
+            {onMinDebtSafetySpreadChange && (
+              <button
+                type="button"
+                onClick={() => setShowDebtAlertPanel(v => !v)}
+                className={`px-3 py-1.5 rounded text-xs sm:text-sm font-medium border transition whitespace-nowrap ${schedulePanelToggleClass(showDebtAlertPanel)}`}
+              >
+                {showDebtAlertPanel ? ff.toggleHideDebtAlert : ff.toggleShowDebtAlert}
+              </button>
+            )}
+          </div>
+        </div>
 
-        <div className="space-y-3">
+        {showRecurringPanel && (
+        <div className="space-y-3 animate-fade-in border-t border-slate-100 pt-3">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
             <div>
               <h4 className="text-sm font-semibold text-slate-700">{ff.recurringRulesTitle}</h4>
@@ -659,15 +688,17 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
             </ul>
           )}
         </div>
+        )}
 
-        {onMinDebtSafetySpreadChange && (
-          <div className="space-y-2 border-t border-slate-200 pt-4">
+        {showDebtAlertPanel && onMinDebtSafetySpreadChange && (
+          <div className="space-y-2 border-t border-slate-200 pt-4 animate-fade-in">
             <h4 className="text-sm font-semibold text-slate-700">{ff.debtAlertSettingsTitle}</h4>
             <p className="text-xs text-slate-500 max-w-2xl">{ff.minSafetySpreadHelp}</p>
             <label className="flex items-center gap-2 text-xs text-slate-600">
               <span>{ff.minSafetySpread}</span>
               <input
                 type="number"
+                inputMode={INPUT_MODE_DECIMAL}
                 min={0}
                 max={20}
                 step={0.5}
@@ -721,6 +752,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                   <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.recurringLeadDays}</label>
                   <input
                     type="number"
+                    inputMode={INPUT_MODE_NUMERIC}
                     min={0}
                     max={31}
                     value={recLeadDays}
@@ -733,6 +765,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                 <label className="block text-slate-700 dark:text-slate-200 font-medium">{ff.recurringDayOfMonth}</label>
                 <input
                   type="number"
+                  inputMode={INPUT_MODE_NUMERIC}
                   min={1}
                   max={31}
                   required
@@ -764,6 +797,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                 </label>
                 <input
                   type="number"
+                  inputMode={INPUT_MODE_DECIMAL}
                   min={0}
                   step="0.01"
                   required
@@ -784,6 +818,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                   </label>
                   <input
                     type="number"
+                    inputMode={INPUT_MODE_DECIMAL}
                     step="0.0001"
                     placeholder={
                       (() => {
@@ -811,6 +846,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                 </label>
                 <input
                   type="number"
+                  inputMode={INPUT_MODE_DECIMAL}
                   step="0.01"
                   value={recFee}
                   onChange={e => setRecFee(e.target.value)}
@@ -822,6 +858,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-1 leading-relaxed">{ff.recurringAmountTwdHelp}</p>
                 <input
                   type="number"
+                  inputMode={INPUT_MODE_DECIMAL}
                   step="0.01"
                   value={recAmountTwd}
                   onChange={e => setRecAmountTwd(e.target.value)}
@@ -1313,7 +1350,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{ff.amount} ({selectedAccount?.currency || 'TWD'})</label>
-                      <input type="number" required min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}/>
+                      <input type="number" inputMode={INPUT_MODE_DECIMAL} required min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}/>
                     </div>
                   </div>
 
@@ -1341,7 +1378,8 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                             {!isTransfer && selectedAccount?.currency === Currency.JPY && <span className="text-xs text-orange-600 ml-1">{ff.jpyConversion}</span>}
                          </label>
                          <input 
-                           type="number" 
+                           type="number"
+                           inputMode={INPUT_MODE_DECIMAL}
                            step="0.0001" 
                            placeholder={transferRatePlaceholder ?? fundEntryRatePlaceholder} 
                            value={exchangeRate} 
@@ -1362,7 +1400,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
 
                      <div>
                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">{translate('fundForm.fees', language, { currency: baseCurrency })} <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">{ff.feesNote}</span></label>
-                       <input type="number" step="1" placeholder="0" value={fee} onChange={e => setFee(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}/>
+                       <input type="number" inputMode={INPUT_MODE_NUMERIC} step="1" placeholder="0" value={fee} onChange={e => setFee(e.target.value)} className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}/>
                      </div>
                   </div>
 
