@@ -98,7 +98,7 @@ export const zhTW: Translations = {
     legendMarketOuter: '個股／ETF（外圓）',
     legendStockBondInner: '股債比例（內圓）',
     assetClassOverrideTitle: '自訂股/債分類（覆寫）',
-    tickerSymbolLabel: 'Ticker',
+    tickerSymbolLabel: '股票代號',
     tickerPlaceholderExamples: '例如：AGG / TLT / BND',
     assetClassSelectLabel: '分類',
     equityLabelShort: '股',

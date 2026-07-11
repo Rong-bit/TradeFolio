@@ -100,7 +100,7 @@ export const ko: Translations = {
     legendMarketOuter: '티커별 보유(외곽)',
     legendStockBondInner: '주식·채권 비율(내곽)',
     assetClassOverrideTitle: '주식/채권 사용자 지정(덮어쓰기)',
-    tickerSymbolLabel: '티커',
+    tickerSymbolLabel: '종목 코드',
     tickerPlaceholderExamples: '예: AGG / TLT / BND',
     assetClassSelectLabel: '분류',
     equityLabelShort: '주식',

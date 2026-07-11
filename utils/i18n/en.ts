@@ -100,7 +100,7 @@ export const en: Translations = {
     legendMarketOuter: 'Holdings by ticker (outer ring)',
     legendStockBondInner: 'Stock/bond mix (inner ring)',
     assetClassOverrideTitle: 'Custom stock/bond classification (overrides)',
-    tickerSymbolLabel: 'Ticker',
+    tickerSymbolLabel: 'Stock ticker',
     tickerPlaceholderExamples: 'e.g. AGG / TLT / BND',
     assetClassSelectLabel: 'Class',
     equityLabelShort: 'Equity',

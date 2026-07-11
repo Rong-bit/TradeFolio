@@ -46,7 +46,7 @@ export const ar: Translations = {
     legendMarketOuter: 'المراكز حسب الرمز (خارجي)',
     legendStockBondInner: 'أسهم/سندات (داخلي)',
     assetClassOverrideTitle: 'تصنيف مخصص للأسهم/السندات (تجاوزات)',
-    tickerSymbolLabel: 'الرمز',
+    tickerSymbolLabel: 'رمز السهم',
     tickerPlaceholderExamples: 'مثال: AGG / TLT / BND',
     assetClassSelectLabel: 'الفئة',
     equityLabelShort: 'أسهم',

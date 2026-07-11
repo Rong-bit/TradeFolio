@@ -37,7 +37,7 @@ zhCN.dashboard = {
   legendMarketOuter: '个股／ETF（外圆）',
   legendStockBondInner: '股债比例（内圆）',
   assetClassOverrideTitle: '自定义股/债分类（覆盖）',
-  tickerSymbolLabel: '代码',
+  tickerSymbolLabel: '股票代号',
   tickerPlaceholderExamples: '例如：AGG / TLT / BND',
   assetClassSelectLabel: '分类',
   equityLabelShort: '股',

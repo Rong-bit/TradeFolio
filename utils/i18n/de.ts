@@ -70,7 +70,7 @@ export const de: Translations = {
     legendMarketOuter: 'Bestände nach Ticker (außen)',
     legendStockBondInner: 'Aktien/Anleihen (innen)',
     assetClassOverrideTitle: 'Eigene Aktien/Anleihen-Klassifikation (Überschreibungen)',
-    tickerSymbolLabel: 'Boersenkuerzel',
+    tickerSymbolLabel: 'Aktiensymbol',
     tickerPlaceholderExamples: 'z. B. AGG / TLT / BND',
     assetClassSelectLabel: 'Klasse',
     equityLabelShort: 'Aktien',

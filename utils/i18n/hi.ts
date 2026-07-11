@@ -46,7 +46,7 @@ export const hi: Translations = {
     legendMarketOuter: 'टिकर के अनुसार होल्डिंग (बाहरी)',
     legendStockBondInner: 'इक्विटी/बॉन्ड (आंतरिक)',
     assetClassOverrideTitle: 'कस्टम इक्विटी/बॉन्ड वर्गीकरण (ओवरराइड)',
-    tickerSymbolLabel: 'टिकर',
+    tickerSymbolLabel: 'स्टॉक टिकर',
     tickerPlaceholderExamples: 'उदा. AGG / TLT / BND',
     assetClassSelectLabel: 'वर्ग',
     equityLabelShort: 'इक्विटी',

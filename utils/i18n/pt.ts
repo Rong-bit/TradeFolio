@@ -46,7 +46,7 @@ export const pt: Translations = {
     legendMarketOuter: 'Posições por ticker (externo)',
     legendStockBondInner: 'Ações/títulos (interno)',
     assetClassOverrideTitle: 'Classificação personalizada ações/títulos (substituições)',
-    tickerSymbolLabel: 'Código',
+    tickerSymbolLabel: 'Código da ação',
     tickerPlaceholderExamples: 'ex.: AGG / TLT / BND',
     assetClassSelectLabel: 'Classe',
     equityLabelShort: 'Ações',

@@ -100,7 +100,7 @@ export const ja: Translations = {
     legendMarketOuter: '銘柄別（外周）',
     legendStockBondInner: '株債比率（内周）',
     assetClassOverrideTitle: '株/債の手動分類（上書き）',
-    tickerSymbolLabel: 'ティッカー',
+    tickerSymbolLabel: '銘柄',
     tickerPlaceholderExamples: '例：AGG / TLT / BND',
     assetClassSelectLabel: '分類',
     equityLabelShort: '株式',
