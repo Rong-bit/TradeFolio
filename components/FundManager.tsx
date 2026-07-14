@@ -1440,7 +1440,9 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
               <h3 className="text-base sm:text-lg font-bold text-red-600 mb-2">
                 {translate('funds.confirmClearAll', language, { count: filteredFlows.length })}
               </h3>
-              <p className="text-sm sm:text-base text-slate-600 mb-6">{translations.funds.confirmClearAllMessage}</p>
+              <p className="text-sm sm:text-base text-slate-600 mb-6">
+                {translate('funds.confirmClearAllMessage', language, { count: filteredFlows.length })}
+              </p>
               <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                  <button type="button" onClick={() => setIsClearConfirmOpen(false)} className={`${MODAL_CANCEL_BUTTON} text-sm sm:text-base`}>{translations.common.cancel}</button>
                  <button 
