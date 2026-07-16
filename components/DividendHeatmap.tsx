@@ -4,7 +4,7 @@ import { Market, Transaction, TransactionType } from '../types';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
-import { transactionAmountNativeToTWD, valueInBaseCurrency, cashDividendRecordAmount } from '../utils/calculations';
+import { transactionAmountNativeToTWD, valueInBaseCurrency, cashDividendNetNative } from '../utils/calculations';
 import { t, translate } from '../utils/i18n';
 import { useActualDividends } from '../hooks/useActualDividends';
 import {
@@ -208,7 +208,6 @@ const DividendHeatmap: React.FC = () => {
   const { language, isGuest } = useUI();
   const tr = t(language);
   const [hoveredCell, setHoveredCell] = useState<{ year: number; month: number } | null>(null);
-  const [pendingAccountByKey, setPendingAccountByKey] = useState<Record<string, string>>({});
   const [dismissedPendingKeys, setDismissedPendingKeys] = useState<Set<string>>(
     () => readDismissedPendingDividendKeys()
   );
@@ -234,6 +233,27 @@ const DividendHeatmap: React.FC = () => {
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const dtx = tr.dividendTax;
   const tf = tr.transactionForm;
+
+  const marketLabelMap = useMemo(
+    (): Record<Market, string> => ({
+      [Market.US]: tf.marketUS,
+      [Market.TW]: tf.marketTW,
+      [Market.UK]: tf.marketUK,
+      [Market.JP]: tf.marketJP,
+      [Market.CN]: tf.marketCN,
+      [Market.SZ]: tf.marketSZ,
+      [Market.IN]: tf.marketIN,
+      [Market.CA]: tf.marketCA,
+      [Market.FR]: tf.marketFR,
+      [Market.HK]: tf.marketHK,
+      [Market.KR]: tf.marketKR,
+      [Market.DE]: tf.marketDE,
+      [Market.AU]: tf.marketAU,
+      [Market.SA]: tf.marketSA,
+      [Market.BR]: tf.marketBR,
+    }),
+    [tf]
+  );
 
   const getAccountName = (accountId: string): string => {
     const a = accounts.find(x => x.id === accountId);
@@ -298,7 +318,7 @@ const DividendHeatmap: React.FC = () => {
       const d = new Date(tx.date);
       const year = d.getFullYear();
       const month = d.getMonth();
-      const amt = cashDividendRecordAmount(tx);
+      const amt = cashDividendNetNative(tx);
       const amountTWD = transactionAmountNativeToTWD(amt, tx, accounts, rates);
       const amount = toBase(amountTWD);
       if (!map[year]) map[year] = {};
@@ -414,11 +434,6 @@ const DividendHeatmap: React.FC = () => {
       persistDismissedPendingDividendKeys(next);
       return next;
     });
-    setPendingAccountByKey(prev => {
-      const next = { ...prev };
-      delete next[rowKey];
-      return next;
-    });
     if (confirmState?.rowKey === rowKey) setConfirmState(null);
   };
 
@@ -431,7 +446,7 @@ const DividendHeatmap: React.FC = () => {
   }, [dividendRequests, actualDividendsMap]);
 
   const handleAddPendingActual = (row: PendingActualRow) => {
-    const accountId = pendingAccountByKey[row.key] ?? row.accountId ?? accounts[0]?.id;
+    const accountId = row.accountId ?? accounts[0]?.id;
     if (!accountId) return;
     const calc = getCashDividendCalc(row);
     if (calc.netNative <= 0) return;
@@ -593,12 +608,6 @@ const DividendHeatmap: React.FC = () => {
     }
 
     addTransaction(saved);
-    const rowKey = confirmState.rowKey;
-    setPendingAccountByKey(prev => {
-      const next = { ...prev };
-      delete next[rowKey];
-      return next;
-    });
     setConfirmState(null);
   };
 
@@ -628,81 +637,14 @@ const DividendHeatmap: React.FC = () => {
   const bestMonth = monthTotals.indexOf(Math.max(...monthTotals));
   const hasHeatmapData = displayYears.length > 0;
 
-  const renderPendingAddRow = (pa: PendingActualRow, opts?: { showTicker?: boolean }) => {
-    const showTicker = opts?.showTicker !== false;
-    const paSelectedAccount =
-      pendingAccountByKey[pa.key] ?? pa.accountId ?? accounts[0]?.id ?? '';
-    const paOptionAccountIds = new Set(pa.accountOptions.map(o => o.accountId));
-    const calc = getCashDividendCalc(pa);
-    const cur = pa.currency ?? getAccountCurrencyCode(paSelectedAccount);
-    const fmtAmt = (n: number, market: Market) =>
-      formatCashDividendNativeAmountForMarket(market, n);
-    const accountLabel =
-      accounts.find(a => a.id === pa.accountId)?.name ?? pa.accountId;
-    const tipLines: string[] = [];
-    tipLines.push(`${accountLabel}：${pa.quantity} 股`);
-    tipLines.push(
-      `${dtx.pendingActualPerShare}: ${pa.amountPerShare} × ${pa.quantity} = ${fmtAmt(calc.grossNative, pa.market)} ${cur}`
-    );
-    if (calc.taxNative > 0) {
-      const pct = getMarketWithholdingReferenceRatePercent(pa.market);
-      const pctLabel = pct != null ? `${pct}%` : '';
-      tipLines.push(`− ${pctLabel} = -${fmtAmt(calc.taxNative, pa.market)} ${cur}`);
-      tipLines.push(`= ${fmtAmt(calc.netNative, pa.market)} ${cur}`);
-    }
-    const sourceLabel =
-      pa.source === 'stockanalysis'
-        ? 'StockAnalysis'
-        : pa.source === 'yahoo'
-          ? dtx.pendingActualSourceYahoo
-          : dtx.pendingActualSourceMoneyDj;
-    tipLines.push(
-      `${sourceLabel}｜${dtx.upcomingExDate} ${pa.exDate}${pa.payDate ? ` → ${pa.payDate}` : ''}`
-    );
+  const renderPendingAddRow = (pa: PendingActualRow) => {
+    const accountId = pa.accountId ?? accounts[0]?.id ?? '';
 
     return (
       <div key={pa.key} className="flex flex-wrap items-center justify-center gap-2 text-sm">
-        {showTicker && (
-          <span className="font-mono font-semibold text-slate-700">{pa.ticker}</span>
-        )}
-        {showTicker && (
-          <span
-            className="rounded px-1.5 py-0.5 bg-sky-50 border border-sky-200 text-sky-800 font-semibold tabular-nums"
-            title={tipLines.join('\n')}
-          >
-            {fmtAmt(calc.netNative, pa.market)} {cur}
-          </span>
-        )}
-        {showTicker && (
-          <select
-            value={paSelectedAccount}
-            onChange={e =>
-              setPendingAccountByKey(prev => ({ ...prev, [pa.key]: e.target.value }))
-            }
-            className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-sky-400"
-          >
-            {pa.accountOptions.map(opt => {
-              const acc = accounts.find(a => a.id === opt.accountId);
-              return (
-                <option key={opt.accountId} value={opt.accountId}>
-                  {acc ? acc.name : opt.accountId}
-                </option>
-              );
-            })}
-            {accounts
-              .filter(a => !paOptionAccountIds.has(a.id))
-              .map(a => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-          </select>
-        )}
-        {!showTicker && (
-          <span className="text-sm font-medium text-slate-500">
-            {getAccountName(paSelectedAccount)}
-          </span>
-        )}
+        <span className="text-sm font-medium text-slate-500">
+          {getAccountName(accountId)}
+        </span>
         <button
           type="button"
           onClick={() => handleAddPendingActual(pa)}
@@ -887,7 +829,7 @@ const DividendHeatmap: React.FC = () => {
                   <thead className="bg-slate-50 text-slate-500 font-semibold">
                     <tr>
                       <th className="px-3 py-2">{tr.holdings.ticker}</th>
-                      <th className="px-3 py-2">Mkt</th>
+                      <th className="px-3 py-2">{tr.historicalModal.colMarket}</th>
                       <th className="px-3 py-2">{dtx.upcomingExDate}</th>
                       <th className="px-3 py-2">{dtx.pendingActualPayDate}</th>
                       <th className="px-3 py-2 text-right">{dtx.pendingActualPerShare}</th>
@@ -902,7 +844,7 @@ const DividendHeatmap: React.FC = () => {
                       return (
                         <tr key={pa.key} className="border-b border-slate-100 text-slate-600 last:border-b-0 dark:border-slate-700">
                           <td className="px-3 py-2 font-mono font-medium">{pa.ticker}</td>
-                          <td className="px-3 py-2">{pa.market}</td>
+                          <td className="px-3 py-2">{marketLabelMap[pa.market] ?? pa.market}</td>
                           <td className="px-3 py-2 tabular-nums">{pa.exDate}</td>
                           <td className="px-3 py-2 tabular-nums">
                             {pa.payDate ?? '—'}
@@ -917,7 +859,7 @@ const DividendHeatmap: React.FC = () => {
                             {formatCashDividendNativeAmountForMarket(pa.market, calc.netNative)}{' '}
                             {cur}
                           </td>
-                          <td className="px-3 py-2 text-center">{renderPendingAddRow(pa, { showTicker: false })}</td>
+                          <td className="px-3 py-2 text-center">{renderPendingAddRow(pa)}</td>
                         </tr>
                       );
                     })}
@@ -950,7 +892,7 @@ const DividendHeatmap: React.FC = () => {
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
                   <span className="text-slate-600 dark:text-slate-400">{tf.marketLabel}</span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">{confirmState.tx.market}</span>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">{marketLabelMap[confirmState.tx.market] ?? confirmState.tx.market}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
                   <span className="text-slate-600 dark:text-slate-400">{tf.tickerLabel}</span>
