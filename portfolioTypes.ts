@@ -101,6 +101,8 @@ export interface Account {
   annualInterestRate?: number;
   creditLimit?: number;
   linkedBrokerageAccountId?: string;
+  /** 已結清後由使用者隱藏：列表不顯示，資料與歷史仍保留 */
+  isHidden?: boolean;
 }
 
 export interface CashFlow {
@@ -299,8 +301,10 @@ export interface AccountPerformance {
   cashBalanceTWD: number;
   profitTWD: number;
   roi: number;
-  /** 無持股時視為該證券戶績效已結清（轉倉結案後常見） */
+  /** 無持股且現金≈0：證券戶績效已結清（轉倉結案後常見） */
   isClosed?: boolean;
+  /** 無持股但仍有現金：空手、帳戶仍可用 */
+  isFlat?: boolean;
   // 原始幣種數值（用於切換顯示）
   totalAssetsNative?: number;
   marketValueNative?: number;
