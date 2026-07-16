@@ -1,18 +1,24 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Account, AccountKind, Currency, DebtKind, BASE_CURRENCIES } from '../types';
 import { isLiabilityAccount } from '../utils/debtAccountHelpers';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from '../utils/calculations';
 import { t, translate } from '../utils/i18n';
-import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
+import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON, INPUT_MODE_DECIMAL, INPUT_MODE_NUMERIC } from '../utils/formFieldClasses';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 
 interface Props {}
 
 const AccountManager: React.FC<Props> = () => {
-  const { computedAccounts: accounts, addAccount, updateAccount: onUpdate, removeAccount: onDelete } = usePortfolio();
+  const {
+    computedAccounts: allAccounts,
+    accountPerformance,
+    addAccount,
+    updateAccount: onUpdate,
+    removeAccount: onDelete,
+  } = usePortfolio();
   const { language } = useUI();
   const isChinese = language === 'zh-TW' || language === 'zh-CN';
   const onAdd = addAccount;
@@ -29,24 +35,49 @@ const AccountManager: React.FC<Props> = () => {
   
   // State for custom delete confirmation modal
   const [deleteTarget, setDeleteTarget] = useState<{id: string, name: string} | null>(null);
+  const [hideTarget, setHideTarget] = useState<{id: string, name: string} | null>(null);
   
   // State for edit modal
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const closedAccountIds = useMemo(
+    () => new Set(accountPerformance.filter(a => a.isClosed).map(a => a.id)),
+    [accountPerformance]
+  );
+  const visibleAccounts = useMemo(
+    () => allAccounts.filter(a => !a.isHidden),
+    [allAccounts]
+  );
+  const hiddenAccounts = useMemo(
+    () => allAccounts.filter(a => a.isHidden),
+    [allAccounts]
+  );
   
-  // 檢查名稱是否與其他帳戶重複（排除當前編輯的帳戶）
+  // 檢查名稱是否與其他帳戶重複（排除當前編輯的帳戶；含已隱藏）
   const isNameDuplicate = useCallback((checkName: string): boolean => {
-    return accounts.some(acc => {
+    return allAccounts.some(acc => {
       // 編輯模式下，排除當前編輯的帳戶
       if (editingAccount && acc.id === editingAccount.id) {
         return false;
       }
       return acc.name === checkName;
     });
-  }, [accounts, editingAccount]);
+  }, [allAccounts, editingAccount]);
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    const hiddenDup = allAccounts.find(
+      acc =>
+        acc.isHidden &&
+        acc.name === name.trim() &&
+        !(editingAccount && acc.id === editingAccount.id)
+    );
+    if (hiddenDup) {
+      alert(translate('accounts.duplicateHiddenNameHint', language, { name: name.trim() }));
+      return;
+    }
     
     // 檢查名稱是否重複
     if (isNameDuplicate(name)) {
@@ -128,6 +159,10 @@ const AccountManager: React.FC<Props> = () => {
   const handleDeleteClick = (e: React.MouseEvent, id: string, accountName: string) => {
     // Only stop propagation to prevent bubbling to card clicks if any
     e.stopPropagation();
+    if (closedAccountIds.has(id)) {
+      setHideTarget({ id, name: accountName });
+      return;
+    }
     setDeleteTarget({ id, name: accountName });
   };
 
@@ -136,6 +171,19 @@ const AccountManager: React.FC<Props> = () => {
       onDelete(deleteTarget.id);
       setDeleteTarget(null);
     }
+  };
+
+  const confirmHide = () => {
+    if (!hideTarget) return;
+    const acc = allAccounts.find(a => a.id === hideTarget.id);
+    if (acc && onUpdate) {
+      onUpdate({ ...acc, isHidden: true });
+    }
+    setHideTarget(null);
+  };
+
+  const restoreAccount = (acc: Account) => {
+    if (onUpdate) onUpdate({ ...acc, isHidden: false });
   };
 
   const getCurrencyLabel = (c: Currency): string => {
@@ -205,6 +253,7 @@ const AccountManager: React.FC<Props> = () => {
                 <label className="block text-sm font-medium text-slate-700">{translations.accounts.annualInterestRate}</label>
                 <input
                   type="number"
+                  inputMode={INPUT_MODE_DECIMAL}
                   step="0.01"
                   min="0"
                   value={annualInterestRate}
@@ -217,6 +266,7 @@ const AccountManager: React.FC<Props> = () => {
                 <label className="block text-sm font-medium text-slate-700">{translations.accounts.creditLimit}</label>
                 <input
                   type="number"
+                  inputMode={INPUT_MODE_NUMERIC}
                   step="1"
                   min="0"
                   value={creditLimit}
@@ -233,7 +283,7 @@ const AccountManager: React.FC<Props> = () => {
                   className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
                 >
                   <option value="">—</option>
-                  {accounts
+                  {visibleAccounts
                     .filter(a => !isLiabilityAccount(a))
                     .map(a => (
                       <option key={a.id} value={a.id}>{a.name}</option>
@@ -274,7 +324,7 @@ const AccountManager: React.FC<Props> = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {accounts.map(acc => (
+        {visibleAccounts.map(acc => (
           <div key={acc.id} className="bg-white p-5 rounded-lg shadow border border-slate-100 hover:shadow-md transition-shadow relative">
             {/* Header Area */}
             <div className="flex justify-between items-start mb-3">
@@ -344,16 +394,44 @@ const AccountManager: React.FC<Props> = () => {
           </div>
         ))}
         
-        {accounts.length === 0 && (
+        {visibleAccounts.length === 0 && allAccounts.length === 0 && (
           <div className="col-span-full text-center py-10 text-slate-400 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
             {translations.accounts.noAccounts}
           </div>
         )}
       </div>
 
+      {hiddenAccounts.length > 0 && (
+        <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <h4 className="text-sm font-bold text-slate-600 mb-3">
+            {translations.accounts.hiddenAccountsSection}（{hiddenAccounts.length}）
+          </h4>
+          <div className="space-y-2">
+            {hiddenAccounts.map(acc => (
+              <div
+                key={acc.id}
+                className="flex items-center justify-between gap-3 bg-white rounded-md border border-slate-100 px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-slate-800 truncate">{acc.name}</p>
+                  <p className="text-xs text-slate-500">{acc.currency}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => restoreAccount(acc)}
+                  className="shrink-0 px-3 py-1.5 text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-md transition"
+                >
+                  {translations.accounts.restoreAccount}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Edit Account Modal */}
       {isEditModalOpen && editingAccount && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <h3 className="text-lg font-bold text-slate-900 mb-4">{translations.accounts.editAccountTitle}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -397,6 +475,7 @@ const AccountManager: React.FC<Props> = () => {
                     <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.annualInterestRate}</label>
                     <input
                       type="number"
+                      inputMode={INPUT_MODE_DECIMAL}
                       step="0.01"
                       min="0"
                       value={annualInterestRate}
@@ -408,6 +487,7 @@ const AccountManager: React.FC<Props> = () => {
                     <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.creditLimit}</label>
                     <input
                       type="number"
+                      inputMode={INPUT_MODE_NUMERIC}
                       step="1"
                       min="0"
                       value={creditLimit}
@@ -423,10 +503,14 @@ const AccountManager: React.FC<Props> = () => {
                       className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
                     >
                       <option value="">—</option>
-                      {accounts
+                      {allAccounts
                         .filter(a => !isLiabilityAccount(a) && a.id !== editingAccount.id)
                         .map(a => (
-                          <option key={a.id} value={a.id}>{a.name}</option>
+                          <option key={a.id} value={a.id}>
+                            {a.isHidden
+                              ? `${a.name} (${translations.accounts.hiddenAccountsSection})`
+                              : a.name}
+                          </option>
                         ))}
                     </select>
                   </div>
@@ -448,7 +532,8 @@ const AccountManager: React.FC<Props> = () => {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.balance}</label>
                   <input 
-                    type="number" 
+                    type="number"
+                    inputMode={INPUT_MODE_DECIMAL}
                     step="0.01"
                     value={balance}
                     onChange={(e) => setBalance(e.target.value)}
@@ -504,7 +589,7 @@ const AccountManager: React.FC<Props> = () => {
 
       {/* Custom Delete Confirmation Modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
           <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
             <h3 className="text-lg font-bold text-slate-900 mb-2">{translations.accounts.confirmDelete}</h3>
             <p className="text-slate-600 mb-4">
@@ -525,6 +610,36 @@ const AccountManager: React.FC<Props> = () => {
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition shadow-sm"
               >
                 {translations.accounts.deleteAccount}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 已結清：僅能隱藏 */}
+      {hideTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">
+              {translations.accounts.cannotDeleteClosedTitle}
+            </h3>
+            <p className="text-slate-600 mb-6 text-sm leading-relaxed">
+              {translations.accounts.cannotDeleteClosedMessage}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setHideTarget(null)}
+                className={MODAL_CANCEL_BUTTON}
+              >
+                {translations.common.cancel}
+              </button>
+              <button
+                type="button"
+                onClick={confirmHide}
+                className="px-4 py-2 bg-slate-900 text-white rounded hover:bg-slate-800 transition shadow-sm"
+              >
+                {translations.accounts.hideAccount}
               </button>
             </div>
           </div>
