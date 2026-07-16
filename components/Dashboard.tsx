@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Account, CashFlow, CashFlowType, Currency, Holding, AssetClass, Market, Transaction, TransactionType, StockSplitEvent } from '../portfolioTypes';
-import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildQuarterlyTrendData, getAssetClassForTicker, calculateAssetAllocation, currencyToTWDRate } from '../utils/calculations';
+import { formatCurrency, valueInBaseCurrency, getDisplayRateForBaseCurrency, holdingValueToTWD, buildAttributionSeries, buildWaterfallYearRows, buildQuarterlyTrendData, getAssetClassForTicker, calculateAssetAllocation, currencyToTWDRate, cashDividendNetNative } from '../utils/calculations';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
@@ -36,11 +36,19 @@ const SEGMENT_BTN_CLASS =
 function Dashboard({ onUpdateHistorical }: DashboardProps) {
   const { summary, holdings, chartData, annualPerformance,
     accountPerformance, cashFlows, transactions, accounts: portfolioAccounts, computedAccounts,
-    handleAutoUpdatePrices: onAutoUpdate,
+    updatePrice: onUpdatePrice, handleAutoUpdatePrices: onAutoUpdate,
     refreshIntervalMs, historicalData, stockSplits } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { language, isGuest } = useUI();
   const accounts = computedAccounts;
+  const visibleAccountPerformance = useMemo(
+    () =>
+      accountPerformance.filter(ap => {
+        const src = portfolioAccounts.find(a => a.id === ap.id);
+        return !src?.isHidden;
+      }),
+    [accountPerformance, portfolioAccounts]
+  );
   const translations = t(language);
   const [showDetails, setShowDetails] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -94,12 +102,15 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
     () => Array.from(new Set(holdings.map((h: Holding) => h.ticker))).sort((a, b) => a.localeCompare(b)),
     [holdings]
   );
+  const holdingTickersUpper = useMemo(
+    () => new Set(holdings.map((h: Holding) => h.ticker.trim().toUpperCase())),
+    [holdings]
+  );
   const overrideChips = useMemo(() => {
-    const set = new Set(tickerSuggestions);
     return Object.entries(tickerClassOverrides)
-      .filter(([ticker]) => set.has(ticker))
+      .filter(([ticker]) => holdingTickersUpper.has(ticker))
       .sort(([a], [b]) => a.localeCompare(b));
-  }, [tickerClassOverrides, tickerSuggestions]);
+  }, [tickerClassOverrides, holdingTickersUpper]);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [hoveredAnnualYear, setHoveredAnnualYear] = useState<string | null>(null);
   const [hoveredAccountId, setHoveredAccountId] = useState<string | null>(null);
@@ -218,7 +229,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       }
 
       if (tx.type === TransactionType.CASH_DIVIDEND && isOverseasMarket && isReportYear) {
-        const divNative = (tx.amount ?? tx.price * tx.quantity) - (tx.fees || 0);
+        const divNative = cashDividendNetNative(tx);
         overseasDividendTwd += toTwdByTxDate(divNative, tx);
       }
     });
@@ -1502,7 +1513,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                       onChange={(e) => setOverrideTickerInput(e.target.value)}
                       list="ticker-suggestions"
                       placeholder={translations.dashboard.tickerPlaceholderExamples}
-                      className="w-full bg-white border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full bg-white border border-slate-200 rounded-md p-2 text-base sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     />
                     <datalist id="ticker-suggestions">
                       {tickerSuggestions.map((t) => (
@@ -1517,7 +1528,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     <select
                       value={overrideAssetClass}
                       onChange={(e) => setOverrideAssetClass(e.target.value as AssetClass)}
-                      className="w-full bg-white border border-slate-200 rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full bg-white border border-slate-200 rounded-md p-2 text-base sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
                       <option value={AssetClass.EQUITY}>{translations.dashboard.equityLabelShort}</option>
                       <option value={AssetClass.BOND}>{translations.dashboard.bondLabelShort}</option>
@@ -1759,8 +1770,8 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-700 bg-white dark:bg-slate-800">
-              {accountPerformance.length > 0 ? (
-                accountPerformance.map(acc => {
+              {visibleAccountPerformance.length > 0 ? (
+                visibleAccountPerformance.map(acc => {
                   let displayCurrency: string;
                   let totalAssets: number;
                   let marketValue: number;
@@ -1844,6 +1855,10 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                               <span className="ml-1.5 inline-flex rounded px-1.5 py-0.5 text-xs font-semibold bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-200">
                                 {translate('dashboard.accountClosedBadge', language)}
                               </span>
+                            ) : acc.isFlat ? (
+                              <span className="ml-1.5 inline-flex rounded px-1.5 py-0.5 text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200">
+                                {translate('dashboard.accountFlatBadge', language)}
+                              </span>
                             ) : null}
                           </div>
                         </td>
@@ -1896,7 +1911,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
       <HoldingsTable />
 
       {showCostDetailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
             <div className="bg-slate-900 p-4 flex justify-between items-center shrink-0">
               <h2 className="text-white font-bold text-lg flex items-center gap-2">
