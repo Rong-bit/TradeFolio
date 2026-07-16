@@ -12,6 +12,7 @@ import {
 } from '../types';
 import { applyRecurringDeposits } from '../utils/recurringDeposits';
 import { holdingPriceKey, quoteCurrencyForTransaction } from '../utils/calculations';
+import { normalizeTransactionAmount } from '../utils/transactionAmount';
 import { invalidateActualDividendCacheForTx } from '../utils/actualDividendCache';
 import { clearDismissedPendingDividendKeysForTransaction } from '../utils/pendingDividendDismissals';
 
@@ -26,6 +27,17 @@ export interface PortfolioDataState {
   historicalData: HistoricalData;
   recurringDepositRules: RecurringDepositRule[];
   stockSplits: StockSplitEvent[];
+}
+
+/** 修正台股轉倉舊資料未捨去的金額小數 */
+function normalizeTwTransferTransactions(state: PortfolioDataState): PortfolioDataState {
+  let changed = false;
+  const transactions = state.transactions.map(tx => {
+    const next = normalizeTransactionAmount(tx);
+    if (next.amount !== tx.amount) changed = true;
+    return next;
+  });
+  return changed ? { ...state, transactions } : state;
 }
 
 /** 套用定期入金規則（單次 setState，避免 effect + cashFlows 依賴造成重複入帳） */
@@ -107,7 +119,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
       localStorage.setItem(schemaKey, PRICE_DETAILS_SCHEMA);
     }
 
-    setData(applyRecurringToPortfolioState(loaded));
+    setData(normalizeTwTransferTransactions(applyRecurringToPortfolioState(loaded)));
   }, []);
 
   /** 重置所有資料（登出時使用） */
@@ -118,31 +130,33 @@ export function usePortfolioData(userPrefix: string | undefined) {
   // ── Transactions ──────────────────────────────────────────────
 
   const addTransaction = useCallback((tx: Transaction) => {
-    invalidateActualDividendCacheForTx(tx);
+    const normalized = normalizeTransactionAmount(tx);
+    invalidateActualDividendCacheForTx(normalized);
     setData(prev => {
       const newPrices = { ...prev.currentPrices };
       const key = holdingPriceKey(
-        tx.market,
-        tx.ticker,
-        quoteCurrencyForTransaction(tx, prev.accounts)
+        normalized.market,
+        normalized.ticker,
+        quoteCurrencyForTransaction(normalized, prev.accounts)
       );
-      if (!newPrices[key]) newPrices[key] = tx.price;
+      if (!newPrices[key]) newPrices[key] = normalized.price;
       return {
         ...prev,
-        transactions: [...prev.transactions, tx],
+        transactions: [...prev.transactions, normalized],
         currentPrices: newPrices,
       };
     });
   }, []);
 
   const updateTransaction = useCallback((tx: Transaction) => {
+    const normalized = normalizeTransactionAmount(tx);
     setData(prev => {
-      const old = prev.transactions.find(t => t.id === tx.id);
+      const old = prev.transactions.find(t => t.id === normalized.id);
       if (old) invalidatePendingDividendStateForTx(old);
-      invalidatePendingDividendStateForTx(tx);
+      invalidatePendingDividendStateForTx(normalized);
       return {
         ...prev,
-        transactions: prev.transactions.map(t => (t.id === tx.id ? tx : t)),
+        transactions: prev.transactions.map(t => (t.id === normalized.id ? normalized : t)),
       };
     });
   }, []);
@@ -159,10 +173,11 @@ export function usePortfolioData(userPrefix: string | undefined) {
   }, []);
 
   const addBatchTransactions = useCallback((txs: Transaction[]) => {
-    txs.forEach(invalidateActualDividendCacheForTx);
+    const normalizedTxs = txs.map(normalizeTransactionAmount);
+    normalizedTxs.forEach(invalidateActualDividendCacheForTx);
     setData(prev => {
       const newPrices = { ...prev.currentPrices };
-      txs.forEach(tx => {
+      normalizedTxs.forEach(tx => {
         const key = holdingPriceKey(
           tx.market,
           tx.ticker,
@@ -172,7 +187,7 @@ export function usePortfolioData(userPrefix: string | undefined) {
       });
       return {
         ...prev,
-        transactions: [...prev.transactions, ...txs],
+        transactions: [...prev.transactions, ...normalizedTxs],
         currentPrices: newPrices,
       };
     });
@@ -341,7 +356,9 @@ export function usePortfolioData(userPrefix: string | undefined) {
   }, []);
 
   const importData = useCallback((imported: Partial<PortfolioDataState>) => {
-    setData(prev => applyRecurringToPortfolioState({ ...prev, ...imported }));
+    setData(prev =>
+      normalizeTwTransferTransactions(applyRecurringToPortfolioState({ ...prev, ...imported }))
+    );
   }, []);
 
   return {
