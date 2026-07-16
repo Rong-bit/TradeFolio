@@ -125,8 +125,9 @@ export const zhTW: Translations = {
     profitFormulaTooltip:
       '總損益 = 未實現 + 已實現 + 股利/利息。已實現僅計 SELL，轉倉不列入已實現。',
     accountReturnRateTooltip:
-      '累積報酬率 = 損益 ÷ 分母 × 100%。分母優先為淨入金（入金−出金±現金轉帳）；若淨入金≤0，改為累計投入成本（目前持倉成本＋已賣出部位成本）。轉倉若填轉移日市值，轉出戶認列已實現、轉入戶成本以市值為準。無持股標示已結清。',
+      '累積報酬率 = 損益 ÷ 分母 × 100%。分母優先為淨入金（入金−出金±現金轉帳）；若淨入金≤0，改為累計投入成本（目前持倉成本＋已賣出部位成本）。轉倉若填轉移日市值，轉出戶認列已實現、轉入戶成本以市值為準。無持股且現金≈0 標示已結清；無持股但仍有現金標示無持倉。',
     accountClosedBadge: '已結清',
+    accountFlatBadge: '無持倉',
     unrealizedPL: '未實現損益',
     realizedPL: '已實現損益',
     dividendInterest: '累積股利/利息',
@@ -445,6 +446,14 @@ export const zhTW: Translations = {
     confirmDeleteMessage: '您確定要刪除「{name}」嗎？',
     deleteWarning: '注意：這不會刪除該帳戶下的歷史交易紀錄，但在篩選時可能會出現異常。',
     deleteAccount: '確認刪除',
+    cannotDeleteClosedTitle: '無法刪除已結清帳戶',
+    cannotDeleteClosedMessage:
+      '此帳戶已無持股與現金。刪除會讓歷史交易變成「未知帳戶」。若不想在列表看到，請改為隱藏。',
+    hideAccount: '隱藏帳戶',
+    hiddenAccountsSection: '已隱藏帳戶',
+    restoreAccount: '恢復顯示',
+    duplicateHiddenNameHint:
+      '帳戶名稱「{name}」與已隱藏帳戶相同。請先恢復該帳戶，或使用其他名稱。',
     noAccounts: '尚無帳戶，請上方新增第一個證券戶。',
     cashBalance: '現金餘額',
     editAccountTitle: '編輯帳戶',
@@ -598,6 +607,7 @@ export const zhTW: Translations = {
     cagrExample: '這表示如果從上市時買入並持有至今，每年的平均複合報酬率。',
     cagrExampleValue: '範例：股票從 100 元漲到 200 元，經過 5 年，年化報酬率約為 14.87%',
     errorEnterTicker: '請輸入股票代號',
+    errorEnterAllocation: '請輸入配置比例',
     errorAllocationRange: '配置比例必須在 0% 到 100% 之間',
     errorAllocationSum: '配置比例總和不能超過 100%',
     errorNoHoldings: '目前沒有持倉資料可導入',
@@ -613,7 +623,7 @@ export const zhTW: Translations = {
     addRow: '添加行',
     action: '操作',
     delete: '刪除',
-    addAll: '批量添加所有',
+    addAll: '加入配置列表',
     yearlyInvestment: '年度投入',
   },
   help: {

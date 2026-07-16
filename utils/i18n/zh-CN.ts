@@ -37,7 +37,7 @@ zhCN.dashboard = {
   legendMarketOuter: '个股／ETF（外圆）',
   legendStockBondInner: '股债比例（内圆）',
   assetClassOverrideTitle: '自定义股/债分类（覆盖）',
-  tickerSymbolLabel: '股票代号',
+  tickerSymbolLabel: '代码',
   tickerPlaceholderExamples: '例如：AGG / TLT / BND',
   assetClassSelectLabel: '分类',
   equityLabelShort: '股',
@@ -64,8 +64,9 @@ zhCN.dashboard = {
   profitFormulaTooltip:
     '总损益 = 未实现 + 已实现 + 股息/利息。已实现仅统计 SELL，转仓不计入已实现。',
   accountReturnRateTooltip:
-    '累积报酬率 = 损益 ÷ 分母 × 100%。优先净入金；若≤0 则用累计投入成本。转仓若填转移日市值，转出户认列已实现、转入户成本以市值为准。无持股标示已结清。',
+    '累积报酬率 = 损益 ÷ 分母 × 100%。优先净入金；若≤0 则用累计投入成本。转仓若填转移日市值，转出户认列已实现、转入户成本以市值为准。无持股且现金≈0 标示已结清；无持股但仍有现金标示无持仓。',
   accountClosedBadge: '已结清',
+  accountFlatBadge: '无持仓',
   unrealizedPL: '未实现损益',
   realizedPL: '已实现损益',
   dividendInterest: '累计股息/利息',
@@ -295,6 +296,14 @@ zhCN.accounts = {
   confirmDeleteMessage: '您确定要删除「{name}」吗？',
   deleteWarning: '注意：这不会删除该账户下的历史交易记录，但在筛选时可能会出现异常。',
   deleteAccount: '确认删除',
+  cannotDeleteClosedTitle: '无法删除已结清账户',
+  cannotDeleteClosedMessage:
+    '此账户已无持股与现金。删除会让历史交易变成「未知账户」。若不想在列表看到，请改为隐藏。',
+  hideAccount: '隐藏账户',
+  hiddenAccountsSection: '已隐藏账户',
+  restoreAccount: '恢复显示',
+  duplicateHiddenNameHint:
+    '账户名称「{name}」与已隐藏账户相同。请先恢复该账户，或使用其他名称。',
   noAccounts: '尚无账户，请上方新增第一个证券户。',
   cashBalance: '现金余额',
   editAccountTitle: '编辑账户',
@@ -310,6 +319,39 @@ zhCN.accounts = {
   linkedBrokerageAccount: '主要对应证券户',
   debtBalance: '欠款本金',
   liabilityHint: '拨款请用资金管理「转账」：负债户 → 证券活存。',
+};
+zhCN.rebalance = {
+  ...zhTW.rebalance,
+  title: '个股再平衡',
+  resetToCurrent: '带入目前比重',
+  totalAssets: '总资产 (含现金)',
+  enable: '平衡',
+  symbol: '标的',
+  currentPrice: '现价',
+  currentValue: '现值',
+  currentWeight: '目前占比',
+  targetWeight: '目标占比',
+  targetValue: '目标价值',
+  adjustAmount: '调整金额',
+  suggestedAction: '建议操作',
+  cash: '现金',
+  totalEnabled: '已启用项目',
+  remainingFunds: '剩余资金',
+  notParticipating: '不参与平衡',
+  accounts: '个账户',
+  description: '说明：',
+  description1: '相同名称的个股会自动合并显示，目标占比会按现值比例分配给各个账户。',
+  description2: '勾选「平衡」栏位来选择哪些股债需要再平衡，未勾选的项目将不参与再平衡计算。',
+  description3: '现金部分也可以勾选，若勾选现金，可以手动设定现金目标比例；若不勾选，现金将维持现状。',
+  description4: '目标占比会自动保存。若未手动设定现金目标，系统会自动计算剩余比例分配给现金；若手动设定现金目标，则使用您设定的值。',
+  description5: '若「现金」目标比例为负值，代表您的股票目标配置超过 100%，请调降部分持股目标。',
+  description6: '点击「带入目前比重」可快速重置所有目标值为当前现况。',
+  buy: '买',
+  sell: '卖',
+  accountLabel: '(账户)',
+  sharesLabel: '(股)',
+  totalLabel: '总计 (',
+  accountCount: '个账户',
 };
 zhCN.labels = { ...zhTW.labels, date: '日期', account: '账户', amount: '金额', balance: '余额', action: '操作', type: '类别', price: '单价', quantity: '数量', currency: '币别', fee: '手续费', exchangeRate: '汇率', totalCost: '总计成本', category: '类别', description: '标的/描述', note: '备注' };
 zhCN.history = {
@@ -447,6 +489,7 @@ zhCN.simulator = {
   cagrExample: '这表示如果从上市时买入并持有至今，每年的平均复合报酬率。',
   cagrExampleValue: '范例：股票从 100 元涨到 200 元，经过 5 年，年化报酬率约为 14.87%',
   errorEnterTicker: '请输入股票代号',
+  errorEnterAllocation: '请输入配置比例',
   errorAllocationRange: '配置比例必须在 0% 到 100% 之间',
   errorAllocationSum: '配置比例总和不能超过 100%',
   errorNoHoldings: '目前没有持仓资料可导入',
@@ -462,7 +505,7 @@ zhCN.simulator = {
   addRow: '添加行',
   action: '操作',
   delete: '删除',
-  addAll: '批量添加所有',
+  addAll: '加入配置列表',
   yearlyInvestment: '年度投入',
 };
 zhCN.help = {
@@ -728,7 +771,7 @@ zhCN.historicalModal = {
   pricePlaceholder: '输入股价',
   hintTitle: '💡 说明：',
   hintBullet1:
-    '第一颗按钮（文案含「🤖 补齐 {year} Q{quarter} 缺漏资料」）：针对下拉菜单目前选定的年份与季末，仅抓取该季末股价／汇率；只补数值为 0 或未填的字段，已填数据不会被覆盖。',
+    '第一颗按钮（「🤖 补齐 {year} Q{quarter} 缺漏资料」）：针对下拉菜单目前选定的年份与季度，抓取该季末股价／汇率；只补数值为 0 或未填的字段，已填数据不会被覆盖。',
   hintBullet2:
     '「🚀 一键抓取」：同时抓取年底（12/31）+ Q1～Q3 季末（3/31、6/30、9/30）股价，让累积损益图可按季显示真实数据。',
   hintBullet3: '勾选「强制重新抓取」可覆盖已有数据。',

@@ -154,6 +154,8 @@ export interface Translations {
     profitFormulaTooltip: string;
     accountReturnRateTooltip: string;
     accountClosedBadge: string;
+    /** 無持股但仍有現金 */
+    accountFlatBadge: string;
     unrealizedPL: string;
     realizedPL: string;
     dividendInterest: string;
@@ -490,6 +492,12 @@ export interface Translations {
     confirmDeleteMessage: string;
     deleteWarning: string;
     deleteAccount: string;
+    cannotDeleteClosedTitle: string;
+    cannotDeleteClosedMessage: string;
+    hideAccount: string;
+    hiddenAccountsSection: string;
+    restoreAccount: string;
+    duplicateHiddenNameHint: string;
     noAccounts: string;
     cashBalance: string;
     editAccountTitle: string;
@@ -645,6 +653,7 @@ export interface Translations {
     cagrExample: string;
     cagrExampleValue: string;
     errorEnterTicker: string;
+    errorEnterAllocation: string;
     errorAllocationRange: string;
     errorAllocationSum: string;
     errorNoHoldings: string;
