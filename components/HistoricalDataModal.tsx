@@ -5,8 +5,8 @@ import { useUI } from '../contexts/UIContext';
 import { t } from '../utils/i18n';
 import { HistoricalData, Market, Currency } from '../types';
 import { getPortfolioStateAtDate } from '../utils/calculations';
-import { fetchHistoricalYearEndData, fetchHistoricalQuarterEndData } from '../services/yahooFinanceService';
 import { INPUT_MODE_DECIMAL } from '../utils/formFieldClasses';
+import { fetchHistoricalYearEndData, fetchHistoricalQuarterEndData } from '../services/yahooFinanceService';
 
 const applyVars = (template: string, vars: Record<string, string | number>) =>
   template.replace(/\{(\w+)\}/g, (m, key) => (key in vars ? String(vars[key]) : m));
@@ -606,17 +606,17 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                    </div>
                </div>
                
-               <table className="min-w-full text-sm text-left">
+               <table className="min-w-full text-sm text-left border-collapse">
                    <thead style={{ backgroundColor: "#f8fafc", color: "#64748b" }}>
                        <tr>
-                           <th className="px-4 py-2">{tr.colMarket}</th>
-                           <th className="px-4 py-2">{tr.colTicker}</th>
-                           <th className="px-4 py-2 text-right">
+                           <th className="px-4 py-2 border-b border-slate-200">{tr.colMarket}</th>
+                           <th className="px-4 py-2 border-b border-slate-200">{tr.colTicker}</th>
+                           <th className="px-4 py-2 text-right border-b border-slate-200">
                             收盤價 ({selectedPeriodDateLabel})
                            </th>
                        </tr>
                    </thead>
-                   <tbody className="divide-y divide-slate-100">
+                   <tbody>
                        {activeTickers.length === 0 ? (
                            <tr><td colSpan={3} className="p-8 text-center text-slate-400">{tr.noHoldingsThisYear}</td></tr>
                        ) : (
@@ -636,7 +636,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                                
                                return (
                                    <tr key={t.ticker} onMouseEnter={e=>(e.currentTarget.style.backgroundColor="#f8fafc")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")}>
-                                       <td className="px-4 py-2">
+                                       <td className="px-4 py-2 border-b border-slate-100">
                                            <span className={`px-2 py-0.5 rounded text-xs ${
                                             t.market === Market.US ? 'bg-blue-100 text-blue-700' : 
                                             t.market === Market.UK ? 'bg-purple-100 text-purple-700' : 
@@ -651,19 +651,17 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                                                {t.market}
                                            </span>
                                        </td>
-                                       <td className="px-4 py-2" style={{ color: "#334155" }}>
-                                           <span className="no-underline decoration-0">{t.ticker.replace(/\(BAK\)/gi, '')}</span>
+                                       <td className="px-4 py-2 font-bold border-b border-slate-100" style={{ color: "#334155" }}>
+                                           {t.ticker.replace(/\(BAK\)/gi, '')}
                                            {hasData && <span className="text-green-500 ml-1 text-xs">✓</span>}
                                        </td>
-                                       <td className="px-4 py-2 text-right">
+                                       <td className="px-4 py-2 text-right border-b border-slate-100">
                                            <input 
                                              type="number"
                                              inputMode={INPUT_MODE_DECIMAL}
                                              step="0.01"
                                              value={val}
                                              onChange={(e) => handlePriceChange(priceKey, e.target.value)}
-                                             spellCheck={false}
-                                             autoComplete="off"
                                              className="w-32 border rounded p-1 text-right text-base sm:text-sm focus:ring-2 focus:ring-accent" style={{ color: "#1e293b", backgroundColor: hasData ? "#f0fdf4" : "#ffffff", borderColor: hasData ? "#bbf7d0" : "#cbd5e1" }}
                                              placeholder={tr.pricePlaceholder}
                                            />
