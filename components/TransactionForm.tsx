@@ -10,6 +10,7 @@ import {
   usCashDividendCentBreakdown,
   formatUsDividendNativeAmount,
 } from '../utils/dividendTaxHelpers';
+import { computeTransactionAmount } from '../utils/transactionAmount';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 interface Props {
@@ -321,6 +322,14 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     }
 
     if (shouldCreateTransferPair) {
+      // 與匯出持股同一套台股無條件捨去規則，避免金額差小數點
+      const transferInAmount = computeTransactionAmount(
+        TransactionType.TRANSFER_IN,
+        formData.market,
+        price,
+        quantity,
+        0
+      );
       const transferInTx: Transaction = {
         id: uuidv4(),
         date: formData.date,
@@ -332,7 +341,7 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
         fees: 0,
         accountId: targetAccountId,
         note: formData.note,
-        amount: price * quantity
+        amount: transferInAmount
       };
       setPendingTransferInTransaction(transferInTx);
     } else {
@@ -386,34 +395,6 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   const getAccountCurrencyCode = (accountId: string): string => {
     const a = accounts.find((x: Account) => x.id === accountId);
     return a ? String(a.currency) : 'TWD';
-  };
-
-  const twFloorBaseAmount = (price: number, quantity: number, market: Market): number => {
-    const raw = price * quantity;
-    return market === Market.TW ? Math.floor(raw) : raw;
-  };
-
-  const computeTransactionAmount = (
-    type: TransactionType,
-    market: Market,
-    price: number,
-    quantity: number,
-    fees: number
-  ): number => {
-    if (type === TransactionType.BUY || type === TransactionType.SELL) {
-      const baseAmount = twFloorBaseAmount(price, quantity, market);
-      return type === TransactionType.BUY ? baseAmount + fees : baseAmount - fees;
-    }
-    if (type === TransactionType.DIVIDEND) {
-      return twFloorBaseAmount(price, quantity, market) + fees;
-    }
-    if (type === TransactionType.CASH_DIVIDEND) {
-      return price * quantity - fees;
-    }
-    if (type === TransactionType.TRANSFER_OUT) {
-      return twFloorBaseAmount(price, quantity, market) - fees;
-    }
-    return price * quantity;
   };
 
   const formatAmountForMarket = (value: number, market: Market): string =>
