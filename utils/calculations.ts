@@ -236,16 +236,6 @@ export function cashDividendNetNative(tx: Pick<Transaction, 'amount' | 'price' |
   return baseVal - (tx.fees || 0);
 }
 
-/** 與歷史紀錄「金額」欄相同：有 amount 用 amount，否則 price×quantity（不另扣 fees） */
-export function cashDividendRecordAmount(
-  tx: Pick<Transaction, 'amount' | 'price' | 'quantity' | 'market'>
-): number {
-  if (tx.amount !== undefined && tx.amount !== null) return tx.amount;
-  let baseVal = tx.price * tx.quantity;
-  if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
-  return baseVal;
-}
-
 /** 1 外幣 = 幾 TWD；缺值時與 valueInBaseCurrency 使用相同正數預設，避免回傳 0 導致換算／資金匯率 placeholder 誤用他幣 */
 function twdPerUnitOrFallback(rate: number | undefined, fallback: number): number {
   return rate && rate > 0 ? rate : fallback;
