@@ -33,6 +33,10 @@ import {
   isDebtRepaymentOutflow,
   effectiveLiabilityBalance,
 } from './debtAccountHelpers';
+import {
+  computeTransactionAmount,
+  resolveTransactionLedgerAmount,
+} from './transactionAmount';
 
 /** 匯率物件（X→TWD：1 X = N TWD） */
 export interface ExchangeRates {
@@ -230,16 +234,6 @@ export function cashDividendNetNative(tx: Pick<Transaction, 'amount' | 'price' |
   let baseVal = tx.price * tx.quantity;
   if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
   return baseVal - (tx.fees || 0);
-}
-
-/** 與歷史紀錄「金額」欄相同：有 amount 用 amount，否則 price×quantity（不另扣 fees） */
-export function cashDividendRecordAmount(
-  tx: Pick<Transaction, 'amount' | 'price' | 'quantity' | 'market'>
-): number {
-  if (tx.amount !== undefined && tx.amount !== null) return tx.amount;
-  let baseVal = tx.price * tx.quantity;
-  if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
-  return baseVal;
 }
 
 /** 1 外幣 = 幾 TWD；缺值時與 valueInBaseCurrency 使用相同正數預設，避免回傳 0 導致換算／資金匯率 placeholder 誤用他幣 */
@@ -621,10 +615,23 @@ export const calculateHoldings = (
   });
   const splitCursors = new Map<string, { splits: StockSplitEvent[]; index: number }>();
   const resolveCostAmount = (tx: Transaction, baseVal: number): number => {
+    // 台股轉倉／匯入：不用舊的未捨去 amount，改走與帳本相同公式
+    if (
+      tx.type === TransactionType.TRANSFER_IN ||
+      tx.type === TransactionType.TRANSFER_OUT
+    ) {
+      return computeTransactionAmount(tx.type, tx.market, tx.price, tx.quantity, tx.fees || 0);
+    }
     if (Number.isFinite(tx.amount) && (tx.amount as number) > 0) return tx.amount as number;
     return baseVal + (tx.fees || 0);
   };
   const resolveProceedAmount = (tx: Transaction, baseVal: number): number => {
+    if (
+      tx.type === TransactionType.TRANSFER_IN ||
+      tx.type === TransactionType.TRANSFER_OUT
+    ) {
+      return computeTransactionAmount(tx.type, tx.market, tx.price, tx.quantity, tx.fees || 0);
+    }
     if (Number.isFinite(tx.amount) && (tx.amount as number) > 0) return tx.amount as number;
     return baseVal - (tx.fees || 0);
   };
@@ -865,16 +872,8 @@ export function buildLedgerState(
   accounts: Account[]
 ): { combinedRecordsSorted: CombinedRecord[]; finalBalancesByAccountId: Record<string, number> } {
   const txR: CombinedRecord[] = transactions.map(tx => {
-    let amt = tx.amount ?? 0;
-    if (!tx.amount) {
-      if (tx.type === TransactionType.BUY || tx.type === TransactionType.TRANSFER_OUT) {
-        amt = tx.price * tx.quantity + (tx.fees || 0);
-      } else if (tx.type === TransactionType.SELL) {
-        amt = tx.price * tx.quantity - (tx.fees || 0);
-      } else {
-        amt = tx.price * tx.quantity;
-      }
-    }
+    // 轉倉／缺漏金額走標準公式（台股轉倉會 floor，修正匯入舊資料小數）
+    const amt = resolveTransactionLedgerAmount(tx);
     return {
       id: tx.id,
       date: tx.date,
@@ -2152,7 +2151,12 @@ export const calculateAccountPerformance = (
       if (tx.type === TransactionType.BUY || tx.type === TransactionType.TRANSFER_IN || tx.type === TransactionType.DIVIDEND) {
         let baseVal = tx.price * tx.quantity;
         if (tx.market === Market.TW) baseVal = Math.floor(baseVal);
-        const txCost = tx.amount !== undefined ? tx.amount : (baseVal + (tx.fees || 0));
+        const txCost =
+          tx.type === TransactionType.TRANSFER_IN
+            ? computeTransactionAmount(tx.type, tx.market, tx.price, tx.quantity, tx.fees || 0)
+            : tx.amount !== undefined
+              ? tx.amount
+              : baseVal + (tx.fees || 0);
         pos.quantity += tx.quantity;
         pos.totalCost += txCost;
         return;
@@ -2197,10 +2201,14 @@ export const calculateAccountPerformance = (
     const realizedProfitNativeOut = realizedProfitTWD / normalizedAccountRate;
     const incomeNative = incomeTWD / normalizedAccountRate;
 
-    const isClosed =
-      !isLiabilityAccount(acc) &&
-      accountHoldings.length === 0 &&
-      accountTxs.length > 0;
+    // 已結清：無持股且現金≈0；無持倉：無持股但仍有現金（帳戶仍可用）
+    const CASH_EPS = 0.005;
+    const hasNoHoldings = accountHoldings.length === 0;
+    const hasMeaningfulCash = Math.abs(acc.balance) >= CASH_EPS;
+    const isSecuritiesWithHistory =
+      !isLiabilityAccount(acc) && hasNoHoldings && accountTxs.length > 0;
+    const isClosed = isSecuritiesWithHistory && !hasMeaningfulCash;
+    const isFlat = isSecuritiesWithHistory && hasMeaningfulCash;
 
     return {
       id: acc.id,
@@ -2212,6 +2220,7 @@ export const calculateAccountPerformance = (
       profitTWD,
       roi,
       isClosed,
+      isFlat,
       totalAssetsNative,
       marketValueNative,
       cashBalanceNative,
