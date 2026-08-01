@@ -13,7 +13,7 @@ import {
   ACTUAL_DIVIDENDS_LS_KEY,
 } from '../utils/actualDividendCache';
 
-// v12：台股個股改走 Yahoo 台股股利頁快速真實日期；清除舊版慢路徑快取。
+// v14：清除 FundClear 部署前留下的 ETF 無組成快取。
 const LS_KEY = ACTUAL_DIVIDENDS_LS_KEY;
 const LEGACY_LS_KEYS = [
   'tf-actual-dividends-v1',
@@ -27,6 +27,8 @@ const LEGACY_LS_KEYS = [
   'tf-actual-dividends-v9',
   'tf-actual-dividends-v10',
   'tf-actual-dividends-v11',
+  'tf-actual-dividends-v12',
+  'tf-actual-dividends-v13',
 ] as const;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const EMPTY_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -90,7 +92,7 @@ function normalizeRequests(requests: Array<{ ticker: string; market: Market }>) 
 /**
  * 依持倉代號批次抓取「歷史已發放」現金配息。
  * TW/US 優先高精度來源；其他市場用 Yahoo Finance events=div。
- * 使用 localStorage 快取 24 小時（`tf-actual-dividends-v12`）。
+ * 使用 localStorage 快取 24 小時（`tf-actual-dividends-v14`）。
  */
 export function useActualDividends(
   requests: Array<{ ticker: string; market: Market }>
@@ -116,7 +118,12 @@ export function useActualDividends(
     for (const j of jobs) {
       const hit = cached[j.key];
       const isEmptyResult = Array.isArray(hit?.data) && hit.data.length === 0;
-      const ttl = isEmptyResult ? EMPTY_CACHE_TTL_MS : CACHE_TTL_MS;
+      const isTwEtfMissingComposition =
+        j.market === Market.TW &&
+        Array.isArray(hit?.data) &&
+        hit.data.some(rec => rec.isEtf && !rec.distributionComposition);
+      const ttl =
+        isEmptyResult || isTwEtfMissingComposition ? EMPTY_CACHE_TTL_MS : CACHE_TTL_MS;
       const isFresh = !!hit && Date.now() - hit.at < ttl;
       // 僅快取成功結果；空結果只短暫沿用，避免某台裝置暫時抓失敗後整天看不到待確認配息。
       if (isFresh && Array.isArray(hit.data)) {
