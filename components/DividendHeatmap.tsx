@@ -7,6 +7,10 @@ import { useUI } from '../contexts/UIContext';
 import { transactionAmountNativeToTWD, valueInBaseCurrency, cashDividendNetNative } from '../utils/calculations';
 import { t, translate } from '../utils/i18n';
 import { useActualDividends } from '../hooks/useActualDividends';
+import type {
+  ActualDividendRecord,
+  TwEtfDistributionComposition,
+} from '../services/moneydjService';
 import {
   listAccountTickerQuantitiesAtExDate,
   tickerHasRecordedCashDividendInExMonth,
@@ -30,6 +34,8 @@ import {
   marketCashDividendPriceIsNetAfterWithholding,
   netPriceMarketCashDividendSaveFields,
   readTransactionStatutoryWithholding,
+  twEstimatedSingleDividendTwd,
+  twEtfNhiEligibleIncomeTwd,
 } from '../utils/dividendTaxHelpers';
 import { FORM_FIELD_THEME } from '../utils/formFieldClasses';
 
@@ -86,6 +92,9 @@ type PendingConfirmState = {
   editAmount: string;
   baseNetNative: number;
   baseWithheldNhiTwd?: number;
+  twDistributionComposition?: TwEtfDistributionComposition;
+  twNhiEligibleIncomeTwd?: number;
+  twEtfCompositionUnavailable?: boolean;
   deductWireFee: boolean;
 };
 
@@ -196,7 +205,9 @@ type PendingActualRow = {
   payDateEstimated?: boolean;
   amountPerShare: number;
   currency?: string;
-  source: 'mops' | 'moneydj' | 'dj' | 'stockanalysis' | 'yahoo';
+  source: ActualDividendRecord['source'];
+  distributionComposition?: TwEtfDistributionComposition;
+  isEtf?: boolean;
   estTotalNative: number;
   accountId: string;
   accountOptions: Array<{ accountId: string; quantity: number }>;
@@ -214,15 +225,7 @@ const DividendHeatmap: React.FC = () => {
   const [pendingListVisible, setPendingListVisible] = useState(
     () => readPendingDividendListVisible()
   );
-  const [confirmState, setConfirmState] = useState<{
-    tx: Transaction;
-    rowKey: string;
-    editPrice: string;
-    editAmount: string;
-    baseNetNative: number;
-    baseWithheldNhiTwd?: number;
-    deductWireFee: boolean;
-  } | null>(null);
+  const [confirmState, setConfirmState] = useState<PendingConfirmState | null>(null);
 
   useEffect(() => {
     const syncDismissedKeys = () => setDismissedPendingKeys(readDismissedPendingDividendKeys());
@@ -263,22 +266,32 @@ const DividendHeatmap: React.FC = () => {
     const a = accounts.find(x => x.id === accountId);
     return a ? String(a.currency) : 'TWD';
   };
-  const getTypeName = (type: TransactionType): string => {
-    switch (type) {
-      case TransactionType.BUY: return tf.typeBuy;
-      case TransactionType.SELL: return tf.typeSell;
-      case TransactionType.DIVIDEND: return tf.typeDividend;
-      case TransactionType.CASH_DIVIDEND: return tf.typeCashDividend;
-      case TransactionType.TRANSFER_IN: return tf.typeTransferIn;
-      case TransactionType.TRANSFER_OUT: return tf.typeTransferOut;
-      default: return String(type);
-    }
-  };
-
   const getCashDividendCalc = (
-    row: { market: Market; amountPerShare: number; quantity: number }
+    row: Pick<
+      PendingActualRow,
+      'market' | 'amountPerShare' | 'quantity' | 'distributionComposition' | 'isEtf'
+    >
   ): ReturnType<typeof cashDividendBreakdownForMarket> => {
-    return cashDividendBreakdownForMarket(row.market, row.quantity, row.amountPerShare);
+    if (row.market !== Market.TW) {
+      return cashDividendBreakdownForMarket(row.market, row.quantity, row.amountPerShare);
+    }
+    if (row.distributionComposition) {
+      const gross = twEstimatedSingleDividendTwd(row.quantity, row.amountPerShare);
+      const basis = twEtfNhiEligibleIncomeTwd(
+        gross,
+        row.distributionComposition.dividendIncomePercent,
+        row.distributionComposition.interestIncomePercent
+      );
+      return cashDividendBreakdownForMarket(row.market, row.quantity, row.amountPerShare, {
+        twNhiEligibleIncomeTwd: basis,
+      });
+    }
+    return cashDividendBreakdownForMarket(
+      row.market,
+      row.quantity,
+      row.amountPerShare,
+      row.isEtf ? { twNhiEligibleIncomeTwd: null } : undefined
+    );
   };
 
   const mergedHoldingsForDiv = useMemo(() => {
@@ -405,6 +418,8 @@ const DividendHeatmap: React.FC = () => {
             amountPerShare: rec.amountPerShare,
             currency: rec.currency,
             source: rec.source,
+            distributionComposition: rec.distributionComposition,
+            isEtf: rec.isEtf,
             estTotalNative: rec.amountPerShare * acct.quantity,
             accountId: acct.accountId,
             accountOptions: holdersAtEx,
@@ -483,6 +498,19 @@ const DividendHeatmap: React.FC = () => {
       editAmount: formatNetForConfirmEdit(row.market, calc.netNative),
       baseNetNative: calc.netNative,
       baseWithheldNhiTwd: calc.withheldNhiTwd,
+      ...(row.distributionComposition
+        ? {
+            twDistributionComposition: row.distributionComposition,
+            twNhiEligibleIncomeTwd: twEtfNhiEligibleIncomeTwd(
+              calc.grossNative,
+              row.distributionComposition.dividendIncomePercent,
+              row.distributionComposition.interestIncomePercent
+            ),
+          }
+        : {}),
+      ...(row.market === Market.TW && row.isEtf && !row.distributionComposition
+        ? { twEtfCompositionUnavailable: true }
+        : {}),
       deductWireFee: false,
     });
   };
@@ -891,16 +919,8 @@ const DividendHeatmap: React.FC = () => {
                   <span className="font-medium text-slate-900 dark:text-slate-100">{getAccountName(confirmState.tx.accountId)}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
-                  <span className="text-slate-600 dark:text-slate-400">{tf.marketLabel}</span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">{marketLabelMap[confirmState.tx.market] ?? confirmState.tx.market}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
                   <span className="text-slate-600 dark:text-slate-400">{tf.tickerLabel}</span>
                   <span className="font-medium font-mono text-slate-900 dark:text-slate-100">{confirmState.tx.ticker}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
-                  <span className="text-slate-600 dark:text-slate-400">{tf.typeLabel}</span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">{getTypeName(confirmState.tx.type)}</span>
                 </div>
                 <div className="flex justify-between items-center gap-3 py-1 border-b border-slate-100 dark:border-slate-700">
                   <span className="text-slate-600 dark:text-slate-400 shrink-0">{dtx.pendingActualConfirmGrossAmount}</span>
@@ -909,12 +929,31 @@ const DividendHeatmap: React.FC = () => {
                     {getAccountCurrencyCode(confirmState.tx.accountId)}
                   </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-700">
-                  <span className="text-slate-600 dark:text-slate-400">{tf.quantityLabel}</span>
-                  <span className="font-medium text-slate-900 dark:text-slate-100">
-                    {tf.cashDividendQuantityConfirm}
-                  </span>
-                </div>
+                {confirmState.tx.market === Market.TW && confirmState.twDistributionComposition && (
+                  <div className="rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-950/30">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-600 dark:text-slate-400">
+                        {dtx.pendingActualNhiEligibleIncome}
+                      </span>
+                      <span className="font-medium tabular-nums text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                        {(
+                          confirmState.twDistributionComposition.dividendIncomePercent +
+                          confirmState.twDistributionComposition.interestIncomePercent
+                        ).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        % · {(confirmState.twNhiEligibleIncomeTwd ?? 0).toLocaleString()} TWD
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                      {dtx.pendingActualCompositionWarning}
+                    </p>
+                  </div>
+                )}
+                {confirmState.tx.market === Market.TW &&
+                  confirmState.twEtfCompositionUnavailable && (
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                      {dtx.pendingActualCompositionUnavailable}
+                    </p>
+                  )}
                 {(() => {
                   const tax = readTransactionStatutoryWithholding(confirmState.tx);
                   if (tax == null || tax <= 0) return null;

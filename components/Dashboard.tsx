@@ -1635,7 +1635,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                     <th className="px-6 py-3 text-right">{translations.dashboard.annualROI}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody>
                   {annualPerformance.map(item => {
                     const displayCurrency = showAnnualInUSD ? 'USD' : baseCurrency;
                     const startAssets = showAnnualInUSD ? item.startAssets / summary.exchangeRateUsdToTwd : toBase(item.startAssets);
@@ -1956,7 +1956,13 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                       ? 'bg-green-100 text-green-700'
                       : 'bg-red-100 text-red-700';
                     return (
-                    <tr key={item.id} onMouseEnter={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#334155":"#f8fafc")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")} style={{ transition: "background-color 0.15s" }}>
+                    <tr
+                      key={item.id}
+                      className="border-b border-slate-100 last:border-b-0 dark:border-slate-700"
+                      onMouseEnter={e=>(e.currentTarget.style.backgroundColor=isDarkMode?"#334155":"#f8fafc")}
+                      onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")}
+                      style={{ transition: "background-color 0.15s" }}
+                    >
                       <td className="px-3 py-2 whitespace-nowrap">{item.date}</td>
                       <td className="px-3 py-2">
                         <span className={`px-2 py-0.5 rounded text-xs font-semibold ${badgeClass}`}>
