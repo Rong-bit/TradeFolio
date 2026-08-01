@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 
 interface UseAutoRefreshOptions {
   /** 刷新間隔（毫秒），預設 3 分鐘 */
@@ -12,7 +12,8 @@ interface UseAutoRefreshOptions {
 /**
  * 自動定時刷新 hook。
  * - 每 intervalMs 自動呼叫 onRefresh（靜默模式）
- * - 切到其他分頁 / 最小化時自動暫停，切回來立即補一次刷新
+ * - 畫面倒數與實際排程共用 nextRefreshAt
+ * - 切到其他分頁 / 最小化時暫停；切回來僅在已逾期時補刷
  * - enabled=false 時完全不啟動（未登入、無持倉時使用）
  */
 export function useAutoRefresh(
@@ -25,53 +26,82 @@ export function useAutoRefresh(
     refreshOnVisible = true,
   } = options;
 
-  const timerRef        = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastRefreshRef  = useRef<number>(0);
+  const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRefreshingRef = useRef(false);
   const onRefreshRef    = useRef(onRefresh);
+  const scheduleNextRef = useRef<() => void>(() => {});
+  const nextRefreshAtRef = useRef<number | null>(null);
+  const [nextRefreshAt, setNextRefreshAt] = useState<number | null>(null);
 
   // 保持 callback 最新，避免 stale closure
   useEffect(() => { onRefreshRef.current = onRefresh; }, [onRefresh]);
 
-  const doRefresh = useCallback(async () => {
+  const runRefresh = useCallback(async (silent: boolean) => {
     if (isRefreshingRef.current) return; // 避免重疊請求
     isRefreshingRef.current = true;
-    lastRefreshRef.current = Date.now();
     try {
-      await onRefreshRef.current(true); // silent = true
+      await onRefreshRef.current(silent);
     } finally {
       isRefreshingRef.current = false;
     }
   }, []);
 
-  // 定時器
+  const scheduleNext = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (!enabled) {
+      timerRef.current = null;
+      nextRefreshAtRef.current = null;
+      setNextRefreshAt(null);
+      return;
+    }
+
+    const nextAt = Date.now() + intervalMs;
+    nextRefreshAtRef.current = nextAt;
+    setNextRefreshAt(nextAt);
+    timerRef.current = setTimeout(async () => {
+      timerRef.current = null;
+      if (document.visibilityState !== 'visible') return;
+      await runRefresh(true);
+      scheduleNextRef.current();
+    }, intervalMs);
+  }, [enabled, intervalMs, runRefresh]);
+
   useEffect(() => {
-    if (!enabled) return;
+    scheduleNextRef.current = scheduleNext;
+  }, [scheduleNext]);
 
-    timerRef.current = setInterval(doRefresh, intervalMs);
+  // 初始排程；更新完成後才開始下一個完整週期。
+  useEffect(() => {
+    scheduleNext();
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [enabled, intervalMs, doRefresh]);
+  }, [scheduleNext]);
 
-  // 頁面可見性：切回前台時，若距上次刷新已超過半個間隔則補刷
+  const refreshNow = useCallback(async (silent = false) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+    nextRefreshAtRef.current = null;
+    setNextRefreshAt(null);
+    await runRefresh(silent);
+    scheduleNextRef.current();
+  }, [runRefresh]);
+
+  // 頁面可見性：已超過畫面所示的下次更新時間才補刷。
   useEffect(() => {
     if (!enabled || !refreshOnVisible) return;
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.visibilityState !== 'visible') return;
-      const elapsed = Date.now() - lastRefreshRef.current;
-      if (elapsed >= intervalMs / 2) {
-        doRefresh();
-        // 重置定時器讓下一次從現在開始計
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = setInterval(doRefresh, intervalMs);
-        }
+      const nextAt = nextRefreshAtRef.current;
+      if (nextAt != null && Date.now() >= nextAt) {
+        await refreshNow(true);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [enabled, refreshOnVisible, intervalMs, doRefresh]);
+  }, [enabled, refreshOnVisible, refreshNow]);
+
+  return { nextRefreshAt, refreshNow };
 }
