@@ -68,6 +68,28 @@ export function twNhiSupplementFloorTwd(
   return Math.floor(basis * TW_NHI_SUPPLEMENT_RATE);
 }
 
+/** ETF：依官方收益組成估算本次補充保費計費所得（54C 股利＋適用之利息所得）。 */
+export function twEtfNhiEligibleIncomeTwd(
+  grossDividendTwd: number,
+  dividendIncomePercent: number,
+  interestIncomePercent: number
+): number {
+  const gross = Number(grossDividendTwd);
+  const dividendPercent = Number(dividendIncomePercent);
+  const interestPercent = Number(interestIncomePercent);
+  if (!Number.isFinite(gross) || gross <= 0) return 0;
+  if (!Number.isFinite(dividendPercent) || !Number.isFinite(interestPercent)) return 0;
+  const eligiblePercent = Math.max(0, Math.min(100, dividendPercent + interestPercent));
+  return Math.round(gross * eligiblePercent / 100);
+}
+
+/** 以已確認的補充保費計費所得套用門檻與費率。 */
+export function twNhiSupplementFromEligibleIncomeTwd(eligibleIncomeTwd: number): number {
+  const basis = Math.round(eligibleIncomeTwd);
+  if (!Number.isFinite(basis) || basis < TW_NHI_SUPPLEMENT_THRESHOLD_TWD) return 0;
+  return Math.floor(basis * TW_NHI_SUPPLEMENT_RATE);
+}
+
 /** 是否為常見高配息 ETF（拆單教育文案用） */
 export function isHighDividendTwEtfTicker(ticker: string): boolean {
   const t = ticker.trim();
@@ -329,7 +351,14 @@ export function cashDividendBreakdownForMarket(
   market: Market,
   shares: number,
   perShare: number,
-  opts?: { explicitTaxNative?: number }
+  opts?: {
+    explicitTaxNative?: number;
+    /**
+     * 台股 ETF 補充保費計費所得。null 表示已知為 ETF 但官方尚無組成，
+     * 此時不可退回用整筆配息估算。
+     */
+    twNhiEligibleIncomeTwd?: number | null;
+  }
 ): CashDividendBreakdown {
   const grossNative = cashDividendGrossNative(market, shares, perShare);
   if (grossNative <= 0) {
@@ -339,10 +368,17 @@ export function cashDividendBreakdownForMarket(
   const cfg = MARKET_DIVIDEND_WITHHOLDING[market];
 
   if (cfg.mode === 'tw_nhi') {
-    const nhi =
-      opts?.explicitTaxNative != null && opts.explicitTaxNative > 0
-        ? Math.round(opts.explicitTaxNative)
-        : twNhiSupplementFloorTwd(grossNative);
+    let nhi: number;
+    if (opts?.explicitTaxNative != null && opts.explicitTaxNative >= 0) {
+      nhi = Math.round(opts.explicitTaxNative);
+    } else if (opts && 'twNhiEligibleIncomeTwd' in opts) {
+      nhi =
+        opts.twNhiEligibleIncomeTwd == null
+          ? 0
+          : twNhiSupplementFromEligibleIncomeTwd(opts.twNhiEligibleIncomeTwd);
+    } else {
+      nhi = twNhiSupplementFloorTwd(grossNative);
+    }
     const taxNative = nhi > 0 ? nhi : 0;
     const netNative = grossNative - taxNative;
     return {
