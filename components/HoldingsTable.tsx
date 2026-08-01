@@ -7,8 +7,8 @@ import {
   valuationCurrencyForHolding,
   calculateGenericXIRR,
 } from '../utils/calculations';
-import { formatHoldingPrice } from '../utils/formatDisplay';
 import { t } from '../utils/i18n';
+import { formatHoldingPrice } from '../utils/formatDisplay';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useUI } from '../contexts/UIContext';
 
@@ -72,7 +72,7 @@ function computeMergedAnnualizedXirr(
 
 const HoldingsTable: React.FC<Props> = () => {
   const { holdings, accounts, transactions,
-    handleAutoUpdatePrices: onAutoUpdate, refreshIntervalMs } = usePortfolio();
+    handleAutoUpdatePrices: onAutoUpdate, refreshIntervalMs, nextRefreshAt } = usePortfolio();
   const { language } = useUI();
   const translations = t(language);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -260,11 +260,11 @@ const HoldingsTable: React.FC<Props> = () => {
 
   function renderHoldingRow(h: Holding, isDetailedMode: boolean = false) {
     const isProfit = h.unrealizedPL >= 0;
-    const acc = accounts.find(a => a.id === h.accountId);
     const mergedCurrency =
       h.accountId.startsWith('merged') && h.accountId.includes(MS_ROW)
         ? h.accountId.split(MS_ROW).slice(-1)[0]
         : null;
+    const acc = accounts.find(a => a.id === h.accountId);
     const currency = isDetailedMode && acc
       ? String(acc.currency)
       : mergedCurrency ?? marketNativeCurrency(h.market);
@@ -510,6 +510,7 @@ const HoldingsTable: React.FC<Props> = () => {
           </div>
           <RefreshCountdown
             intervalMs={refreshIntervalMs}
+            nextRefreshAt={nextRefreshAt}
             onManualRefresh={handleAutoUpdateClick}
             isRefreshing={isUpdating}
             label={translations.holdings.aiUpdatePrices}

@@ -277,7 +277,10 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     appText,
   });
 
-  useAutoRefresh(handleAutoUpdatePrices, {
+  const {
+    nextRefreshAt,
+    refreshNow: refreshPricesNow,
+  } = useAutoRefresh(handleAutoUpdatePrices, {
     intervalMs: REFRESH_INTERVAL_MS,
     enabled: baseHoldings.length > 0,
     refreshOnVisible: true,
@@ -426,8 +429,9 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     setRebalanceEnabledItems,
     addStockSplit,
     removeStockSplit,
-    handleAutoUpdatePrices,
+    handleAutoUpdatePrices: refreshPricesNow,
     refreshIntervalMs: REFRESH_INTERVAL_MS,
+    nextRefreshAt,
   };
 
   const marketValue = {

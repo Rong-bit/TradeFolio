@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUI } from '../contexts/UIContext';
 
 interface RefreshCountdownProps {
   intervalMs: number;       // 刷新週期（毫秒）
+  nextRefreshAt: number | null; // 與自動更新排程共用的時間戳
   onManualRefresh: () => void;
   isRefreshing?: boolean;
   label?: string;           // 按鈕文字
@@ -14,6 +15,7 @@ interface RefreshCountdownProps {
  */
 const RefreshCountdown: React.FC<RefreshCountdownProps> = ({
   intervalMs,
+  nextRefreshAt,
   onManualRefresh,
   isRefreshing = false,
   label,
@@ -22,25 +24,24 @@ const RefreshCountdown: React.FC<RefreshCountdownProps> = ({
   const isChinese = language === 'zh-TW' || language === 'zh-CN';
   const defaultLabel = isChinese ? '更新股價' : 'Update Prices';
   const refreshingLabel = isChinese ? '更新中...' : 'Refreshing...';
-  const [secondsLeft, setSecondsLeft] = useState(Math.floor(intervalMs / 1000));
-  const startRef = useRef(Date.now());
+  const [secondsLeft, setSecondsLeft] = useState(0);
 
   // 每秒倒數
   useEffect(() => {
     const tick = () => {
-      const elapsed = Date.now() - startRef.current;
-      const remaining = Math.max(0, Math.floor((intervalMs - (elapsed % intervalMs)) / 1000));
+      const remaining =
+        nextRefreshAt == null
+          ? 0
+          : Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1000));
       setSecondsLeft(remaining);
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [intervalMs]);
+  }, [nextRefreshAt]);
 
-  // 手動刷新時重置計時
+  // 手動刷新由 useAutoRefresh 統一重設實際排程與倒數。
   const handleClick = () => {
-    startRef.current = Date.now();
-    setSecondsLeft(Math.floor(intervalMs / 1000));
     onManualRefresh();
   };
 
