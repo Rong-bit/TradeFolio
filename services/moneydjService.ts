@@ -10,8 +10,21 @@ import { Market } from '../types';
 import {
   buildProxiedFetchUrls,
   proxyFetchTimeoutMs,
+  resolveYahooProxyBase,
 } from '../utils/yahooProxyUrl';
 import type { YahooMarket } from './yahooFinanceService';
+
+export interface TwEtfDistributionComposition {
+  /** 基金資訊觀測站預估股利所得占比（通常對應 54C） */
+  dividendIncomePercent: number;
+  /** 基金資訊觀測站預估利息所得占比（可能包含 5A） */
+  interestIncomePercent: number;
+  equalizationReservePercent: number;
+  realizedCapitalGainPercent: number;
+  otherIncomePercent: number;
+  /** 官方欄位為公告前預估，實際仍以收益分配通知書為準 */
+  estimated: true;
+}
 
 export interface ActualDividendRecord {
   /** YYYY-MM-DD 除息日（必有） */
@@ -24,8 +37,12 @@ export interface ActualDividendRecord {
   amountPerShare: number;
   /** 報價幣別（hint） */
   currency?: string;
+  /** 台股 ETF 官方預估收益分配組成 */
+  distributionComposition?: TwEtfDistributionComposition;
+  /** 已由 ETF 專用資料來源確認；組成缺漏時不可把整筆配息當成健保費基 */
+  isEtf?: boolean;
   /** 來源標記，用於 UI 顯示徽章 */
-  source: 'mops' | 'moneydj' | 'dj' | 'stockanalysis' | 'yahoo';
+  source: 'fundclear' | 'mops' | 'moneydj' | 'dj' | 'stockanalysis' | 'yahoo';
 }
 
 const PAY_DATE_OFFSET_DAYS_BY_MARKET: Partial<Record<Market, number>> = {
@@ -62,6 +79,106 @@ function tsToYmd(secondsOrMs: number): string {
   const d = new Date(ms);
   if (Number.isNaN(d.getTime())) return '';
   return d.toISOString().slice(0, 10);
+}
+
+type FundClearDividendRow = {
+  stockNo?: unknown;
+  exDivDate?: unknown;
+  payDate?: unknown;
+  disAmount?: unknown;
+  divDet1?: unknown;
+  divDet2?: unknown;
+  divDet3?: unknown;
+  divDet4?: unknown;
+  divDet5?: unknown;
+};
+
+function compactYmdToIso(value: unknown): string {
+  const s = String(value ?? '').trim();
+  if (!/^\d{8}$/.test(s)) return '';
+  const iso = `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
+  const d = new Date(`${iso}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? '' : iso;
+}
+
+function fundClearPercent(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : 0;
+}
+
+/** 將基金資訊觀測站 ETF 配息回應正規化；搜尋結果仍須嚴格比對證券代號。 */
+export function parseFundClearDividendResponse(
+  payload: unknown,
+  ticker: string
+): ActualDividendRecord[] {
+  if (!payload || typeof payload !== 'object') return [];
+  const list = (payload as { list?: unknown }).list;
+  if (!Array.isArray(list)) return [];
+  const normalizedTicker = ticker.trim().toUpperCase();
+  const rows: ActualDividendRecord[] = [];
+
+  for (const raw of list as FundClearDividendRow[]) {
+    if (String(raw.stockNo ?? '').trim().toUpperCase() !== normalizedTicker) continue;
+    const exDate = compactYmdToIso(raw.exDivDate);
+    const payDate = compactYmdToIso(raw.payDate);
+    const amountPerShare = Number(raw.disAmount);
+    if (!exDate || !payDate || !Number.isFinite(amountPerShare) || amountPerShare <= 0) continue;
+
+    const percentages = [
+      fundClearPercent(raw.divDet1),
+      fundClearPercent(raw.divDet2),
+      fundClearPercent(raw.divDet3),
+      fundClearPercent(raw.divDet4),
+      fundClearPercent(raw.divDet5),
+    ];
+    const hasComposition = percentages.some(value => value > 0);
+    rows.push({
+      exDate,
+      payDate,
+      amountPerShare,
+      currency: 'TWD',
+      source: 'fundclear',
+      isEtf: true,
+      ...(hasComposition
+        ? {
+            distributionComposition: {
+              dividendIncomePercent: percentages[0],
+              interestIncomePercent: percentages[1],
+              equalizationReservePercent: percentages[2],
+              realizedCapitalGainPercent: percentages[3],
+              otherIncomePercent: percentages[4],
+              estimated: true as const,
+            },
+          }
+        : {}),
+    });
+  }
+
+  return rows.sort((a, b) => b.exDate.localeCompare(a.exDate));
+}
+
+function fundClearDividendProxyUrl(ticker: string): string {
+  const base = resolveYahooProxyBase();
+  const path = `/api/fundclear-dividend?ticker=${encodeURIComponent(ticker)}`;
+  if (!base) return path;
+  return new URL(path, base).toString();
+}
+
+async function fetchFundClearTwEtfHistory(ticker: string): Promise<ActualDividendRecord[]> {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), proxyFetchTimeoutMs());
+  try {
+    const res = await fetch(fundClearDividendProxyUrl(ticker), {
+      headers: { Accept: 'application/json' },
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return [];
+    return parseFundClearDividendResponse(await res.json(), ticker);
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(tid);
+  }
 }
 
 function isMoneyDjTarget(target: string): boolean {
@@ -636,7 +753,7 @@ async function fetchYahooDividendEvents(
  * 一律回傳「除息日由新到舊」的陣列；未來日期不會出現。
  *
  * 精度優先來源：
- *  - ETF（台股自動補 .tw）：MoneyDJ ETF 配息頁。
+ *  - 台股 ETF：基金資訊觀測站（含預估收益組成），MoneyDJ 備援。
  *  - 台股個股：Yahoo 台股股利頁（真實發放日，快速）＋MOPS/DJ 備援＋Yahoo chart 補缺。
  *  - 美股個股：StockAnalysis dividend page（個股 /stocks/、ETF /etf/）。
  *  - 美股／台股 ETF 若上述來源皆無資料：Yahoo Finance events=div（發放日推估）。
@@ -662,6 +779,16 @@ export async function fetchActualDividendHistory(
     }
   };
 
+  if (market === Market.TW) {
+    const fundClearRows = await fetchFundClearTwEtfHistory(ticker);
+    if (fundClearRows.length) {
+      mergeRecords(fundClearRows);
+      if (byExDate.size > 0) {
+        return Array.from(byExDate.values()).sort((a, b) => b.exDate.localeCompare(a.exDate));
+      }
+    }
+  }
+
   if (market === Market.TW || market === Market.US) {
     const mdjEtfRows = await fetchMoneyDjEtfHistory(ticker, market).catch(() => null);
     if (mdjEtfRows?.length) {
@@ -672,6 +799,7 @@ export async function fetchActualDividendHistory(
           amountPerShare: row.amountPerShare,
           currency: row.currency,
           source: 'moneydj' as const,
+          isEtf: true,
         }))
       );
       if (byExDate.size > 0) {
