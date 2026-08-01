@@ -46,7 +46,7 @@ export interface PortfolioContextValue {
   updateCashFlow: (cf: CashFlow) => void;
   removeCashFlow: (id: string) => void;
   addBatchCashFlows: (cfs: CashFlow[]) => void;
-  clearCashFlows: () => void;
+  clearCashFlows: (ids: string[]) => void;
   removeCashFlowsByIds: (ids: string[]) => void;
   addRecurringDepositRule: (rule: RecurringDepositRule) => void;
   updateRecurringDepositRule: (rule: RecurringDepositRule) => void;
@@ -67,6 +67,8 @@ export interface PortfolioContextValue {
   // 自動更新
   handleAutoUpdatePrices: (silent?: boolean) => Promise<void>;
   refreshIntervalMs: number;
+  /** 與實際自動更新排程共用的下次刷新時間；無持倉時為 null */
+  nextRefreshAt: number | null;
 }
 
 export const PortfolioContext = createContext<PortfolioContextValue | null>(null);
