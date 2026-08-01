@@ -328,6 +328,10 @@ export interface Translations {
     pendingActualAccount: string;
     pendingActualNoteTemplate: string;
     pendingActualConfirmGrossAmount: string;
+    pendingActualCompositionEstimated: string;
+    pendingActualNhiEligibleIncome: string;
+    pendingActualCompositionWarning: string;
+    pendingActualCompositionUnavailable: string;
     pendingActualWireFeeOption: string;
     pendingActualWireFeeHint: string;
     pendingActualWireFeeLabel: string;
