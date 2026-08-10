@@ -30,6 +30,7 @@ import {
   cashDividendBreakdownForMarket,
   formatCashDividendNativeAmountForMarket,
   formatUsDividendNativeAmount,
+  getAccountUsDividendWithholdingRate,
   getMarketWithholdingReferenceRatePercent,
   marketCashDividendPriceIsNetAfterWithholding,
   netPriceMarketCashDividendSaveFields,
@@ -269,11 +270,19 @@ const DividendHeatmap: React.FC = () => {
   const getCashDividendCalc = (
     row: Pick<
       PendingActualRow,
-      'market' | 'amountPerShare' | 'quantity' | 'distributionComposition' | 'isEtf'
+      'market' | 'amountPerShare' | 'quantity' | 'distributionComposition' | 'isEtf' | 'accountId'
     >
   ): ReturnType<typeof cashDividendBreakdownForMarket> => {
     if (row.market !== Market.TW) {
-      return cashDividendBreakdownForMarket(row.market, row.quantity, row.amountPerShare);
+      const account = accounts.find(item => item.id === row.accountId);
+      return cashDividendBreakdownForMarket(
+        row.market,
+        row.quantity,
+        row.amountPerShare,
+        row.market === Market.US
+          ? { usWithholdingRate: getAccountUsDividendWithholdingRate(account) }
+          : undefined
+      );
     }
     if (row.distributionComposition) {
       const gross = twEstimatedSingleDividendTwd(row.quantity, row.amountPerShare);

@@ -9,6 +9,7 @@ import {
   twEstimatedSingleDividendTwd,
   usCashDividendCentBreakdown,
   formatUsDividendNativeAmount,
+  getAccountUsDividendWithholdingRate,
 } from '../utils/dividendTaxHelpers';
 import { computeTransactionAmount } from '../utils/transactionAmount';
 import { usePortfolio } from '../contexts/PortfolioContext';
@@ -20,7 +21,7 @@ interface Props {
   editingTransaction: Transaction | null;
 }
 
-/** 現金股息：價格欄為股息總額、數量固定 1；美股為扣完 30% 後金額，台股為毛額；舊資料若 quantity≠1 則併入 price */
+/** 現金股息：價格欄為股息總額、數量固定 1；美股為依帳戶預扣後金額，台股為毛額；舊資料若 quantity≠1 則併入 price */
 function cashDividendFormFromTransaction(tx: Transaction): {
   price: string;
   quantity: string;
@@ -95,6 +96,9 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
   const [pendingTransaction, setPendingTransaction] = useState<Transaction | null>(null);
   const [pendingTransferInTransaction, setPendingTransferInTransaction] = useState<Transaction | null>(null);
   const [targetAccountId, setTargetAccountId] = useState('');
+  const selectedUsWithholdingRate = getAccountUsDividendWithholdingRate(
+    accounts.find(account => account.id === formData.accountId)
+  );
   const isTransferOutMode = formData.type === TransactionType.TRANSFER_OUT;
   const transactionTypeOptions: TransactionType[] = [
     TransactionType.BUY,
@@ -157,18 +161,29 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
     }
   }, [formData.type, editingTransaction]);
 
-  // 美股現金股息：備註含每股×股數時，新增交易才自動同步試算毛額（編輯時保留已存資料）
+  // 美股現金股息：備註含每股×股數時，新增交易依帳戶預扣設定同步試算（編輯時保留已存資料）
   useEffect(() => {
     if (editingTransaction) return;
     if (formData.type !== TransactionType.CASH_DIVIDEND || formData.market !== Market.US) return;
     const breakdown = parseCashDividendNoteBreakdown(formData.note);
     if (!breakdown) return;
-    const calc = usCashDividendCentBreakdown(breakdown.shares, breakdown.perShare);
+    const calc = usCashDividendCentBreakdown(
+      breakdown.shares,
+      breakdown.perShare,
+      undefined,
+      selectedUsWithholdingRate
+    );
     const nextPrice = formatUsDividendNativeAmount(calc.netNative);
     if (formData.price !== nextPrice) {
       setFormData(prev => ({ ...prev, price: nextPrice }));
     }
-  }, [editingTransaction, formData.type, formData.market, formData.note]);
+  }, [
+    editingTransaction,
+    formData.type,
+    formData.market,
+    formData.note,
+    selectedUsWithholdingRate,
+  ]);
 
   // 當選擇轉入/轉出且關鍵欄位變更時，重新填入平均成本（查無則清空）
   useEffect(() => {
@@ -216,7 +231,9 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
       if (formData.market === Market.US) {
         const formula = usCashDividendCentBreakdown(
           noteBreakdown.shares,
-          noteBreakdown.perShare
+          noteBreakdown.perShare,
+          undefined,
+          selectedUsWithholdingRate
         );
         const taxNative =
           isEditing &&
@@ -521,7 +538,12 @@ const TransactionForm: React.FC<Props> = ({ onAdd, onUpdate, onClose, editingTra
 
     const withheld = getCashDividendWithheld();
     if (formData.market === Market.US) {
-      const formula = usCashDividendCentBreakdown(breakdown.shares, breakdown.perShare);
+      const formula = usCashDividendCentBreakdown(
+        breakdown.shares,
+        breakdown.perShare,
+        undefined,
+        selectedUsWithholdingRate
+      );
       const taxNative = withheld > 0 ? withheld : formula.taxNative;
       return {
         grossNative: formula.grossNative,

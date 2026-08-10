@@ -1,7 +1,16 @@
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Account, AccountKind, Currency, DebtKind, BASE_CURRENCIES } from '../types';
+import {
+  Account,
+  AccountKind,
+  Currency,
+  DebtKind,
+  Market,
+  BASE_CURRENCIES,
+  type UsDividendTaxProfile,
+} from '../types';
 import { isLiabilityAccount } from '../utils/debtAccountHelpers';
+import { getAccountUsDividendWithholdingRate } from '../utils/dividendTaxHelpers';
 import { v4 as uuidv4 } from 'uuid';
 import { formatCurrency } from '../utils/calculations';
 import { t, translate } from '../utils/i18n';
@@ -15,12 +24,44 @@ const AccountManager: React.FC<Props> = () => {
   const {
     computedAccounts: allAccounts,
     accountPerformance,
+    holdings,
+    transactions,
     addAccount,
     updateAccount: onUpdate,
     removeAccount: onDelete,
   } = usePortfolio();
   const { language } = useUI();
   const isChinese = language === 'zh-TW' || language === 'zh-CN';
+  const usTaxText =
+    language === 'zh-TW'
+      ? {
+          label: '美股股息預扣設定',
+          w8: 'W-8BEN 非美國稅務居民（30%）',
+          w9: 'W-9 美國稅務居民（0%）',
+          backup: '備用預扣（24%）',
+          custom: '自訂稅率',
+          customRate: '自訂預扣率（%）',
+          badge: '美股預扣',
+        }
+      : language === 'zh-CN'
+        ? {
+            label: '美股股息预扣设置',
+            w8: 'W-8BEN 非美国税务居民（30%）',
+            w9: 'W-9 美国税务居民（0%）',
+            backup: '备用预扣（24%）',
+            custom: '自定义税率',
+            customRate: '自定义预扣率（%）',
+            badge: '美股预扣',
+          }
+        : {
+            label: 'U.S. dividend withholding',
+            w8: 'W-8BEN non-U.S. tax resident (30%)',
+            w9: 'W-9 U.S. tax resident (0%)',
+            backup: 'Backup withholding (24%)',
+            custom: 'Custom rate',
+            customRate: 'Custom withholding rate (%)',
+            badge: 'U.S. withholding',
+          };
   const onAdd = addAccount;
   const translations = t(language);
   const [name, setName] = useState('');
@@ -32,6 +73,10 @@ const AccountManager: React.FC<Props> = () => {
   const [annualInterestRate, setAnnualInterestRate] = useState('');
   const [creditLimit, setCreditLimit] = useState('');
   const [linkedBrokerageAccountId, setLinkedBrokerageAccountId] = useState('');
+  const [usDividendTaxProfile, setUsDividendTaxProfile] =
+    useState<UsDividendTaxProfile>('W8BEN_30');
+  const [usDividendCustomWithholdingPercent, setUsDividendCustomWithholdingPercent] =
+    useState('30');
   
   // State for custom delete confirmation modal
   const [deleteTarget, setDeleteTarget] = useState<{id: string, name: string} | null>(null);
@@ -41,10 +86,48 @@ const AccountManager: React.FC<Props> = () => {
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const closedAccountIds = useMemo(
-    () => new Set(accountPerformance.filter(a => a.isClosed).map(a => a.id)),
-    [accountPerformance]
+  const accountUsesUsMarket = useCallback(
+    (account: Account): boolean =>
+      account.currency === Currency.USD ||
+      account.isSubBrokerage ||
+      transactions.some(tx => tx.accountId === account.id && tx.market === Market.US) ||
+      holdings.some(holding => holding.accountId === account.id && holding.market === Market.US),
+    [holdings, transactions]
   );
+  const showUsTaxSettings =
+    accountKind === AccountKind.BROKERAGE &&
+    (currency === Currency.USD ||
+      isSubBrokerage ||
+      (editingAccount != null && accountUsesUsMarket(editingAccount)));
+
+  /** 已結清或無持倉（曾有交易、目前無持股）皆不可刪，只能隱藏 */
+  const hideOnlyAccountIds = useMemo(() => {
+    const fromPerf = accountPerformance
+      .filter(a => a.isClosed || a.isFlat)
+      .map(a => a.id);
+    const ids = new Set(fromPerf);
+    // 本地再算一次，避免績效陣列尚未就緒時誤開刪除
+    allAccounts.forEach(acc => {
+      if (isLiabilityAccount(acc)) return;
+      const hasTx = transactions.some(tx => tx.accountId === acc.id);
+      if (!hasTx) return;
+      const hasHoldings = holdings.some(
+        h => h.accountId === acc.id && h.quantity > 0.000001
+      );
+      if (!hasHoldings) ids.add(acc.id);
+    });
+    return ids;
+  }, [accountPerformance, allAccounts, holdings, transactions]);
+
+  const accountStatusById = useMemo(() => {
+    const map = new Map<string, 'closed' | 'flat'>();
+    accountPerformance.forEach(a => {
+      if (a.isClosed) map.set(a.id, 'closed');
+      else if (a.isFlat) map.set(a.id, 'flat');
+    });
+    return map;
+  }, [accountPerformance]);
+
   const visibleAccounts = useMemo(
     () => allAccounts.filter(a => !a.isHidden),
     [allAccounts]
@@ -93,6 +176,10 @@ const AccountManager: React.FC<Props> = () => {
     const isLiability = accountKind === AccountKind.LIABILITY;
     const rateNum = annualInterestRate.trim() ? parseFloat(annualInterestRate) : undefined;
     const limitNum = creditLimit.trim() ? parseFloat(creditLimit) : undefined;
+    const parsedCustomWithholding = parseFloat(usDividendCustomWithholdingPercent);
+    const customWithholdingPercent = Number.isFinite(parsedCustomWithholding)
+      ? Math.max(0, Math.min(100, parsedCustomWithholding))
+      : 30;
     const accountPayload: Account = {
       id: editingAccount?.id ?? uuidv4(),
       name,
@@ -100,6 +187,7 @@ const AccountManager: React.FC<Props> = () => {
       isSubBrokerage: isLiability ? false : isSubBrokerage,
       balance: accountBalance,
       accountKind,
+      isHidden: editingAccount?.isHidden,
       ...(isLiability
         ? {
             debtKind,
@@ -112,6 +200,11 @@ const AccountManager: React.FC<Props> = () => {
             annualInterestRate: undefined,
             creditLimit: undefined,
             linkedBrokerageAccountId: undefined,
+            usDividendTaxProfile: showUsTaxSettings ? usDividendTaxProfile : undefined,
+            usDividendCustomWithholdingPercent:
+              showUsTaxSettings && usDividendTaxProfile === 'CUSTOM'
+                ? customWithholdingPercent
+                : undefined,
           }),
     };
 
@@ -133,6 +226,8 @@ const AccountManager: React.FC<Props> = () => {
     setAnnualInterestRate('');
     setCreditLimit('');
     setLinkedBrokerageAccountId('');
+    setUsDividendTaxProfile('W8BEN_30');
+    setUsDividendCustomWithholdingPercent('30');
   };
 
   const handleEditClick = (e: React.MouseEvent, account: Account) => {
@@ -149,6 +244,12 @@ const AccountManager: React.FC<Props> = () => {
     );
     setCreditLimit(account.creditLimit != null ? String(account.creditLimit) : '');
     setLinkedBrokerageAccountId(account.linkedBrokerageAccountId ?? '');
+    setUsDividendTaxProfile(account.usDividendTaxProfile ?? 'W8BEN_30');
+    setUsDividendCustomWithholdingPercent(
+      account.usDividendCustomWithholdingPercent != null
+        ? String(account.usDividendCustomWithholdingPercent)
+        : '30'
+    );
     setIsEditModalOpen(true);
   };
   
@@ -159,7 +260,7 @@ const AccountManager: React.FC<Props> = () => {
   const handleDeleteClick = (e: React.MouseEvent, id: string, accountName: string) => {
     // Only stop propagation to prevent bubbling to card clicks if any
     e.stopPropagation();
-    if (closedAccountIds.has(id)) {
+    if (hideOnlyAccountIds.has(id)) {
       setHideTarget({ id, name: accountName });
       return;
     }
@@ -305,17 +406,51 @@ const AccountManager: React.FC<Props> = () => {
             </select>
           </div>
           {accountKind === AccountKind.BROKERAGE && (
-            <div className="flex items-center h-10 pb-2">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isSubBrokerage}
-                  onChange={e => setIsSubBrokerage(e.target.checked)}
-                  className="rounded text-accent focus:ring-accent"
-                />
-                <span className="text-sm text-slate-700">{translations.accounts.subBrokerage}</span>
-              </label>
-            </div>
+            <>
+              <div className="flex items-center h-10 pb-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isSubBrokerage}
+                    onChange={e => setIsSubBrokerage(e.target.checked)}
+                    className="rounded text-accent focus:ring-accent"
+                  />
+                  <span className="text-sm text-slate-700">{translations.accounts.subBrokerage}</span>
+                </label>
+              </div>
+              {showUsTaxSettings && (
+                <>
+                  <div className="min-w-[260px]">
+                    <label className="block text-sm font-medium text-slate-700">{usTaxText.label}</label>
+                    <select
+                      value={usDividendTaxProfile}
+                      onChange={e => setUsDividendTaxProfile(e.target.value as UsDividendTaxProfile)}
+                      className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                    >
+                      <option value="W8BEN_30">{usTaxText.w8}</option>
+                      <option value="W9_0">{usTaxText.w9}</option>
+                      <option value="BACKUP_24">{usTaxText.backup}</option>
+                      <option value="CUSTOM">{usTaxText.custom}</option>
+                    </select>
+                  </div>
+                  {usDividendTaxProfile === 'CUSTOM' && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700">{usTaxText.customRate}</label>
+                      <input
+                        type="number"
+                        inputMode={INPUT_MODE_DECIMAL}
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={usDividendCustomWithholdingPercent}
+                        onChange={e => setUsDividendCustomWithholdingPercent(e.target.value)}
+                        className={`mt-1 block w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )}
           <button type="submit" className="bg-slate-900 text-white px-4 py-2 rounded hover:bg-slate-800">
             {editingAccount ? translations.accounts.update : translations.accounts.add}
@@ -349,6 +484,22 @@ const AccountManager: React.FC<Props> = () => {
                     {acc.currency}
                   </span>
                   {acc.isSubBrokerage && <span className="text-xs bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded">{translations.accounts.subBrokerage}</span>}
+                  {!isLiabilityAccount(acc) && accountUsesUsMarket(acc) && (
+                    <span className="text-xs bg-sky-50 text-sky-700 border border-sky-100 px-2 py-0.5 rounded">
+                      {usTaxText.badge}{' '}
+                      {Number((getAccountUsDividendWithholdingRate(acc) * 100).toFixed(2))}%
+                    </span>
+                  )}
+                  {accountStatusById.get(acc.id) === 'closed' && (
+                    <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-semibold">
+                      {translations.dashboard.accountClosedBadge}
+                    </span>
+                  )}
+                  {accountStatusById.get(acc.id) === 'flat' && (
+                    <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold">
+                      {translations.dashboard.accountFlatBadge}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -543,17 +694,51 @@ const AccountManager: React.FC<Props> = () => {
                 </div>
               </div>
               {accountKind === AccountKind.BROKERAGE && (
-                <div className="flex items-center">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input 
-                      type="checkbox"
-                      checked={isSubBrokerage}
-                      onChange={(e) => setIsSubBrokerage(e.target.checked)}
-                      className="rounded text-accent focus:ring-accent"
-                    />
-                    <span className="text-sm text-slate-700">{translations.accounts.subBrokerage}</span>
-                  </label>
-                </div>
+                <>
+                  <div className="flex items-center">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isSubBrokerage}
+                        onChange={(e) => setIsSubBrokerage(e.target.checked)}
+                        className="rounded text-accent focus:ring-accent"
+                      />
+                      <span className="text-sm text-slate-700">{translations.accounts.subBrokerage}</span>
+                    </label>
+                  </div>
+                  {showUsTaxSettings && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">{usTaxText.label}</label>
+                        <select
+                          value={usDividendTaxProfile}
+                          onChange={e => setUsDividendTaxProfile(e.target.value as UsDividendTaxProfile)}
+                          className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                        >
+                          <option value="W8BEN_30">{usTaxText.w8}</option>
+                          <option value="W9_0">{usTaxText.w9}</option>
+                          <option value="BACKUP_24">{usTaxText.backup}</option>
+                          <option value="CUSTOM">{usTaxText.custom}</option>
+                        </select>
+                      </div>
+                      {usDividendTaxProfile === 'CUSTOM' && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">{usTaxText.customRate}</label>
+                          <input
+                            type="number"
+                            inputMode={INPUT_MODE_DECIMAL}
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={usDividendCustomWithholdingPercent}
+                            onChange={e => setUsDividendCustomWithholdingPercent(e.target.value)}
+                            className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
               )}
               <div className="flex justify-end gap-3 pt-4">
                 <button 
@@ -570,6 +755,8 @@ const AccountManager: React.FC<Props> = () => {
                     setAnnualInterestRate('');
                     setCreditLimit('');
                     setLinkedBrokerageAccountId('');
+                    setUsDividendTaxProfile('W8BEN_30');
+                    setUsDividendCustomWithholdingPercent('30');
                   }}
                   className={MODAL_CANCEL_BUTTON}
                 >
