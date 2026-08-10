@@ -5,12 +5,15 @@ interface UseAutoRefreshOptions {
   intervalMs?: number;
   /** 是否啟用（例如未登入時不啟用） */
   enabled?: boolean;
+  /** 啟用後是否立即靜默刷新一次（預設 false） */
+  refreshOnStart?: boolean;
   /** 切回前台時是否立即刷新（預設 true） */
   refreshOnVisible?: boolean;
 }
 
 /**
  * 自動定時刷新 hook。
+ * - 可在啟用後立即靜默刷新一次
  * - 每 intervalMs 自動呼叫 onRefresh（靜默模式）
  * - 畫面倒數與實際排程共用 nextRefreshAt
  * - 切到其他分頁 / 最小化時暫停；切回來僅在已逾期時補刷
@@ -23,6 +26,7 @@ export function useAutoRefresh(
   const {
     intervalMs = 3 * 60 * 1000, // 預設 3 分鐘
     enabled = true,
+    refreshOnStart = false,
     refreshOnVisible = true,
   } = options;
 
@@ -31,6 +35,7 @@ export function useAutoRefresh(
   const onRefreshRef    = useRef(onRefresh);
   const scheduleNextRef = useRef<() => void>(() => {});
   const nextRefreshAtRef = useRef<number | null>(null);
+  const hasRefreshedOnStartRef = useRef(false);
   const [nextRefreshAt, setNextRefreshAt] = useState<number | null>(null);
 
   // 保持 callback 最新，避免 stale closure
@@ -70,14 +75,6 @@ export function useAutoRefresh(
     scheduleNextRef.current = scheduleNext;
   }, [scheduleNext]);
 
-  // 初始排程；更新完成後才開始下一個完整週期。
-  useEffect(() => {
-    scheduleNext();
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [scheduleNext]);
-
   const refreshNow = useCallback(async (silent = false) => {
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = null;
@@ -86,6 +83,28 @@ export function useAutoRefresh(
     await runRefresh(silent);
     scheduleNextRef.current();
   }, [runRefresh]);
+
+  // 初始排程；若要求啟動刷新，完成後才開始下一個完整週期。
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!enabled) {
+      hasRefreshedOnStartRef.current = false;
+      scheduleNext();
+    } else if (refreshOnStart && !hasRefreshedOnStartRef.current) {
+      hasRefreshedOnStartRef.current = true;
+      void runRefresh(true).finally(() => {
+        if (!cancelled) scheduleNextRef.current();
+      });
+    } else {
+      scheduleNext();
+    }
+
+    return () => {
+      cancelled = true;
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [enabled, refreshOnStart, runRefresh, scheduleNext]);
 
   // 頁面可見性：已超過畫面所示的下次更新時間才補刷。
   useEffect(() => {
