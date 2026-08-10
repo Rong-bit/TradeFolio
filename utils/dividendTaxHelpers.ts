@@ -116,7 +116,7 @@ export function isHighDividendTwEtfTicker(ticker: string): boolean {
   return t === '0050' || t === '0056' || t === '00878';
 }
 
-/** 美股複委託常見試算：稅前無條件捨至美分、原始毛額的 30% 預扣稅無條件進位至美分 */
+/** 美股複委託常見試算：以完整精度毛額分別四捨五入稅前金額與預扣稅至美分 */
 export const US_DIVIDEND_GROSS_DECIMALS = 2;
 
 function roundToCents(value: number): number {
@@ -132,12 +132,16 @@ function decimalStringToScaledInt(value: string): { digits: bigint; scale: numbe
   return { digits, scale: fraction.length };
 }
 
+function divideAndRoundHalfUp(numerator: bigint, denominator: bigint): bigint {
+  return (numerator * 2n + denominator) / (denominator * 2n);
+}
+
 function usDividendScaledProduct(shares: number, perShare: number): {
   product: bigint;
   divisor: bigint;
 } {
   const SHARE_SCALE = 6;
-  const PER_SHARE_SCALE = 4;
+  const PER_SHARE_SCALE = 6;
   const share = decimalStringToScaledInt(shares.toFixed(SHARE_SCALE));
   const perShareScaled = decimalStringToScaledInt(perShare.toFixed(PER_SHARE_SCALE));
   const product = share.digits * perShareScaled.digits;
@@ -145,14 +149,14 @@ function usDividendScaledProduct(shares: number, perShare: number): {
   return { product, divisor: 10n ** BigInt(totalScale) };
 }
 
-/** 稅前毛額：股數 × 每股，捨至美分（股數 6 位、每股 4 位小數，BigInt 避免浮點誤差） */
+/** 稅前毛額：股數 × 完整精度每股股息後四捨五入至美分（BigInt 避免浮點誤差） */
 function usDividendGrossNative(shares: number, perShare: number): number {
   const { product, divisor } = usDividendScaledProduct(shares, perShare);
-  const grossCents = product * 100n / divisor;
+  const grossCents = divideAndRoundHalfUp(product * 100n, divisor);
   return Number(grossCents) / 100;
 }
 
-/** 以未截位的原始毛額計算預扣稅，再無條件進位至美分。 */
+/** 以未截位的原始毛額計算預扣稅，再四捨五入至美分。 */
 function usDividendWithholdingCents(
   shares: number,
   perShare: number,
@@ -165,10 +169,10 @@ function usDividendWithholdingCents(
   const scaledRate = BigInt(Math.round(normalizedRate * Number(RATE_SCALE)));
   const numerator = product * scaledRate * 100n;
   const denominator = divisor * RATE_SCALE;
-  return Number((numerator + denominator - 1n) / denominator);
+  return Number(divideAndRoundHalfUp(numerator, denominator));
 }
 
-/** 美股：試算毛額、預扣稅、實領（毛額捨至美分；原始毛額計稅後進位至美分） */
+/** 美股：試算毛額、預扣稅、實領（毛額與原始毛額計稅結果分別四捨五入至美分） */
 export function usCashDividendCentBreakdown(
   shares: number,
   perShare: number,
@@ -258,7 +262,7 @@ export function usCashDividendFromNoteWithNetOverride(
   };
 }
 
-/** 美股：已知稅前毛額時試算預扣稅與稅後實領（原始毛額計稅後進位至美分） */
+/** 美股：已知稅前毛額時試算預扣稅與稅後實領（各自四捨五入至美分） */
 export function usWithholdingFromGrossNative(
   grossNative: number,
   withholdingRate = US_DIVIDEND_WITHHOLDING_RATE
@@ -269,14 +273,14 @@ export function usWithholdingFromGrossNative(
   if (!Number.isFinite(grossNative) || grossNative <= 0) {
     return { taxNative: 0, netNative: 0 };
   }
-  const grossCents = Math.floor(grossNative * 100 + 1e-8);
+  const grossCents = Math.round(roundToCents(grossNative) * 100);
   const normalizedRate = Math.max(0, Math.min(1, withholdingRate));
   const taxCents = Math.min(
     grossCents,
-    Math.ceil(grossNative * normalizedRate * 100 - 1e-10)
+    Math.round(roundToCents(grossNative * normalizedRate) * 100)
   );
   const taxNative = taxCents / 100;
-  const netNative = (grossCents - Math.round(taxNative * 100)) / 100;
+  const netNative = (grossCents - taxCents) / 100;
   return { taxNative, netNative };
 }
 

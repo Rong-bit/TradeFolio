@@ -9,11 +9,11 @@ import {
 } from './dividendTaxHelpers';
 
 describe('US dividend withholding calculation', () => {
-  it('truncates gross dividend and rounds withholding tax up to cents', () => {
+  it('rounds gross dividend and withholding tax independently to cents', () => {
     expect(usCashDividendCentBreakdown(831.88675, 0.2006)).toMatchObject({
-      grossNative: 166.87,
-      taxNative: 50.07,
-      netNative: 116.8,
+      grossNative: 166.88,
+      taxNative: 50.06,
+      netNative: 116.82,
     });
   });
 
@@ -25,11 +25,19 @@ describe('US dividend withholding calculation', () => {
     });
   });
 
-  it('calculates withholding from the untruncated gross dividend', () => {
+  it('calculates withholding from the unrounded gross dividend', () => {
     expect(usCashDividendCentBreakdown(1549.887, 0.2006)).toMatchObject({
-      grossNative: 310.9,
-      taxNative: 93.28,
-      netNative: 217.62,
+      grossNative: 310.91,
+      taxNative: 93.27,
+      netNative: 217.64,
+    });
+  });
+
+  it('keeps six-decimal per-share precision before rounding each result', () => {
+    expect(usCashDividendCentBreakdown(312.56342, 0.562715)).toMatchObject({
+      grossNative: 175.88,
+      taxNative: 52.77,
+      netNative: 123.11,
     });
   });
 
