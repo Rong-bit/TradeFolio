@@ -22,6 +22,7 @@ interface Props {}
 
 const AccountManager: React.FC<Props> = () => {
   const {
+    accounts: storedAccounts,
     computedAccounts: allAccounts,
     accountPerformance,
     holdings,
@@ -67,7 +68,6 @@ const AccountManager: React.FC<Props> = () => {
   const [name, setName] = useState('');
   const [currency, setCurrency] = useState<Currency>(Currency.TWD);
   const [isSubBrokerage, setIsSubBrokerage] = useState(false);
-  const [balance, setBalance] = useState('');
   const [accountKind, setAccountKind] = useState<AccountKind>(AccountKind.BROKERAGE);
   const [debtKind, setDebtKind] = useState<DebtKind>(DebtKind.PERSONAL_LOAN);
   const [annualInterestRate, setAnnualInterestRate] = useState('');
@@ -171,7 +171,9 @@ const AccountManager: React.FC<Props> = () => {
       return;
     }
     
-    const accountBalance = balance ? parseFloat(balance) : 0;
+    const accountBalance = editingAccount
+      ? storedAccounts.find(account => account.id === editingAccount.id)?.balance ?? 0
+      : 0;
     
     const isLiability = accountKind === AccountKind.LIABILITY;
     const rateNum = annualInterestRate.trim() ? parseFloat(annualInterestRate) : undefined;
@@ -220,7 +222,6 @@ const AccountManager: React.FC<Props> = () => {
     setName('');
     setCurrency(Currency.TWD);
     setIsSubBrokerage(false);
-    setBalance('');
     setAccountKind(AccountKind.BROKERAGE);
     setDebtKind(DebtKind.PERSONAL_LOAN);
     setAnnualInterestRate('');
@@ -236,7 +237,6 @@ const AccountManager: React.FC<Props> = () => {
     setName(account.name);
     setCurrency(account.currency);
     setIsSubBrokerage(account.isSubBrokerage);
-    setBalance(account.balance.toString());
     setAccountKind(account.accountKind ?? AccountKind.BROKERAGE);
     setDebtKind(account.debtKind ?? DebtKind.PERSONAL_LOAN);
     setAnnualInterestRate(
@@ -667,31 +667,17 @@ const AccountManager: React.FC<Props> = () => {
                   </div>
                 </>
               )}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.currency}</label>
-                  <select 
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value as Currency)}
-                    className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
-                  >
-                    {accountCurrencies.map(c => (
-                      <option key={c} value={c}>{getCurrencyLabel(c)}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.balance}</label>
-                  <input 
-                    type="number"
-                    inputMode={INPUT_MODE_DECIMAL}
-                    step="0.01"
-                    value={balance}
-                    onChange={(e) => setBalance(e.target.value)}
-                    className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
-                    placeholder="0"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{translations.accounts.currency}</label>
+                <select 
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value as Currency)}
+                  className={`w-full border border-slate-300 rounded-md p-2 ${FORM_FIELD_THEME}`}
+                >
+                  {accountCurrencies.map(c => (
+                    <option key={c} value={c}>{getCurrencyLabel(c)}</option>
+                  ))}
+                </select>
               </div>
               {accountKind === AccountKind.BROKERAGE && (
                 <>
@@ -749,7 +735,6 @@ const AccountManager: React.FC<Props> = () => {
                     setName('');
                     setCurrency(Currency.TWD);
                     setIsSubBrokerage(false);
-                    setBalance('');
                     setAccountKind(AccountKind.BROKERAGE);
                     setDebtKind(DebtKind.PERSONAL_LOAN);
                     setAnnualInterestRate('');
