@@ -79,6 +79,8 @@ export enum DebtKind {
   SECURITIES_LENDING = 'SECURITIES_LENDING',
 }
 
+export type UsDividendTaxProfile = 'W8BEN_30' | 'W9_0' | 'BACKUP_24' | 'CUSTOM';
+
 export type ScheduledRuleKind = 'RECURRING_DEPOSIT' | 'DEBT_PAYMENT_ALERT';
 
 export enum CashFlowCategory {
@@ -103,6 +105,10 @@ export interface Account {
   /** Credit line limit (same currency as account); used for utilization display */
   creditLimit?: number;
   linkedBrokerageAccountId?: string;
+  /** 美股股息預扣身分；舊帳戶未設定時視為 W-8BEN 30%。 */
+  usDividendTaxProfile?: UsDividendTaxProfile;
+  /** CUSTOM 時使用，百分比 0–100。 */
+  usDividendCustomWithholdingPercent?: number;
   /** 已結清後由使用者隱藏：列表不顯示，資料與歷史仍保留 */
   isHidden?: boolean;
 }
@@ -239,7 +245,7 @@ export interface PortfolioSummary {
   avgExchangeRate: number;
   /** 當曆年：台股健保補充保費預扣合計（TWD） */
   yearWithheldNhiTwd: number;
-  /** 當曆年：美股現金股利預扣稅合計（TWD）：有填 withheldUsTaxNative 者加總，否則以實領金額用 30% 回推 */
+  /** 當曆年：美股現金股利預扣稅合計（TWD）：有實際值則加總，否則依帳戶預扣設定回推。 */
   yearUsWithholdingTwd: number;
 }
 
