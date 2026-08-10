@@ -1,5 +1,5 @@
 import { Market } from '../types';
-import type { Transaction } from '../types';
+import type { Account, Transaction } from '../types';
 import type { YahooMarket } from '../services/yahooFinanceService';
 
 /** 配息相關 map 鍵：`${market}\x1e${ticker}` */
@@ -23,6 +23,26 @@ export function twStockDividendParValueForNhiBasisTwd(stockDividendShares: numbe
 
 /** 美股配息常見預扣 30%（僅供試算） */
 export const US_DIVIDEND_WITHHOLDING_RATE = 0.3;
+
+/** 依帳戶稅務文件取得美股股息預扣率；舊帳戶維持 W-8BEN 30% 相容預設。 */
+export function getAccountUsDividendWithholdingRate(
+  account?: Pick<Account, 'usDividendTaxProfile' | 'usDividendCustomWithholdingPercent'>
+): number {
+  switch (account?.usDividendTaxProfile) {
+    case 'W9_0':
+      return 0;
+    case 'BACKUP_24':
+      return 0.24;
+    case 'CUSTOM': {
+      const percent = account.usDividendCustomWithholdingPercent;
+      if (!Number.isFinite(percent)) return US_DIVIDEND_WITHHOLDING_RATE;
+      return Math.max(0, Math.min(100, Number(percent))) / 100;
+    }
+    case 'W8BEN_30':
+    default:
+      return US_DIVIDEND_WITHHOLDING_RATE;
+  }
+}
 /** 台股現金股利跨行等常見匯費（元；是否收取依券商／銀行，未自動從試算中扣除） */
 export const TW_DIVIDEND_CROSS_BANK_WIRE_FEE_TWD = 10;
 export function marketToYahooMarketForDividends(m: Market): YahooMarket | null {
@@ -96,8 +116,8 @@ export function isHighDividendTwEtfTicker(ticker: string): boolean {
   return t === '0050' || t === '0056' || t === '00878';
 }
 
-/** 美股複委託常見試算：稅前無條件捨至小數第 3 位、30% 預扣稅四捨五入至美分 */
-export const US_DIVIDEND_GROSS_DECIMALS = 3;
+/** 美股複委託常見試算：稅前無條件捨至美分、原始毛額的 30% 預扣稅無條件進位至美分 */
+export const US_DIVIDEND_GROSS_DECIMALS = 2;
 
 function roundToCents(value: number): number {
   return Math.round(value * 100) / 100;
@@ -112,23 +132,48 @@ function decimalStringToScaledInt(value: string): { digits: bigint; scale: numbe
   return { digits, scale: fraction.length };
 }
 
-/** 稅前毛額：股數 × 每股，捨至小數第 3 位（股數 6 位、每股 4 位小數，BigInt 避免浮點誤差） */
-function usDividendGrossNative(shares: number, perShare: number): number {
+function usDividendScaledProduct(shares: number, perShare: number): {
+  product: bigint;
+  divisor: bigint;
+} {
   const SHARE_SCALE = 6;
   const PER_SHARE_SCALE = 4;
   const share = decimalStringToScaledInt(shares.toFixed(SHARE_SCALE));
   const perShareScaled = decimalStringToScaledInt(perShare.toFixed(PER_SHARE_SCALE));
   const product = share.digits * perShareScaled.digits;
   const totalScale = share.scale + perShareScaled.scale;
-  const grossMilli = product * 1000n / 10n ** BigInt(totalScale);
-  return Number(grossMilli) / 1000;
+  return { product, divisor: 10n ** BigInt(totalScale) };
 }
 
-/** 美股：試算毛額、預扣稅、實領（稅前 3 位捨去、稅金四捨五入至美分） */
+/** 稅前毛額：股數 × 每股，捨至美分（股數 6 位、每股 4 位小數，BigInt 避免浮點誤差） */
+function usDividendGrossNative(shares: number, perShare: number): number {
+  const { product, divisor } = usDividendScaledProduct(shares, perShare);
+  const grossCents = product * 100n / divisor;
+  return Number(grossCents) / 100;
+}
+
+/** 以未截位的原始毛額計算預扣稅，再無條件進位至美分。 */
+function usDividendWithholdingCents(
+  shares: number,
+  perShare: number,
+  withholdingRate: number
+): number {
+  const normalizedRate = Math.max(0, Math.min(1, withholdingRate));
+  if (normalizedRate <= 0) return 0;
+  const { product, divisor } = usDividendScaledProduct(shares, perShare);
+  const RATE_SCALE = 1_000_000n;
+  const scaledRate = BigInt(Math.round(normalizedRate * Number(RATE_SCALE)));
+  const numerator = product * scaledRate * 100n;
+  const denominator = divisor * RATE_SCALE;
+  return Number((numerator + denominator - 1n) / denominator);
+}
+
+/** 美股：試算毛額、預扣稅、實領（毛額捨至美分；原始毛額計稅後進位至美分） */
 export function usCashDividendCentBreakdown(
   shares: number,
   perShare: number,
-  explicitTaxNative?: number
+  explicitTaxNative?: number,
+  withholdingRate = US_DIVIDEND_WITHHOLDING_RATE
 ): {
   grossCents: number;
   taxCents: number;
@@ -149,15 +194,17 @@ export function usCashDividendCentBreakdown(
   }
 
   const grossNative = usDividendGrossNative(shares, perShare);
-  const taxNative =
-    explicitTaxNative != null && explicitTaxNative > 0
-      ? Math.round(explicitTaxNative * 100) / 100
-      : roundToCents(grossNative * US_DIVIDEND_WITHHOLDING_RATE);
-  const netNative = Math.round((grossNative - taxNative) * 100) / 100;
-
   const grossCents = Math.round(grossNative * 100);
-  const taxCents = Math.round(taxNative * 100);
-  const netCents = Math.round(netNative * 100);
+  const taxCents =
+    explicitTaxNative != null && explicitTaxNative >= 0
+      ? Math.round(explicitTaxNative * 100)
+      : Math.min(
+          grossCents,
+          usDividendWithholdingCents(shares, perShare, withholdingRate)
+        );
+  const netCents = grossCents - taxCents;
+  const taxNative = taxCents / 100;
+  const netNative = netCents / 100;
 
   return {
     grossCents,
@@ -211,16 +258,25 @@ export function usCashDividendFromNoteWithNetOverride(
   };
 }
 
-/** 美股：已知稅前毛額時試算預扣稅與稅後實領（稅金四捨五入至美分） */
-export function usWithholdingFromGrossNative(grossNative: number): {
+/** 美股：已知稅前毛額時試算預扣稅與稅後實領（原始毛額計稅後進位至美分） */
+export function usWithholdingFromGrossNative(
+  grossNative: number,
+  withholdingRate = US_DIVIDEND_WITHHOLDING_RATE
+): {
   taxNative: number;
   netNative: number;
 } {
   if (!Number.isFinite(grossNative) || grossNative <= 0) {
     return { taxNative: 0, netNative: 0 };
   }
-  const taxNative = roundToCents(grossNative * US_DIVIDEND_WITHHOLDING_RATE);
-  const netNative = Math.round((grossNative - taxNative) * 100) / 100;
+  const grossCents = Math.floor(grossNative * 100 + 1e-8);
+  const normalizedRate = Math.max(0, Math.min(1, withholdingRate));
+  const taxCents = Math.min(
+    grossCents,
+    Math.ceil(grossNative * normalizedRate * 100 - 1e-10)
+  );
+  const taxNative = taxCents / 100;
+  const netNative = (grossCents - Math.round(taxNative * 100)) / 100;
   return { taxNative, netNative };
 }
 
@@ -353,6 +409,8 @@ export function cashDividendBreakdownForMarket(
   perShare: number,
   opts?: {
     explicitTaxNative?: number;
+    /** 美股帳戶適用的預扣率 0–1；未提供時維持 30%。 */
+    usWithholdingRate?: number;
     /**
      * 台股 ETF 補充保費計費所得。null 表示已知為 ETF 但官方尚無組成，
      * 此時不可退回用整筆配息估算。
@@ -391,7 +449,12 @@ export function cashDividendBreakdownForMarket(
   }
 
   if (cfg.mode === 'us_broker') {
-    const formula = usCashDividendCentBreakdown(shares, perShare, opts?.explicitTaxNative);
+    const formula = usCashDividendCentBreakdown(
+      shares,
+      perShare,
+      opts?.explicitTaxNative,
+      opts?.usWithholdingRate
+    );
     return {
       grossNative: formula.grossNative,
       taxNative: formula.taxNative,

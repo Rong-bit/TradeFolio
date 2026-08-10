@@ -39,6 +39,12 @@ const CF_TYPES = new Set<string>(Object.values(CashFlowType));
 const CF_CATEGORIES = new Set<string>(Object.values(CashFlowCategory));
 const ACCOUNT_KINDS = new Set<string>(Object.values(AccountKind));
 const DEBT_KINDS = new Set<string>(Object.values(DebtKind));
+const US_DIVIDEND_TAX_PROFILES = new Set<string>([
+  'W8BEN_30',
+  'W9_0',
+  'BACKUP_24',
+  'CUSTOM',
+]);
 const RULE_KINDS = new Set<string>(['RECURRING_DEPOSIT', 'DEBT_PAYMENT_ALERT']);
 const BASE_CURRENCY_SET = new Set<string>(BASE_CURRENCIES);
 
@@ -164,6 +170,18 @@ function dayOfMonth(value: unknown, label: string): number {
 
 function parseAccount(raw: unknown, index: number): Account {
   const o = requireObject(raw, `accounts[${index}]`);
+  const customWithholdingPercent = optionalNum(
+    o.usDividendCustomWithholdingPercent,
+    `accounts[${index}].usDividendCustomWithholdingPercent`
+  );
+  if (
+    customWithholdingPercent != null &&
+    (customWithholdingPercent < 0 || customWithholdingPercent > 100)
+  ) {
+    throw new ImportValidationError(
+      `accounts[${index}].usDividendCustomWithholdingPercent must be between 0 and 100`
+    );
+  }
   const account: Account = {
     id: str(o.id, `accounts[${index}].id`, MAX_ID_LEN),
     name: str(o.name, `accounts[${index}].name`, MAX_NAME_LEN),
@@ -181,6 +199,15 @@ function parseAccount(raw: unknown, index: number): Account {
       `accounts[${index}].linkedBrokerageAccountId`,
       MAX_ID_LEN
     ),
+    usDividendTaxProfile: optionalEnum(
+      o.usDividendTaxProfile,
+      `accounts[${index}].usDividendTaxProfile`,
+      US_DIVIDEND_TAX_PROFILES
+    ) as Account['usDividendTaxProfile'],
+    usDividendCustomWithholdingPercent: customWithholdingPercent,
+    isHidden: o.isHidden === undefined || o.isHidden === null
+      ? undefined
+      : bool(o.isHidden, `accounts[${index}].isHidden`),
   };
   return account;
 }
