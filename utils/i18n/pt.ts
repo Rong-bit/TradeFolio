@@ -23,7 +23,7 @@ export const pt: Translations = {
     accumulatedStockDividends: 'Dividendos em Ações Acumulados',
     yearDividendTaxTitle: 'Descontos relacionados a dividendos neste ano (referência)',
     yearWithheldNhi: 'Total acumulado de prêmio suplementar NHI (somente registros preenchidos)',
-    yearUsWithholding: 'Total acumulado de retenção EUA (somente preenchidos; se vazio, estimado a partir de 30% do líquido)',
+    yearUsWithholding: 'Total de retenção dos EUA (registrado ou estimado pelas configurações da conta)',
     yearUsWithholdingHint: 'Preencher "withholding tax" no registro de dividendo em dinheiro melhora a precisão.',
     annualizedReturnRate: 'Taxa de Retorno Anualizada',
     avgExchangeRate: 'Taxa de Câmbio Média (TWD/USD)',

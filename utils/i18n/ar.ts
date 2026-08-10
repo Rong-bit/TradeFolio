@@ -23,7 +23,7 @@ export const ar: Translations = {
     accumulatedStockDividends: 'أرباح الأسهم المتراكمة',
     yearDividendTaxTitle: 'الاستقطاعات المتعلقة بالتوزيعات هذا العام (مرجع)',
     yearWithheldNhi: 'إجمالي قسط NHI الإضافي (للسجلات المُدخلة فقط)',
-    yearUsWithholding: 'إجمالي ضريبة الحجب الأمريكية (السجلات المُدخلة؛ وإذا كانت فارغة يُقدَّر 30% من الصافي)',
+    yearUsWithholding: 'إجمالي ضريبة الحجب الأمريكية (المسجل أو المقدر من إعدادات الحساب)',
     yearUsWithholdingHint: 'تعبئة "ضريبة الحجب" في سجل التوزيع النقدي يجعل الإحصاء أدق.',
     annualizedReturnRate: 'معدل العائد السنوي',
     avgExchangeRate: 'متوسط سعر الصرف (TWD/USD)',

@@ -77,7 +77,7 @@ export const ko: Translations = {
     accumulatedStockDividends: '주식 배당 재투자',
     yearDividendTaxTitle: '올해 배당 관련 공제(참고)',
     yearWithheldNhi: '대만 2세대 건강보험 추가부담금(입력된 기록 합계)',
-    yearUsWithholding: '미국 배당 원천징수세(입력값 합계, 미입력 시 실수령액 기준 30% 역산)',
+    yearUsWithholding: '미국 배당 원천징수세(입력값 또는 계좌 설정 기준 추정)',
     yearUsWithholdingHint: '현금 배당 기록에 "미국 원천징수세"를 입력하면 합계가 더 정확해집니다.',
     annualizedReturnRate: '연평균 수익률',
     avgExchangeRate: '평균 환율',

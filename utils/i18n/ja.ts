@@ -77,7 +77,7 @@ export const ja: Translations = {
     accumulatedStockDividends: '株式配当再投資',
     yearDividendTaxTitle: '本年度の配当関連控除（参考）',
     yearWithheldNhi: '二代健保上乗せ（記録分の合計）',
-    yearUsWithholding: '米国源泉税（記録または実受取から30%推定）',
+    yearUsWithholding: '米国源泉税（記録または口座設定から推定）',
     yearUsWithholdingHint: '現金配当に「源泉税」を入力すると集計が正確になります。',
     annualizedReturnRate: '年率リターン',
     avgExchangeRate: '平均為替',

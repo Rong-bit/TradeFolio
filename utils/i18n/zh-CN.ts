@@ -21,7 +21,7 @@ zhCN.dashboard = {
   accumulatedStockDividends: '累积股息再投入',
   yearDividendTaxTitle: '本年度配息相关扣款（参考）',
   yearWithheldNhi: '累计二代健保补充保费（仅加总有填写之记录）',
-  yearUsWithholding: '累计美股预扣税（已填写者加总；未填则以实领 30% 回推）',
+  yearUsWithholding: '累计美股预扣税（已填写者加总；未填则依账户设置回推）',
   yearUsWithholdingHint: '在现金股息记录中填写「预扣税」可让统计更精准。',
   annualizedReturn: '真实年化（XIRR）',
   annualizedReturnRate: '总市值年化报酬率',

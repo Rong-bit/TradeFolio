@@ -47,7 +47,7 @@ export const de: Translations = {
     accumulatedStockDividends: 'Kumulierte Aktiendividenden',
     yearDividendTaxTitle: 'Dividendenbezogene Abzuege dieses Jahres (Referenz)',
     yearWithheldNhi: 'TW-NHI-Zusatzbeitrag (Summe der erfassten Eintraege)',
-    yearUsWithholding: 'US-Quellensteuer auf Dividenden (erfasst oder mit 30 % aus dem Netto geschaetzt)',
+    yearUsWithholding: 'US-Quellensteuer auf Dividenden (erfasst oder nach Kontoeinstellung geschaetzt)',
     yearUsWithholdingHint: 'Tragen Sie in Bardividenden-Zeilen die „US-Quellensteuer“ ein, um exakte Summen zu erhalten.',
     annualizedReturnRate: 'Annualisierte Rendite',
     avgExchangeRate: 'Durchschnittlicher Wechselkurs (TWD/USD)',

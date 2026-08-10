@@ -77,7 +77,7 @@ export const en: Translations = {
     accumulatedStockDividends: 'Accumulated Stock Dividends',
     yearDividendTaxTitle: 'Dividend-related withholdings (this year, reference)',
     yearWithheldNhi: 'TW NHI supplement (sum of recorded rows)',
-    yearUsWithholding: 'US dividend withholding (recorded, or 30% implied from net)',
+    yearUsWithholding: 'US dividend withholding (recorded, or implied from account settings)',
     yearUsWithholdingHint: 'Enter “US tax withheld” on cash dividend rows for exact totals.',
     annualizedReturnRate: 'Annualized Return Rate',
     avgExchangeRate: 'Avg Exchange Rate (TWD/USD)',

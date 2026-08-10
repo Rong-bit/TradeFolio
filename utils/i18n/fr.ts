@@ -48,7 +48,7 @@ export const fr: Translations = {
     accumulatedStockDividends: 'Dividendes en Actions Accumulés',
     yearDividendTaxTitle: 'Retenues liees aux dividendes (annee en cours, indicatif)',
     yearWithheldNhi: 'Supplement NHI taiwanais retenu (somme des lignes renseignees)',
-    yearUsWithholding: 'Retenue a la source US sur dividendes (saisie, sinon estimation a 30 % depuis le net)',
+    yearUsWithholding: 'Retenue a la source US sur dividendes (saisie ou estimee selon le compte)',
     yearUsWithholdingHint: 'Renseignez « retenue US » dans les lignes de dividendes en especes pour obtenir un total precis.',
     annualizedReturnRate: 'Taux de Rendement Annualisé',
     avgExchangeRate: 'Taux de Change Moyen (TWD/USD)',

@@ -23,7 +23,7 @@ export const hi: Translations = {
     accumulatedStockDividends: 'संचित स्टॉक लाभांश',
     yearDividendTaxTitle: 'इस वर्ष लाभांश-संबंधित कटौतियां (संदर्भ)',
     yearWithheldNhi: 'कुल NHI अतिरिक्त प्रीमियम (केवल भरे गए रिकॉर्ड)',
-    yearUsWithholding: 'कुल US withholding tax (भरे गए रिकॉर्ड का योग; खाली होने पर प्राप्त राशि से 30% अनुमान)',
+    yearUsWithholding: 'कुल US withholding tax (रिकॉर्ड या खाता सेटिंग से अनुमान)',
     yearUsWithholdingHint: 'कैश डिविडेंड रिकॉर्ड में "withholding tax" भरने से यह आंकड़ा अधिक सटीक होगा।',
     annualizedReturnRate: 'वार्षिक रिटर्न दर',
     avgExchangeRate: 'औसत विनिमय दर (TWD/USD)',

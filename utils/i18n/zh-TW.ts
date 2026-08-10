@@ -76,7 +76,7 @@ export const zhTW: Translations = {
     accumulatedStockDividends: '累積股息再投入',
     yearDividendTaxTitle: '本年度配息相關扣款（參考）',
     yearWithheldNhi: '累計二代健保補充保費（僅加總有填寫之紀錄）',
-    yearUsWithholding: '累計美股預扣稅（已填寫者加總；未填則以實領 30% 回推）',
+    yearUsWithholding: '累計美股預扣稅（已填寫者加總；未填則依帳戶設定回推）',
     yearUsWithholdingHint: '於現金股息紀錄中填寫「預扣稅」可讓統計更精準。',
     annualizedReturnRate: '總市值年化報酬率',
     avgExchangeRate: '平均換匯成本',
