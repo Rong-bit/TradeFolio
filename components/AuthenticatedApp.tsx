@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
 import { BaseCurrency, BASE_CURRENCIES, Transaction, CashFlow } from '../types';
 import { useLocalStorageDebouncedSimple } from '../hooks/useLocalStorageDebounced';
 import { useFilters } from '../hooks/useFilters';
@@ -285,6 +285,15 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     enabled: baseHoldings.length > 0,
     refreshOnVisible: true,
   });
+
+  // 登入資料載入且確認有持股後，立即連網同步一次股價與匯率。
+  const initialRefreshUserRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!currentUser || baseHoldings.length === 0) return;
+    if (initialRefreshUserRef.current === currentUser) return;
+    initialRefreshUserRef.current = currentUser;
+    void refreshPricesNow(true);
+  }, [currentUser, baseHoldings.length, refreshPricesNow]);
 
   useAutoHistoricalSyncEffect({
     isAuthenticated: true,
