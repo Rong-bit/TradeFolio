@@ -28,6 +28,7 @@ import {
   currencyToTWDRate,
   holdingValueToTWD,
   transactionAmountNativeToTWD,
+  cashDividendNetNative,
 } from '../utils/calculations';
 import {
   computeDebtSummary,
@@ -35,6 +36,7 @@ import {
   netInvestedDeltaForCashFlow,
 } from '../utils/debtAccountHelpers';
 import { checkDebtPaymentAlerts, computeDebtSpreadAlerts } from '../utils/scheduledAlerts';
+import { getAccountUsDividendWithholdingRate } from '../utils/dividendTaxHelpers';
 
 export interface PortfolioMetricsInput {
   transactions: Transaction[];
@@ -137,8 +139,10 @@ export function usePortfolioMetrics(input: PortfolioMetricsInput) {
       transactions
         .filter((t: Transaction) => t.type === type)
         .reduce((s: number, t: Transaction) => {
-          const baseVal = t.price * t.quantity;
-          const amt = (t.amount ?? baseVal) - t.fees;
+          const amt =
+            type === TransactionType.CASH_DIVIDEND
+              ? cashDividendNetNative(t)
+              : (t.amount ?? t.price * t.quantity) - t.fees;
           return s + transactionAmountNativeToTWD(amt, t, accounts, rates);
         }, 0);
 
@@ -152,12 +156,16 @@ export function usePortfolioMetrics(input: PortfolioMetricsInput) {
         yearWithheldNhiTwd += t.withheldNhiTwd;
       }
       if (t.market === Market.US) {
-        const netNative = (t.amount ?? t.price * t.quantity) - (t.fees || 0);
+        const netNative = cashDividendNetNative(t);
         if (t.withheldUsTaxNative != null && t.withheldUsTaxNative > 0) {
           yearUsWithholdingTwd += transactionAmountNativeToTWD(t.withheldUsTaxNative, t, accounts, rates);
         } else if (netNative > 0) {
-          const implied = netNative * (0.3 / 0.7);
-          yearUsWithholdingTwd += transactionAmountNativeToTWD(implied, t, accounts, rates);
+          const account = accounts.find(item => item.id === t.accountId);
+          const withholdingRate = getAccountUsDividendWithholdingRate(account);
+          if (withholdingRate > 0 && withholdingRate < 1) {
+            const implied = netNative * (withholdingRate / (1 - withholdingRate));
+            yearUsWithholdingTwd += transactionAmountNativeToTWD(implied, t, accounts, rates);
+          }
         }
       }
     });
