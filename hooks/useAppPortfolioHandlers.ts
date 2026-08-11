@@ -6,13 +6,8 @@ import {
   Market,
   HistoricalData,
   RecurringDepositRule,
-  CombinedRecord,
 } from '../types';
 import type { AppText } from './useAppText';
-import {
-  countVisibleFilteredRecords,
-  getDeletableIdsFromFilteredRecords,
-} from '../utils/filteredRecordDelete';
 
 interface UiModals {
   setIsFormOpen: (v: boolean) => void;
@@ -43,14 +38,12 @@ interface PortfolioMutations {
   recurringDepositRules: RecurringDepositRule[];
   updateTransaction: (tx: Transaction) => void;
   removeTransaction: (id: string) => void;
-  clearTransactions: () => void;
   removeTransactionsByIds: (ids: string[]) => void;
   batchUpdateMarket: (updates: { id: string; market: Market }[]) => void;
   updateAccount: (acc: Account) => void;
   removeAccount: (id: string) => void;
   updateCashFlow: (cf: CashFlow) => void;
   removeCashFlow: (id: string) => void;
-  clearCashFlows: () => void;
   removeCashFlowsByIds: (ids: string[]) => void;
   saveHistoricalData: (data: HistoricalData) => void;
   updateRecurringDepositRule: (rule: RecurringDepositRule) => void;
@@ -61,12 +54,12 @@ interface Params {
   ui: UiModals;
   deleteState: DeleteState;
   appText: AppText;
-  filteredRecords: CombinedRecord[];
   showAlert: (message: string, title?: string, type?: 'info' | 'success' | 'error') => void;
+  getFilteredTransactionIds: () => string[];
   markHighlighted: (ids: string | string[]) => void;
 }
 
-export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, filteredRecords, showAlert, markHighlighted }: Params) {
+export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, showAlert, getFilteredTransactionIds, markHighlighted }: Params) {
   const {
     transactions,
     accounts,
@@ -74,14 +67,12 @@ export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, f
     recurringDepositRules,
     updateTransaction,
     removeTransaction,
-    clearTransactions,
     removeTransactionsByIds,
     batchUpdateMarket,
     updateAccount,
     removeAccount,
     updateCashFlow,
     removeCashFlow,
-    clearCashFlows,
     removeCashFlowsByIds,
     saveHistoricalData,
     updateRecurringDepositRule,
@@ -150,25 +141,19 @@ export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, f
   ]);
 
   const handleClearAllTransactions = useCallback(() => {
-    if (countVisibleFilteredRecords(filteredRecords) === 0) return;
     setIsDeleteConfirmOpen(true);
-  }, [filteredRecords, setIsDeleteConfirmOpen]);
+  }, [setIsDeleteConfirmOpen]);
 
   const confirmDeleteAllTransactions = useCallback(() => {
-    const { transactionIds, cashFlowIds } = getDeletableIdsFromFilteredRecords(filteredRecords);
-    const count = countVisibleFilteredRecords(filteredRecords);
-    removeTransactionsByIds(transactionIds);
-    removeCashFlowsByIds(cashFlowIds);
+    const ids = getFilteredTransactionIds();
+    if (ids.length === 0) {
+      setIsDeleteConfirmOpen(false);
+      return;
+    }
+    removeTransactionsByIds(ids);
     setIsDeleteConfirmOpen(false);
-    setTimeout(() => showAlert(appText.txCleared(count), appText.deleteSuccessTitle, 'success'), 100);
-  }, [
-    filteredRecords,
-    removeTransactionsByIds,
-    removeCashFlowsByIds,
-    setIsDeleteConfirmOpen,
-    appText,
-    showAlert,
-  ]);
+    setTimeout(() => showAlert(appText.txCleared(ids.length), appText.deleteSuccessTitle, 'success'), 100);
+  }, [getFilteredTransactionIds, removeTransactionsByIds, setIsDeleteConfirmOpen, appText, showAlert]);
 
   const handleUpdateAccount = useCallback(
     (acc: Account) => {
@@ -225,11 +210,14 @@ export function useAppPortfolioHandlers({ portfolio, ui, deleteState, appText, f
     clearCashFlowDelete();
   }, [setIsCashFlowDeleteConfirmOpen, clearCashFlowDelete]);
 
-  const handleClearAllCashFlows = useCallback(() => {
-    const count = cashFlows.length;
-    clearCashFlows();
-    showAlert(appText.cashFlowCleared(count), appText.deleteSuccessTitle, 'success');
-  }, [cashFlows.length, clearCashFlows, appText, showAlert]);
+  const handleClearAllCashFlows = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      removeCashFlowsByIds(ids);
+      showAlert(appText.cashFlowCleared(ids.length), appText.deleteSuccessTitle, 'success');
+    },
+    [removeCashFlowsByIds, appText, showAlert]
+  );
 
   const handleSaveHistoricalData = useCallback(
     (nd: HistoricalData) => {

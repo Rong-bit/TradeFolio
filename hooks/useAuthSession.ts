@@ -1,8 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ADMIN_EMAIL, SYSTEM_ACCESS_CODE, GLOBAL_AUTHORIZED_USERS } from '../config';
-import { getLanguage, setLanguage as saveLanguage, Language } from '../utils/i18n';
 import { openMailTo } from '../utils/openMailTo';
+import { getLanguage, setLanguage as saveLanguage, Language } from '../utils/i18n';
 import { useAppText, AppText } from './useAppText';
+import {
+  userChoseGuestLoginRef,
+  resolveGeneralUserLoginGuestState,
+  afterGeneralUserLogin,
+} from './useSubscription';
 import type { AlertDialogState } from '../types';
 
 export { ADMIN_EMAIL };
@@ -10,6 +15,7 @@ export { ADMIN_EMAIL };
 export interface AuthSession {
   isAuthenticated: boolean;
   isGuest: boolean;
+  setIsGuest: (v: boolean) => void;
   currentUser: string;
   loginEmail: string;
   setLoginEmail: (v: string) => void;
@@ -92,15 +98,27 @@ export function useAuthSession(): AuthSession {
       }
       if (GLOBAL_AUTHORIZED_USERS.includes(email)) {
         loginSuccess(email, false);
+        showAlert(appText.memberModeLoginSuccess, appText.loginSuccessTitle, 'success');
         return;
       }
-      loginSuccess(email, true);
-      showAlert(appText.guestLoginNotice, appText.loginSuccessTitle, 'info');
+
+      const startAsGuest = resolveGeneralUserLoginGuestState();
+      if (startAsGuest) {
+        userChoseGuestLoginRef.current = true;
+        loginSuccess(email, true);
+        showAlert(appText.guestModeLoginSuccess, appText.loginSuccessTitle, 'info');
+      } else {
+        userChoseGuestLoginRef.current = false;
+        loginSuccess(email, false);
+        showAlert(appText.memberModeLoginSuccess, appText.loginSuccessTitle, 'success');
+      }
+      afterGeneralUserLogin(email, setIsGuest);
     },
     [loginEmail, loginPassword, appText, loginSuccess, showAlert]
   );
 
   const handleLogout = useCallback(() => {
+    userChoseGuestLoginRef.current = false;
     setIsAuthenticated(false);
     setIsGuest(false);
     setCurrentUser('');
@@ -125,6 +143,7 @@ export function useAuthSession(): AuthSession {
   return {
     isAuthenticated,
     isGuest,
+    setIsGuest,
     currentUser,
     loginEmail,
     setLoginEmail,
