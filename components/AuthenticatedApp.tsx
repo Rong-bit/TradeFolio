@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { BaseCurrency, BASE_CURRENCIES, Transaction, CashFlow } from '../types';
 import { useLocalStorageDebouncedSimple } from '../hooks/useLocalStorageDebounced';
 import { useFilters } from '../hooks/useFilters';
@@ -14,10 +15,11 @@ import { useBackupRestore } from '../hooks/useBackupRestore';
 import { useAutoHistoricalSyncEffect } from '../hooks/useAutoHistoricalSyncEffect';
 import { useAppPortfolioHandlers } from '../hooks/useAppPortfolioHandlers';
 import { useRecentRecordHighlights } from '../hooks/useRecentRecordHighlights';
+import { useSubscription } from '../hooks/useSubscription';
+import { useSafeAreaInsets } from '../hooks/useSafeAreaInsets';
 import type { AuthSession } from '../hooks/useAuthSession';
+import { Capacitor } from '@capacitor/core';
 import { formatNumber, formatAmount } from '../utils/formatDisplay';
-import { countVisibleFilteredRecords } from '../utils/filteredRecordDelete';
-import { clearUserLocalStorage } from '../utils/deleteAppAccount';
 import { INPUT_MODE_DECIMAL } from '../utils/formFieldClasses';
 import { t, getBaseCurrencyLabel, BaseCurrencyCode, LANGUAGES } from '../utils/i18n';
 import { PortfolioContext } from '../contexts/PortfolioContext';
@@ -26,21 +28,21 @@ import { MarketContext } from '../contexts/MarketContext';
 import { UIContext } from '../contexts/UIContext';
 import DebtAlertsBanner from './DebtAlertsBanner';
 import TransactionForm from './TransactionForm';
+import Dashboard from './Dashboard';
+import AccountManager from './AccountManager';
+import FundManager from './FundManager';
+import RebalanceView from './RebalanceView';
+import HelpView from './HelpView';
+import HistoryView from './HistoryView';
+import BatchImportModal from './BatchImportModal';
+import HistoricalDataModal from './HistoricalDataModal';
+import BatchUpdateMarketModal from './BatchUpdateMarketModal';
+import AssetAllocationSimulator from './AssetAllocationSimulator';
+import StockSplitManager from './StockSplitManager';
 import DarkModeToggle from './DarkModeToggle';
 import AlertDialog from './AlertDialog';
 import AppConfirmModals from './AppConfirmModals';
-
-const Dashboard = lazy(() => import('./Dashboard'));
-const HistoryView = lazy(() => import('./HistoryView'));
-const AccountManager = lazy(() => import('./AccountManager'));
-const StockSplitManager = lazy(() => import('./StockSplitManager'));
-const FundManager = lazy(() => import('./FundManager'));
-const RebalanceView = lazy(() => import('./RebalanceView'));
-const AssetAllocationSimulator = lazy(() => import('./AssetAllocationSimulator'));
-const HelpView = lazy(() => import('./HelpView'));
-const BatchImportModal = lazy(() => import('./BatchImportModal'));
-const HistoricalDataModal = lazy(() => import('./HistoricalDataModal'));
-const BatchUpdateMarketModal = lazy(() => import('./BatchUpdateMarketModal'));
+import SubscriptionModal from './SubscriptionModal';
 
 const REFRESH_INTERVAL_MS = 3 * 60 * 1000;
 
@@ -51,6 +53,7 @@ interface Props {
 const AuthenticatedApp: React.FC<Props> = ({ session }) => {
   const {
     isGuest,
+    setIsGuest,
     currentUser,
     userPrefix,
     language,
@@ -69,6 +72,48 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
   const [debtBannerDismissed, setDebtBannerDismissed] = useState(false);
 
   const {
+    isSubscriptionModalOpen,
+    openSubscriptionModal,
+    closeSubscriptionModal,
+    effectiveIsGuest,
+    showApplyMemberButton,
+    handleSubscriptionUpdated,
+  } = useSubscription({
+    isAuthenticated: true,
+    currentUser,
+    isGuest,
+    setIsGuest,
+    view,
+  });
+
+  const handleUpgrade = () => {
+    const platform = Capacitor.getPlatform();
+    if (platform === 'ios') {
+      openSubscriptionModal();
+    } else {
+      handleContactAdmin();
+    }
+  };
+
+  /** App Store 5.1.1(v)：清除本機所有 tf_* 資料並登出 */
+  const handleDeleteAccount = useCallback(() => {
+    if (typeof localStorage !== 'undefined') {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('tf_')) keysToRemove.push(key);
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    }
+    sessionLogout();
+  }, [sessionLogout]);
+
+  const upgradeLabel =
+    Capacitor.getPlatform() === 'ios'
+      ? t(language).subscription.becomeMember
+      : t(language).common.upgrade;
+
+  const {
     isFormOpen,
     isImportOpen,
     isDeleteConfirmOpen,
@@ -85,7 +130,43 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     setIsHistoricalModalOpen,
     setIsBatchUpdateMarketOpen,
     setIsMobileMenuOpen,
+    toggleMobileMenu,
   } = useUIState();
+
+  const { top: safeAreaTop } = useSafeAreaInsets();
+
+  const menuToggleRef = useRef(0);
+  const menuPointerHandledRef = useRef(false);
+
+  const handleMenuToggle = useCallback(() => {
+    const now = Date.now();
+    if (now - menuToggleRef.current < 150) return;
+    menuToggleRef.current = now;
+    toggleMobileMenu();
+  }, [toggleMobileMenu]);
+
+  const handleMenuButtonActivate = useCallback(
+    (e: React.SyntheticEvent) => {
+      e.stopPropagation();
+      handleMenuToggle();
+    },
+    [handleMenuToggle]
+  );
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevPosition = document.body.style.position;
+    const prevWidth = document.body.style.width;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.position = prevPosition;
+      document.body.style.width = prevWidth;
+    };
+  }, [isMobileMenuOpen]);
 
   const deleteState = useDeleteState();
   const { transactionToEdit, cashFlowToDelete } = deleteState;
@@ -283,21 +364,13 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
   } = useAutoRefresh(handleAutoUpdatePrices, {
     intervalMs: REFRESH_INTERVAL_MS,
     enabled: baseHoldings.length > 0,
+    refreshOnStart: true,
     refreshOnVisible: true,
   });
 
-  // 登入資料載入且確認有持股後，立即連網同步一次股價與匯率。
-  const initialRefreshUserRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (!currentUser || baseHoldings.length === 0) return;
-    if (initialRefreshUserRef.current === currentUser) return;
-    initialRefreshUserRef.current = currentUser;
-    void refreshPricesNow(true);
-  }, [currentUser, baseHoldings.length, refreshPricesNow]);
-
   useAutoHistoricalSyncEffect({
     isAuthenticated: true,
-    isGuest,
+    isGuest: effectiveIsGuest,
     userPrefix,
     transactions,
     cashFlows,
@@ -338,7 +411,10 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     [combinedRecords, filterAccount, filterTicker, filterDateFrom, filterDateTo, includeCashFlow]
   );
 
-  const filteredClearCount = countVisibleFilteredRecords(filteredRecords);
+  const filteredTransactionIds = useMemo(
+    () => filteredRecords.filter(r => r.type === 'TRANSACTION').map(r => r.id),
+    [filteredRecords]
+  );
 
   const handlers = useAppPortfolioHandlers({
     portfolio: {
@@ -348,14 +424,12 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
       recurringDepositRules,
       updateTransaction,
       removeTransaction,
-      clearTransactions,
       removeTransactionsByIds,
       batchUpdateMarket,
       updateAccount,
       removeAccount,
       updateCashFlow,
       removeCashFlow,
-      clearCashFlows,
       removeCashFlowsByIds,
       saveHistoricalData,
       updateRecurringDepositRule,
@@ -371,8 +445,8 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     },
     deleteState,
     appText,
-    filteredRecords,
     showAlert,
+    getFilteredTransactionIds: () => filteredTransactionIds,
     markHighlighted,
   });
 
@@ -382,15 +456,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     resetRates();
   };
 
-  const handleDeleteAppAccount = () => {
-    if (!currentUser) return;
-    clearUserLocalStorage(currentUser);
-    sessionLogout();
-    resetData();
-    resetRates();
-  };
-
-  const availableViews = isGuest
+  const availableViews = effectiveIsGuest
     ? (['dashboard', 'history', 'funds', 'accounts', 'splits', 'simulator', 'help'] as View[])
     : (['dashboard', 'history', 'funds', 'accounts', 'splits', 'rebalance', 'simulator', 'help'] as View[]);
 
@@ -426,7 +492,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     updateCashFlow: handlers.handleUpdateCashFlow,
     removeCashFlow: handlers.handleRemoveCashFlow,
     addBatchCashFlows: addBatchCashFlowsWithHighlight,
-    clearCashFlows,
+    clearCashFlows: handlers.handleClearAllCashFlows,
     removeCashFlowsByIds,
     addRecurringDepositRule,
     updateRecurringDepositRule,
@@ -471,7 +537,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
     setView,
     availableViews,
     isAuthenticated: true,
-    isGuest,
+    isGuest: effectiveIsGuest,
     currentUser,
     alertDialog,
     showAlert,
@@ -516,15 +582,52 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
       <MarketContext.Provider value={marketValue}>
         <UIContext.Provider value={uiValue}>
           <div className="min-h-screen bg-slate-50 flex flex-col">
-            <header className="bg-slate-900 text-white shadow-lg sticky top-0 z-30">
+            <header
+              className="app-fixed-header bg-slate-900 text-white shadow-lg sticky top-0 z-30"
+              style={{
+                isolation: 'isolate',
+                WebkitTransform: 'translateZ(0)',
+                transform: 'translateZ(0)',
+                paddingTop: safeAreaTop > 0 ? `${safeAreaTop}px` : 'env(safe-area-inset-top, 0px)',
+              }}
+            >
               <div className={`mx-auto px-4 ${mainMaxW}`}>
-                <div className="flex items-center justify-between h-16">
-                  <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center justify-between min-h-16 h-16" style={{ position: 'relative', zIndex: 100, pointerEvents: 'auto' }}>
+                  <div
+                    className="flex items-center gap-3 shrink-0"
+                    style={{ position: 'relative', zIndex: 101, pointerEvents: 'auto' }}
+                  >
                     <button
                       type="button"
-                      onClick={() => setIsMobileMenuOpen(true)}
-                      className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-                      aria-label="Open Menu"
+                      id="mobile-menu-toggle-button"
+                      aria-label={isMobileMenuOpen ? 'Close Menu' : 'Open Menu'}
+                      onPointerUp={e => {
+                        if (e.pointerType !== 'touch') return;
+                        menuPointerHandledRef.current = true;
+                        handleMenuButtonActivate(e);
+                        window.setTimeout(() => {
+                          menuPointerHandledRef.current = false;
+                        }, 400);
+                      }}
+                      onClick={e => {
+                        if (menuPointerHandledRef.current) {
+                          menuPointerHandledRef.current = false;
+                          return;
+                        }
+                        handleMenuButtonActivate(e);
+                      }}
+                      className="p-3 -ml-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors touch-manipulation relative cursor-pointer"
+                      style={{
+                        WebkitTapHighlightColor: 'transparent',
+                        touchAction: 'manipulation',
+                        userSelect: 'none',
+                        pointerEvents: 'auto',
+                        minWidth: 48,
+                        minHeight: 48,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -560,6 +663,19 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                         ))}
                       </select>
                     </div>
+                    {showApplyMemberButton && (
+                      <button
+                        type="button"
+                        onClick={handleUpgrade}
+                        className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-900 text-xs font-bold rounded-full transition shadow-lg shadow-amber-500/20"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                        <span>{upgradeLabel}</span>
+                      </button>
+                    )}
                     <div className="hidden sm:flex items-center gap-2">
                       <select
                         value={baseCurrency}
@@ -616,18 +732,20 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
 
             <main className={`flex-1 mx-auto w-full md:p-8 ${mainPadding}`}>
               <div className={`mb-6 ${view === 'dashboard' ? 'max-sm:px-3 max-sm:pr-2' : ''}`}>
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-800 border-l-4 border-indigo-500 pl-2 sm:pl-3 flex justify-between items-center">
                   <span className="break-words">{pageTitle}</span>
+                  {showApplyMemberButton && (
+                    <button
+                      type="button"
+                      onClick={handleUpgrade}
+                      className="sm:hidden px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full shadow"
+                    >
+                      {upgradeLabel}
+                    </button>
+                  )}
                 </h2>
               </div>
               <div className="animate-fade-in">
-                <Suspense
-                  fallback={
-                    <div className="flex items-center justify-center py-16 text-slate-500 text-sm" aria-busy="true">
-                      {t(language).common.loading}
-                    </div>
-                  }
-                >
                 {(view === 'dashboard' || view === 'funds') && (
                   <DebtAlertsBanner
                     paymentAlerts={debtPaymentAlerts}
@@ -651,10 +769,10 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                     onRemoveTransaction={handlers.handleRemoveTransaction}
                     onRemoveCashFlow={handlers.handleRemoveCashFlow}
                     onClearAllTransactions={handlers.handleClearAllTransactions}
-                    filteredClearCount={filteredClearCount}
                     onOpenBatchUpdateMarket={() => handlers.setIsBatchUpdateMarketOpen(true)}
                     onOpenImport={() => handlers.setIsImportOpen(true)}
                     filteredRecords={filteredRecords}
+                    filteredTransactionCount={filteredTransactionIds.length}
                     filterAccount={filterAccount}
                     setFilterAccount={setFilterAccount}
                     filterTicker={filterTicker}
@@ -678,29 +796,55 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                     onMinDebtSafetySpreadChange={handleMinDebtSafetySpreadChange}
                   />
                 )}
-                {view === 'rebalance' && !isGuest && <RebalanceView />}
+                {view === 'rebalance' && !effectiveIsGuest && <RebalanceView />}
                 {view === 'simulator' && <AssetAllocationSimulator />}
                 {view === 'help' && (
                   <HelpView
                     onExport={handleExportData}
                     onImport={handleImportData}
+                    currentUser={currentUser}
+                    onOpenSubscription={Capacitor.getPlatform() === 'ios' ? openSubscriptionModal : undefined}
+                    onDeleteAccount={handleDeleteAccount}
                     onContactAdmin={handleContactAdmin}
-                    onDeleteAccount={handleDeleteAppAccount}
                   />
                 )}
-                </Suspense>
               </div>
             </main>
 
-            {isMobileMenuOpen && (
+            {isMobileMenuOpen &&
+              typeof document !== 'undefined' &&
+              createPortal(
               <div
-                className="fixed inset-0 z-50 flex bg-black bg-opacity-50 animate-fade-in"
-                onClick={() => setIsMobileMenuOpen(false)}
+                data-mobile-menu="true"
+                className="fixed inset-0 flex bg-black/50 animate-fade-in"
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 999999,
+                  pointerEvents: 'auto',
+                  WebkitTransform: 'translateZ(0)',
+                  transform: 'translateZ(0)',
+                }}
+                onClick={e => {
+                  if (e.target === e.currentTarget) setIsMobileMenuOpen(false);
+                }}
+                onTouchEnd={e => {
+                  if (e.target === e.currentTarget) {
+                    e.preventDefault();
+                    setIsMobileMenuOpen(false);
+                  }
+                }}
               >
                 <div
                   className="bg-slate-900 w-80 h-full shadow-2xl flex flex-col animate-slide-right"
                   onClick={e => e.stopPropagation()}
-                  style={{ willChange: 'transform' }}
+                  onTouchStart={e => e.stopPropagation()}
+                  onTouchEnd={e => e.stopPropagation()}
+                  style={{
+                    willChange: 'transform',
+                    maxWidth: '85vw',
+                    paddingTop: safeAreaTop > 0 ? `${safeAreaTop}px` : 'env(safe-area-inset-top, 0px)',
+                  }}
                 >
                   <div className="p-6 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
                     <div>
@@ -737,12 +881,17 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                       </span>
                       {baseCurrency === 'TWD' ? (
                         <input
-                          type="number"
-                          inputMode={INPUT_MODE_DECIMAL}
-                          step="0.01"
+                          type="text"
+                          inputMode="decimal"
+                          pattern="[0-9]*[.]?[0-9]*"
                           value={exchangeRate}
-                          onChange={e => setUsdRate(parseFloat(e.target.value))}
-                          className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-right px-2 py-1"
+                          onChange={e => {
+                            const v = e.target.value;
+                            if (v === '' || v === '.') return;
+                            const n = parseFloat(v);
+                            if (!Number.isNaN(n)) setUsdRate(n);
+                          }}
+                          className="w-20 bg-slate-800 rounded border border-slate-700 text-emerald-400 text-base sm:text-sm text-right px-2 py-1"
                         />
                       ) : (
                         <span className="text-emerald-400 font-mono">{displayRate.value.toFixed(2)}</span>
@@ -779,6 +928,22 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                         </option>
                       ))}
                     </select>
+                    {showApplyMemberButton && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleUpgrade();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-amber-500 text-slate-900 font-bold hover:bg-amber-600 transition"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                        {upgradeLabel}
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -794,7 +959,8 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                     </button>
                   </div>
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
 
             <footer className="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800">
@@ -816,25 +982,19 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
               />
             )}
             {isImportOpen && (
-              <Suspense fallback={null}>
-                <BatchImportModal onImport={addBatchTransactionsWithHighlight} onClose={() => setIsImportOpen(false)} />
-              </Suspense>
+              <BatchImportModal onImport={addBatchTransactionsWithHighlight} onClose={() => setIsImportOpen(false)} />
             )}
             {isHistoricalModalOpen && (
-              <Suspense fallback={null}>
-                <HistoricalDataModal
-                  onSave={handlers.handleSaveHistoricalData}
-                  onClose={() => setIsHistoricalModalOpen(false)}
-                />
-              </Suspense>
+              <HistoricalDataModal
+                onSave={handlers.handleSaveHistoricalData}
+                onClose={() => setIsHistoricalModalOpen(false)}
+              />
             )}
             {isBatchUpdateMarketOpen && (
-              <Suspense fallback={null}>
-                <BatchUpdateMarketModal
-                  onUpdate={handlers.handleBatchUpdateMarket}
-                  onClose={() => setIsBatchUpdateMarketOpen(false)}
-                />
-              </Suspense>
+              <BatchUpdateMarketModal
+                onUpdate={handlers.handleBatchUpdateMarket}
+                onClose={() => setIsBatchUpdateMarketOpen(false)}
+              />
             )}
 
             <AppConfirmModals
@@ -842,8 +1002,8 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
               appText={appText}
               isDeleteConfirmOpen={isDeleteConfirmOpen}
               setIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
-              filteredClearCount={filteredClearCount}
               confirmDeleteAllTransactions={handlers.confirmDeleteAllTransactions}
+              pendingClearTxCount={filteredTransactionIds.length}
               isTransactionDeleteConfirmOpen={isTransactionDeleteConfirmOpen}
               setIsTransactionDeleteConfirmOpen={setIsTransactionDeleteConfirmOpen}
               confirmRemoveTransaction={handlers.confirmRemoveTransaction}
@@ -857,6 +1017,15 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
             />
 
             <AlertDialog dialog={alertDialog} language={language} onClose={closeAlert} />
+
+            {isSubscriptionModalOpen && (
+              <SubscriptionModal
+                isOpen={isSubscriptionModalOpen}
+                onClose={closeSubscriptionModal}
+                language={language}
+                onSubscriptionUpdated={handleSubscriptionUpdated}
+              />
+            )}
           </div>
         </UIContext.Provider>
       </MarketContext.Provider>
