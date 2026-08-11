@@ -20,6 +20,7 @@ interface Props {
   onOpenImport: () => void;
   filteredRecords: any[];
   filteredTransactionCount: number;
+  filteredClearCount?: number;
   filterAccount: string;
   setFilterAccount: (v: string) => void;
   filterTicker: string;
@@ -45,6 +46,7 @@ const HistoryView: React.FC<Props> = ({
   onOpenImport,
   filteredRecords,
   filteredTransactionCount,
+  filteredClearCount,
   filterAccount,
   setFilterAccount,
   filterTicker,
@@ -64,6 +66,7 @@ const HistoryView: React.FC<Props> = ({
   const { language, isRecordHighlighted } = useUI();
   const tr = t(language);
   const isChinese = language === 'zh-TW' || language === 'zh-CN';
+  const effectiveClearCount = filteredClearCount ?? filteredTransactionCount;
 
   return (
     <>
@@ -107,7 +110,7 @@ const HistoryView: React.FC<Props> = ({
             </button>
             <button
               onClick={onClearAllTransactions}
-              disabled={filteredTransactionCount === 0}
+              disabled={effectiveClearCount === 0}
               className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-red-100 border border-red-200 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
             >
               {tr.history.clearAll}
