@@ -1,16 +1,16 @@
 import React from 'react';
 import { Account, CashFlow, CashFlowType, Currency, Transaction } from '../types';
 import { Language, t } from '../utils/i18n';
-import type { AppText } from '../hooks/useAppText';
 import { MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
+import type { AppText } from '../hooks/useAppText';
 
 interface Props {
   language: Language;
   appText: AppText;
   isDeleteConfirmOpen: boolean;
   setIsDeleteConfirmOpen: (v: boolean) => void;
-  filteredClearCount: number;
   confirmDeleteAllTransactions: () => void;
+  pendingClearTxCount: number;
   isTransactionDeleteConfirmOpen: boolean;
   setIsTransactionDeleteConfirmOpen: (v: boolean) => void;
   confirmRemoveTransaction: () => void;
@@ -28,8 +28,8 @@ const AppConfirmModals: React.FC<Props> = ({
   appText,
   isDeleteConfirmOpen,
   setIsDeleteConfirmOpen,
-  filteredClearCount,
   confirmDeleteAllTransactions,
+  pendingClearTxCount,
   isTransactionDeleteConfirmOpen,
   setIsTransactionDeleteConfirmOpen,
   confirmRemoveTransaction,
@@ -59,7 +59,7 @@ const AppConfirmModals: React.FC<Props> = ({
       })[type] ?? type;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
         <div className="bg-white rounded-lg shadow-xl p-6 max-w-md">
           <h3 className="text-lg font-bold text-red-600 mb-2">{appText.cashFlowDeleteTitle}</h3>
           <div className="mb-4">
@@ -115,12 +115,10 @@ const AppConfirmModals: React.FC<Props> = ({
   return (
     <>
       {isDeleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm">
-            <h3 className="text-lg font-bold text-red-600 mb-2">
-              {appText.confirmClearTxTitle(filteredClearCount)}
-            </h3>
-            <p className="text-slate-600 mb-6">{appText.confirmClearTxMessage(filteredClearCount)}</p>
+            <h3 className="text-lg font-bold text-red-600 mb-2">{appText.confirmClearTxTitle}</h3>
+            <p className="text-slate-600 mb-6">{appText.confirmClearTxMessage(pendingClearTxCount)}</p>
             <div className="flex justify-end gap-3">
               <button
                 type="button"
@@ -141,7 +139,7 @@ const AppConfirmModals: React.FC<Props> = ({
         </div>
       )}
       {isTransactionDeleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm">
             <h3 className="text-lg font-bold text-slate-800 mb-2">{appText.deleteTxTitle}</h3>
             <p className="text-slate-600 mb-6">{appText.deleteTxMessage}</p>
