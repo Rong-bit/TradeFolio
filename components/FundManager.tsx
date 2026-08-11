@@ -1055,7 +1055,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
               <th className="px-2 sm:px-3 py-2 text-center whitespace-nowrap">{t(language).labels.action}</th>
             </tr>
           </thead>
-          <tbody className="[&>tr>td]:border-b [&>tr>td]:border-slate-100 dark:[&>tr>td]:border-slate-700">
+          <tbody>
             {filteredFlows.length === 0 ? (
                 <tr><td colSpan={8} className="p-8 text-center text-slate-400">{(language === 'en' || language === 'de' || language === 'fr' || language === 'hi') ? 'No matching records found.' : '沒有符合條件的資金紀錄。'}</td></tr>
             ) : (
@@ -1144,32 +1144,32 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
 
                    return (
                      <tr key={cf.id} className={recordRowClassName(isRecordHighlighted(cf.id))}>
-                       <td className="px-2 sm:px-3 py-2 text-slate-600 dark:text-slate-300 whitespace-nowrap">{cf.date}</td>
+                       <td className="px-2 sm:px-3 py-2 text-slate-600 dark:text-slate-300 whitespace-nowrap border-b border-slate-100 dark:border-slate-700">{cf.date}</td>
 
-                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-800 dark:text-slate-100">
+                       <td className="px-2 sm:px-3 py-2 text-right font-mono text-slate-800 dark:text-slate-100 border-b border-slate-100 dark:border-slate-700">
                          {formatCurrency(cf.amount, accountCurrency)}
                        </td>
 
-                       <td className="px-2 sm:px-3 py-2 text-right text-slate-500 dark:text-slate-300 hidden sm:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right text-slate-500 dark:text-slate-300 hidden sm:table-cell border-b border-slate-100 dark:border-slate-700">
                          {displayExRateStr}
                        </td>
 
-                       <td className="px-2 sm:px-3 py-2 text-right text-slate-400 dark:text-slate-500 hidden sm:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-right text-slate-400 dark:text-slate-500 hidden sm:table-cell border-b border-slate-100 dark:border-slate-700">
                          {displayFee == null || displayFee === '-' || displayFee === '' ? '-' : String(displayFee)}
                        </td>
 
-                       <td className="px-2 sm:px-3 py-2 text-right font-bold text-emerald-700">
+                       <td className="px-2 sm:px-3 py-2 text-right font-bold text-emerald-700 border-b border-slate-100 dark:border-slate-700">
                          {formatCurrency(toBase(displayTotalTWD), baseCurrency)}
                        </td>
 
-                       <td className="px-2 sm:px-3 py-2 text-slate-700 dark:text-slate-100 whitespace-nowrap text-xs sm:text-sm">
+                       <td className="px-2 sm:px-3 py-2 text-slate-700 dark:text-slate-100 whitespace-nowrap text-xs sm:text-sm border-b border-slate-100 dark:border-slate-700">
                          <div className="flex flex-col">
                            <span>{accountName}</span>
                            {cf.type === CashFlowType.TRANSFER && targetName && <span className="text-slate-400 dark:text-slate-500 text-xs">→ {targetName}</span>}
                          </div>
                        </td>
 
-                       <td className="px-2 sm:px-3 py-2 text-slate-600 dark:text-slate-300 hidden sm:table-cell">
+                       <td className="px-2 sm:px-3 py-2 text-slate-600 dark:text-slate-300 hidden sm:table-cell border-b border-slate-100 dark:border-slate-700">
                          <div className="flex flex-col gap-1">
                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${typeBadgeClass}`}>
                              {typeBadgeLabel}
@@ -1189,7 +1189,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                          </div>
                        </td>
 
-                       <td className="px-2 sm:px-3 py-2 text-right">
+                       <td className="px-2 sm:px-3 py-2 text-right border-b border-slate-100 dark:border-slate-700">
                          <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 justify-end items-end sm:items-center">
                              <button 
                                onClick={() => {
