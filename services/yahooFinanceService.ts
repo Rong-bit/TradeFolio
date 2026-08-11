@@ -569,19 +569,17 @@ async function twseRowToPriceData(
     return null;
   }
 
-  // 漲跌一律以「最近成交 z」對參考價/昨收；勿用五檔中價減昨收（易與行情軟體符號相反）
+  // 漲跌一律以「最近成交 z」對參考價/昨收；勿用委賣價減昨收（易與行情軟體符號相反）
   let price = 0;
   let priceFromLastTrade = false;
   if (z > 0) {
     price = z;
     priceFromLastTrade = true;
   } else if (session === 'continuous') {
-    if (bestAsk > 0 && bestBid > 0) {
-      price = (bestAsk + bestBid) / 2;
+    if (bestAsk > 0) {
+      price = bestAsk;
     } else if (bestBid > 0) {
       price = bestBid;
-    } else if (bestAsk > 0) {
-      price = bestAsk;
     } else if (o > 0) {
       price = o;
       priceFromLastTrade = true;
