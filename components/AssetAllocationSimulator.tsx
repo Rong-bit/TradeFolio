@@ -5,12 +5,20 @@ import { v4 as uuidv4 } from 'uuid';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import { fetchAnnualizedReturn } from '../services/yahooFinanceService';
 import { t, translate } from '../utils/i18n';
-import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON } from '../utils/formFieldClasses';
+import { FORM_FIELD_THEME, MODAL_CANCEL_BUTTON, INPUT_MODE_DECIMAL, INPUT_MODE_NUMERIC } from '../utils/formFieldClasses';
 import { usePortfolio } from '../contexts/PortfolioContext';
 import { useMarket } from '../contexts/MarketContext';
 import { useUI } from '../contexts/UIContext';
 
 interface Props {}
+
+/** 手動添加資產表格欄寬：避免窄螢幕下代號／市場／配置比例被壓縮不可見 */
+const SIM_MANUAL_TABLE_MIN = 'min-w-[42rem]';
+const SIM_COL_TICKER = 'min-w-[7rem]';
+const SIM_COL_MARKET = 'min-w-[10rem]';
+const SIM_COL_RETURN = 'min-w-[12rem]';
+const SIM_COL_ALLOC = 'min-w-[5.5rem]';
+const SIM_COL_ACTION = 'min-w-[4.5rem]';
 
 const AssetAllocationSimulator: React.FC<Props> = () => {
   const { holdings: rawHoldings } = usePortfolio();
@@ -22,6 +30,14 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
   const holdings = rawHoldings.map(h => ({ ticker: h.ticker, market: h.market, annualizedReturn: h.annualizedReturn }));
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const translations = t(language);
+
+  /** 標籤後綴基準幣；若文案已含 (XXX) 則不再重複（避免 en 等出現 (TWD)(TWD)） */
+  const simulatorAmountLabel = (text: string) => {
+    if (language === 'zh-TW') return text;
+    if (/\([A-Z]{3}\)\s*$/i.test(text.trim())) return text;
+    return `${text} (${baseCurrency})`;
+  };
+
   const [assets, setAssets] = useState<AssetSimulationItem[]>([]);
   const [initialAmount, setInitialAmount] = useState<number>(1000000); // 預設 100 萬
   const [years, setYears] = useState<number>(10); // 預設 10 年
@@ -226,11 +242,16 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
   const batchAddAssets = () => {
     setErrorMessage('');
     
-    // 驗證所有行
-    const validRows = inputRows.filter(row => row.ticker.trim() && row.allocation > 0);
+    const rowsWithTicker = inputRows.filter(row => row.ticker.trim());
+    const validRows = rowsWithTicker.filter(row => row.allocation > 0);
     
-    if (validRows.length === 0) {
+    if (rowsWithTicker.length === 0) {
       setErrorMessage(translations.simulator.errorEnterTicker);
+      return;
+    }
+
+    if (validRows.length === 0) {
+      setErrorMessage(translations.simulator.errorEnterAllocation);
       return;
     }
 
@@ -259,7 +280,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
   };
 
 
-  // 從現有持倉導入
+  // 從現有持倉導入（同一市場＋代號只保留一筆；已在配置列表者略過）
   const importFromHoldings = () => {
     setErrorMessage('');
     if (holdings.length === 0) {
@@ -267,13 +288,25 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
       return;
     }
 
-    const newAssets: AssetSimulationItem[] = holdings.map(h => ({
-      id: uuidv4(),
-      ticker: h.ticker,
-      market: h.market,
-      annualizedReturn: h.annualizedReturn || 8, // 如果沒有年化報酬，預設 8%
-      allocation: 0 // 需要手動設定配置比例
-    }));
+    const existingKeys = new Set(
+      assets.map(a => `${a.market}\x1e${a.ticker.trim().toUpperCase()}`)
+    );
+    const byKey = new Map<string, AssetSimulationItem>();
+
+    for (const h of holdings) {
+      const key = `${h.market}\x1e${h.ticker.trim().toUpperCase()}`;
+      if (existingKeys.has(key) || byKey.has(key)) continue;
+      byKey.set(key, {
+        id: uuidv4(),
+        ticker: h.ticker.trim().toUpperCase(),
+        market: h.market,
+        annualizedReturn: h.annualizedReturn || 8,
+        allocation: 0,
+      });
+    }
+
+    const newAssets = Array.from(byKey.values());
+    if (newAssets.length === 0) return;
 
     setAssets([...assets, ...newAssets]);
   };
@@ -395,10 +428,11 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              {translations.simulator.initialAmount} {language === 'zh-TW' ? '' : `(${baseCurrency})`}
+              {simulatorAmountLabel(translations.simulator.initialAmount)}
             </label>
             <input
               type="number"
+              inputMode={INPUT_MODE_DECIMAL}
               value={initialAmount === 0 ? '' : initialAmount}
               onChange={(e) => {
                 const inputValue = e.target.value;
@@ -430,7 +464,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                   setInitialAmount(numValue);
                 }
               }}
-              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
+              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
               min="0"
               step="1000"
               placeholder="0"
@@ -442,6 +476,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
             </label>
             <input
               type="text"
+              inputMode={INPUT_MODE_NUMERIC}
               value={years === 0 ? '' : years.toString()}
               onChange={(e) => {
                 const inputValue = e.target.value.trim();
@@ -485,7 +520,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                   setYears(numValue);
                 }
               }}
-              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
+              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
               min="1"
               max="50"
               placeholder="10"
@@ -499,10 +534,11 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                {translations.simulator.regularAmount} {language === 'zh-TW' ? '' : `(${baseCurrency})`}
+                {simulatorAmountLabel(translations.simulator.regularAmount)}
               </label>
               <input
                 type="number"
+                inputMode={INPUT_MODE_DECIMAL}
                 value={regularInvestment === 0 ? '' : regularInvestment}
                 onChange={(e) => {
                   const inputValue = e.target.value;
@@ -534,7 +570,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                     setRegularInvestment(numValue);
                   }
                 }}
-                className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
+                className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                 min="0"
                 step="1000"
                 placeholder="0"
@@ -548,7 +584,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
               <select
                 value={regularFrequency}
                 onChange={(e) => setRegularFrequency(e.target.value as 'monthly' | 'quarterly' | 'yearly')}
-                className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
+                className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                 disabled={regularInvestment === 0}
               >
                 <option value="monthly">{translations.simulator.monthly}</option>
@@ -606,14 +642,8 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
 
       {/* 手動添加資產 */}
       <div className="bg-white p-6 rounded-xl shadow">
-        <div className="flex justify-between items-center mb-4">
+        <div className="mb-4">
           <h3 className="font-bold text-slate-800 text-lg">{translations.simulator.manualAdd}</h3>
-          <button
-            onClick={addInputRow}
-            className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 active:bg-green-200 active:scale-95 active:shadow-inner transition-all duration-150 text-sm font-medium border border-green-200 hover:border-green-300"
-          >
-            + {translations.simulator.addRow}
-          </button>
         </div>
         
         {/* 年化報酬率說明 */}
@@ -634,34 +664,37 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
         </div>
 
         {/* 多行輸入表格 */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-xs sm:text-sm">
+        <div className="overflow-x-auto -mx-1 px-1">
+          <table className={`w-full ${SIM_MANUAL_TABLE_MIN} text-xs sm:text-sm border-collapse`}>
             <thead className="bg-slate-50 text-slate-600 uppercase font-medium">
-              <tr>
-                <th className="px-3 py-2 text-left">{translations.simulator.ticker}</th>
-                <th className="px-3 py-2 text-left">{translations.simulator.market}</th>
-                <th className="px-3 py-2 text-left">{translations.simulator.annualReturn}</th>
-                <th className="px-3 py-2 text-left">{translations.simulator.allocation}</th>
-                <th className="px-3 py-2 text-center">{translations.simulator.action}</th>
+              <tr className="border-b border-slate-100">
+                <th className={`px-2 sm:px-3 py-2 text-left ${SIM_COL_TICKER}`}>{translations.simulator.ticker}</th>
+                <th className={`px-2 sm:px-3 py-2 text-left ${SIM_COL_MARKET}`}>{translations.simulator.market}</th>
+                <th className={`px-2 sm:px-3 py-2 text-left ${SIM_COL_RETURN}`}>{translations.simulator.annualReturn}</th>
+                <th className={`px-2 sm:px-3 py-2 text-left ${SIM_COL_ALLOC}`}>{translations.simulator.allocation}</th>
+                <th className={`px-2 sm:px-3 py-2 text-center ${SIM_COL_ACTION}`}>{translations.simulator.action}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {inputRows.map((row) => (
-                <tr key={row.id} className="hover:bg-slate-50">
-                  <td className="px-3 py-2">
+            <tbody>
+              {inputRows.map(row => (
+                <tr
+                  key={row.id}
+                  className="hover:bg-slate-50"
+                >
+                  <td className={`px-2 sm:px-3 py-2 border-b border-slate-100 ${SIM_COL_TICKER}`}>
                     <input
                       type="text"
                       value={row.ticker}
                       onChange={(e) => updateInputRow(row.id, 'ticker', e.target.value)}
                       placeholder={translations.simulator.tickerPlaceholder}
-                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
+                      className={`w-full min-w-0 px-2 sm:px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                     />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className={`px-2 sm:px-3 py-2 border-b border-slate-100 ${SIM_COL_MARKET}`}>
                     <select
                       value={row.market}
                       onChange={(e) => updateInputRow(row.id, 'market', e.target.value as Market)}
-                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
+                      className={`w-full min-w-0 px-2 sm:px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                     >
                       <option value={Market.TW}>{translations.simulator.marketTW}</option>
                       <option value={Market.US}>{translations.simulator.marketUS}</option>
@@ -680,13 +713,14 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                       <option value={Market.BR}>{translations.simulator.marketBR}</option>
                     </select>
                   </td>
-                  <td className="px-3 py-2">
-                    <div className="flex items-center gap-2">
+                  <td className={`px-2 sm:px-3 py-2 border-b border-slate-100 ${SIM_COL_RETURN}`}>
+                    <div className="flex items-center gap-2 min-w-0">
                       <input
                         type="number"
+                        inputMode={INPUT_MODE_DECIMAL}
                         value={row.annualReturn}
                         onChange={(e) => updateInputRow(row.id, 'annualReturn', parseFloat(e.target.value) || 0)}
-                        className={`flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
+                        className={`flex-1 min-w-[3.5rem] px-2 sm:px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                         step="0.1"
                         min="0"
                         max="100"
@@ -713,9 +747,10 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                       )}
                     </div>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className={`px-2 sm:px-3 py-2 border-b border-slate-100 ${SIM_COL_ALLOC}`}>
                     <input
                       type="number"
+                      inputMode={INPUT_MODE_DECIMAL}
                       value={row.allocation === 0 ? '' : row.allocation}
                       onChange={(e) => {
                         const inputValue = e.target.value;
@@ -744,14 +779,14 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                           updateInputRow(row.id, 'allocation', numValue);
                         }
                       }}
-                      className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${FORM_FIELD_THEME}`}
+                      className={`w-full min-w-0 px-2 sm:px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                       step="0.1"
                       min="0"
                       max="100"
                       placeholder="0"
                     />
                   </td>
-                  <td className="px-3 py-2 text-center">
+                  <td className={`px-2 sm:px-3 py-2 text-center border-b border-slate-100 ${SIM_COL_ACTION}`}>
                     <button
                       onClick={() => removeInputRow(row.id)}
                       disabled={inputRows.length === 1}
@@ -767,7 +802,13 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
         </div>
 
         {/* 批量添加按鈕 */}
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            onClick={addInputRow}
+            className="px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 active:bg-green-200 active:scale-95 active:shadow-inner transition-all duration-150 text-sm font-medium border border-green-200 hover:border-green-300"
+          >
+            + {translations.simulator.addRow}
+          </button>
           <button
             onClick={batchAddAssets}
             className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 active:bg-slate-950 active:scale-95 active:shadow-inner transition-all duration-150 font-medium shadow-md hover:shadow-lg"
@@ -798,9 +839,9 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-xs sm:text-sm">
+            <table className="min-w-full text-xs sm:text-sm border-collapse">
               <thead className="bg-slate-50 text-slate-600 uppercase font-medium">
-                <tr>
+                <tr className="border-b border-slate-100">
                   <th className="px-3 py-2 text-left">{translations.simulator.ticker}</th>
                   <th className="px-3 py-2 text-left">{translations.simulator.market}</th>
                   <th className="px-3 py-2 text-right">{translations.simulator.annualReturn}</th>
@@ -808,28 +849,32 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                   <th className="px-3 py-2 text-right">{translations.simulator.action}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {assets.map(asset => {
-                  const currentTotal = assets.reduce((sum, a) => sum + a.allocation, 0);
                   return (
-                    <tr key={asset.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-2 font-semibold text-slate-800">
+                    <tr
+                      key={asset.id}
+                      className="hover:bg-slate-50"
+                    >
+                      <td className="px-3 py-2 font-semibold text-slate-800 border-b border-slate-100">
                         {asset.ticker}
                         {asset.name && <span className="text-xs text-slate-500 ml-2">({asset.name})</span>}
                       </td>
-                      <td className="px-3 py-2 text-slate-600">{getMarketDisplayText(asset.market)}</td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-slate-600 border-b border-slate-100">{getMarketDisplayText(asset.market)}</td>
+                      <td className="px-3 py-2 text-right border-b border-slate-100">
                         <input
                           type="number"
+                          inputMode={INPUT_MODE_DECIMAL}
                           value={asset.annualizedReturn}
                           onChange={(e) => updateAsset(asset.id, 'annualizedReturn', parseFloat(e.target.value) || 0)}
-                          className={`w-20 px-2 py-1 border border-slate-300 rounded text-right focus:ring-2 focus:ring-blue-500 ${FORM_FIELD_THEME}`}
+                          className={`w-20 px-2 py-1 border border-slate-300 rounded text-right text-base sm:text-sm focus:ring-2 focus:ring-blue-500 ${FORM_FIELD_THEME}`}
                           step="0.1"
                         />
                       </td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-right border-b border-slate-100">
                         <input
                           type="number"
+                          inputMode={INPUT_MODE_DECIMAL}
                           value={asset.allocation === 0 ? '' : asset.allocation}
                           onChange={(e) => {
                             const inputValue = e.target.value;
@@ -863,14 +908,14 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                               updateAsset(asset.id, 'allocation', numValue);
                             }
                           }}
-                          className={`w-20 px-2 py-1 border border-slate-300 rounded text-right focus:ring-2 focus:ring-blue-500 ${FORM_FIELD_THEME}`}
+                          className={`w-20 px-2 py-1 border border-slate-300 rounded text-right text-base sm:text-sm focus:ring-2 focus:ring-blue-500 ${FORM_FIELD_THEME}`}
                           step="0.1"
                           min="0"
                           max="100"
                           placeholder="0"
                         />
                       </td>
-                      <td className="px-3 py-2 text-right">
+                      <td className="px-3 py-2 text-right border-b border-slate-100">
                         <button
                           onClick={() => removeAsset(asset.id)}
                           className="text-red-500 hover:text-red-700 active:text-red-900 active:scale-95 transition-all duration-150 text-sm px-2 py-1 rounded hover:bg-red-50 active:bg-red-100"
@@ -882,7 +927,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
                   );
                 })}
               </tbody>
-              <tfoot className="bg-slate-50 font-bold">
+              <tfoot className="bg-slate-50 font-bold border-t border-slate-100">
                 <tr>
                   <td colSpan={3} className="px-3 py-2 text-right">{translations.simulator.allocationSum}</td>
                   <td className="px-3 py-2 text-right">
@@ -1077,7 +1122,7 @@ const AssetAllocationSimulator: React.FC<Props> = () => {
 
       {/* 清空確認對話框 */}
       {showClearConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm">
             <h3 className="text-lg font-bold text-slate-800 mb-2">{translations.simulator.confirmClear}</h3>
             <p className="text-slate-600 mb-6">{translations.simulator.confirmClearMessage}</p>

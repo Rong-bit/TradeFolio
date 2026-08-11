@@ -337,7 +337,7 @@ const RebalanceView: React.FC<Props> = () => {
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
                     }`}
                   >
-                    USD
+                    {translations.dashboard.usd}
                   </button>
                 </div>
               </div>
@@ -359,8 +359,8 @@ const RebalanceView: React.FC<Props> = () => {
         </div>
 
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 max-w-full">
-          <table className="w-full min-w-[52rem] text-xs sm:text-sm text-left">
-            <thead className="bg-slate-50 text-slate-500 font-medium">
+          <table className="w-full min-w-[52rem] border-collapse text-xs sm:text-sm text-left">
+            <thead className="text-slate-500 font-medium border-b border-slate-100">
               <tr>
                 <th className="px-2 sm:px-3 py-2 w-12 whitespace-nowrap">{translations.rebalance.enable}</th>
                 <th className="px-2 sm:px-3 py-2 min-w-[7rem] whitespace-normal leading-tight">{translations.rebalance.symbol} {translations.rebalance.accountLabel}</th>
@@ -373,7 +373,7 @@ const RebalanceView: React.FC<Props> = () => {
                 <th className="px-2 sm:px-3 py-2 text-right min-w-[6rem] whitespace-normal leading-tight">{translations.rebalance.suggestedAction} {translations.rebalance.sharesLabel}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {rebalanceRows.map(row => {
                 const isBuy = row.diffValTwd > 0;
                 const isEnabled = row.isEnabled;
@@ -388,7 +388,7 @@ const RebalanceView: React.FC<Props> = () => {
                 const displayDiffVal = showInUSD ? row.diffValTwd / summary.exchangeRateUsdToTwd : toBase(row.diffValTwd);
                 
                 return (
-                  <tr key={row.mergedKey} className={`hover:bg-slate-50 dark:hover:bg-slate-700/40 ${!isEnabled ? 'opacity-50' : ''}`}>
+                  <tr key={row.mergedKey} className={`border-b border-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700/40 ${!isEnabled ? 'opacity-50' : ''}`}>
                     <td className="px-2 sm:px-3 py-2 text-center">
                       <input
                         type="checkbox"
@@ -436,17 +436,16 @@ const RebalanceView: React.FC<Props> = () => {
                     <td className="px-2 sm:px-3 py-2 text-right">
                       <div className="flex justify-end items-center">
                         <input 
-                          type="number" 
-                          className={`w-24 text-base text-right border-2 rounded px-2 py-1 focus:ring-2 focus:ring-accent focus:border-accent font-bold ${
+                          type="text"
+                          inputMode="decimal"
+                          pattern="[0-9]*[.]?[0-9]*"
+                          className={`w-24 text-right border-2 rounded px-2 py-1 text-base sm:text-sm focus:ring-2 focus:ring-accent focus:border-accent font-bold ${
                             isEnabled 
                               ? 'border-indigo-100 text-slate-700 bg-white' 
                               : 'border-slate-200 text-slate-400 bg-slate-50'
                           }`}
                           value={row.targetPct === 0 ? '' : row.targetPct}
                           onChange={(e) => handleTargetChange(row.mergedKey, e.target.value, row.accountIds, row.ticker)}
-                          step="0.1"
-                          min="0"
-                          max="100"
                           disabled={!isEnabled}
                         />
                       </div>
@@ -471,7 +470,7 @@ const RebalanceView: React.FC<Props> = () => {
               })}
               
               {/* Cash Row */}
-              <tr className={`bg-slate-50 font-medium border-t-2 border-slate-200 ${!isCashEnabled ? 'opacity-50' : ''}`}>
+              <tr className={`border-b border-slate-100 font-medium ${!isCashEnabled ? 'opacity-50' : ''}`}>
                 <td className="px-2 sm:px-3 py-2 text-center">
                   <input
                     type="checkbox"
@@ -483,39 +482,38 @@ const RebalanceView: React.FC<Props> = () => {
                 <td className="px-2 sm:px-3 py-2 text-slate-700">{translations.rebalance.cash}</td>
                 <td className="px-2 sm:px-3 py-2 text-right">-</td>
                 <td className="px-2 sm:px-3 py-2 text-right font-mono">
-                  {formatCurrency(showInUSD ? summary.cashBalanceTWD / summary.exchangeRateUsdToTwd : toBase(summary.cashBalanceTWD), showInUSD ? 'USD' : baseCurrency)}
+                  {formatCurrency(showInUSD ? summary.cashBalanceTWD / summary.exchangeRateUsdToTwd : toBase(summary.cashBalanceTWD), displayCurrencyCode)}
                 </td>
                 <td className="px-2 sm:px-3 py-2 text-right">{cashCurrentPctEnabled.toFixed(1)}%</td>
                 <td className="px-2 sm:px-3 py-2 text-right">
                   <div className="flex justify-end items-center">
                     <input 
-                      type="number" 
-                      className={`w-24 text-base text-right border-2 rounded px-2 py-1 focus:ring-2 focus:ring-accent focus:border-accent font-bold ${
+                      type="text"
+                      inputMode="decimal"
+                      pattern="[0-9]*[.]?[0-9]*"
+                      className={`w-24 text-right border-2 rounded px-2 py-1 text-base sm:text-sm focus:ring-2 focus:ring-accent focus:border-accent font-bold ${
                         isCashEnabled 
                           ? (cashTargetPct < 0 ? 'border-red-300 text-red-600 bg-red-50' : 'border-indigo-100 text-slate-700 bg-white') 
                           : 'border-slate-200 text-slate-400 bg-slate-50'
                       }`}
                       value={isCashEnabled ? (cashTargetPct === 0 ? '' : cashTargetPct) : ''}
                       onChange={(e) => handleTargetChange('cash', e.target.value, [], '')}
-                      step="0.1"
-                      min="0"
-                      max="100"
                       disabled={!isCashEnabled}
                     />
                   </div>
                 </td>
                 <td className={`px-2 sm:px-3 py-2 text-right ${isCashEnabled ? '' : 'text-slate-300'}`}>
-                  {formatCurrency(showInUSD ? targetCashTwd / summary.exchangeRateUsdToTwd : toBase(targetCashTwd), showInUSD ? 'USD' : baseCurrency)}
+                  {formatCurrency(showInUSD ? targetCashTwd / summary.exchangeRateUsdToTwd : toBase(targetCashTwd), displayCurrencyCode)}
                 </td>
                 <td className={`px-2 sm:px-3 py-2 text-right ${isCashEnabled ? (diffCashTwd > 0 ? 'text-blue-600' : 'text-slate-500') : 'text-slate-300'}`}>
-                  {formatCurrency(showInUSD ? diffCashTwd / summary.exchangeRateUsdToTwd : toBase(diffCashTwd), showInUSD ? 'USD' : baseCurrency)}
+                  {formatCurrency(showInUSD ? diffCashTwd / summary.exchangeRateUsdToTwd : toBase(diffCashTwd), displayCurrencyCode)}
                 </td>
                 <td className="px-2 sm:px-3 py-2 text-right text-xs text-slate-400 whitespace-normal leading-tight">
                   {isCashEnabled ? `(${translations.rebalance.remainingFunds})` : `(${translations.rebalance.notParticipating})`}
                 </td>
               </tr>
             </tbody>
-            <tfoot className="bg-slate-100 font-bold border-t-2 border-slate-300">
+            <tfoot className="bg-slate-100 font-bold border-t border-slate-100">
                <tr>
                  <td colSpan={5} className="px-2 sm:px-3 py-2 text-right whitespace-normal leading-tight">{translations.rebalance.totalLabel}{translations.rebalance.totalEnabled})</td>
                  <td className={`px-2 sm:px-3 py-2 text-right ${Math.abs(totalTargetPct + cashTargetPct - 100) > 0.01 ? 'text-red-600' : 'text-slate-800'}`}>
