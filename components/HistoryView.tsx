@@ -20,7 +20,6 @@ interface Props {
   onOpenImport: () => void;
   filteredRecords: any[];
   filteredTransactionCount: number;
-  filteredClearCount?: number;
   filterAccount: string;
   setFilterAccount: (v: string) => void;
   filterTicker: string;
@@ -46,7 +45,6 @@ const HistoryView: React.FC<Props> = ({
   onOpenImport,
   filteredRecords,
   filteredTransactionCount,
-  filteredClearCount,
   filterAccount,
   setFilterAccount,
   filterTicker,
@@ -66,7 +64,6 @@ const HistoryView: React.FC<Props> = ({
   const { language, isRecordHighlighted } = useUI();
   const tr = t(language);
   const isChinese = language === 'zh-TW' || language === 'zh-CN';
-  const effectiveClearCount = filteredClearCount ?? filteredTransactionCount;
 
   return (
     <>
@@ -110,7 +107,7 @@ const HistoryView: React.FC<Props> = ({
             </button>
             <button
               onClick={onClearAllTransactions}
-              disabled={effectiveClearCount === 0}
+              disabled={filteredTransactionCount === 0}
               className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-red-100 border border-red-200 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
             >
               {tr.history.clearAll}
@@ -246,7 +243,7 @@ const HistoryView: React.FC<Props> = ({
       {/* 交易記錄表 */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="min-w-full text-xs sm:text-sm text-left">
-          <thead className="bg-slate-50 text-slate-500 uppercase font-medium border-b-[0.5px] border-slate-100 dark:border-slate-700">
+          <thead className="bg-slate-50 text-slate-500 uppercase font-medium border-b border-slate-100 dark:border-slate-700">
             <tr>
               <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{tr.labels.date}</th>
               <th className="px-2 sm:px-3 py-2 whitespace-nowrap hidden sm:table-cell">{tr.labels.account}</th>
