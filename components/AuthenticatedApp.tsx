@@ -136,37 +136,47 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
   const { top: safeAreaTop } = useSafeAreaInsets();
 
   const menuToggleRef = useRef(0);
-  const menuPointerHandledRef = useRef(false);
 
   const handleMenuToggle = useCallback(() => {
     const now = Date.now();
-    if (now - menuToggleRef.current < 150) return;
+    // 避免 Android 觸控合成 click / 連點造成「開了又關」像當機
+    if (now - menuToggleRef.current < 350) return;
     menuToggleRef.current = now;
     toggleMobileMenu();
   }, [toggleMobileMenu]);
 
-  const handleMenuButtonActivate = useCallback(
-    (e: React.SyntheticEvent) => {
-      e.stopPropagation();
-      handleMenuToggle();
-    },
-    [handleMenuToggle]
-  );
-
   useEffect(() => {
     if (!isMobileMenuOpen) return;
-    const prevOverflow = document.body.style.overflow;
-    const prevPosition = document.body.style.position;
-    const prevWidth = document.body.style.width;
+
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    const { overflow, position, top, left, right, width } = document.body.style;
+    const htmlOverflow = document.documentElement.style.overflow;
+
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
     document.body.style.width = '100%';
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      document.body.style.position = prevPosition;
-      document.body.style.width = prevWidth;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMobileMenuOpen(false);
     };
-  }, [isMobileMenuOpen]);
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.documentElement.style.overflow = htmlOverflow;
+      document.body.style.overflow = overflow;
+      document.body.style.position = position;
+      document.body.style.top = top;
+      document.body.style.left = left;
+      document.body.style.right = right;
+      document.body.style.width = width;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isMobileMenuOpen, setIsMobileMenuOpen]);
 
   const deleteState = useDeleteState();
   const { transactionToEdit, cashFlowToDelete } = deleteState;
@@ -601,20 +611,10 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                       type="button"
                       id="mobile-menu-toggle-button"
                       aria-label={isMobileMenuOpen ? 'Close Menu' : 'Open Menu'}
-                      onPointerUp={e => {
-                        if (e.pointerType !== 'touch') return;
-                        menuPointerHandledRef.current = true;
-                        handleMenuButtonActivate(e);
-                        window.setTimeout(() => {
-                          menuPointerHandledRef.current = false;
-                        }, 400);
-                      }}
+                      aria-expanded={isMobileMenuOpen}
                       onClick={e => {
-                        if (menuPointerHandledRef.current) {
-                          menuPointerHandledRef.current = false;
-                          return;
-                        }
-                        handleMenuButtonActivate(e);
+                        e.stopPropagation();
+                        handleMenuToggle();
                       }}
                       className="p-3 -ml-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors touch-manipulation relative cursor-pointer"
                       style={{
@@ -629,7 +629,7 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                         justifyContent: 'center',
                       }}
                     >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                       </svg>
                     </button>
@@ -822,28 +822,18 @@ const AuthenticatedApp: React.FC<Props> = ({ session }) => {
                   inset: 0,
                   zIndex: 999999,
                   pointerEvents: 'auto',
-                  WebkitTransform: 'translateZ(0)',
-                  transform: 'translateZ(0)',
                 }}
                 onClick={e => {
                   if (e.target === e.currentTarget) setIsMobileMenuOpen(false);
-                }}
-                onTouchEnd={e => {
-                  if (e.target === e.currentTarget) {
-                    e.preventDefault();
-                    setIsMobileMenuOpen(false);
-                  }
                 }}
               >
                 <div
                   className="bg-slate-900 w-80 h-full shadow-2xl flex flex-col animate-slide-right"
                   onClick={e => e.stopPropagation()}
-                  onTouchStart={e => e.stopPropagation()}
-                  onTouchEnd={e => e.stopPropagation()}
                   style={{
-                    willChange: 'transform',
                     maxWidth: '85vw',
                     paddingTop: safeAreaTop > 0 ? `${safeAreaTop}px` : 'env(safe-area-inset-top, 0px)',
+                    overscrollBehavior: 'contain',
                   }}
                 >
                   <div className="p-6 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
