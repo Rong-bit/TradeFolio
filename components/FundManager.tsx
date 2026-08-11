@@ -45,15 +45,16 @@ function fundAccountMatchesBaseCurrency(
 
 const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafetySpreadChange }) => {
   const { accounts, cashFlows, addCashFlow, updateCashFlow: onUpdate,
-    addBatchCashFlows, removeCashFlow, removeCashFlowsByIds,
+    addBatchCashFlows, removeCashFlow, clearCashFlows,
     recurringDepositRules, addRecurringDepositRule, updateRecurringDepositRule, removeRecurringDepositRule,
   } = usePortfolio();
   const { baseCurrency, rates } = useMarket();
   const { exchangeRateUsdToTwd: currentExchangeRate, jpyExchangeRate: currentJpyExchangeRate, eurExchangeRate: currentEurExchangeRate, gbpExchangeRate: currentGbpExchangeRate, hkdExchangeRate: currentHkdExchangeRate, krwExchangeRate: currentKrwExchangeRate, cadExchangeRate: currentCadExchangeRate, inrExchangeRate: currentInrExchangeRate } = rates;
-  const { language, showAlert, isRecordHighlighted } = useUI();
+  const { language, isRecordHighlighted } = useUI();
   const onAdd = addCashFlow;
   const onBatchAdd = addBatchCashFlows;
   const onDelete = removeCashFlow;
+  const onClearAll = clearCashFlows;
   const toBase = (v: number) => valueInBaseCurrency(v, baseCurrency, rates);
   const translations = t(language);
   const ff = translations.fundForm;
@@ -95,6 +96,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
   const [recKind, setRecKind] = useState<ScheduledRuleKind>('RECURRING_DEPOSIT');
   const [recLeadDays, setRecLeadDays] = useState('3');
 
+  const [safetySpreadDraft, setSafetySpreadDraft] = useState(() => String(minDebtSafetySpread));
   const [showRecurringPanel, setShowRecurringPanel] = useState(false);
   const [showDebtAlertPanel, setShowDebtAlertPanel] = useState(false);
 
@@ -102,6 +104,10 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
     open
       ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700';
+
+  useEffect(() => {
+    setSafetySpreadDraft(String(minDebtSafetySpread));
+  }, [minDebtSafetySpread]);
 
   const openRecModal = (rule?: RecurringDepositRule) => {
     if (rule) {
@@ -559,7 +565,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
             <h3 className="text-base sm:text-lg font-bold text-slate-700">{t(language).funds.operations}</h3>
             <div className="flex flex-wrap gap-2">
                <button
-                 onClick={() => filteredFlows.length > 0 && setIsClearConfirmOpen(true)}
+                 onClick={() => setIsClearConfirmOpen(true)}
                  disabled={filteredFlows.length === 0}
                  className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-red-100 border border-red-200 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
                >
@@ -702,9 +708,24 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                 min={0}
                 max={20}
                 step={0.5}
-                value={minDebtSafetySpread}
-                onChange={e => onMinDebtSafetySpreadChange(parseFloat(e.target.value) || 0)}
-                className={`w-20 border border-slate-300 rounded px-2 py-1 ${FORM_FIELD_THEME}`}
+                value={safetySpreadDraft}
+                onChange={e => setSafetySpreadDraft(e.target.value)}
+                onBlur={() => {
+                  const raw = safetySpreadDraft.trim();
+                  if (raw === '' || raw === '-' || raw === '.') {
+                    setSafetySpreadDraft(String(minDebtSafetySpread));
+                    return;
+                  }
+                  const parsed = parseFloat(raw);
+                  if (!Number.isFinite(parsed)) {
+                    setSafetySpreadDraft(String(minDebtSafetySpread));
+                    return;
+                  }
+                  const clamped = Math.min(20, Math.max(0, parsed));
+                  onMinDebtSafetySpreadChange(clamped);
+                  setSafetySpreadDraft(String(clamped));
+                }}
+                className={`w-20 border border-slate-300 rounded px-2 py-1 text-base sm:text-sm ${FORM_FIELD_THEME}`}
               />
             </label>
           </div>
@@ -712,7 +733,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
       </div>
 
       {recModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-[55] animate-fade-in">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-[55] animate-fade-in">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[95vh] overflow-hidden flex flex-col">
             <div className="bg-slate-900 p-3 sm:p-4 flex justify-between items-center shrink-0">
               <h2 className="text-white font-bold text-base sm:text-lg">
@@ -741,7 +762,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                 <select
                   value={recKind}
                   onChange={e => setRecKind(e.target.value as ScheduledRuleKind)}
-                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                 >
                   <option value="RECURRING_DEPOSIT">{ff.recurringKindDeposit}</option>
                   <option value="DEBT_PAYMENT_ALERT">{ff.recurringKindDebtAlert}</option>
@@ -757,7 +778,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                     max={31}
                     value={recLeadDays}
                     onChange={e => setRecLeadDays(e.target.value)}
-                    className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                    className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                   />
                 </div>
               )}
@@ -771,7 +792,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                   required
                   value={recDay}
                   onChange={e => setRecDay(e.target.value)}
-                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                 />
               </div>
               <div>
@@ -780,7 +801,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                   value={recAccountId}
                   onChange={e => setRecAccountId(e.target.value)}
                   required
-                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                 >
                   {accounts
                     .filter(a => (recKind === 'DEBT_PAYMENT_ALERT' ? isLiabilityAccount(a) : !isLiabilityAccount(a)))
@@ -797,13 +818,13 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                 </label>
                 <input
                   type="number"
-                  inputMode={INPUT_MODE_DECIMAL}
+                inputMode={INPUT_MODE_DECIMAL}
                   min={0}
                   step="0.01"
                   required
                   value={recAmount}
                   onChange={e => setRecAmount(e.target.value)}
-                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                 />
               </div>
               {recShowExchange && (
@@ -818,7 +839,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                   </label>
                   <input
                     type="number"
-                    inputMode={INPUT_MODE_DECIMAL}
+                inputMode={INPUT_MODE_DECIMAL}
                     step="0.0001"
                     placeholder={
                       (() => {
@@ -835,7 +856,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                     }
                     value={recEx}
                     onChange={e => setRecEx(e.target.value)}
-                    className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                    className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                   />
                 </div>
               )}
@@ -846,11 +867,11 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                 </label>
                 <input
                   type="number"
-                  inputMode={INPUT_MODE_DECIMAL}
+                inputMode={INPUT_MODE_DECIMAL}
                   step="0.01"
                   value={recFee}
                   onChange={e => setRecFee(e.target.value)}
-                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                 />
               </div>
               <div>
@@ -858,11 +879,11 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 mb-1 leading-relaxed">{ff.recurringAmountTwdHelp}</p>
                 <input
                   type="number"
-                  inputMode={INPUT_MODE_DECIMAL}
+                inputMode={INPUT_MODE_DECIMAL}
                   step="0.01"
                   value={recAmountTwd}
                   onChange={e => setRecAmountTwd(e.target.value)}
-                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                 />
               </div>
               <div>
@@ -871,7 +892,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                   type="month"
                   value={recStartMonth}
                   onChange={e => setRecStartMonth(e.target.value)}
-                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                 />
                 <p className="text-xs text-slate-500 mt-1">{ff.recurringStartMonthHint}</p>
               </div>
@@ -881,7 +902,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                   type="text"
                   value={recNote}
                   onChange={e => setRecNote(e.target.value)}
-                  className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                  className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                 />
               </div>
               <div className="flex gap-2 pt-2">
@@ -922,7 +943,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                <select 
                   value={filterAccount} 
                   onChange={e => setFilterAccount(e.target.value)} 
-                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${FORM_FIELD_THEME}`}
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                >
                   <option value="">{t(language).funds.allAccounts}</option>
                   {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -937,7 +958,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                <select 
                   value={filterType} 
                   onChange={e => setFilterType(e.target.value)} 
-                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${FORM_FIELD_THEME}`}
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                >
                   <option value="">{t(language).funds.allTypes}</option>
                   <option value={CashFlowType.DEPOSIT}>{t(language).funds.deposit}</option>
@@ -957,7 +978,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                   type="date" 
                   value={filterDateFrom} 
                   onChange={e => setFilterDateFrom(e.target.value)} 
-                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${FORM_FIELD_THEME}`} 
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`} 
                />
              </div>
 
@@ -970,7 +991,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                   type="date" 
                   value={filterDateTo} 
                   onChange={e => setFilterDateTo(e.target.value)} 
-                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${FORM_FIELD_THEME}`} 
+                  className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`} 
                />
              </div>
           </div>
@@ -1022,7 +1043,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
       {/* 3. List Table */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="min-w-full text-sm sm:text-base text-left">
-          <thead className="bg-slate-50 text-slate-500 uppercase">
+          <thead className="bg-slate-50 text-slate-500 uppercase border-b border-slate-100 dark:border-slate-700">
             <tr>
               <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{t(language).labels.date}</th>
               <th className="px-2 sm:px-3 py-2 text-right whitespace-nowrap">{t(language).labels.amount}</th>
@@ -1034,7 +1055,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
               <th className="px-2 sm:px-3 py-2 text-center whitespace-nowrap">{t(language).labels.action}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="[&>tr>td]:border-b-[0.5px] [&>tr>td]:border-slate-100 dark:[&>tr>td]:border-slate-700">
             {filteredFlows.length === 0 ? (
                 <tr><td colSpan={8} className="p-8 text-center text-slate-400">{(language === 'en' || language === 'de' || language === 'fr' || language === 'hi') ? 'No matching records found.' : '沒有符合條件的資金紀錄。'}</td></tr>
             ) : (
@@ -1192,7 +1213,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
       
       {/* 確認對話框 */}
       {showConfirmDialog && pendingCashFlow && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-[60]">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60]">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="bg-slate-900 p-4">
               <h3 className="text-white font-bold text-lg">{ff.confirmTitle}</h3>
@@ -1313,7 +1334,7 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
 
       {/* 4. Form Modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50 animate-fade-in">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-2 sm:p-4 z-50 animate-fade-in">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden flex flex-col">
              <div className="bg-slate-900 p-3 sm:p-4 flex justify-between items-center shrink-0">
                 <h2 className="text-white font-bold text-base sm:text-lg">{editingCashFlow ? ff.editFundRecord : ff.addFundRecord}</h2>
@@ -1379,12 +1400,12 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                          </label>
                          <input 
                            type="number"
-                           inputMode={INPUT_MODE_DECIMAL}
+                inputMode={INPUT_MODE_DECIMAL} 
                            step="0.0001" 
                            placeholder={transferRatePlaceholder ?? fundEntryRatePlaceholder} 
                            value={exchangeRate} 
                            onChange={e => setExchangeRate(e.target.value)} 
-                           className={`mt-1 w-full border border-slate-300 rounded p-2 ${FORM_FIELD_THEME}`}
+                           className={`mt-1 w-full border border-slate-300 rounded p-2 text-base sm:text-sm ${FORM_FIELD_THEME}`}
                            required
                          />
                        </div>
@@ -1435,11 +1456,9 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
       
       {/* 5. Clear All Confirmation Modal */}
       {isClearConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in">
            <div className="bg-white rounded-lg shadow-xl p-4 sm:p-6 max-w-sm w-full mx-4">
-              <h3 className="text-base sm:text-lg font-bold text-red-600 mb-2">
-                {translate('funds.confirmClearAll', language, { count: filteredFlows.length })}
-              </h3>
+              <h3 className="text-base sm:text-lg font-bold text-red-600 mb-2">{translations.funds.confirmClearAll}</h3>
               <p className="text-sm sm:text-base text-slate-600 mb-6">
                 {translate('funds.confirmClearAllMessage', language, { count: filteredFlows.length })}
               </p>
@@ -1447,14 +1466,8 @@ const FundManager: React.FC<Props> = ({ minDebtSafetySpread = 2, onMinDebtSafety
                  <button type="button" onClick={() => setIsClearConfirmOpen(false)} className={`${MODAL_CANCEL_BUTTON} text-sm sm:text-base`}>{translations.common.cancel}</button>
                  <button 
                    onClick={() => {
-                       const count = filteredFlows.length;
-                       removeCashFlowsByIds(filteredFlows.map(cf => cf.id));
+                       onClearAll(filteredFlows.map(cf => cf.id));
                        setIsClearConfirmOpen(false);
-                       showAlert(
-                         translate('appMessages.cashFlowCleared', language, { count }),
-                         translate('appMessages.deleteSuccessTitle', language),
-                         'success'
-                       );
                    }} 
                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base"
                  >
