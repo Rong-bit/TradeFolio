@@ -1495,11 +1495,13 @@ const BOND_KEYWORDS = [
 ];
 
 const BOND_TICKER_PATTERNS = [
+  /^\d{5}B$/, // 台股債券 ETF，例如 00679B、00937B
   /^TLT$/,
   /^IEF$/,
   /^SHY$/,
   /^BND$/,
   /^BNDX$/,
+  /^BNDW$/,
   /^AGG$/,
   /^LQD$/,
   /^VGIT$/,
