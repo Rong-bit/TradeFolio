@@ -61,3 +61,25 @@ export function parseHoldingUnitPrice(input: string): number {
   if (!Number.isFinite(raw)) return 0;
   return Math.round(raw * 100) / 100;
 }
+
+/** 訂閱方案價格：TWD/JPY/KRW 整數不顯示小數，USD 等顯示兩位小數（與 StoreKit 無關，避免占位價與真實價格式不一致） */
+export function formatSubscriptionDisplayPrice(
+  priceValue: number,
+  currency: string,
+  locale: string = 'zh-TW'
+): string {
+  const normalized = Math.abs(priceValue) < 0.0001 ? 0 : priceValue;
+  const code = (currency || 'TWD').trim().toUpperCase();
+  const twoDecimals = ['USD', 'EUR', 'GBP', 'HKD', 'AUD', 'CAD', 'CHF', 'SGD'].includes(code);
+
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: twoDecimals ? 2 : 0,
+      maximumFractionDigits: twoDecimals ? 2 : 0,
+    }).format(normalized);
+  } catch {
+    return `${code} ${normalized.toLocaleString(locale)}`;
+  }
+}
