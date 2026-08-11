@@ -15,6 +15,8 @@ export interface AppText {
   enterEmail: string;
   adminWelcome: string;
   adminPasswordWrong: string;
+  memberModeLoginSuccess: string;
+  guestModeLoginSuccess: string;
   guestLoginNotice: string;
   contactSubject: string;
   contactBody: string;
@@ -36,7 +38,7 @@ export interface AppText {
   cashFlowCleared: (count: number) => string;
   historicalSaved: string;
   loginPasswordPlaceholder: string;
-  confirmClearTxTitle: (count: number) => string;
+  confirmClearTxTitle: string;
   confirmClearTxMessage: (count: number) => string;
   confirmClearAction: string;
   deleteTxTitle: string;
@@ -77,11 +79,21 @@ export function useAppText(language: Language, currentUser: string): AppText {
       enterEmail: tx('enterEmail', isChinese ? '請輸入 Email 信箱' : 'Please enter your email address'),
       adminWelcome: tx('adminWelcome', isChinese ? '歡迎回來，管理員！' : 'Welcome back, admin!'),
       adminPasswordWrong: tx('adminPasswordWrong', isChinese ? '管理員密碼錯誤' : 'Incorrect admin password'),
+      memberModeLoginSuccess: tx(
+        'memberModeLoginSuccess',
+        isChinese ? '已為您登入「會員模式」。' : 'You are now logged in as a member.'
+      ),
+      guestModeLoginSuccess: tx(
+        'guestModeLoginSuccess',
+        isChinese
+          ? '已為您登入「非會員模式」。\n\n您尚未申請會員，若需申請會員，請點擊「申請會員」按鈕進行內購。'
+          : 'You are logged in as a guest.\n\nYou are not a member yet. To become a member, please tap "Become Member" to purchase.'
+      ),
       guestLoginNotice: tx(
         'guestLoginNotice',
         isChinese
-          ? '已為您登入「非會員模式」。\n\n部分進階功能可能受限。若遇到問題，請至「系統管理」使用問題回報通知開發者。'
-          : 'You are now logged in as guest mode.\n\nSome advanced features may be limited. If you encounter issues, go to System Management to report a problem.'
+          ? '已為您登入「非會員模式」。\n\n您尚未註冊，若需開通會員模式，請按\'申請開通\'發送申請信通知管理員開通權限。'
+          : 'You are now logged in as a guest.\n\nIf you want full membership access, click "Upgrade" to send an application email to the administrator.'
       ),
       contactSubject: tx(
         'contactSubject',
@@ -143,7 +155,7 @@ export function useAppText(language: Language, currentUser: string): AppText {
       txCleared: (count: number) =>
         tx(
           'txCleared',
-          isChinese ? `✅ 成功清空篩選的 ${count} 筆紀錄！` : `✅ Cleared ${count} filtered records successfully!`,
+          isChinese ? `✅ 成功清空 ${count} 筆交易紀錄！` : `✅ Cleared ${count} transactions successfully!`,
           { count }
         ),
       accountUpdated: (name: string) =>
@@ -159,7 +171,7 @@ export function useAppText(language: Language, currentUser: string): AppText {
       cashFlowCleared: (count: number) =>
         tx(
           'cashFlowCleared',
-          isChinese ? `✅ 成功清空篩選的 ${count} 筆資金紀錄！` : `✅ Cleared ${count} filtered fund records successfully!`,
+          isChinese ? `✅ 成功清空 ${count} 筆篩選資金紀錄！` : `✅ Cleared ${count} filtered fund records successfully!`,
           { count }
         ),
       historicalSaved: tx(
@@ -169,18 +181,16 @@ export function useAppText(language: Language, currentUser: string): AppText {
           : 'Historical asset data updated. Reports are now corrected by real prices.'
       ),
       loginPasswordPlaceholder: tx('loginPasswordPlaceholder', isChinese ? '請輸入密碼' : 'Enter password'),
-      confirmClearTxTitle: (count: number) =>
-        tx(
-          'confirmClearTxTitle',
-          isChinese ? `確認清空篩選的 ${count} 筆紀錄？` : `Confirm clearing ${count} filtered records?`,
-          { count }
-        ),
+      confirmClearTxTitle: tx(
+        'confirmClearTxTitle',
+        isChinese ? '確認清空篩選交易？' : 'Confirm clearing filtered transactions?'
+      ),
       confirmClearTxMessage: (count: number) =>
         tx(
           'confirmClearTxMessage',
           isChinese
-            ? '此操作將刪除目前篩選條件下的交易與資金紀錄，且無法復原。建議先備份資料。'
-            : 'This will delete transactions and fund records matching your current filters. This action cannot be undone. Please backup your data first.',
+            ? `將刪除 ${count} 筆篩選範圍內的交易紀錄，此操作無法復原，請確認您已備份資料。`
+            : `This will delete ${count} transaction(s) in the current filter. This action cannot be undone. Please make sure you have a backup.`,
           { count }
         ),
       confirmClearAction: tx('confirmClearAction', isChinese ? '確認清空' : 'Confirm Clear'),
