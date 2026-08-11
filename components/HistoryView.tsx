@@ -16,10 +16,10 @@ interface Props {
   onRemoveTransaction: (id: string) => void;
   onRemoveCashFlow: (id: string) => void;
   onClearAllTransactions: () => void;
-  filteredClearCount: number;
   onOpenBatchUpdateMarket: () => void;
   onOpenImport: () => void;
   filteredRecords: any[];
+  filteredTransactionCount: number;
   filterAccount: string;
   setFilterAccount: (v: string) => void;
   filterTicker: string;
@@ -41,10 +41,10 @@ const HistoryView: React.FC<Props> = ({
   onRemoveTransaction,
   onRemoveCashFlow,
   onClearAllTransactions,
-  filteredClearCount,
   onOpenBatchUpdateMarket,
   onOpenImport,
   filteredRecords,
+  filteredTransactionCount,
   filterAccount,
   setFilterAccount,
   filterTicker,
@@ -107,7 +107,7 @@ const HistoryView: React.FC<Props> = ({
             </button>
             <button
               onClick={onClearAllTransactions}
-              disabled={filteredClearCount === 0}
+              disabled={filteredTransactionCount === 0}
               className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs sm:text-sm hover:bg-red-100 border border-red-200 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
             >
               {tr.history.clearAll}
@@ -148,7 +148,7 @@ const HistoryView: React.FC<Props> = ({
             <select
               value={filterAccount}
               onChange={e => setFilterAccount(e.target.value)}
-              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${FORM_FIELD_THEME}`}
+              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
             >
               <option value="">{tr.funds.allAccounts}</option>
               {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -163,7 +163,7 @@ const HistoryView: React.FC<Props> = ({
               value={filterTicker}
               onChange={e => setFilterTicker(e.target.value)}
               placeholder={isChinese ? '例如: 0050, AAPL' : 'e.g. 0050, AAPL'}
-              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${FORM_FIELD_THEME}`}
+              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
             />
           </div>
           <div>
@@ -174,7 +174,7 @@ const HistoryView: React.FC<Props> = ({
               type="date"
               value={filterDateFrom}
               onChange={e => setFilterDateFrom(e.target.value)}
-              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${FORM_FIELD_THEME}`}
+              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
             />
           </div>
           <div>
@@ -185,7 +185,7 @@ const HistoryView: React.FC<Props> = ({
               type="date"
               value={filterDateTo}
               onChange={e => setFilterDateTo(e.target.value)}
-              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm ${FORM_FIELD_THEME}`}
+              className={`w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base sm:text-sm ${FORM_FIELD_THEME}`}
             />
           </div>
         </div>
@@ -243,7 +243,7 @@ const HistoryView: React.FC<Props> = ({
       {/* 交易記錄表 */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="min-w-full text-xs sm:text-sm text-left">
-          <thead className="bg-slate-50 text-slate-500 uppercase font-medium">
+          <thead className="bg-slate-50 text-slate-500 uppercase font-medium border-b-[0.5px] border-slate-100 dark:border-slate-700">
             <tr>
               <th className="px-2 sm:px-3 py-2 whitespace-nowrap">{tr.labels.date}</th>
               <th className="px-2 sm:px-3 py-2 whitespace-nowrap hidden sm:table-cell">{tr.labels.account}</th>
@@ -257,7 +257,7 @@ const HistoryView: React.FC<Props> = ({
               <th className="px-2 sm:px-3 py-2 text-center whitespace-nowrap">{tr.labels.action}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {filteredRecords.map(record => {
               const accName = accounts.find(a => a.id === record.accountId)?.name;
               const balance = record.balance ?? 0;
@@ -287,10 +287,11 @@ const HistoryView: React.FC<Props> = ({
                   tAN = accounts.find(a => a.id === record.sourceAccountId)?.name ?? null;
               }
 
-              const highlighted = isRecordHighlighted(record.id);
-
               return (
-                <tr key={`${record.type}-${record.id}`} className={recordRowClassName(highlighted)}>
+                <tr
+                  key={`${record.type}-${record.id}`}
+                  className={recordRowClassName(isRecordHighlighted(record.id))}
+                >
                   <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-slate-600 dark:text-slate-300 text-xs sm:text-sm">
                     {record.date}
                   </td>
