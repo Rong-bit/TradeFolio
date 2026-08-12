@@ -36,28 +36,32 @@ const DocumentationContent: React.FC<Props> = ({ content }) => {
       {lines.map((line, i) => {
         if (line.startsWith('### ')) {
           return (
-            <h4 key={i} className="text-base font-bold text-slate-900 dark:text-slate-100 mt-4 mb-1">
+            <h4 key={i} className="text-base font-bold text-slate-800 mt-4 mb-1">
               {renderInlineMarkdown(line.slice(4))}
             </h4>
           );
         }
         if (line.startsWith('## ')) {
           return (
-            <h3 key={i} className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-5 mb-2">
+            <h3 key={i} className="text-lg font-bold text-slate-800 mt-5 mb-2">
               {renderInlineMarkdown(line.slice(3))}
             </h3>
           );
         }
         if (line.startsWith('# ')) {
           return (
-            <h2 key={i} className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-2 mb-3">
+            <h2 key={i} className="text-xl font-bold text-slate-800 mt-2 mb-3">
               {renderInlineMarkdown(line.slice(2))}
             </h2>
           );
         }
         if (line.startsWith('> ')) {
           return (
-            <blockquote key={i} className="border-l-4 border-slate-400 dark:border-slate-500 pl-3 my-2 text-slate-700 dark:text-slate-300">
+            <blockquote
+              key={i}
+              className="my-2 border-0 border-none pl-0 ml-0 text-slate-600"
+              style={{ border: 'none', marginInline: 0, paddingInline: 0 }}
+            >
               {renderInlineMarkdown(line.slice(2))}
             </blockquote>
           );
@@ -65,8 +69,8 @@ const DocumentationContent: React.FC<Props> = ({ content }) => {
         if (/^[*-] /.test(line)) {
           return (
             <div key={i} className="flex gap-2 ml-2">
-              <span className="text-slate-600 dark:text-slate-400 shrink-0">•</span>
-              <span className="text-slate-900 dark:text-slate-100">{renderInlineMarkdown(line.slice(2))}</span>
+              <span className="text-slate-400 shrink-0">•</span>
+              <span>{renderInlineMarkdown(line.slice(2))}</span>
             </div>
           );
         }
@@ -74,7 +78,7 @@ const DocumentationContent: React.FC<Props> = ({ content }) => {
           return <div key={i} className="h-2" aria-hidden />;
         }
         return (
-          <p key={i} className="leading-relaxed text-slate-900 dark:text-slate-100">
+          <p key={i} className="leading-relaxed">
             {renderInlineMarkdown(line)}
           </p>
         );
