@@ -82,6 +82,15 @@
         filter: invert(1) brightness(1.15);
         opacity: 0.95;
       }
+      /* 選取反白：覆蓋暗色模式下強制淺色字，避免看不清 */
+      ::selection {
+        background-color: #c7d2fe !important;
+        color: #0f172a !important;
+      }
+      .dark ::selection {
+        background-color: #4f46e5 !important;
+        color: #ffffff !important;
+      }
     </style>
     <script>
       (function() {
