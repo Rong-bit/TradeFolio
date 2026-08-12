@@ -1502,24 +1502,24 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
               </div>
 
               {/* 股/債覆寫：預設收合，需自行設定時再展開 */}
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+              <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-600 rounded-lg p-3 selection:bg-indigo-200 selection:text-slate-900 dark:selection:bg-indigo-600 dark:selection:text-white">
                 <button
                   type="button"
                   onClick={() => setShowAssetClassOverride((open) => !open)}
                   aria-expanded={showAssetClassOverride}
-                  className="w-full flex items-center justify-between gap-2 text-left rounded-md -m-1 p-1 hover:bg-slate-100/80 transition"
+                  className="w-full flex items-center justify-between gap-2 text-left rounded-md -m-1 p-1 hover:bg-slate-100/80 dark:hover:bg-slate-700/70 transition"
                 >
-                  <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-2">
                     {translations.dashboard.assetClassOverrideTitle}
                     {overrideChips.length > 0 && (
-                      <span className="text-[10px] sm:text-xs font-medium tabular-nums text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] sm:text-xs font-medium tabular-nums text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 px-1.5 py-0.5 rounded">
                         {overrideChips.length}
                       </span>
                     )}
                   </span>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${showAssetClassOverride ? 'rotate-180' : ''}`}
+                    className={`h-4 w-4 shrink-0 text-slate-500 dark:text-slate-400 transition-transform ${showAssetClassOverride ? 'rotate-180' : ''}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -1533,7 +1533,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   <div className="mt-2">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
                       <div className="sm:col-span-2">
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
                           {translations.dashboard.tickerSymbolLabel}
                         </label>
                         <input
@@ -1541,7 +1541,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           onChange={(e) => setOverrideTickerInput(e.target.value)}
                           list="ticker-suggestions"
                           placeholder={translations.dashboard.tickerPlaceholderExamples}
-                          className="w-full bg-white border border-slate-200 rounded-md p-2 text-base sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          className="w-full bg-white dark:bg-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-md p-2 text-base sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         />
                         <datalist id="ticker-suggestions">
                           {tickerSuggestions.map((t) => (
@@ -1550,13 +1550,13 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                         </datalist>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">
+                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
                           {translations.dashboard.assetClassSelectLabel}
                         </label>
                         <select
                           value={overrideAssetClass}
                           onChange={(e) => setOverrideAssetClass(e.target.value as AssetClass)}
-                          className="w-full bg-white border border-slate-200 rounded-md p-2 text-base sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          className="w-full bg-white dark:bg-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-600 rounded-md p-2 text-base sm:text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         >
                           <option value={AssetClass.EQUITY}>{translations.dashboard.equityLabelShort}</option>
                           <option value={AssetClass.BOND}>{translations.dashboard.bondLabelShort}</option>
@@ -1573,7 +1573,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                       </button>
                       <button
                         onClick={() => clearOverrideForTicker(overrideTickerInput)}
-                        className="flex-1 px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-700 hover:bg-slate-100 transition"
+                        className="flex-1 px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                       >
                         {translations.dashboard.clearTickerOverride}
                       </button>
@@ -1581,7 +1581,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
 
                     {overrideChips.length > 0 && (
                       <div className="mt-3">
-                        <p className="text-xs sm:text-sm text-slate-500 mb-1">{translations.dashboard.currentOverridesHeading}</p>
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-1">{translations.dashboard.currentOverridesHeading}</p>
                         <div className="flex flex-wrap gap-2">
                           {overrideChips.map(([tickerKey, assetClass]) => {
                             const label =
@@ -1593,11 +1593,11 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                                 key={tickerKey}
                                 type="button"
                                 onClick={() => clearOverrideForTicker(tickerKey)}
-                                className="px-2 py-1 rounded bg-white border border-slate-200 hover:border-indigo-200 transition flex items-center gap-2"
+                                className="px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 hover:border-indigo-200 dark:hover:border-indigo-500 transition flex items-center gap-2"
                                 title={translations.dashboard.removeOverrideTitle}
                               >
-                                <span className="text-xs font-mono text-slate-700">{tickerKey}</span>
-                                <span className={`text-xs font-semibold ${assetClass === AssetClass.BOND ? 'text-blue-700' : 'text-emerald-700'}`}>
+                                <span className="text-xs font-mono text-slate-700 dark:text-slate-200">{tickerKey}</span>
+                                <span className={`text-xs font-semibold ${assetClass === AssetClass.BOND ? 'text-blue-700 dark:text-blue-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
                                   {label}
                                 </span>
                                 <span className="text-xs sm:text-sm text-slate-400">×</span>
