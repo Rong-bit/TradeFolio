@@ -100,18 +100,18 @@ const MarketPerformanceChart: React.FC = () => {
 
   return (
     <div className="bg-white p-6 rounded-xl shadow overflow-hidden">
-      <div className="flex justify-between items-center mb-5">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start mb-5">
+        <div className="min-w-0">
           <h3 className="font-bold text-slate-800 text-xl">{tr.marketChart.title}</h3>
           <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">{tr.marketChart.subtitle}</p>
         </div>
-        <div className="flex rounded-lg border border-slate-200 overflow-hidden text-sm font-medium">
+        <div className="flex w-full sm:w-auto shrink-0 rounded-lg border border-slate-200 overflow-hidden text-xs sm:text-sm font-medium">
           {(['cumulativeReturn', 'weight', 'value'] as Metric[]).map(m => (
             <button
               key={m}
               type="button"
               onClick={() => setMetric(m)}
-              className={`px-3 py-1.5 transition ${metric === m ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+              className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 whitespace-nowrap transition ${metric === m ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
             >
               {metricButtonLabels[m]}
             </button>
