@@ -19,6 +19,8 @@ type DisplayMode = 'merged' | 'detailed';
 const MARKET_COL = 'w-16 min-w-[4rem] max-w-[4rem]';
 const TICKER_COL = 'w-28 min-w-[7rem] max-w-[7rem]';
 const MARKET_TICKER_COL = 'w-[11rem] min-w-[11rem] max-w-[11rem]';
+const WEIGHT_COL = 'w-[8.5rem] min-w-[8.5rem]';
+const DAILY_CHANGE_COL = 'w-28 min-w-[7rem]';
 
 function sanitizeAnnualized(v: number): number {
   if (!Number.isFinite(v)) return 0;
@@ -336,7 +338,7 @@ const HoldingsTable: React.FC<Props> = () => {
           {formatHoldingPrice(displayCurrentPrice, currency)}
         </td>
 
-        <td className="px-3 py-2">
+        <td className={`px-3 py-2 ${WEIGHT_COL}`}>
           <div className="flex flex-col gap-1">
             <span
               className={`text-xs font-medium text-right ${
@@ -388,7 +390,7 @@ const HoldingsTable: React.FC<Props> = () => {
           {h.annualizedReturn && h.annualizedReturn !== 0 ? `${h.annualizedReturn.toFixed(1)}%` : '-'}
         </td>
 
-        <td className={`px-3 py-2 text-right text-xs font-bold ${dailyChangeColor}`}>
+        <td className={`px-3 py-2 text-right text-xs font-bold ${DAILY_CHANGE_COL} ${dailyChangeColor}`}>
           {h.dailyChange !== undefined && h.dailyChange !== null ? (
              <div className="flex flex-col items-end">
                <span>{h.dailyChange > 0 ? '+' : ''}{h.dailyChange.toFixed(2)}</span>
@@ -535,7 +537,7 @@ const HoldingsTable: React.FC<Props> = () => {
               <th className="px-3 py-2 text-right">{translations.holdings.quantity}</th>
               <th className="px-3 py-2 text-right">{translations.holdings.currentPrice}</th>
               <th
-                className="px-3 py-2 w-32 text-right cursor-pointer hover:text-indigo-600 select-none"
+                className={`px-3 py-2 ${WEIGHT_COL} text-right cursor-pointer hover:text-indigo-600 select-none`}
                 onClick={() => handleSort('weight')}
               >{translations.holdings.weight}<SortIcon col="weight" /></th>
               <th className="px-3 py-2 text-right">{translations.holdings.cost}</th>
@@ -552,7 +554,7 @@ const HoldingsTable: React.FC<Props> = () => {
                 onClick={() => handleSort('annualizedReturn')}
               >{translations.holdings.annualizedROI}<SortIcon col="annualizedReturn" /></th>
               <th
-                className="px-3 py-2 text-right cursor-pointer hover:text-indigo-600 select-none"
+                className={`px-3 py-2 ${DAILY_CHANGE_COL} text-right cursor-pointer hover:text-indigo-600 select-none`}
                 onClick={() => handleSort('dailyChangePercent')}
               >{translations.holdings.dailyChange}<SortIcon col="dailyChangePercent" /></th>
               <th className="px-3 py-2 text-right">{translations.holdings.avgPrice}</th>

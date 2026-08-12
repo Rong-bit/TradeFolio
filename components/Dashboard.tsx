@@ -1509,7 +1509,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                   aria-expanded={showAssetClassOverride}
                   className="w-full flex items-center justify-between gap-2 text-left rounded-md -m-1 p-1 hover:bg-slate-100/80 transition"
                 >
-                  <span className="text-xs sm:text-sm font-semibold text-slate-700 flex items-center gap-2">
+                  <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
                     {translations.dashboard.assetClassOverrideTitle}
                     {overrideChips.length > 0 && (
                       <span className="text-[10px] sm:text-xs font-medium tabular-nums text-indigo-600 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
@@ -1761,7 +1761,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                 </th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.totalAssetsNT}</th>
                 <th className="px-3 py-2 text-right">{translations.dashboard.marketValueNT}</th>
-                <th className="px-3 py-2 text-right">
+                <th className="px-3 py-2 text-right min-w-[5.5rem]">
                   <span className="inline-flex items-center justify-end gap-1">
                     {translations.dashboard.balanceNT}
                     <span
@@ -1905,7 +1905,7 @@ function Dashboard({ onUpdateHistorical }: DashboardProps) {
                           {formatCurrency(marketValue, displayCurrency)}
                         </td>
                         <td
-                          className="px-3 py-2 text-right tabular-nums text-sm"
+                          className="px-3 py-2 text-right tabular-nums text-sm min-w-[5.5rem]"
                           style={{ color: isDarkMode ? "#e2e8f0" : "#334155" }}
                         >
                           {formatCurrency(cashBalance, displayCurrency)}

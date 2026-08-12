@@ -835,7 +835,7 @@ const DividendHeatmap: React.FC = () => {
 
       <div className="mt-6 border-t border-slate-100 pt-4">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <h4 className="text-xl font-bold text-slate-800">{dtx.pendingActualTitle}</h4>
+          <h4 className="text-sm font-medium text-slate-800">{dtx.pendingActualTitle}</h4>
           <button
             type="button"
             onClick={() => {
