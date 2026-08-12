@@ -467,8 +467,8 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
           <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">&times;</button>
         </div>
         
-        <div className="p-6 flex-1 overflow-y-auto space-y-6">
-           <div className="flex gap-4 items-center bg-slate-50 p-4 rounded-lg border border-slate-200">
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto space-y-6">
+           <div className="flex gap-4 items-start bg-slate-50 p-4 rounded-lg border border-slate-200">
                <div className="flex flex-col gap-2 shrink-0">
                    <div>
                    <label className="block text-xs font-bold text-slate-500 mb-1">{tr.selectYearLabel}</label>
@@ -498,11 +498,11 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                </div>
                
                <div className="flex-1 flex flex-col items-end gap-2">
-                   <div className="flex gap-2">
+                   <div className="flex flex-col gap-2 w-full max-w-[14rem] sm:max-w-none sm:w-auto">
                        <button
                          onClick={handleAiFetch}
                          disabled={loading || years.length === 0}
-                         className={`px-4 py-2 rounded shadow text-sm font-bold text-white transition flex items-center gap-2
+                         className={`w-full sm:w-auto px-4 py-2 rounded shadow text-sm font-bold text-white transition flex items-center justify-center gap-2
                            ${loading ? 'bg-slate-400' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                        >
                            {loading && !batchProgress
@@ -512,7 +512,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                        <button
                          onClick={handleBatchFetch}
                          disabled={loading || years.length === 0}
-                         className={`px-4 py-2 rounded shadow text-sm font-bold text-white transition flex items-center gap-2
+                         className={`w-full sm:w-auto px-4 py-2 rounded shadow text-sm font-bold text-white transition flex items-center justify-center gap-2
                            ${loading ? 'bg-slate-400' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                        >
                            {batchProgress
@@ -545,13 +545,13 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
            </div>
 
            <div className="border rounded-lg overflow-hidden" style={{ backgroundColor: "#ffffff" }}>
-               <div className="p-4 border-b flex justify-between items-center" style={{ backgroundColor: "#f1f5f9" }}>
-                   <h3 className="font-bold" style={{ color: "#334155" }}>
+               <div className="p-3 sm:p-4 border-b flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3" style={{ backgroundColor: "#f1f5f9" }}>
+                   <h3 className="font-bold shrink-0" style={{ color: "#334155" }}>
                     {selectedYear} Q{selectedQuarter} 數據
                    </h3>
-                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2 justify-end max-w-[70%]">
+                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:justify-end">
                        <div className="flex items-center gap-2">
-                         <label className="text-sm" style={{ color: "#475569" }}>{tr.exchangeRateLabel}</label>
+                         <label className="text-sm whitespace-nowrap" style={{ color: "#475569" }}>{tr.exchangeRateLabel}</label>
                          <input
                            type="number"
                            inputMode={INPUT_MODE_DECIMAL}
@@ -606,13 +606,20 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                    </div>
                </div>
                
-               <table className="min-w-full text-sm text-left border-collapse">
+               <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
+               <table className="w-full table-fixed text-sm text-left border-collapse">
+                   <colgroup>
+                       <col className="w-[3.75rem]" />
+                       <col />
+                       <col />
+                   </colgroup>
                    <thead style={{ backgroundColor: "#f8fafc", color: "#64748b" }}>
                        <tr>
-                           <th className="px-4 py-2 border-b border-slate-200">{tr.colMarket}</th>
-                           <th className="px-4 py-2 border-b border-slate-200">{tr.colTicker}</th>
-                           <th className="px-4 py-2 text-right border-b border-slate-200">
-                            收盤價 ({selectedPeriodDateLabel})
+                           <th className="px-1.5 sm:px-2 py-2 border-b border-slate-200 whitespace-nowrap">{tr.colMarket}</th>
+                           <th className="px-2 py-2 border-b border-slate-200 whitespace-nowrap">{tr.colTicker}</th>
+                           <th className="px-2 py-2 text-center border-b border-slate-200 whitespace-nowrap">
+                            <span className="sm:hidden">收盤價</span>
+                            <span className="hidden sm:inline">收盤價 ({selectedPeriodDateLabel})</span>
                            </th>
                        </tr>
                    </thead>
@@ -633,11 +640,12 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                                const val4 = currentYearData.prices[t.ticker];
                                const val = val1 !== undefined ? val1 : (val2 !== undefined ? val2 : (val3 !== undefined ? val3 : val4)) || 0;
                                const hasData = val > 0;
+                               const displayPrice = val === 0 ? 0 : Math.round(Number(val) * 100) / 100;
                                
                                return (
                                    <tr key={t.ticker} onMouseEnter={e=>(e.currentTarget.style.backgroundColor="#f8fafc")} onMouseLeave={e=>(e.currentTarget.style.backgroundColor="transparent")}>
-                                       <td className="px-4 py-2 border-b border-slate-100">
-                                           <span className={`px-2 py-0.5 rounded text-xs ${
+                                       <td className="px-1.5 sm:px-2 py-2 border-b border-slate-100">
+                                           <span className={`px-1.5 py-0.5 rounded text-xs ${
                                             t.market === Market.US ? 'bg-blue-100 text-blue-700' : 
                                             t.market === Market.UK ? 'bg-purple-100 text-purple-700' : 
                                             t.market === Market.JP ? 'bg-red-100 text-red-700' :
@@ -651,18 +659,18 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                                                {t.market}
                                            </span>
                                        </td>
-                                       <td className="px-4 py-2 font-bold border-b border-slate-100" style={{ color: "#334155" }}>
+                                       <td className="px-2 py-2 font-bold border-b border-slate-100 truncate" style={{ color: "#334155" }}>
                                            {t.ticker.replace(/\(BAK\)/gi, '')}
-                                           {hasData && <span className="text-green-500 ml-1 text-xs">✓</span>}
+                                           {hasData && <span className="text-green-500 ml-0.5 text-xs">✓</span>}
                                        </td>
-                                       <td className="px-4 py-2 text-right border-b border-slate-100">
+                                       <td className="px-2 py-2 text-left border-b border-slate-100">
                                            <input 
                                              type="number"
                                              inputMode={INPUT_MODE_DECIMAL}
                                              step="0.01"
-                                             value={val}
+                                             value={displayPrice}
                                              onChange={(e) => handlePriceChange(priceKey, e.target.value)}
-                                             className="w-32 border rounded p-1 text-right text-base sm:text-sm focus:ring-2 focus:ring-accent" style={{ color: "#1e293b", backgroundColor: hasData ? "#f0fdf4" : "#ffffff", borderColor: hasData ? "#bbf7d0" : "#cbd5e1" }}
+                                             className="w-full min-w-0 border rounded p-1 text-right text-base sm:text-sm focus:ring-2 focus:ring-accent" style={{ color: "#1e293b", backgroundColor: hasData ? "#f0fdf4" : "#ffffff", borderColor: hasData ? "#bbf7d0" : "#cbd5e1" }}
                                              placeholder={tr.pricePlaceholder}
                                            />
                                        </td>
@@ -672,6 +680,7 @@ const HistoricalDataModal: React.FC<Props> = ({ onSave, onClose }) => {
                        )}
                    </tbody>
                </table>
+               </div>
            </div>
            
            <div className="text-xs p-3 rounded" style={{ backgroundColor: "#fefce8", color: "#78716c", border: "1px solid #fef08a" }}>
