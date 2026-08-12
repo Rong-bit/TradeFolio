@@ -1,8 +1,5 @@
 name: Deploy to GitHub Pages
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
   push:
     branches: [ main ]
@@ -20,14 +17,12 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           # 移除 cache: 'npm'，因為沒有 package-lock.json 會導致錯誤
@@ -42,18 +37,13 @@ jobs:
           # 可選：覆寫預設 https://trade-folio.vercel.app/api/yahoo-proxy
           # GitHub Pages 無 /api，未設 variable 時建置仍會內建上述預設（手機與電腦同一 bundle）
           VITE_YAHOO_PROXY_URL: ${{ vars.VITE_YAHOO_PROXY_URL }}
-          # 可選：問題回報外部 API（未設則 GitHub Pages 走 mailto + 剪貼簿）
-          # 範例：https://trade-folio.vercel.app/api/contact-admin
-          VITE_CONTACT_ADMIN_API_URL: ${{ vars.VITE_CONTACT_ADMIN_API_URL }}
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ./dist
 
   deploy:
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -62,4 +52,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
